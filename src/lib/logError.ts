@@ -17,14 +17,14 @@ export async function logError(
     const { data: userRes } = await supabase.auth.getUser();
     const user_id = userRes?.user?.id ?? null;
 
-    await supabase.from("error_log").insert({
+    await supabase.from("error_log").insert([{
       source: ctx.source ?? "client",
-      route,
+      route: route ?? undefined,
       message: message.slice(0, 2000),
-      stack: stack ? stack.slice(0, 8000) : null,
-      meta: ctx.meta ?? null,
-      user_id,
-    });
+      stack: stack ? stack.slice(0, 8000) : undefined,
+      meta: (ctx.meta ?? undefined) as any,
+      user_id: user_id ?? undefined,
+    }]);
   } catch {
     // swallow
   }
