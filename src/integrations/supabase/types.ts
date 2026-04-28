@@ -14,6 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          appetite: number | null
+          created_at: string
+          energy: number | null
+          id: string
+          logged_for: string
+          mood: string[] | null
+          notes: string | null
+          pet_id: string
+          sleep_hours: number | null
+          stool_score: number | null
+          urine_frequency: number | null
+          walk_minutes: number | null
+          water_ml: number | null
+        }
+        Insert: {
+          appetite?: number | null
+          created_at?: string
+          energy?: number | null
+          id?: string
+          logged_for?: string
+          mood?: string[] | null
+          notes?: string | null
+          pet_id: string
+          sleep_hours?: number | null
+          stool_score?: number | null
+          urine_frequency?: number | null
+          walk_minutes?: number | null
+          water_ml?: number | null
+        }
+        Update: {
+          appetite?: number | null
+          created_at?: string
+          energy?: number | null
+          id?: string
+          logged_for?: string
+          mood?: string[] | null
+          notes?: string | null
+          pet_id?: string
+          sleep_hours?: number | null
+          stool_score?: number | null
+          urine_frequency?: number | null
+          walk_minutes?: number | null
+          water_ml?: number | null
+        }
+        Relationships: []
+      }
+      appointment_messages: {
+        Row: {
+          appointment_id: string
+          attachment_url: string | null
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          appointment_id: string
+          attachment_url?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          appointment_id?: string
+          attachment_url?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      appointments: {
+        Row: {
+          cancellation_reason: string | null
+          created_at: string
+          duration_min: number
+          id: string
+          mode: Database["public"]["Enums"]["appointment_mode"]
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          prescription: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+          vet_id: string
+          video_room_name: string | null
+          video_room_url: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          created_at?: string
+          duration_min?: number
+          id?: string
+          mode?: Database["public"]["Enums"]["appointment_mode"]
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          prescription?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+          vet_id: string
+          video_room_name?: string | null
+          video_room_url?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          created_at?: string
+          duration_min?: number
+          id?: string
+          mode?: Database["public"]["Enums"]["appointment_mode"]
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          prescription?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+          vet_id?: string
+          video_room_name?: string | null
+          video_room_url?: string | null
+        }
+        Relationships: []
+      }
       cron_health: {
         Row: {
           job_name: string
@@ -315,6 +444,54 @@ export type Database = {
           },
         ]
       }
+      medication_logs: {
+        Row: {
+          active: boolean
+          created_at: string
+          dose: string | null
+          end_on: string | null
+          frequency: string | null
+          id: string
+          name: string
+          pet_id: string
+          prescribing_vet: string | null
+          reason: string | null
+          route: string | null
+          start_on: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dose?: string | null
+          end_on?: string | null
+          frequency?: string | null
+          id?: string
+          name: string
+          pet_id: string
+          prescribing_vet?: string | null
+          reason?: string | null
+          route?: string | null
+          start_on?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dose?: string | null
+          end_on?: string | null
+          frequency?: string | null
+          id?: string
+          name?: string
+          pet_id?: string
+          prescribing_vet?: string | null
+          reason?: string | null
+          route?: string | null
+          start_on?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       missing_pet_sightings: {
         Row: {
           created_at: string
@@ -518,6 +695,42 @@ export type Database = {
           },
         ]
       }
+      parasite_preventatives: {
+        Row: {
+          batch_number: string | null
+          created_at: string
+          given_on: string
+          id: string
+          next_due_on: string | null
+          notes: string | null
+          parasite_type: Database["public"]["Enums"]["parasite_type"]
+          pet_id: string
+          product_name: string
+        }
+        Insert: {
+          batch_number?: string | null
+          created_at?: string
+          given_on?: string
+          id?: string
+          next_due_on?: string | null
+          notes?: string | null
+          parasite_type?: Database["public"]["Enums"]["parasite_type"]
+          pet_id: string
+          product_name: string
+        }
+        Update: {
+          batch_number?: string | null
+          created_at?: string
+          given_on?: string
+          id?: string
+          next_due_on?: string | null
+          notes?: string | null
+          parasite_type?: Database["public"]["Enums"]["parasite_type"]
+          pet_id?: string
+          product_name?: string
+        }
+        Relationships: []
+      }
       payment_intents: {
         Row: {
           amount_inr: number
@@ -554,24 +767,88 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_access_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          owner_id: string
+          pet_id: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["access_request_status"]
+          vet_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          owner_id: string
+          pet_id: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["access_request_status"]
+          vet_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          owner_id?: string
+          pet_id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["access_request_status"]
+          vet_id?: string
+        }
+        Relationships: []
+      }
+      pet_care_team: {
+        Row: {
+          granted_at: string
+          id: string
+          pet_id: string
+          revoked_at: string | null
+          vet_id: string
+        }
+        Insert: {
+          granted_at?: string
+          id?: string
+          pet_id: string
+          revoked_at?: string | null
+          vet_id: string
+        }
+        Update: {
+          granted_at?: string
+          id?: string
+          pet_id?: string
+          revoked_at?: string | null
+          vet_id?: string
+        }
+        Relationships: []
+      }
       pets: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
           allergies: string[]
           avatar_url: string | null
           bio: string | null
+          blood_type: string | null
           breed: string | null
           city: string | null
           conditions: string[]
           created_at: string
+          current_medications: string | null
           date_of_birth: string | null
           diet_type: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"] | null
           id: string
+          insurance_policy: string | null
+          insurance_provider: string | null
+          microchip_id: string | null
           name: string
           neutered: boolean | null
           owner_id: string
+          primary_vet_id: string | null
+          public_id: string | null
           social_level: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           temperament: string[]
@@ -584,18 +861,25 @@ export type Database = {
           allergies?: string[]
           avatar_url?: string | null
           bio?: string | null
+          blood_type?: string | null
           breed?: string | null
           city?: string | null
           conditions?: string[]
           created_at?: string
+          current_medications?: string | null
           date_of_birth?: string | null
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
           id?: string
+          insurance_policy?: string | null
+          insurance_provider?: string | null
+          microchip_id?: string | null
           name: string
           neutered?: boolean | null
           owner_id: string
+          primary_vet_id?: string | null
+          public_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           temperament?: string[]
@@ -608,18 +892,25 @@ export type Database = {
           allergies?: string[]
           avatar_url?: string | null
           bio?: string | null
+          blood_type?: string | null
           breed?: string | null
           city?: string | null
           conditions?: string[]
           created_at?: string
+          current_medications?: string | null
           date_of_birth?: string | null
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
           id?: string
+          insurance_policy?: string | null
+          insurance_provider?: string | null
+          microchip_id?: string | null
           name?: string
           neutered?: boolean | null
           owner_id?: string
+          primary_vet_id?: string | null
+          public_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species?: Database["public"]["Enums"]["pet_species"]
           temperament?: string[]
@@ -855,6 +1146,39 @@ export type Database = {
           subject_id?: string
           subject_type?: Database["public"]["Enums"]["report_subject"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      repro_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          litter_count: number | null
+          notes: string | null
+          occurred_on: string
+          partner_pet_id: string | null
+          pet_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          litter_count?: number | null
+          notes?: string | null
+          occurred_on?: string
+          partner_pet_id?: string | null
+          pet_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          litter_count?: number | null
+          notes?: string | null
+          occurred_on?: string
+          partner_pet_id?: string | null
+          pet_id?: string
         }
         Relationships: []
       }
@@ -1455,6 +1779,69 @@ export type Database = {
         }
         Relationships: []
       }
+      vet_availability: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          mode: Database["public"]["Enums"]["appointment_mode"]
+          start_time: string
+          vet_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          mode?: Database["public"]["Enums"]["appointment_mode"]
+          start_time: string
+          vet_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          mode?: Database["public"]["Enums"]["appointment_mode"]
+          start_time?: string
+          vet_id?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
+      vet_availability_overrides: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          is_blocked: boolean
+          override_date: string
+          reason: string | null
+          start_time: string | null
+          vet_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_blocked?: boolean
+          override_date: string
+          reason?: string | null
+          start_time?: string | null
+          vet_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_blocked?: boolean
+          override_date?: string
+          reason?: string | null
+          start_time?: string | null
+          vet_id?: string
+        }
+        Relationships: []
+      }
       vet_consults: {
         Row: {
           ai_summary: string | null
@@ -1518,6 +1905,144 @@ export type Database = {
           },
         ]
       }
+      vet_profiles: {
+        Row: {
+          active: boolean
+          address: string | null
+          bio: string | null
+          city: string | null
+          clinic_name: string | null
+          consult_modes: Database["public"]["Enums"]["appointment_mode"][]
+          created_at: string
+          default_duration_min: number
+          display_name: string
+          id: string
+          languages: string[]
+          lat: number | null
+          license_council: string | null
+          license_doc_path: string | null
+          license_number: string
+          lng: number | null
+          onboarded: boolean
+          phone: string | null
+          photo_url: string | null
+          price_chat_inr: number
+          price_clinic_inr: number
+          price_video_inr: number
+          rating_avg: number | null
+          rating_count: number
+          specialisations: string[]
+          updated_at: string
+          user_id: string
+          year_qualified: number | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          bio?: string | null
+          city?: string | null
+          clinic_name?: string | null
+          consult_modes?: Database["public"]["Enums"]["appointment_mode"][]
+          created_at?: string
+          default_duration_min?: number
+          display_name: string
+          id?: string
+          languages?: string[]
+          lat?: number | null
+          license_council?: string | null
+          license_doc_path?: string | null
+          license_number: string
+          lng?: number | null
+          onboarded?: boolean
+          phone?: string | null
+          photo_url?: string | null
+          price_chat_inr?: number
+          price_clinic_inr?: number
+          price_video_inr?: number
+          rating_avg?: number | null
+          rating_count?: number
+          specialisations?: string[]
+          updated_at?: string
+          user_id: string
+          year_qualified?: number | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          bio?: string | null
+          city?: string | null
+          clinic_name?: string | null
+          consult_modes?: Database["public"]["Enums"]["appointment_mode"][]
+          created_at?: string
+          default_duration_min?: number
+          display_name?: string
+          id?: string
+          languages?: string[]
+          lat?: number | null
+          license_council?: string | null
+          license_doc_path?: string | null
+          license_number?: string
+          lng?: number | null
+          onboarded?: boolean
+          phone?: string | null
+          photo_url?: string | null
+          price_chat_inr?: number
+          price_clinic_inr?: number
+          price_video_inr?: number
+          rating_avg?: number | null
+          rating_count?: number
+          specialisations?: string[]
+          updated_at?: string
+          user_id?: string
+          year_qualified?: number | null
+        }
+        Relationships: []
+      }
+      vital_logs: {
+        Row: {
+          body_condition: number | null
+          created_at: string
+          gum_colour: string | null
+          heart_rate_bpm: number | null
+          hydration: string | null
+          id: string
+          notes: string | null
+          pet_id: string
+          recorded_at: string
+          respiratory_rate_rpm: number | null
+          temperature_c: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          body_condition?: number | null
+          created_at?: string
+          gum_colour?: string | null
+          heart_rate_bpm?: number | null
+          hydration?: string | null
+          id?: string
+          notes?: string | null
+          pet_id: string
+          recorded_at?: string
+          respiratory_rate_rpm?: number | null
+          temperature_c?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          body_condition?: number | null
+          created_at?: string
+          gum_colour?: string | null
+          heart_rate_bpm?: number | null
+          hydration?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string
+          recorded_at?: string
+          respiratory_rate_rpm?: number | null
+          temperature_c?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       pets_public: {
@@ -1578,6 +2103,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["sub_tier"]
       }
+      generate_pet_public_id: { Args: never; Returns: string }
       get_pets_public: {
         Args: never
         Returns: {
@@ -1627,8 +2153,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      vet_can_read_pet: { Args: { _pet_id: string }; Returns: boolean }
     }
     Enums: {
+      access_request_status: "pending" | "approved" | "rejected" | "expired"
       activity_level: "low" | "medium" | "high"
       app_role:
         | "user"
@@ -1640,6 +2168,14 @@ export type Database = {
         | "finance"
         | "super_admin"
       application_status: "pending" | "approved" | "rejected"
+      appointment_mode: "chat" | "video" | "in_clinic"
+      appointment_status:
+        | "requested"
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "no_show"
       booking_status:
         | "pending"
         | "confirmed"
@@ -1664,6 +2200,13 @@ export type Database = {
       mating_intent: "stud" | "dam" | "either"
       missing_status: "active" | "resolved" | "cancelled"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
+      parasite_type:
+        | "flea"
+        | "tick"
+        | "heartworm"
+        | "dewormer"
+        | "combination"
+        | "other"
       payment_intent_status:
         | "beta_free"
         | "pending"
@@ -1837,6 +2380,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_request_status: ["pending", "approved", "rejected", "expired"],
       activity_level: ["low", "medium", "high"],
       app_role: [
         "user",
@@ -1849,6 +2393,15 @@ export const Constants = {
         "super_admin",
       ],
       application_status: ["pending", "approved", "rejected"],
+      appointment_mode: ["chat", "video", "in_clinic"],
+      appointment_status: [
+        "requested",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
       booking_status: [
         "pending",
         "confirmed",
@@ -1876,6 +2429,14 @@ export const Constants = {
       mating_intent: ["stud", "dam", "either"],
       missing_status: ["active", "resolved", "cancelled"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
+      parasite_type: [
+        "flea",
+        "tick",
+        "heartworm",
+        "dewormer",
+        "combination",
+        "other",
+      ],
       payment_intent_status: [
         "beta_free",
         "pending",
