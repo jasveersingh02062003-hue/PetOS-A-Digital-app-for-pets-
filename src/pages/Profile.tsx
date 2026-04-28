@@ -372,6 +372,7 @@ const Profile = () => {
           {/* COMPACT MENU */}
           <div className="space-y-1.5 mt-8 mb-6">
             <Row label="My orders" onClick={() => nav("/orders")} />
+            <Row label="Rewards & points" onClick={() => nav("/rewards")} />
             <Row label="Manage services" onClick={() => nav("/services/manage")} />
             <Row label="My listings & requests" onClick={() => nav("/mates/manage")} />
             <Row label="My appointments" onClick={() => nav("/appointments")} />
