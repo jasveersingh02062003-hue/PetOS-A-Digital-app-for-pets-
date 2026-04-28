@@ -8,6 +8,9 @@ import { usePets } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TierGate } from "@/components/TierGate";
+import { useTier } from "@/hooks/useTier";
+import { useAuth } from "@/hooks/useAuth";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -20,11 +23,14 @@ const SUGGESTIONS = [
 
 const AiChat = () => {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const { data: tier } = useTier();
   const { data: pets } = usePets();
   const [activePetId, setActivePetId] = useState<string | undefined>();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [softGate, setSoftGate] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
