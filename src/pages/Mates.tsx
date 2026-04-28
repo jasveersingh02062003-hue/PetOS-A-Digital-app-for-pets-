@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Plus, Sparkles, ShieldCheck, PawPrint } from "lucide-react";
+import { Heart, Plus, Sparkles, ShieldCheck, PawPrint, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { MatesGrid } from "@/components/MatesGrid";
@@ -77,7 +77,22 @@ const Mates = () => {
       {tab === "mating" ? (
         <MatingPane myPet={myPet} nav={nav} isBuyer={isBuyer} />
       ) : (
-        <AdoptGrid />
+        <>
+          <button
+            onClick={() => nav("/shelters")}
+            className="w-full mb-4 rounded-2xl border border-coral/30 bg-gradient-to-r from-coral/10 to-lilac/10 p-3 flex items-center gap-3 text-left hover:shadow-sm transition"
+          >
+            <div className="h-10 w-10 rounded-xl bg-coral/15 grid place-items-center text-coral shrink-0">
+              <Heart className="h-5 w-5" fill="currentColor" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display text-sm leading-tight">Browse shelters & rescues</div>
+              <div className="text-[11px] text-muted-foreground">Adopt, volunteer or donate directly</div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+          <AdoptGrid />
+        </>
       )}
     </div>
   );
