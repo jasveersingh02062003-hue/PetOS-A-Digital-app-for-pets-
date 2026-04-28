@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
@@ -62,11 +62,13 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-7 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-9 w-full bg-muted rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="trust" className="rounded-lg gap-1.5"><FileCheck2 className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="rewards" className="rounded-lg gap-1.5"><Coins className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
@@ -79,6 +81,8 @@ const Admin = () => {
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
           <TabsContent value="broadcast" className="mt-4"><BroadcastTab /></TabsContent>
           <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
+          <TabsContent value="trust" className="mt-4"><TrustQueueTab /></TabsContent>
+          <TabsContent value="rewards" className="mt-4"><RewardsQueueTab /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -476,3 +480,135 @@ const FlagsTab = () => {
 };
 
 export default Admin;
+
+const TrustQueueTab = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("service_providers")
+      .select("id, name, category, owner_id, trust_status, id_proof_path, address_proof_path, years_experience, quiz_passed_at, city, created_at")
+      .in("trust_status", ["pending"])
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setItems(data ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const decide = async (id: string, status: "verified" | "rejected") => {
+    const { error } = await supabase.rpc("set_provider_trust_status" as any, {
+      _provider_id: id,
+      _status: status,
+      _notes: notes[id] || null,
+    });
+    if (error) toast.error(error.message);
+    else { toast.success(`Provider ${status}`); load(); }
+  };
+
+  const signedUrl = async (path: string) => {
+    if (!path) return null;
+    const { data } = await supabase.storage.from("trust-docs").createSignedUrl(path, 300);
+    return data?.signedUrl ?? null;
+  };
+
+  const openDoc = async (path: string) => {
+    const url = await signedUrl(path);
+    if (url) window.open(url, "_blank");
+    else toast.error("Could not open document");
+  };
+
+  if (loading) return <div className="text-sm text-muted-foreground p-4">Loading…</div>;
+  if (items.length === 0) return <Card className="p-6 text-center text-sm text-muted-foreground">No pending verifications.</Card>;
+
+  return (
+    <div className="space-y-3">
+      {items.map((p) => (
+        <Card key={p.id} className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-semibold">{p.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {p.category} · {p.city || "—"} · {p.years_experience ?? 0} yrs exp
+              </div>
+              <div className="text-xs mt-1">
+                Quiz: {p.quiz_passed_at ? <Badge variant="default">passed</Badge> : <Badge variant="secondary">not passed</Badge>}
+              </div>
+            </div>
+            <Badge variant="outline">{p.trust_status}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {p.id_proof_path && (
+              <Button size="sm" variant="outline" onClick={() => openDoc(p.id_proof_path)}>View ID proof</Button>
+            )}
+            {p.address_proof_path && (
+              <Button size="sm" variant="outline" onClick={() => openDoc(p.address_proof_path)}>View address proof</Button>
+            )}
+          </div>
+          <Textarea
+            placeholder="Optional notes for the provider"
+            value={notes[p.id] || ""}
+            onChange={(e) => setNotes((n) => ({ ...n, [p.id]: e.target.value }))}
+            className="text-sm"
+            rows={2}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => decide(p.id, "verified")}>Approve</Button>
+            <Button size="sm" variant="destructive" onClick={() => decide(p.id, "rejected")}>Reject</Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+const RewardsQueueTab = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("reward_redemptions" as any)
+      .select("*")
+      .in("status", ["requested", "approved"])
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setItems((data as any) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const decide = async (id: string, status: "applied" | "rejected") => {
+    const { error } = await supabase.rpc("apply_redemption" as any, { _id: id, _status: status });
+    if (error) toast.error(error.message);
+    else { toast.success(`Redemption ${status}`); load(); }
+  };
+
+  if (loading) return <div className="text-sm text-muted-foreground p-4">Loading…</div>;
+  if (items.length === 0) return <Card className="p-6 text-center text-sm text-muted-foreground">No pending redemptions.</Card>;
+
+  return (
+    <div className="space-y-2">
+      {items.map((r) => (
+        <Card key={r.id} className="p-4 flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <div className="font-medium text-sm">{r.kind.replace(/_/g, " ")}</div>
+            <div className="text-xs text-muted-foreground">
+              user {r.user_id.slice(0, 8)}… · {r.points_spent} pts · ₹{r.inr_value}
+            </div>
+            {r.notes && <div className="text-xs italic mt-1">{r.notes}</div>}
+          </div>
+          <Badge variant="outline">{r.status}</Badge>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => decide(r.id, "applied")}>Apply</Button>
+            <Button size="sm" variant="destructive" onClick={() => decide(r.id, "rejected")}>Reject</Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};

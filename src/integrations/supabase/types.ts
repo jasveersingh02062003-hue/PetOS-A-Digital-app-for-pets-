@@ -4081,6 +4081,14 @@ export type Database = {
     }
     Functions: {
       admin_kpis: { Args: never; Returns: Json }
+      apply_redemption: {
+        Args: {
+          _id: string
+          _notes?: string
+          _status: Database["public"]["Enums"]["redemption_status"]
+        }
+        Returns: undefined
+      }
       award_reward: {
         Args: {
           _reason?: string
@@ -4265,6 +4273,10 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      set_provider_trust_status: {
+        Args: { _notes?: string; _provider_id: string; _status: string }
+        Returns: undefined
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
