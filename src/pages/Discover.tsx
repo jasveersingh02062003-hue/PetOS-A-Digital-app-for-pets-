@@ -12,6 +12,7 @@ import { NearMePanel } from "@/components/maps/NearMePanel";
 import {
   Compass, Flame, Users, CalendarDays, Stethoscope, Heart, ArrowRight,
   Scissors, GraduationCap, Hotel, Sun, Home, Footprints, Car, AlertTriangle,
+  MapPin, Sparkles, ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
@@ -50,7 +51,7 @@ const TILES: Tile[] = [
 
 const Discover = () => {
   const nav = useNavigate();
-  const { coords } = useUserLocation();
+  const { coords, city } = useUserLocation() as any;
   useSeo({
     title: "Discover pets, mates and stories",
     description: "Find verified breeding partners, trusted vets, meetups and trending pet stories near you.",
@@ -77,14 +78,42 @@ const Discover = () => {
 
   return (
     <div className="container-app pad-top-safe">
-      <header className="pt-6 pb-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Explore</div>
-        <h1 className="font-display text-[28px] mt-1 leading-tight">Discover</h1>
+      {/* Hero */}
+      <header className="pt-6 pb-4 relative">
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/8 via-coral/5 to-transparent rounded-b-[32px] -z-10" />
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold inline-flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3" /> Explore
+            </div>
+            <h1 className="font-display text-[30px] mt-1 leading-tight">Discover</h1>
+          </div>
+          {coords && (
+            <button
+              onClick={() => nav("/settings/about")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-hairline text-xs font-medium hover:bg-muted/40"
+            >
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <span className="truncate max-w-[120px]">{city || "Near you"}</span>
+            </button>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground mt-1">Everything for your pet — scroll, tap, done.</p>
       </header>
 
       <div className="mb-5">
         <SearchBar />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {["#puppies", "#adoption", "grooming", "vets near me"].map((s) => (
+            <button
+              key={s}
+              onClick={() => nav(`/search?q=${encodeURIComponent(s.replace(/^#/, ""))}`)}
+              className="text-[11px] px-2.5 py-1 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
       <TrendingHashtagsRail />
