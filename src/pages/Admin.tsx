@@ -62,11 +62,13 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-7 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-9 w-full bg-muted rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="trust" className="rounded-lg gap-1.5"><FileCheck2 className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="rewards" className="rounded-lg gap-1.5"><Coins className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
