@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut, Settings, Plus, AlertTriangle, ShieldCheck, ChevronRight, Search,
   Camera, Share2, Edit3, Grid3x3, Tag as TagIcon, PawPrint, Heart, Sparkles,
+  ShoppingBag, Gift, Briefcase, Stethoscope, Calendar, Wrench, Trophy,
+  Award, Flame, Crown,
 } from "lucide-react";
 import { PlusBadge } from "@/components/PlusBadge";
 import { MissingCreateSheet } from "@/components/MissingCreateSheet";
@@ -61,6 +63,21 @@ const Profile = () => {
         followers: followers.count ?? 0,
         following: following.count ?? 0,
       };
+    },
+  });
+
+  const { data: achievements } = useQuery({
+    queryKey: ["profile-achievements", user?.id],
+    enabled: !!user?.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("achievements")
+        .select("kind, earned_at, pet_id")
+        .eq("user_id", user!.id)
+        .order("earned_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
     },
   });
 
@@ -369,15 +386,59 @@ const Profile = () => {
             </TabsContent>
           </Tabs>
 
-          {/* COMPACT MENU */}
-          <div className="space-y-1.5 mt-8 mb-6">
-            <Row label="My orders" onClick={() => nav("/orders")} />
-            <Row label="Rewards & points" onClick={() => nav("/rewards")} />
-            <Row label="Manage services" onClick={() => nav("/services/manage")} />
-            <Row label="My listings & requests" onClick={() => nav("/mates/manage")} />
-            <Row label="My appointments" onClick={() => nav("/appointments")} />
-            <Row label="Vet portal" onClick={() => nav("/vet")} />
-            {isStaff && <Row label="Admin console" onClick={() => nav("/admin")} />}
+          {/* ACHIEVEMENTS */}
+          {!!achievements?.length && (
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5" /> Achievements
+                </h2>
+                <span className="text-[11px] text-muted-foreground">{achievements.length}</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6 pb-1">
+                {achievements.map((a: any, i: number) => (
+                  <AchievementChip key={`${a.kind}-${i}`} kind={a.kind} earnedAt={a.earned_at} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PLUS UPSELL */}
+          {tier?.tier !== "plus" && (
+            <button
+              onClick={() => nav("/plus")}
+              className="w-full mt-6 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-100/60 via-card to-coral/10 p-4 text-left hover:shadow-sm transition flex items-center gap-3"
+            >
+              <div className="h-11 w-11 rounded-2xl bg-amber-500/20 grid place-items-center shrink-0">
+                <Crown className="h-5 w-5 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-base leading-tight">Upgrade to PetOS Plus</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Unlimited AI vet, priority bookings, ad-free experience.
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </button>
+          )}
+
+          {/* GROUPED MENU */}
+          <div className="mt-8 mb-6 space-y-5">
+            <MenuSection title="Activity">
+              <IconRow icon={ShoppingBag} label="My orders" onClick={() => nav("/orders")} />
+              <IconRow icon={Calendar} label="My appointments" onClick={() => nav("/appointments")} />
+              <IconRow icon={Gift} label="Rewards & points" onClick={() => nav("/rewards")} />
+            </MenuSection>
+
+            <MenuSection title="Selling & services">
+              <IconRow icon={Heart} label="My listings & requests" onClick={() => nav("/mates/manage")} />
+              <IconRow icon={Briefcase} label="Manage services" onClick={() => nav("/services/manage")} />
+            </MenuSection>
+
+            <MenuSection title="Professional">
+              <IconRow icon={Stethoscope} label="Vet portal" onClick={() => nav("/vet")} />
+              {isStaff && <IconRow icon={Wrench} label="Admin console" onClick={() => nav("/admin")} />}
+            </MenuSection>
           </div>
 
           <Button variant="outline" onClick={signOut} className="w-full rounded-2xl h-12 border-hairline">
@@ -428,6 +489,58 @@ const Row = ({ label, onClick }: { label: string; onClick?: () => void }) => (
     <ChevronRight className="h-4 w-4 text-muted-foreground" />
   </button>
 );
+
+const MenuSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 px-1">
+      {title}
+    </div>
+    <div className="rounded-2xl border border-hairline bg-card divide-y divide-hairline overflow-hidden">
+      {children}
+    </div>
+  </div>
+);
+
+const IconRow = ({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className="w-full px-4 h-12 flex items-center gap-3 text-sm font-medium hover:bg-muted/30 transition-colors"
+  >
+    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+    <span className="flex-1 text-left">{label}</span>
+    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+  </button>
+);
+
+const ACHIEVEMENT_META: Record<string, { label: string; icon: any; tone: string }> = {
+  first_post: { label: "First post", icon: Sparkles, tone: "bg-amber-500/15 text-amber-700" },
+  vaccinated: { label: "Vaccinated", icon: ShieldCheck, tone: "bg-sky/15 text-sky" },
+  dewormed_recent: { label: "Dewormed", icon: ShieldCheck, tone: "bg-leaf/15 text-leaf" },
+  daily_moment_first: { label: "Daily debut", icon: Sparkles, tone: "bg-lilac/15 text-lilac" },
+  daily_streak_7: { label: "7-day streak", icon: Flame, tone: "bg-coral/15 text-coral" },
+  daily_streak_30: { label: "30-day streak", icon: Flame, tone: "bg-coral/20 text-coral" },
+  social_butterfly: { label: "Social butterfly", icon: Heart, tone: "bg-coral/15 text-coral" },
+  meetup_host: { label: "Meetup host", icon: Trophy, tone: "bg-amber-500/15 text-amber-700" },
+  helpful_vet: { label: "Helpful vet", icon: Award, tone: "bg-sky/15 text-sky" },
+};
+
+const AchievementChip = ({ kind, earnedAt }: { kind: string; earnedAt: string }) => {
+  const meta = ACHIEVEMENT_META[kind] ?? { label: kind.replace(/_/g, " "), icon: Trophy, tone: "bg-muted text-muted-foreground" };
+  const Icon = meta.icon;
+  return (
+    <div
+      className="shrink-0 flex flex-col items-center gap-1.5 w-[84px]"
+      title={`${meta.label} · ${new Date(earnedAt).toLocaleDateString()}`}
+    >
+      <div className={`h-14 w-14 rounded-2xl grid place-items-center ${meta.tone}`}>
+        <Icon className="h-6 w-6" strokeWidth={2.2} />
+      </div>
+      <div className="text-[10px] text-center font-medium leading-tight capitalize line-clamp-2">
+        {meta.label}
+      </div>
+    </div>
+  );
+};
 
 const StatusChip = ({ pet }: { pet: any }) => {
   if (!pet.status_chip) return null;
