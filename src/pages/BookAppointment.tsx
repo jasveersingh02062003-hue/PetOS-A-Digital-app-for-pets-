@@ -25,6 +25,7 @@ const BookAppointment = () => {
   const [petId, setPetId] = useState<string>(params.get("pet") || "");
   const [when, setWhen] = useState("");
   const [notes, setNotes] = useState("");
+  const triageSessionId = params.get("triage") || undefined;
 
   const { data: pets } = useQuery({
     queryKey: ["my-pets-book", user?.id],
@@ -73,10 +74,17 @@ const BookAppointment = () => {
         mode,
         scheduled_at: new Date(when).toISOString(),
         notes: notes || null,
+        triage_session_id: triageSessionId ?? null,
       })
       .select("id")
       .single();
     if (error) return toast.error(error.message);
+    if (triageSessionId) {
+      await supabase
+        .from("vet_triage_sessions")
+        .update({ escalated_to_appointment_id: data.id, closed_at: new Date().toISOString() })
+        .eq("id", triageSessionId);
+    }
     toast.success("Appointment requested");
     nav("/profile");
   };

@@ -10,6 +10,7 @@ import { ArrowLeft, Send, Video, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
+import { ShieldAlert, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AppointmentRoom() {
   const { id } = useParams();
@@ -38,7 +39,16 @@ export default function AppointmentRoom() {
         .select("name, avatar_url, public_id")
         .eq("id", data.pet_id)
         .maybeSingle();
-      return { ...data, pet };
+      let triage: any = null;
+      if ((data as any).triage_session_id) {
+        const { data: t } = await supabase
+          .from("vet_triage_sessions")
+          .select("severity, ai_summary, home_care, recommend_vet, transcript, created_at")
+          .eq("id", (data as any).triage_session_id)
+          .maybeSingle();
+        triage = t;
+      }
+      return { ...data, pet, triage };
     },
   });
 
@@ -181,6 +191,10 @@ export default function AppointmentRoom() {
         <PrescriptionBuilder appointmentId={appt.id} petId={appt.pet_id} ownerId={appt.owner_id} />
       )}
 
+      {isVet && appt.triage && (
+        <TriageSummaryCard triage={appt.triage} />
+      )}
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages?.length === 0 && (
           <div className="text-center text-xs text-muted-foreground py-8">No messages yet</div>
@@ -215,5 +229,47 @@ export default function AppointmentRoom() {
         </Button>
       </div>
     </div>
+  );
+}
+
+const TONE: Record<string, { bg: string; text: string; ring: string; icon: any; label: string }> = {
+  mild:     { bg: "bg-leaf/10",      text: "text-leaf",      ring: "ring-leaf/30",      icon: CheckCircle2, label: "AI: Mild" },
+  moderate: { bg: "bg-amber/15",     text: "text-amber",     ring: "ring-amber/30",     icon: AlertCircle,  label: "AI: Moderate" },
+  severe:   { bg: "bg-emergency/12", text: "text-emergency", ring: "ring-emergency/30", icon: ShieldAlert,  label: "AI: Severe" },
+};
+
+function TriageSummaryCard({ triage }: { triage: any }) {
+  const tone = TONE[triage.severity as string] ?? TONE.moderate;
+  const Icon = tone.icon;
+  const transcript: { role: string; content: string }[] = Array.isArray(triage.transcript) ? triage.transcript : [];
+  return (
+    <Card className={`mx-4 mt-3 p-4 rounded-2xl border-hairline ring-1 ${tone.ring} ${tone.bg}`}>
+      <div className={`flex items-center gap-2 ${tone.text} font-semibold text-sm`}>
+        <Icon className="h-4 w-4" /> {tone.label}{triage.recommend_vet ? " · vet review recommended" : ""}
+      </div>
+      {triage.ai_summary && (
+        <p className="text-sm text-foreground mt-2 leading-relaxed">{triage.ai_summary}</p>
+      )}
+      {!!triage.home_care?.length && (
+        <ul className="mt-2 space-y-1">
+          {triage.home_care.map((h: string, i: number) => (
+            <li key={i} className="text-xs text-foreground/80">• {h}</li>
+          ))}
+        </ul>
+      )}
+      {transcript.length > 0 && (
+        <details className="mt-3">
+          <summary className="text-xs text-muted-foreground cursor-pointer">Show owner ↔ AI transcript ({transcript.length})</summary>
+          <div className="mt-2 space-y-1.5 max-h-60 overflow-y-auto">
+            {transcript.map((m, i) => (
+              <div key={i} className="text-[11px]">
+                <span className="font-semibold capitalize text-muted-foreground">{m.role}: </span>
+                <span className="text-foreground/80">{m.content}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </Card>
   );
 }
