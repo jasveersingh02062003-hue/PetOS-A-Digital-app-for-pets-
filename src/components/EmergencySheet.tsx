@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Siren, MessageSquare, Stethoscope, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Siren, MessageSquare, Stethoscope, Loader2, AlertTriangle, CheckCircle2, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -18,6 +18,8 @@ type Triage = {
 export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const nav = useNavigate();
   const { data: pets } = usePets();
+  const { data: profile } = useProfile();
+  const emergencyVet = (profile as any)?.emergency_vet ?? null;
   const [petId, setPetId] = useState<string | undefined>();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -133,6 +135,13 @@ export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenCh
               className="rounded-2xl border-hairline"
               disabled={loading}
             />
+            {emergencyVet?.phone && (
+              <a href={`tel:${emergencyVet.phone}`} className="block">
+                <Button variant="default" size="lg" className="w-full h-12 rounded-2xl gap-2 bg-emergency hover:bg-emergency/90 text-emergency-foreground">
+                  <Phone className="h-4 w-4" /> Call {emergencyVet.name || "your vet"}
+                </Button>
+              </a>
+            )}
             <Button onClick={runTriage} disabled={loading || !pets?.length} size="lg" className="w-full rounded-2xl h-12">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Assess now</>}
             </Button>
