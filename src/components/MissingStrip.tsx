@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { usePublicPets } from "@/hooks/usePublicProfiles";
+import { SmartImage } from "@/components/SmartImage";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 
 /**
@@ -53,7 +54,7 @@ export const MissingStrip = () => {
       <div className="flex -space-x-2 shrink-0">
         {items.slice(0, 3).map((m: any) => (
           <div key={m.id} className="h-8 w-8 rounded-full ring-2 ring-background bg-muted overflow-hidden">
-            {m.photo_url ? <img src={m.photo_url} alt="" className="h-full w-full object-cover" /> : null}
+            {m.photo_url ? <SmartImage src={m.photo_url} alt="" aspect="1/1" className="h-full w-full" /> : null}
           </div>
         ))}
       </div>
