@@ -1,73 +1,71 @@
 
-## Phase 14 — Exportable Health Report PDF
+## Phase 15 — Pet Insurance lead-capture & commission tracking
 
-### Why this phase, why now
-Per your audit: *"❌ Exportable health PDF report (no edge function)"*. Every other near-term, no-overlap, no-Stripe-Connect, no-hardware item from your audit (pet-context AI, nutrition logs, symptom logs, AI vaccination scan, recurring bookings, walker trust queue, structured mating agreement, search history, presence, error telemetry, a11y, perf) is **already shipped** in the codebase — I verified file-by-file.
+### Why this, why now
+From your audit section G: *"❌ No insurance partner integration, no `insurance_policies` table, no commission tracking."* Verified — the only insurance code today is two text columns on `pets` (`insurance_provider`, `insurance_policy`) for the owner to self-record an existing policy. There is no lead funnel, no partner catalog, no commission log, no admin payout view.
 
-The data is all there (`health_records`, `vaccinations`, `weights`, `nutrition_logs`, `symptom_logs`, `pets`, `profiles`). What's missing is the artifact that owners hand to vets, groomers, boarders, airlines, and breeders. Shipping it:
+It's the cleanest remaining revenue lane: no Stripe Connect (it's an affiliate/lead model), no hardware, no overlap with shipped phases (mating money, walker trust, recurring bookings, AI triage, vault PDF, presence, error telemetry, search history are all live).
 
-- Makes the Vault a real "passport" — the trust narrative your pitch leads with.
-- Becomes a Plus-tier upsell (free users get a watermarked basic PDF; Plus gets full export).
-- Zero dependency on any other unshipped phase. Cannot regress prior work because it only **reads** data.
+### What gets built
 
-### Scope (what gets built)
+1. **`insurance_partners` table** (admin-managed catalog)
+   - name, logo_url, blurb, country, plan_min_inr, plan_max_inr, redirect_url (partner deep link with `{lead_id}` placeholder), commission_pct, active, sort_order.
+   - Seed with two demo rows (Bajaj Allianz Pet, Digit Pet) marked inactive so admins can curate.
 
-1. **Edge function `health-export-pdf`**
-   - Auth-gated (verifies caller owns the pet via RLS-equivalent check).
-   - Inputs: `{ pet_id: uuid, range?: "all" | "12m" | "6m" }`.
-   - Pulls pet profile, owner contact (opt-in), all health records, vaccinations (with verified flag), weight history, nutrition log summary (last 30 days), symptom log summary (last 90 days), and badges.
-   - Renders an A4 PDF using `pdf-lib` (Deno-compatible, no native deps).
-   - Returns `application/pdf` stream with `Content-Disposition: attachment`.
-   - Watermarks "Free preview" on free tier; clean export on Plus (uses existing `current_tier()`).
+2. **`insurance_leads` table** (one row per "Get quote" tap)
+   - user_id, pet_id, partner_id, status enum (`new`, `contacted`, `quoted`, `purchased`, `lost`), pet_breed_snapshot, pet_age_months_snapshot, premium_inr (nullable), commission_inr (nullable), partner_ref (nullable), notes, timestamps.
+   - RLS: owner can SELECT/INSERT own; admins SELECT/UPDATE all; nobody can DELETE.
+   - Trigger: snapshot pet breed + age at insert.
 
-2. **Client integration on Health page**
-   - New `ExportHealthPdfButton` component placed in the Vault header next to the existing share-vet-code action.
-   - Opens a small sheet: range selector (All / Last 12 months / Last 6 months) + "Include owner contact" toggle (default off).
-   - Calls the edge function via `supabase.functions.invoke`, receives a Blob, triggers browser download (`pet-name-health-passport-YYYYMMDD.pdf`).
-   - Toast on success/error; surfaces 402/429 cleanly.
-   - Free-tier users see a "Plus unlocks clean export" hint that links to `/plus`.
+3. **Owner UI on Health page → new "Insurance" card**
+   - Compact card under the existing pet hero (visible only when no `insurance_provider` set, otherwise shows current policy chip with "Compare other plans →").
+   - Lists active partners (logo, blurb, price range, commission badge hidden from owners).
+   - "Get a quote" button → inserts `insurance_leads` row, opens partner URL (with substituted `{lead_id}`) in new tab, toasts "We'll email you partner offers".
 
-3. **No schema changes.** Reuses everything that already exists.
+4. **Admin tab → "Insurance"**
+   - Two sub-tabs: Partners (CRUD on `insurance_partners`), Leads (table with filters by status, inline status update + premium/commission entry).
+   - KPI strip: leads this month, conversion %, commission accrued ₹.
+   - Wired into existing `Admin.tsx` tab system (becomes 11th tab).
+
+5. **Edge function `insurance-lead-create`** (lightweight, optional)
+   - Owner-side could also POST through this to attach UTM/source headers; for v1 the client `supabase.from(...).insert()` is sufficient because RLS scopes to self. **Deferred** — direct insert is enough.
+
+6. **Edge function `insurance-webhook`**
+   - Public POST endpoint partners hit when a lead converts. Verifies a `x-petos-signature` header against `INSURANCE_PARTNER_SECRET` (stored as Supabase secret).
+   - Updates `insurance_leads` row by `partner_ref`, sets status=`purchased`, premium, commission.
+   - Returns 200 with idempotency on duplicate webhook ids.
 
 ### Files
 
-- New: `supabase/functions/health-export-pdf/index.ts`
-- New: `src/components/health/ExportHealthPdfButton.tsx`
-- Edit: `src/pages/Health.tsx` — mount the button in the header row of the active pet's vault.
+- New migration with both tables, enums, RLS, triggers, seed (inactive).
+- New: `src/components/health/InsuranceCard.tsx`.
+- New: `src/components/admin/InsuranceTab.tsx` + `InsurancePartnersPanel.tsx` + `InsuranceLeadsPanel.tsx`.
+- New: `supabase/functions/insurance-webhook/index.ts`.
+- Edit: `src/pages/Health.tsx` — mount `<InsuranceCard petId={active.id} />` under the pet hero.
+- Edit: `src/pages/Admin.tsx` — register the new tab.
+- Secret: ask user to add `INSURANCE_PARTNER_SECRET` only when a real partner is wired (v1 uses a placeholder; webhook returns 401 until secret set).
 
-### Technical notes (non-user)
+### Acceptance
+
+- An owner sees the Insurance card on Health, sees demo partners (after an admin enables them), taps "Get a quote", sees a row appear in `insurance_leads` with status=`new`, and is redirected to the partner URL with `lead_id` query param.
+- A non-owner cannot read someone else's leads.
+- Admin opens Insurance tab → sees the lead, marks it `purchased` with premium ₹6000 → commission auto-computed using partner's `commission_pct`.
+- Webhook can flip a lead to `purchased` when called with valid signature.
+
+### Out of scope (future phases)
+Real partner contracts, automated payout reconciliation, in-app quote calculator (we redirect to partner site), embedded PDF policy delivery.
 
 ```text
-Edge function flow
-─────────────────────
-verify JWT → fetch user
-   │
-   ├─ assert pet ownership (pets.owner_id = user.id)  → 403 if not
-   ├─ load pet, owner profile, achievements
-   ├─ load health_records, vaccinations, weights, nutrition_logs, symptom_logs
-   ├─ check current_tier(user.id) → free vs plus → watermark flag
-   ├─ build PDF with pdf-lib:
-   │     • Cover: pet avatar, name, public_id, breed/dob/sex, vacc-verified shield
-   │     • Section: Vaccinations (table + verified badge)
-   │     • Section: Health records (timeline)
-   │     • Section: Weight chart (sparkline as embedded PNG via Canvas-free path: draw lines)
-   │     • Section: Nutrition (last 30d aggregates)
-   │     • Section: Symptoms (last 90d list)
-   │     • Footer: generated-at, "Generated by Petos" + watermark if free
-   └─ return PDF bytes
+Owner flow
+──────────
+Health page → Insurance card → "Get quote" → insert lead row
+                                              │
+                                              ├─ open partner URL with {lead_id}
+                                              └─ toast confirmation
+
+Partner-side conversion
+──────────
+Partner backend → POST /insurance-webhook (signed)
+                  → update lead: status=purchased, premium, commission
+                  → admin sees it next refresh
 ```
-
-- `pdf-lib` is pure JS (works in Deno via `https://esm.sh/pdf-lib`).
-- Sparkline drawn with `pdf-lib` line primitives — no canvas, no Puppeteer, no headless Chrome.
-- `verify_jwt = true` (default for new functions, fine here).
-- CORS headers included; OPTIONS handled.
-
-### Acceptance check
-
-- Owner of a pet taps "Export PDF" in Vault → gets a downloadable PDF with their pet's data.
-- Non-owner calling the function with someone else's `pet_id` → 403.
-- Plus user → no watermark; Free user → "Free preview" watermark on each page.
-- File opens cleanly in any PDF reader and is text-selectable.
-
-### Out of scope for this phase
-Email delivery, scheduled monthly auto-export, multi-pet single-PDF, vet-side direct-to-clinic upload — all defer to later phases or live under existing vet-share flow.
