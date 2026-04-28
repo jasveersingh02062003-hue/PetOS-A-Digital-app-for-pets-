@@ -55,6 +55,7 @@ import Welcome from "./pages/Welcome";
 import Timeline from "./pages/health/Timeline";
 import VetOnboarding from "./pages/vet/Onboarding";
 import VetDashboard from "./pages/vet/Dashboard";
+import VetVerifications from "./pages/vet/Verifications";
 import BookAppointment from "./pages/BookAppointment";
 import AccessRequests from "./pages/AccessRequests";
 import AppointmentRoom from "./pages/AppointmentRoom";
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/vet" element={<VetDashboard />} />
+              <Route path="/vet/verifications" element={<VetVerifications />} />
               <Route path="/vet/legacy" element={<Vet />} />
               <Route path="/vet/apply" element={<VetApply />} />
               <Route path="/vet/onboarding" element={<VetOnboarding />} />
