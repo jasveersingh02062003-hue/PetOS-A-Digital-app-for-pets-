@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
-import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2, Printer } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2, Printer, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 import { MissingPoster } from "@/components/missing/MissingPoster";
@@ -79,6 +79,7 @@ const MissingDetail = () => {
   const [sightingNote, setSightingNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [boosting, setBoosting] = useState(false);
 
   if (isLoading) return <div className="container-app pt-12 text-sm text-muted-foreground">Loading…</div>;
   if (!missing) return <div className="container-app pt-12 text-sm">Not found.</div>;
@@ -126,6 +127,36 @@ const MissingDetail = () => {
     qc.invalidateQueries({ queryKey: ["missing", id] });
     qc.invalidateQueries({ queryKey: ["missing-pets"] });
     toast.success("So glad they're home 🐾");
+  };
+
+  const boostReach = async () => {
+    if (!user || !missing) return;
+    setBoosting(true);
+    const { data, error } = await supabase.functions.invoke("create-one-time-checkout", {
+      body: { kind: "missing_listing", ref_id: missing.id },
+    });
+    setBoosting(false);
+    if (error) return toast.error(error.message);
+    if (data?.status === "checkout" && data?.url) {
+      window.location.href = data.url;
+      return;
+    }
+    if (data?.status === "free_for_plus" || data?.status === "beta_free") {
+      // Free path → set boost directly (webhook only fires on paid Stripe)
+      const until = new Date();
+      until.setDate(until.getDate() + 7);
+      const { error: upErr } = await supabase
+        .from("missing_pets")
+        .update({ boosted_until: until.toISOString() } as any)
+        .eq("id", missing.id);
+      if (upErr) return toast.error(upErr.message);
+      qc.invalidateQueries({ queryKey: ["missing", id] });
+      toast.success(
+        data.status === "free_for_plus"
+          ? "Boost activated — Plus perk 🌟"
+          : "Boost activated for 7 days",
+      );
+    }
   };
 
   return (
