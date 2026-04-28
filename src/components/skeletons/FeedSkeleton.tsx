@@ -54,3 +54,38 @@ export const ProfileSkeleton = () => (
     </div>
   </div>
 );
+
+export const GridSkeleton = ({
+  count = 6,
+  cols = 2,
+}: { count?: number; cols?: 2 | 3 }) => (
+  <div className={`grid gap-3 ${cols === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+    {Array.from({ length: count }).map((_, i) => (
+      <div
+        key={i}
+        className="rounded-2xl border border-hairline bg-card overflow-hidden"
+      >
+        <Block className="aspect-square rounded-none" />
+        <div className="p-3 space-y-2">
+          <Block className="h-3 w-2/3" />
+          <Block className="h-2.5 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export const MeetupListSkeleton = ({ count = 4 }: { count?: number }) => (
+  <div className="space-y-3">
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="rounded-2xl border border-hairline bg-card p-4 flex gap-3">
+        <Block className="h-16 w-16 rounded-xl shrink-0" />
+        <div className="flex-1 space-y-2 pt-1">
+          <Block className="h-3.5 w-2/3" />
+          <Block className="h-2.5 w-1/2" />
+          <Block className="h-2.5 w-1/3" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
