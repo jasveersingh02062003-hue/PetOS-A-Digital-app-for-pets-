@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, ChevronRight, User, Bell, Phone, Shield, PawPrint, Target,
   LogOut, CreditCard, UserX, Crown, Globe, Moon, HelpCircle, FileText,
-  Sparkles, Mail, Trash2, Repeat,
+  Sparkles, Mail, Trash2, Repeat, Baby,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets, useProfile } from "@/hooks/useProfile";
@@ -105,6 +105,7 @@ const Settings = () => {
 
         <Section title="Bookings">
           <Row icon={Repeat} label="Recurring bookings" desc="Pause, resume or cancel schedules" onClick={() => nav("/bookings/recurring")} />
+          <Row icon={Baby} label="Pregnancies" desc="Track gestation and whelping reminders" onClick={() => nav("/pregnancies")} />
         </Section>
 
         <Section title="App">
