@@ -478,6 +478,7 @@ export type Database = {
           occurred_on: string
           pet_id: string
           record_type: Database["public"]["Enums"]["health_record_type"]
+          source_post_id: string | null
           title: string
           updated_at: string
         }
@@ -489,6 +490,7 @@ export type Database = {
           occurred_on?: string
           pet_id: string
           record_type?: Database["public"]["Enums"]["health_record_type"]
+          source_post_id?: string | null
           title: string
           updated_at?: string
         }
@@ -500,6 +502,7 @@ export type Database = {
           occurred_on?: string
           pet_id?: string
           record_type?: Database["public"]["Enums"]["health_record_type"]
+          source_post_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1406,6 +1409,9 @@ export type Database = {
           caption: string | null
           comment_count: number
           created_at: string
+          health_kind: string | null
+          health_pet_id: string | null
+          health_value: Json | null
           id: string
           image_url: string | null
           like_count: number
@@ -1418,6 +1424,9 @@ export type Database = {
           caption?: string | null
           comment_count?: number
           created_at?: string
+          health_kind?: string | null
+          health_pet_id?: string | null
+          health_value?: Json | null
           id?: string
           image_url?: string | null
           like_count?: number
@@ -1430,6 +1439,9 @@ export type Database = {
           caption?: string | null
           comment_count?: number
           created_at?: string
+          health_kind?: string | null
+          health_pet_id?: string | null
+          health_value?: Json | null
           id?: string
           image_url?: string | null
           like_count?: number
