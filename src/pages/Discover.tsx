@@ -1,8 +1,8 @@
-import { Compass, Heart, Search } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PostFeed } from "@/components/PostFeed";
+import { MatesGrid } from "@/components/MatesGrid";
 
 const Discover = () => {
   return (
@@ -31,11 +31,7 @@ const Discover = () => {
         </TabsContent>
 
         <TabsContent value="mates" className="pb-10">
-          <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
-            <Heart className="h-6 w-6 mx-auto text-primary mb-2" strokeWidth={1.5} />
-            <div className="font-display text-lg">Coming soon</div>
-            <p className="text-sm text-muted-foreground mt-1">Verified mating listings will appear here.</p>
-          </Card>
+          <MatesGrid />
         </TabsContent>
       </Tabs>
     </div>

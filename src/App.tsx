@@ -15,6 +15,9 @@ import Onboarding from "./pages/Onboarding";
 import AiChat from "./pages/AiChat";
 import VaultView from "./pages/VaultView";
 import VetConsult from "./pages/VetConsult";
+import MatesNew from "./pages/MatesNew";
+import MateListing from "./pages/MateListing";
+import MatesManage from "./pages/MatesManage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -33,6 +36,9 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/ai" element={<AiChat />} />
             <Route path="/vet/consult/:id" element={<VetConsult />} />
+            <Route path="/mates/new" element={<MatesNew />} />
+            <Route path="/mates/listing/:id" element={<MateListing />} />
+            <Route path="/mates/manage" element={<MatesManage />} />
             <Route path="/v/:code" element={<VaultView />} />
             <Route element={<AppShell />}>
               <Route path="/" element={<Home />} />
