@@ -179,9 +179,10 @@ const VetTriage = () => {
     }
   };
 
-  const escalateToVet = async () => {
+  const escalateToVet = async (): Promise<void> => {
     if (!sessionId || !activePetId) {
-      return toast.error("Pick a pet first");
+      toast.error("Pick a pet first");
+      return;
     }
     nav(`/book-vet?pet=${activePetId}&triage=${sessionId}`);
   };
