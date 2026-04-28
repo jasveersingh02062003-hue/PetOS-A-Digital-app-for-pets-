@@ -1,114 +1,142 @@
-# Sprint 1 — Images & Speed
 
-Goal: make the app **feel dramatically faster** by fixing the #1 bottleneck — full-size images served from a single region — and removing the "blank → spinner → flash" feeling that says "vibe-coded".
+# Sprint 2 — Finish what Sprint 1 started + Data, Cache, Metrics
 
-This sprint touches the **3 highest-leverage levers** without rewriting the app.
+Sprint 1 shipped image variants, `SmartImage`, `FeedSkeleton`, and the `image-process` edge function. But several items from the original plan were **never wired in**, and that's a big part of why the app still feels "basic and static". This sprint:
 
----
+1. Finishes the Sprint 1 leftovers that were promised but not delivered
+2. Adds the highest-impact items from your shortlist (feed caching, story loading, upload progress, perf metrics, CDN headers)
 
-## What changes for the user
-
-- Feed scroll uses **70% less data** and loads images **3-5× faster**
-- Avatars/stories/cards show **instantly** with blurred placeholders (no more grey squares)
-- App opens to **skeleton layouts** instead of empty spinners — feels instant
-- Smooth scrolling even with hundreds of posts (no jank)
+Everything below is a checklist so you can see exactly what's done vs pending.
 
 ---
 
-## The 3 fixes
+## What's already shipped (no action)
 
-### Fix 1 — Auto-resize & WebP convert every uploaded image
-
-**Today:** A user uploads a 4 MB photo from their phone → that **same 4 MB JPEG** is shown in the feed, profile, and stories. One feed scroll downloads 20–50 MB.
-
-**After:** Every upload goes through a new edge function that produces 3 sizes in modern WebP format:
-
-| Size | Width | Used in |
-|---|---|---|
-| `thumb` | 200px | Avatars, story rail, comment author, pet chips |
-| `feed` | 720px | Feed cards, profile grid, missing strip |
-| `full` | 1440px | Story viewer, full-screen photo, post detail |
-
-Each variant is ~60% smaller than the original JPEG. Combined savings: **~85% on the feed**.
-
-### Fix 2 — Skeleton screens + blur placeholders everywhere
-
-**Today:** Blank screen → spinner → content appears (perceived as "slow + broken").
-
-**After:**
-- Home, Profile, Discover, Feed, Stories, Mates render **skeleton shapes** matching the final layout while data loads
-- Every image has a tiny base64 blur or solid color while the WebP loads (no more grey jumps)
-- Reserved aspect-ratio so layout never shifts
-
-Perception-wise, this is the **biggest "feels premium" win** — users stop noticing load time.
-
-### Fix 3 — Virtualize the feed + prefetch next page
-
-**Today:** All 50 posts render at once. With long captions + images, that's hundreds of DOM nodes. Scroll stutters on mid-range Android.
-
-**After:**
-- Use `react-window` (already lightweight, ~6 KB) to render only **visible posts + 2 buffer**
-- Infinite scroll pagination (10 posts per page instead of 50 upfront)
-- Prefetch page 2 while user is reading page 1 → next batch appears instantly
+- [x] DB columns `image_url_thumb/feed/full` on posts, pets, profiles, stories
+- [x] `image-process` edge function (resize → 3 JPEG variants)
+- [x] `SmartImage` component with shimmer + aspect lock
+- [x] `FeedSkeleton`, `StoryRailSkeleton`, `ProfileSkeleton`
+- [x] `uploadImageWithVariants` helper + Composer/ImageUpload wired
+- [x] PostFeed uses SmartImage + FeedSkeleton
 
 ---
 
-## Technical changes
+## A. Finish Sprint 1 leftovers (worth copying forward)
 
-### New edge function: `image-process`
-- Accepts an uploaded original from the client
-- Uses `https://deno.land/x/imagescript` (pure-Deno, no native deps) to resize + WebP-encode
-- Writes 3 variants to the existing storage bucket under `<userId>/<uuid>/{thumb,feed,full}.webp`
-- Returns the 3 URLs as JSON
+### A1. Use SmartImage everywhere, not just the feed
+SmartImage exists but is **only used in `PostFeed`**. The rest of the app still shows raw 4 MB phone photos.
 
-### Update `src/components/ImageUpload.tsx`
-- Replace direct `supabase.storage.upload()` with `supabase.functions.invoke('image-process', { body: file })`
-- Returns `{ thumb, feed, full }` — store all 3 URLs (or a single base path + variant suffix)
-- Show local preview immediately while processing in background (optimistic UI)
+- [ ] `StoryRail.tsx` — story thumbnails use `variant="thumb"`
+- [ ] `StoryViewer.tsx` — full-screen uses `variant="full"`
+- [ ] `MissingStrip.tsx` + `MissingDetail.tsx` — `variant="feed"`
+- [ ] `MatesGrid.tsx` + `Mates.tsx` cards — `variant="feed"`
+- [ ] `PostGrid.tsx` (profile grid) — `variant="thumb"`
+- [ ] `PetHeroCard.tsx` — pet avatar uses `variant="thumb"`
+- [ ] `Avatar` wrappers in PostCard header — `variant="thumb"`
 
-### DB migration
-- Add nullable columns `image_url_thumb text`, `image_url_feed text`, `image_url_full text` to `posts`, `pets`, `profiles` (avatar variants), `stories`
-- Backfill: leave old `image_url` as fallback — new uploads populate the new columns
-- No breaking changes; old posts keep working
+### A2. Real WebP encoding (not JPEG fallback)
+The current `image-process` function writes `.jpg` because `imagescript` lacks a WebP encoder. Switch to `@squoosh/lib` or call a WebP-capable encoder. Saves another ~25% per image.
 
-### New component: `<SmartImage>`
-- Wraps `LazyImage` with variant selection: `<SmartImage src={post} variant="feed" />`
-- Picks the right URL automatically (`feed` if available, fall back to `image_url`)
-- Adds `srcset` for retina displays
-- Includes solid-color blur placeholder
+- [ ] Replace `imagescript` with WebP-capable encoder in `supabase/functions/image-process/index.ts`
+- [ ] Change file extension and content-type to `.webp` / `image/webp`
 
-### Skeleton components
-- `src/components/skeletons/FeedSkeleton.tsx`
-- `src/components/skeletons/ProfileSkeleton.tsx`
-- `src/components/skeletons/StorySkeleton.tsx`
-- Replace existing `<Loader2 spinner>` usages on Home, Profile, Discover, Feed
+### A3. Skeletons on the other pages
+Sprint 1 promised skeletons "everywhere" but only the feed got one.
 
-### Virtualized feed
-- Add `react-window` dep
-- Refactor `PostFeed.tsx` to use `useInfiniteQuery` (10 posts/page) + `<VariableSizeList>`
-- Prefetch next page when user scrolls past 70%
+- [ ] Use `ProfileSkeleton` in `Profile.tsx` and `UserProfile.tsx` while `useProfile` is loading
+- [ ] Use `StoryRailSkeleton` in `StoryRail.tsx` while stories load (instead of empty 88px box)
+- [ ] Add `DiscoverSkeleton` for `Discover.tsx` (mates + groups grid placeholders)
+- [ ] Add `MeetupsSkeleton` for `Meetups.tsx`
 
-### Files affected
-- **New**: `supabase/functions/image-process/index.ts`, `src/components/SmartImage.tsx`, `src/components/skeletons/*.tsx`, migration for image variant columns
-- **Edited**: `ImageUpload.tsx`, `PostFeed.tsx`, `Home.tsx`, `Profile.tsx`, `Discover.tsx`, `StoryRail.tsx`, `MissingStrip.tsx`, `MatesGrid.tsx`, `Composer.tsx`, `vite.config.ts` (add react-window chunk)
+### A4. Replace remaining `<Loader2>` spinners
+Spinners are the #1 "vibe-coded" tell.
+
+- [ ] Search for `Loader2` across `src/pages` — replace blocking-screen spinners with skeleton variants
+- [ ] Keep small inline spinners (button loading states) — those are fine
 
 ---
 
-## Out of scope (saved for Sprint 2 & 3)
+## B. Data efficiency & caching (the actually-fast part)
 
-- Combined `get_home_data` RPC → Sprint 2
-- IndexedDB cache for offline-first opens → Sprint 2
-- Cloudflare/Bunny CDN in front of storage → Sprint 2
-- Capacitor native wrap → Sprint 3
-- Cloud instance upgrade → only if usage data justifies it
+### B1. One combined `get_home_data` RPC
+Today the Home screen fires ~6 separate Supabase queries (profile, pets, stories, daily prompt, missing strip, feed). One combined RPC = one network round-trip.
+
+- [ ] New SQL function `public.get_home_data(_user_id uuid)` returning JSONB with `{profile, pets, stories, prompt, missing, feed_first_page}`
+- [ ] New hook `useHomeData()` that calls this RPC once
+- [ ] Update `Home.tsx` to consume it; keep child queries as cache hydrators only
+
+### B2. Persistent cache (offline-first opens)
+Right now every cold launch refetches everything. Add `@tanstack/react-query` IndexedDB persister so the previous session's data renders **instantly** on launch, then refreshes in background.
+
+- [ ] Install `@tanstack/query-sync-storage-persister` + `@tanstack/react-query-persist-client`
+- [ ] Configure persister in `App.tsx` with IndexedDB adapter (24 h max age)
+- [ ] Mark sensitive queries (`auth`, `notifications`) as `persist: false`
+
+### B3. Feed prefetch + infinite scroll
+Sprint 1 promised this but never landed it.
+
+- [ ] Convert `PostFeed.tsx` to `useInfiniteQuery` (10 posts/page)
+- [ ] Trigger next-page fetch via IntersectionObserver on the last card
+- [ ] (Optional) react-window virtualization — only if scroll still janks after pagination
 
 ---
 
-## Expected outcome
+## C. Story & avatar loading
 
-- **Feed time-to-first-image**: ~2.5s → ~600ms on 4G
-- **Feed payload**: ~15 MB → ~2 MB for 10 posts
-- **Perceived load time** (user-visible): cut roughly in half thanks to skeletons
-- **Scroll FPS** on mid-range Android: 30-40 → 55-60
+### C1. Story rail
+- [ ] Use `SmartImage variant="thumb"` for story rings
+- [ ] Preload the next 3 story `full` URLs when a viewer opens a story (avoids the white-flash between stories)
+- [ ] Add `<link rel="preconnect">` to the storage host in `index.html`
 
-Approve and I'll ship the entire sprint in one pass.
+### C2. Avatar variants
+- [ ] When uploading a profile/pet avatar, store all 3 variants in `image_url_thumb/feed/full` columns (currently only the `feed` URL is saved into the legacy `avatar_url`)
+- [ ] Update `Avatar` usages to read `_thumb` first
+
+---
+
+## D. Upload progress UI
+
+- [ ] Add an `onProgress` callback to `uploadImageWithVariants` (XHR-based, `supabase.functions.invoke` doesn't expose progress — use direct `fetch` with `ReadableStream` or upload stage indicator: "Uploading… → Optimizing… → Done")
+- [ ] Show a determinate `<Progress>` bar in `Composer.tsx` and `ImageUpload.tsx`
+- [ ] Optimistic preview: show the local `URL.createObjectURL(file)` thumbnail immediately while the server processes
+
+---
+
+## E. CDN-style headers & static perf
+
+- [ ] Confirm `image-process` writes `Cache-Control: public, max-age=31536000, immutable` (it already does — verify in browser devtools)
+- [ ] Add `Cache-Control` headers to the SW (`public/sw.js`) for image responses
+- [ ] Add `<link rel="preconnect" href="<storage-host>">` and `<link rel="dns-prefetch">` in `index.html`
+- [ ] Set `decoding="async"` and `loading="lazy"` defaults inside `SmartImage` (verify they are still present)
+
+---
+
+## F. Performance metrics (so we know it actually got faster)
+
+- [ ] Tiny `src/lib/perf.ts` that logs Core Web Vitals (LCP, FID, CLS, TTFB) using the `web-vitals` package
+- [ ] Send to a new `perf_events` table (user_id, route, metric, value, ts) for self-measurement
+- [ ] Simple admin view at `/admin/perf` showing p50/p95 LCP per route over the last 7 days
+
+---
+
+## Implementation order (so you see wins fast)
+
+```text
+Day 1: A1 (SmartImage everywhere) + A3 (skeletons everywhere)   <- biggest visual win
+Day 2: B1 (get_home_data RPC) + B2 (IndexedDB persist)          <- biggest "feels instant" win
+Day 3: B3 (infinite scroll) + C1 (story preload) + D (progress) <- polish
+Day 4: A2 (real WebP) + E (CDN headers) + F (metrics)           <- measurable proof
+```
+
+---
+
+## Out of scope (Sprint 3)
+
+- Cloudflare/Bunny CDN in front of storage
+- Capacitor native wrap for true 60fps
+- Server-side rendering of the first feed page
+- Push notification batching
+
+---
+
+Approve and I'll start with **Day 1** (SmartImage everywhere + skeletons everywhere) since that's the change you and your friends will see immediately on the next refresh.
