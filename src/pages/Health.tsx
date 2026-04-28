@@ -21,6 +21,7 @@ import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
 import { PetIdButton } from "@/components/health/PetIdCard";
 import { VitalsTab } from "@/components/health/VitalsTab";
 import { MedicationsTab } from "@/components/health/MedicationsTab";
+import { PharmacySuggestionsCard } from "@/components/health/PharmacySuggestionsCard";
 import { ParasiteTab } from "@/components/health/ParasiteTab";
 import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDialog";
 import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton";
@@ -127,7 +128,10 @@ const Health = () => {
 
             <TabsContent value="vitals" className="mt-4"><VitalsTab petId={active.id} /></TabsContent>
             <TabsContent value="vaccinations" className="mt-4"><VaccinationsTab petId={active.id} /></TabsContent>
-            <TabsContent value="meds" className="mt-4"><MedicationsTab petId={active.id} /></TabsContent>
+            <TabsContent value="meds" className="mt-4">
+              <PharmacySuggestionsCard petId={active.id} />
+              <MedicationsTab petId={active.id} />
+            </TabsContent>
             <TabsContent value="parasite" className="mt-4"><ParasiteTab petId={active.id} /></TabsContent>
             <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
