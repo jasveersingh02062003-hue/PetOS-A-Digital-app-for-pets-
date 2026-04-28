@@ -171,8 +171,13 @@ const MissingCard = ({ m }: { m: any }) => {
   return (
     <Card
       onClick={() => nav(`/missing/${m.id}`)}
-      className="rounded-2xl border-hairline shadow-none overflow-hidden cursor-pointer hover:bg-muted/30 transition-colors"
+      className={`rounded-2xl border-hairline shadow-none overflow-hidden cursor-pointer hover:bg-muted/30 transition-colors ${m.is_boosted ? "ring-2 ring-amber-400/60" : ""}`}
     >
+      {m.is_boosted && (
+        <div className="bg-gradient-to-r from-amber-500/15 to-coral/15 px-3 py-1 text-[10px] uppercase tracking-wide font-semibold text-amber-700 flex items-center gap-1">
+          <Sparkles className="h-3 w-3" /> Boosted
+        </div>
+      )}
       <div className="flex gap-3 p-3">
         <div className="h-20 w-20 rounded-xl bg-muted overflow-hidden shrink-0">
           {m.photo_url ? <img src={m.photo_url} alt={m.pet?.name ?? "missing pet"} className="h-full w-full object-cover" /> : null}
