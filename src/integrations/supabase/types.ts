@@ -1084,6 +1084,7 @@ export type Database = {
           id: string
           intent: Database["public"]["Enums"]["mating_intent"]
           owner_id: string
+          paid_until: string | null
           pet_id: string
           requirements: string | null
           travel_km: number | null
@@ -1100,6 +1101,7 @@ export type Database = {
           id?: string
           intent?: Database["public"]["Enums"]["mating_intent"]
           owner_id: string
+          paid_until?: string | null
           pet_id: string
           requirements?: string | null
           travel_km?: number | null
@@ -1116,6 +1118,7 @@ export type Database = {
           id?: string
           intent?: Database["public"]["Enums"]["mating_intent"]
           owner_id?: string
+          paid_until?: string | null
           pet_id?: string
           requirements?: string | null
           travel_km?: number | null
@@ -4283,6 +4286,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["sub_tier"]
       }
       earth: { Args: never; Returns: number }
+      expire_mating_listings: { Args: never; Returns: undefined }
       generate_pet_public_id: { Args: never; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_pets_public: {

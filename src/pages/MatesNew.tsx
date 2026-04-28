@@ -27,27 +27,28 @@ const MatesNew = () => {
   const [discoverable, setDiscoverable] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [draftListingId, setDraftListingId] = useState<string | null>(null);
 
   const selected = pets?.find((p) => p.id === petId);
   const isNeutered = !!selected?.neutered;
   const eligible = selected?.vaccination_verified && !isNeutered;
 
-  const startSubmit = (e: React.FormEvent) => {
+  const startSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selected) return toast.error("Pick a pet first");
     if (!eligible) return toast.error("Verify vaccinations before listing");
-    setPaywallOpen(true);
-  };
-
-  const finishSubmit = async (): Promise<void> => {
-    if (!selected) return;
     setSaving(true);
-    if (!selected.discoverable_for_mating || selected.discoverable_for_mating !== discoverable) {
-      const { error } = await supabase.from("pets").update({ discoverable_for_mating: discoverable }).eq("id", selected.id);
-      if (error) { setSaving(false); toast.error(error.message); return; }
+    // 1. Sync discoverable toggle on the pet
+    if (selected.discoverable_for_mating !== discoverable) {
+      const { error: petErr } = await supabase
+        .from("pets")
+        .update({ discoverable_for_mating: discoverable })
+        .eq("id", selected.id);
+      if (petErr) { setSaving(false); toast.error(petErr.message); return; }
     }
+    // 2. Insert as inactive draft (no paid_until yet)
     const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("mating_listings").insert({
+    const { data: ins, error } = await supabase.from("mating_listings").insert({
       pet_id: selected.id,
       owner_id: u.user!.id,
       intent,
@@ -56,14 +57,30 @@ const MatesNew = () => {
       travel_km: Number(travel) || 0,
       description: description.trim() || null,
       requirements: requirements.trim() || null,
-    });
+      active: false,
+    }).select("id").single();
     setSaving(false);
     if (error) {
       if (error.message.includes("duplicate")) { toast.error("This pet already has a listing"); return; }
       toast.error(error.message); return;
     }
-    toast.success("Listing live");
-    nav("/discover");
+    setDraftListingId(ins.id);
+    setPaywallOpen(true);
+  };
+
+  // Called after PaywallSheet returns from beta_free or free_for_plus path.
+  // Real Stripe checkout is handled by stripe-webhook server-side instead.
+  const finishSubmit = async (): Promise<void> => {
+    if (!draftListingId) return;
+    const until = new Date();
+    until.setDate(until.getDate() + 30);
+    const { error } = await supabase
+      .from("mating_listings")
+      .update({ active: true, paid_until: until.toISOString() })
+      .eq("id", draftListingId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Listing live for 30 days");
+    nav("/mates/manage");
   };
 
   return (
@@ -174,6 +191,7 @@ const MatesNew = () => {
         onOpenChange={setPaywallOpen}
         kind="mating_listing"
         onConfirmed={finishSubmit}
+        refId={draftListingId}
       />
     </div>
   );

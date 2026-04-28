@@ -43,12 +43,50 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode !== "subscription") break;
         const userId = session.client_reference_id ?? (session.metadata?.user_id as string | undefined);
         if (!userId) break;
-        if (!session.subscription) break;
-        const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-        await upsertSub(supabase, userId, sub);
+
+        // Subscription checkout (Plus tier)
+        if (session.mode === "subscription" && session.subscription) {
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+          await upsertSub(supabase, userId, sub);
+          break;
+        }
+
+        // One-time payment checkout (mating_listing, missing_listing, agreement, vet_consult)
+        if (session.mode === "payment") {
+          const kind = session.metadata?.kind as string | undefined;
+          const refId = (session.metadata?.ref_id as string | undefined) || null;
+          const intentId = (session.metadata?.intent_id as string | undefined) || null;
+
+          // Mark our internal payment_intent as paid
+          if (intentId) {
+            await supabase
+              .from("payment_intents")
+              .update({
+                status: "paid",
+                provider_session_id: session.id,
+              })
+              .eq("id", intentId);
+          }
+
+          // Apply side-effect per kind
+          if (kind === "mating_listing" && refId) {
+            const until = new Date();
+            until.setDate(until.getDate() + 30);
+            await supabase
+              .from("mating_listings")
+              .update({ active: true, paid_until: until.toISOString() })
+              .eq("id", refId);
+          } else if (kind === "missing_listing" && refId) {
+            const until = new Date();
+            until.setDate(until.getDate() + 7);
+            await supabase
+              .from("missing_pets")
+              .update({ boosted_until: until.toISOString() })
+              .eq("id", refId);
+          }
+        }
         break;
       }
       case "customer.subscription.updated":
