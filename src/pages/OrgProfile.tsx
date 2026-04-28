@@ -7,10 +7,15 @@ import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useSeo } from "@/hooks/useSeo";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { LittersList } from "@/components/profile/LittersList";
+import { BoardingList } from "@/components/profile/BoardingList";
 
 const OrgProfile = () => {
   const { userId } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
+  const isOwner = !!user && user.id === userId;
 
   const { data: org, isLoading } = useQuery({
     queryKey: ["org-profile", userId],
@@ -119,6 +124,20 @@ const OrgProfile = () => {
             })}
           </div>
         </>
+      )}
+
+      {(org.org_type === "breeder" || org.org_type === "kennel") && userId && (
+        <div className="mt-6">
+          <h2 className="font-display text-lg mb-2">Litters</h2>
+          <LittersList userId={userId} />
+        </div>
+      )}
+
+      {(org.org_type === "breeder" || org.org_type === "kennel" || org.org_type === "trainer") && userId && (
+        <div className="mt-6">
+          <h2 className="font-display text-lg mb-2">Boarding & services</h2>
+          <BoardingList userId={userId} isOwner={isOwner} />
+        </div>
       )}
     </div>
   );
