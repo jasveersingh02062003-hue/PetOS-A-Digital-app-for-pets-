@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { EmergencySheet } from "./EmergencySheet";
 
-const PUBLIC_ROUTES = ["/auth"];
+const PUBLIC_ROUTES = ["/auth", "/v/"];
 
 export const AppShell = () => {
   const { user, loading } = useAuth();
