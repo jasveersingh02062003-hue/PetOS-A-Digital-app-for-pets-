@@ -113,7 +113,9 @@ const ReportsTab = () => {
 
   return (
     <div className="space-y-3">
-      {items.map(r => (
+      <div className="flex justify-end">
+        <a href="/admin/moderation" className="text-xs text-primary hover:underline">Open full moderation queue →</a>
+      </div>
         <Card key={r.id} className="p-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
