@@ -129,7 +129,7 @@ export const PetHeroCard = () => {
             )}
           </div>
           {/* Score chip */}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 h-5 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center grid place-items-center min-w-[28px]">
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 h-5 rounded-full bg-foreground text-background text-[10px] font-bold grid place-items-center min-w-[28px]">
             {score}
           </div>
         </button>
