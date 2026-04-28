@@ -44,7 +44,7 @@ const MatesNew = () => {
     setSaving(true);
     if (!selected.discoverable_for_mating || selected.discoverable_for_mating !== discoverable) {
       const { error } = await supabase.from("pets").update({ discoverable_for_mating: discoverable }).eq("id", selected.id);
-      if (error) { setSaving(false); return toast.error(error.message); }
+      if (error) { setSaving(false); toast.error(error.message); return; }
     }
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("mating_listings").insert({
