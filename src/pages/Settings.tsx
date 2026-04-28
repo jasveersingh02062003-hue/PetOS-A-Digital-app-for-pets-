@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, ChevronRight, User, Bell, Phone, Shield, PawPrint, Target,
-  LogOut, CreditCard,
+  LogOut, CreditCard, UserX,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets } from "@/hooks/useProfile";
@@ -46,6 +46,7 @@ const Settings = () => {
           <Row icon={Bell} label="Notifications" desc="Push, email, SMS" onClick={() => nav("/settings/notifications")} />
           <Row icon={Phone} label="Emergency vet" desc="Used by SOS button" onClick={() => nav("/settings/emergency")} />
           <Row icon={Shield} label="Privacy" desc="Mating discoverability per pet" onClick={() => nav("/settings/privacy")} />
+          <Row icon={UserX} label="Blocked accounts" desc="People you've blocked" onClick={() => nav("/settings/blocked")} />
         </Section>
 
         <Section title="Plan">
