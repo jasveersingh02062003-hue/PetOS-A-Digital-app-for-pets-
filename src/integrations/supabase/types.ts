@@ -787,6 +787,45 @@ export type Database = {
           },
         ]
       }
+      verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_notes: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vet_access_grants: {
         Row: {
           clinic_name: string | null
@@ -830,6 +869,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vet_applications: {
+        Row: {
+          bio: string | null
+          city: string | null
+          clinic_name: string
+          created_at: string
+          id: string
+          license_number: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
+          clinic_name: string
+          created_at?: string
+          id?: string
+          license_number: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          clinic_name?: string
+          created_at?: string
+          id?: string
+          license_number?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       vet_consults: {
         Row: {
@@ -910,6 +991,7 @@ export type Database = {
         | "moderator"
         | "finance"
         | "super_admin"
+      application_status: "pending" | "approved" | "rejected"
       booking_status:
         | "pending"
         | "confirmed"
@@ -954,6 +1036,7 @@ export type Database = {
         | "sitting"
         | "boarding"
         | "vet_clinic"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1091,6 +1174,7 @@ export const Constants = {
         "finance",
         "super_admin",
       ],
+      application_status: ["pending", "approved", "rejected"],
       booking_status: [
         "pending",
         "confirmed",
@@ -1141,6 +1225,7 @@ export const Constants = {
         "boarding",
         "vet_clinic",
       ],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
