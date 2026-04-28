@@ -1088,19 +1088,25 @@ export type Database = {
       }
       reminder_log: {
         Row: {
+          id: string
           kind: string
+          ref_id: string | null
           sent_at: string
-          vaccination_id: string
+          vaccination_id: string | null
         }
         Insert: {
+          id?: string
           kind: string
+          ref_id?: string | null
           sent_at?: string
-          vaccination_id: string
+          vaccination_id?: string | null
         }
         Update: {
+          id?: string
           kind?: string
+          ref_id?: string | null
           sent_at?: string
-          vaccination_id?: string
+          vaccination_id?: string | null
         }
         Relationships: []
       }
