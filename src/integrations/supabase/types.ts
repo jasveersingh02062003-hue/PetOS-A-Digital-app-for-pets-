@@ -762,6 +762,54 @@ export type Database = {
         }
         Relationships: []
       }
+      health_insights: {
+        Row: {
+          data_signature: string | null
+          generated_at: string
+          id: string
+          insights: Json
+          model: string | null
+          owner_id: string
+          pet_id: string
+          summary: string
+        }
+        Insert: {
+          data_signature?: string | null
+          generated_at?: string
+          id?: string
+          insights?: Json
+          model?: string | null
+          owner_id: string
+          pet_id: string
+          summary: string
+        }
+        Update: {
+          data_signature?: string | null
+          generated_at?: string
+          id?: string
+          insights?: Json
+          model?: string | null
+          owner_id?: string
+          pet_id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_insights_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "health_insights_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_records: {
         Row: {
           created_at: string
