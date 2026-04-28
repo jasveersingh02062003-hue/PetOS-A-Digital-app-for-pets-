@@ -92,6 +92,8 @@ const Health = () => {
             <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
           </Tabs>
+
+          <ConsultsList petId={active.id} />
         </>
       )}
     </div>
