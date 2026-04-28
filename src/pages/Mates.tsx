@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Plus, Sparkles, ShieldCheck, PawPrint } from "lucide-react";
 import { motion } from "framer-motion";
@@ -10,15 +11,29 @@ import { useSeo } from "@/hooks/useSeo";
 const Mates = () => {
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") === "adopt" ? "adopt" : "mating";
+  const { data: profile } = useProfile();
+  const isBuyer = (profile as any)?.account_type === "buyer";
+  const tabParam = searchParams.get("tab");
+  // Buyers default to adopt tab unless they explicitly choose mating
+  const tab: "mating" | "adopt" =
+    tabParam === "adopt" ? "adopt" : tabParam === "mating" ? "mating" : isBuyer ? "adopt" : "mating";
   const setTab = (next: "mating" | "adopt") => {
     const sp = new URLSearchParams(searchParams);
     if (next === "mating") sp.delete("tab"); else sp.set("tab", "adopt");
     setSearchParams(sp, { replace: true });
   };
   const { data: pets } = usePets();
-  const { data: profile } = useProfile();
   const myPet = pets?.[0];
+
+  // Auto-redirect first-time buyers to adopt tab in URL too
+  useEffect(() => {
+    if (isBuyer && tabParam === null) {
+      const sp = new URLSearchParams(searchParams);
+      sp.set("tab", "adopt");
+      setSearchParams(sp, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBuyer]);
 
   useSeo({
     title: "Find a mate for your pet",
@@ -59,7 +74,7 @@ const Mates = () => {
       </div>
 
       {tab === "mating" ? (
-        <MatingPane myPet={myPet} nav={nav} />
+        <MatingPane myPet={myPet} nav={nav} isBuyer={isBuyer} />
       ) : (
         <AdoptGrid />
       )}
@@ -67,10 +82,10 @@ const Mates = () => {
   );
 };
 
-const MatingPane = ({ myPet, nav }: { myPet: any; nav: any }) => (
+const MatingPane = ({ myPet, nav, isBuyer }: { myPet: any; nav: any; isBuyer: boolean }) => (
   <>
       {/* Your pet hero */}
-      {myPet && (
+      {myPet && !isBuyer && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,12 +133,18 @@ const MatingPane = ({ myPet, nav }: { myPet: any; nav: any }) => (
       </div>
 
       {!myPet && (
+      !isBuyer ? (
         <Button
           onClick={() => nav("/onboarding")}
           className="w-full rounded-2xl h-12 mb-4 bg-coral text-coral-foreground hover:bg-coral/90 gap-2"
         >
           <Plus className="h-4 w-4" /> Add your pet to start
         </Button>
+      ) : (
+        <Card className="rounded-2xl border-hairline bg-muted/30 shadow-none p-3 mb-4 text-xs text-muted-foreground">
+          Browsing studs and dams. Once you have a pet, you can list it here too.
+        </Card>
+      )
       )}
 
       <h2 className="font-display text-lg mb-3 mt-2">Browse listings</h2>
