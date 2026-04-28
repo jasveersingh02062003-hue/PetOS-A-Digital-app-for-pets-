@@ -15,6 +15,7 @@ import { LineageTree } from "@/components/LineageTree";
 import { StartTransferSheet, TransferStatusCard } from "@/components/TransferSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
+import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -33,6 +34,7 @@ const AdoptListingDetail = () => {
   const { user } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["pet-listing", id],
@@ -88,6 +90,8 @@ const AdoptListingDetail = () => {
   const isFree = listing.listing_type === "adoption" || !listing.fee_inr;
   const isOwner = !!user && user.id === listing.owner_id;
   const isSold = listing.status === "sold";
+  const sellerKind = sellerInfo?.profile?.account_type as string | undefined;
+  const isShelterSeller = sellerKind === "shelter" || sellerKind === "sanctuary" || sellerKind === "rescuer";
 
   const contact = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -214,9 +218,15 @@ const AdoptListingDetail = () => {
         </div>
       ) : (
         <div className="flex gap-2">
-          <Button onClick={() => setConfirmOpen(true)} disabled={isSold} className="flex-1 rounded-xl h-12">
-            {isSold ? "No longer available" : "Contact owner"}
-          </Button>
+          {isShelterSeller ? (
+            <Button onClick={() => setApplyOpen(true)} disabled={isSold} className="flex-1 rounded-xl h-12">
+              {isSold ? "No longer available" : "Apply to adopt"}
+            </Button>
+          ) : (
+            <Button onClick={() => setConfirmOpen(true)} disabled={isSold} className="flex-1 rounded-xl h-12">
+              {isSold ? "No longer available" : "Contact owner"}
+            </Button>
+          )}
           <ReportButton subjectType="listing" subjectId={listing.id} />
         </div>
       )}
@@ -256,6 +266,13 @@ const AdoptListingDetail = () => {
           onOpenChange={setTransferOpen}
         />
       )}
+
+      <AdoptionApplicationSheet
+        open={applyOpen}
+        onOpenChange={setApplyOpen}
+        shelterId={listing.owner_id}
+        listingId={listing.id}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

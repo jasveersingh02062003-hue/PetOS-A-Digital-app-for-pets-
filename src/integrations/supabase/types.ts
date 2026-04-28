@@ -86,6 +86,66 @@ export type Database = {
         }
         Relationships: []
       }
+      adoption_applications: {
+        Row: {
+          applicant_id: string
+          city: string | null
+          created_at: string
+          decided_at: string | null
+          family_size: number | null
+          has_yard: boolean | null
+          home_description: string | null
+          id: string
+          is_volunteer_interest: boolean
+          listing_id: string | null
+          other_pets: string | null
+          phone: string | null
+          prior_experience: string | null
+          shelter_id: string
+          shelter_note: string | null
+          status: Database["public"]["Enums"]["adoption_application_status"]
+          updated_at: string
+        }
+        Insert: {
+          applicant_id: string
+          city?: string | null
+          created_at?: string
+          decided_at?: string | null
+          family_size?: number | null
+          has_yard?: boolean | null
+          home_description?: string | null
+          id?: string
+          is_volunteer_interest?: boolean
+          listing_id?: string | null
+          other_pets?: string | null
+          phone?: string | null
+          prior_experience?: string | null
+          shelter_id: string
+          shelter_note?: string | null
+          status?: Database["public"]["Enums"]["adoption_application_status"]
+          updated_at?: string
+        }
+        Update: {
+          applicant_id?: string
+          city?: string | null
+          created_at?: string
+          decided_at?: string | null
+          family_size?: number | null
+          has_yard?: boolean | null
+          home_description?: string | null
+          id?: string
+          is_volunteer_interest?: boolean
+          listing_id?: string | null
+          other_pets?: string | null
+          phone?: string | null
+          prior_experience?: string | null
+          shelter_id?: string
+          shelter_note?: string | null
+          status?: Database["public"]["Enums"]["adoption_application_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointment_messages: {
         Row: {
           appointment_id: string
@@ -3757,6 +3817,11 @@ export type Database = {
         | "rescuer"
         | "buyer"
       activity_level: "low" | "medium" | "high"
+      adoption_application_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "withdrawn"
       app_role:
         | "user"
         | "pet_pal"
@@ -4012,6 +4077,12 @@ export const Constants = {
         "buyer",
       ],
       activity_level: ["low", "medium", "high"],
+      adoption_application_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "withdrawn",
+      ],
       app_role: [
         "user",
         "pet_pal",

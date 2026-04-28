@@ -13,6 +13,7 @@ import { QuickAccessRail } from "@/components/QuickAccessRail";
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
 const DailyPromptBanner = lazy(() => import("@/components/social/DailyPromptBanner").then((m) => ({ default: m.DailyPromptBanner })));
 const MissingStrip = lazy(() => import("@/components/MissingStrip").then((m) => ({ default: m.MissingStrip })));
+const SheltersNearYouRail = lazy(() => import("@/components/home/SheltersNearYouRail").then((m) => ({ default: m.SheltersNearYouRail })));
 
 const Home = () => {
   const nav = useNavigate();
@@ -50,6 +51,7 @@ const Home = () => {
       <Suspense fallback={null}>
         <div className="-mx-4 mt-1"><DailyPromptBanner /></div>
         <div className="mt-3 mb-4"><MissingStrip /></div>
+        <SheltersNearYouRail />
       </Suspense>
 
       <section className="pb-10">
