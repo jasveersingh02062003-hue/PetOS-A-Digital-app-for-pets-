@@ -23,8 +23,10 @@ export const MatesGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("mating_listings")
-        .select("id, intent, fee_inr, city, description, owner_id, pet_id, pets:pet_id(id, name, breed, species, gender, avatar_url, vaccination_verified)")
+        .select("id, intent, fee_inr, city, description, owner_id, pet_id, paid_until, boosted_until, featured, pets:pet_id(id, name, breed, species, gender, avatar_url, vaccination_verified)")
         .eq("active", true)
+        .or(`paid_until.is.null,paid_until.gt.${new Date().toISOString()}`)
+        .order("featured", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(50);
       if (filters.intent) q = q.eq("intent", filters.intent as any);
