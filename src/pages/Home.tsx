@@ -1,85 +1,65 @@
 import { lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile, usePets } from "@/hooks/useProfile";
-import { ComposerButton } from "@/components/Composer";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
-import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Heart, Users, CalendarDays } from "lucide-react";
+import { Heart, Users } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
-import { HomeHero } from "@/components/HomeHero";
+import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
 
 // Below-the-fold — code-split so they don't block first paint.
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
 const DailyPromptBanner = lazy(() => import("@/components/social/DailyPromptBanner").then((m) => ({ default: m.DailyPromptBanner })));
 const MissingStrip = lazy(() => import("@/components/MissingStrip").then((m) => ({ default: m.MissingStrip })));
-const DailyTipCard = lazy(() => import("@/components/DailyTipCard").then((m) => ({ default: m.DailyTipCard })));
-const HealthStatusStrip = lazy(() => import("@/components/health/HealthStatusStrip").then((m) => ({ default: m.HealthStatusStrip })));
-const PharmacySuggestionsBanner = lazy(() => import("@/components/health/PharmacySuggestionsBanner").then((m) => ({ default: m.PharmacySuggestionsBanner })));
-const MeetupCard = lazy(() => import("@/components/social/MeetupCard").then((m) => ({ default: m.MeetupCard })));
 
 const Home = () => {
   const nav = useNavigate();
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
-  const { data: nextMeetups } = useUpcomingMeetups(profile?.city);
   const firstName = profile?.full_name?.split(" ")[0];
   const hasPets = !!pets && pets.length > 0;
-  const upcoming = (nextMeetups ?? []).slice(0, 1);
   const [tab, setTab] = useState<"for-you" | "following">("for-you");
 
   useSeo({ title: "Home", description: "Your daily Petos feed: stories, meetups, health and missing-pet alerts.", noIndex: true });
 
   return (
     <div className="container-app pad-top-safe">
-      <header className="pt-6 pb-4 flex items-center justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{new Date().toLocaleDateString(undefined, { weekday: "long" })}</div>
-          <h1 className="font-display text-3xl mt-1">Hello{firstName ? `, ${firstName}` : ""}</h1>
+      <header className="pt-6 pb-4">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+          {new Date().toLocaleDateString(undefined, { weekday: "long" })}
         </div>
-        <ComposerButton variant="icon" />
+        <h1 className="font-display text-[28px] mt-1 leading-tight">
+          {firstName ? <>Hi, <span className="text-primary">{firstName}</span></> : "Welcome"}
+        </h1>
       </header>
 
-      <HomeHero />
+      {/* Hero pet card — big avatar, animated health ring, streak, 3 quick actions */}
+      <PetHeroCard />
 
-      <QuickAccessRail />
-
-      <Suspense fallback={null}>
-        {hasPets && <HealthStatusStrip petId={pets![0].id} />}
-        <PharmacySuggestionsBanner />
+      {/* Story rail — comes first because it's social */}
+      <Suspense fallback={<div className="h-[88px]" />}>
         <StoryRail />
-        <div className="-mx-4 mt-2"><DailyPromptBanner /></div>
-        <div className="mt-2 mb-3"><MissingStrip /></div>
-        <div className="mt-2 mb-4"><DailyTipCard /></div>
-        {upcoming.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-base flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 text-primary" /> Upcoming meetup
-              </h2>
-              <button onClick={() => nav("/meetups")} className="text-xs text-muted-foreground">See all</button>
-            </div>
-            <MeetupCard meetup={upcoming[0]} />
-          </div>
-        )}
       </Suspense>
 
-      <div className="mt-3 mb-4">
-        <ComposerButton variant="inline" />
-      </div>
+      {/* Coloured quick-access chips */}
+      <QuickAccessRail />
+
+      {/* Below-the-fold contextual banners */}
+      <Suspense fallback={null}>
+        <div className="-mx-4 mt-1"><DailyPromptBanner /></div>
+        <div className="mt-3 mb-4"><MissingStrip /></div>
+      </Suspense>
 
       <section className="pb-10">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid grid-cols-2 w-full rounded-xl mb-3">
-            <TabsTrigger value="for-you">For you</TabsTrigger>
-            <TabsTrigger value="following"><Users className="h-3.5 w-3.5 mr-1.5" /> Following</TabsTrigger>
+          <TabsList className="grid grid-cols-2 w-full rounded-2xl mb-4 h-11 p-1 bg-muted">
+            <TabsTrigger value="for-you" className="rounded-xl text-sm">For you</TabsTrigger>
+            <TabsTrigger value="following" className="rounded-xl text-sm">
+              <Users className="h-3.5 w-3.5 mr-1.5" /> Following
+            </TabsTrigger>
           </TabsList>
-          {/*
-            Only mount the active tab's PostFeed. Previously both feeds mounted
-            on first paint, doubling the queries and DOM cost on Home.
-          */}
           <TabsContent value="for-you">
             {tab === "for-you" && (
               <PostFeed
@@ -94,7 +74,9 @@ const Home = () => {
                         : "Add your first pet to start sharing photos and following other pets."
                     }
                     ctaLabel={hasPets ? "Share a moment" : "Add your first pet"}
-                    onCta={() => nav(hasPets ? "/" : "/onboarding")}
+                    onCta={() => hasPets
+                      ? window.dispatchEvent(new CustomEvent("petos:open-composer"))
+                      : nav("/onboarding")}
                     secondaryLabel="Explore Discover"
                     onSecondary={() => nav("/discover")}
                   />

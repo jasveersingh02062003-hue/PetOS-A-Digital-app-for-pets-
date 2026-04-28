@@ -1,15 +1,22 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useRef } from "react";
-import { Home, Compass, Heart, ShoppingBag, User, Plus, Siren } from "lucide-react";
+import { Home, Compass, Heart, User, Plus, Siren, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { haptic } from "@/lib/haptics";
 
+/**
+ * Bottom nav with a CENTER FAB that creates a post and an inline
+ * "Mates" tab next to it (replacing the old hidden Health slot).
+ *
+ * Layout:  Home · Discover · [+ FAB] · Mates · Profile
+ * Health is reachable from the Pet hero card and the quick rail.
+ */
 const tabs = [
   { to: "/", label: "Home", icon: Home },
   { to: "/discover", label: "Discover", icon: Compass },
-  { to: "/health", label: "Health", icon: Heart, center: true },
-  { to: "/services", label: "Services", icon: ShoppingBag },
+  { center: true } as any,
+  { to: "/mates", label: "Mates", icon: Heart, tone: "coral" as const },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
@@ -37,37 +44,49 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
   };
   const handleClick = () => {
     if (longPressed.current) return;
+    haptic(10);
     window.dispatchEvent(new CustomEvent("petos:open-composer"));
   };
 
   return (
     <>
-      <button
-        onPointerDown={startPress}
-        onPointerUp={endPress}
-        onPointerLeave={endPress}
-        onPointerCancel={endPress}
-        onClick={handleClick}
-        aria-label="Create post (long-press for emergency)"
-        className="fixed left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.45)] active:scale-95 transition-transform"
-        style={{ bottom: `calc(2.75rem + env(safe-area-inset-bottom))` }}
-      >
-        <Plus className="h-6 w-6" strokeWidth={2} />
-      </button>
+      {/* Emergency button — repositioned to top-right of nav so it stops
+          floating in the middle of feed content. */}
       <button
         onClick={onEmergency}
         aria-label="Emergency assistant"
-        className="fixed right-4 z-50 bg-emergency text-emergency-foreground rounded-full h-11 w-11 flex items-center justify-center shadow-md active:scale-95 transition-transform"
+        className="fixed right-4 z-50 bg-emergency text-emergency-foreground rounded-full h-11 w-11 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
         style={{ bottom: `calc(5.25rem + env(safe-area-inset-bottom))` }}
       >
-        <Siren className="h-5 w-5" strokeWidth={1.75} />
+        <Siren className="h-5 w-5" strokeWidth={2} />
       </button>
+
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-hairline"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="mx-auto max-w-[480px] grid grid-cols-5 h-[4.25rem]">
-          {tabs.map((t) => {
+        <div className="mx-auto max-w-[480px] grid grid-cols-5 h-[4.5rem] items-end pb-2">
+          {tabs.map((t, i) => {
+            if (t.center) {
+              return (
+                <div key="center" className="flex justify-center">
+                  <button
+                    onPointerDown={startPress}
+                    onPointerUp={endPress}
+                    onPointerLeave={endPress}
+                    onPointerCancel={endPress}
+                    onClick={handleClick}
+                    aria-label="Create post (long-press for emergency)"
+                    className="relative -mt-7 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_10px_28px_-6px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform ring-4 ring-background"
+                  >
+                    <Plus className="h-6 w-6" strokeWidth={2.4} />
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-coral flex items-center justify-center">
+                      <Sparkles className="h-2.5 w-2.5 text-white" strokeWidth={2.5} />
+                    </span>
+                  </button>
+                </div>
+              );
+            }
             const Icon = t.icon;
             return (
               <NavLink
@@ -77,22 +96,27 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
                 onClick={() => haptic(8)}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-col items-center justify-center gap-1 text-[10px] tracking-wide uppercase transition-colors",
-                    t.center && "opacity-0 pointer-events-none",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    "flex flex-col items-center justify-end gap-1 text-[10px] tracking-wide uppercase transition-colors h-full",
+                    isActive
+                      ? t.tone === "coral" ? "text-coral" : "text-primary"
+                      : "text-muted-foreground"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
                     <motion.span
-                      animate={{ y: isActive ? -2 : 0, scale: isActive ? 1.08 : 1 }}
+                      animate={{ y: isActive ? -2 : 0, scale: isActive ? 1.1 : 1 }}
                       whileTap={{ scale: 0.85 }}
                       transition={{ type: "spring", stiffness: 500, damping: 22 }}
                     >
-                      <Icon className="h-[22px] w-[22px]" strokeWidth={1.6} />
+                      <Icon
+                        className="h-[22px] w-[22px]"
+                        strokeWidth={isActive ? 2.4 : 1.8}
+                        fill={isActive && t.tone === "coral" ? "currentColor" : "none"}
+                      />
                     </motion.span>
-                    <span className="font-medium">{t.label}</span>
+                    <span className="font-semibold tracking-normal text-[10px] normal-case">{t.label}</span>
                   </>
                 )}
               </NavLink>

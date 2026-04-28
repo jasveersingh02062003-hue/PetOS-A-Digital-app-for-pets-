@@ -23,6 +23,7 @@ import PostAuth from "./pages/PostAuth";
 
 // Lazy — every other route, code-split into separate chunks
 const Discover = lazy(() => import("./pages/Discover"));
+const Mates = lazy(() => import("./pages/Mates"));
 const Health = lazy(() => import("./pages/Health"));
 const Services = lazy(() => import("./pages/Services"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -196,6 +197,7 @@ const App = () => (
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
+                <Route path="/mates" element={<Mates />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/profile" element={<Profile />} />
