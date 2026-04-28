@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope, Sparkles } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope, Sparkles, Siren, PhoneCall } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
@@ -333,19 +333,53 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
     },
   });
 
+  const emergency = (data ?? []).find(
+    (s: any) =>
+      s.ai_flag === "emergency" &&
+      Date.now() - new Date(s.logged_at).getTime() < 48 * 3600_000,
+  );
+
   return (
     <div className="space-y-3">
+      {emergency && (
+        <Card className="rounded-2xl border-2 border-destructive bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-full bg-destructive text-destructive-foreground grid place-items-center shrink-0">
+              <Siren className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-destructive">Possible emergency</div>
+              <p className="text-sm text-foreground mt-0.5">{emergency.symptom}</p>
+              {emergency.ai_reason && (
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{emergency.ai_reason}</p>
+              )}
+              <div className="flex gap-2 mt-3">
+                <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
+                  <a href="tel:"><PhoneCall className="h-3.5 w-3.5" /> Call vet</a>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="rounded-full gap-1.5 h-8 border-destructive/30">
+                  <a href="/askvet/new"><Stethoscope className="h-3.5 w-3.5" /> Ask vet now</a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
       <AddButton label="Log symptom" onClick={() => setOpen(true)} />
       {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No symptoms logged" /> : data.map((s) => (
         <Card key={s.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="font-medium">{s.symptom}</div>
                 <SeverityDots level={s.severity} />
+                <FlagChip flag={(s as any).ai_flag} />
               </div>
               <div className="text-xs text-muted-foreground mt-1">{format(new Date(s.logged_at), "d MMM, h:mm a")}</div>
               {s.notes && <p className="text-sm mt-2 text-ink-soft">{s.notes}</p>}
+              {(s as any).ai_reason && (s as any).ai_flag && (s as any).ai_flag !== "watch" && (
+                <p className="text-xs text-muted-foreground mt-1.5 italic">AI: {(s as any).ai_reason}</p>
+              )}
             </div>
             <DeleteBtn table="symptom_logs" id={s.id} invalidate={["symptoms", petId]} />
           </div>
@@ -365,15 +399,25 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
     e.preventDefault();
     if (!form.symptom.trim()) return toast.error("Symptom required");
     setSaving(true);
-    const { error } = await supabase.from("symptom_logs").insert({
+    const { data: ins, error } = await supabase.from("symptom_logs").insert({
       pet_id: petId,
       symptom: form.symptom.trim(),
       severity: form.severity,
       notes: form.notes.trim() || null,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message);
+    }).select("id").single();
+    if (error) { setSaving(false); return toast.error(error.message); }
     toast.success("Symptom logged");
+    try {
+      const { data: ai } = await supabase.functions.invoke("ai-symptom-classify", {
+        body: { log_id: ins.id },
+      });
+      if (ai?.flag === "emergency") {
+        toast.error("AI flagged this as a possible emergency — see banner above.", { duration: 8000 });
+      } else if (ai?.flag === "vet_soon") {
+        toast.warning("AI suggests booking a vet within 24-48h.");
+      }
+    } catch { /* non-blocking */ }
+    setSaving(false);
     qc.invalidateQueries({ queryKey: ["symptoms", petId] });
     onOpenChange(false);
     setForm({ symptom: "", severity: 2, notes: "" });
