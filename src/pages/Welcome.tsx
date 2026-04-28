@@ -7,6 +7,7 @@ import { FeatureSlide } from "@/components/welcome/FeatureSlide";
 import { PetosLogo } from "@/components/PetosLogo";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
+import { supabase } from "@/integrations/supabase/client";
 
 const SLIDES = [
   {
@@ -56,9 +57,10 @@ export default function Welcome() {
   });
 
 
-  const finish = () => {
+  const finish = async () => {
     localStorage.setItem(SEEN_KEY, "1");
-    nav("/auth", { replace: true });
+    const { data } = await supabase.auth.getSession();
+    nav(data.session ? "/" : "/auth", { replace: true });
   };
 
   const next = () => (last ? finish() : setI(i + 1));
