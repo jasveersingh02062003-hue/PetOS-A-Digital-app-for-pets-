@@ -43,7 +43,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
         followingIds = (f ?? []).map((r: any) => r.following_id);
         if (!followingIds.length) return [];
       }
-      let q = supabase.from("posts").select("*");
+      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, like_count, comment_count, created_at, reaction_counts");
       if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
