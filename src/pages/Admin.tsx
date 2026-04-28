@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
@@ -58,18 +61,24 @@ const Admin = () => {
       </header>
 
       <main className="container-app py-6">
-        <Tabs defaultValue="reports" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl">
-            <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" />Reports</TabsTrigger>
-            <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" />Vets</TabsTrigger>
-            <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" />Verify</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid grid-cols-7 w-full bg-muted rounded-xl">
+            <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
           </TabsList>
 
+          <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
           <TabsContent value="reports" className="mt-4"><ReportsTab /></TabsContent>
           <TabsContent value="vets" className="mt-4"><VetAppsTab /></TabsContent>
           <TabsContent value="providers" className="mt-4"><ProvidersTab /></TabsContent>
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
+          <TabsContent value="broadcast" className="mt-4"><BroadcastTab /></TabsContent>
+          <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -318,6 +327,147 @@ const UsersTab = () => {
           </Card>
         );
       })}
+    </div>
+  );
+};
+
+const OverviewTab = () => {
+  const [k, setK] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.rpc("admin_kpis" as any);
+      if (error) toast.error(error.message); else setK(data);
+      setLoading(false);
+    })();
+  }, []);
+  if (loading) return <Loader2 className="h-5 w-5 animate-spin mx-auto mt-8" />;
+  if (!k) return <p className="text-center text-sm text-muted-foreground py-12">No data.</p>;
+  const tiles: { label: string; value: number; key: string }[] = [
+    { label: "Total users", value: k.users_total, key: "users_total" },
+    { label: "New users (7d)", value: k.users_new_7d, key: "users_new_7d" },
+    { label: "Pets", value: k.pets_total, key: "pets_total" },
+    { label: "Posts today", value: k.posts_today, key: "posts_today" },
+    { label: "Bookings today", value: k.bookings_today, key: "bookings_today" },
+    { label: "Active missing", value: k.active_missing, key: "active_missing" },
+    { label: "Open reports", value: k.open_reports, key: "open_reports" },
+    { label: "Vet apps pending", value: k.pending_vet_apps, key: "pending_vet_apps" },
+    { label: "Providers pending", value: k.pending_provider_verify, key: "pending_provider_verify" },
+    { label: "Active vets", value: k.vets_active, key: "vets_active" },
+    { label: "Plus subscribers", value: k.plus_subscribers, key: "plus_subscribers" },
+  ];
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {tiles.map(t => (
+        <Card key={t.key} className="p-4">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t.label}</div>
+          <div className="font-display text-3xl mt-1">{t.value ?? 0}</div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+const BroadcastTab = () => {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [link, setLink] = useState("");
+  const [city, setCity] = useState("");
+  const [role, setRole] = useState("");
+  const [sending, setSending] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+
+  const load = async () => {
+    const { data } = await supabase.from("broadcasts" as any).select("*").order("created_at", { ascending: false }).limit(20);
+    setHistory((data as any[]) ?? []);
+  };
+  useEffect(() => { load(); }, []);
+
+  const send = async () => {
+    if (!title.trim()) return toast.error("Title is required");
+    setSending(true);
+    const { error } = await supabase.rpc("send_broadcast" as any, {
+      _title: title, _body: body || null, _link: link || null,
+      _target_city: city || null, _target_role: role || null,
+    });
+    setSending(false);
+    if (error) return toast.error(error.message);
+    toast.success("Broadcast sent");
+    setTitle(""); setBody(""); setLink(""); setCity(""); setRole("");
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 space-y-3">
+        <div className="font-medium">New broadcast</div>
+        <Input placeholder="Title (required)" value={title} onChange={e => setTitle(e.target.value)} />
+        <Textarea placeholder="Body" value={body} onChange={e => setBody(e.target.value)} rows={3} />
+        <Input placeholder="Link (e.g. /meetups)" value={link} onChange={e => setLink(e.target.value)} />
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Target city (optional)" value={city} onChange={e => setCity(e.target.value)} />
+          <select value={role} onChange={e => setRole(e.target.value)} className="h-10 px-3 rounded-md border border-hairline bg-card text-sm">
+            <option value="">All roles</option>
+            <option value="user">Users</option>
+            <option value="vet">Vets</option>
+            <option value="moderator">Moderators</option>
+          </select>
+        </div>
+        <Button onClick={send} disabled={sending} className="w-full">
+          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send broadcast"}
+        </Button>
+      </Card>
+      <div className="space-y-2">
+        <div className="text-sm font-medium">Recent broadcasts</div>
+        {history.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-6">None yet.</p>
+        ) : history.map((b: any) => (
+          <Card key={b.id} className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="font-medium text-sm">{b.title}</div>
+              <Badge variant="secondary">{b.recipients_count} sent</Badge>
+            </div>
+            {b.body && <div className="text-xs text-muted-foreground mt-1">{b.body}</div>}
+            <div className="text-[10px] text-muted-foreground mt-1">
+              {new Date(b.created_at).toLocaleString()}
+              {b.target_city && ` · city: ${b.target_city}`}
+              {b.target_role && ` · role: ${b.target_role}`}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const FlagsTab = () => {
+  const [flags, setFlags] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("feature_flags" as any).select("*").order("key");
+    setFlags((data as any[]) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+  const toggle = async (key: string, enabled: boolean) => {
+    const { error } = await supabase.from("feature_flags" as any).update({ enabled, updated_at: new Date().toISOString() }).eq("key", key);
+    if (error) return toast.error(error.message);
+    toast.success(`${key} ${enabled ? "enabled" : "disabled"}`);
+    load();
+  };
+  if (loading) return <Loader2 className="h-5 w-5 animate-spin mx-auto mt-8" />;
+  return (
+    <div className="space-y-2">
+      {flags.map((f: any) => (
+        <Card key={f.key} className="p-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="font-medium text-sm">{f.key}</div>
+            {f.description && <div className="text-xs text-muted-foreground">{f.description}</div>}
+          </div>
+          <Switch checked={f.enabled} onCheckedChange={(v) => toggle(f.key, v)} />
+        </Card>
+      ))}
     </div>
   );
 };
