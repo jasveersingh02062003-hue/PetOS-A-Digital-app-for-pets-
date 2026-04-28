@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets } from "@/hooks/useProfile";
@@ -13,8 +13,26 @@ import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker"
 import { useInviteCollaborators } from "@/hooks/useCollabs";
 import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
 
-export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" }) => {
+export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" | "global" }) => {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("petos:open-composer", handler);
+    return () => window.removeEventListener("petos:open-composer", handler);
+  }, []);
+
+  if (variant === "global") {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle className="font-display">New post</DialogTitle></DialogHeader>
+          <Composer onDone={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const trigger = variant === "fab" ? (
     <button className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform">
       <Plus className="h-6 w-6" />
