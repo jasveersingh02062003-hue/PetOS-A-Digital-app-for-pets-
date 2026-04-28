@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Compass, Heart, ShoppingBag, User, Siren } from "lucide-react";
+import { useRef } from "react";
+import { Home, Compass, Heart, ShoppingBag, User, Plus, Siren } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -12,19 +13,52 @@ const tabs = [
 
 export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
   const loc = useLocation();
-  // hide on auth/onboarding/admin/full-screen routes
+  const pressTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
+
   const hidden = ["/auth", "/onboarding", "/ai"].some((p) => loc.pathname.startsWith(p)) || loc.pathname.startsWith("/admin");
   if (hidden) return null;
+
+  const startPress = () => {
+    longPressed.current = false;
+    pressTimer.current = window.setTimeout(() => {
+      longPressed.current = true;
+      if (navigator.vibrate) navigator.vibrate(20);
+      onEmergency();
+    }, 550);
+  };
+  const endPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+  const handleClick = () => {
+    if (longPressed.current) return;
+    window.dispatchEvent(new CustomEvent("petos:open-composer"));
+  };
 
   return (
     <>
       <button
-        onClick={onEmergency}
-        aria-label="Emergency AI assistant"
-        className="fixed left-1/2 -translate-x-1/2 z-50 bg-emergency text-emergency-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-[0_8px_24px_-6px_hsl(var(--emergency)/0.45)] active:scale-95 transition-transform"
+        onPointerDown={startPress}
+        onPointerUp={endPress}
+        onPointerLeave={endPress}
+        onPointerCancel={endPress}
+        onClick={handleClick}
+        aria-label="Create post (long-press for emergency)"
+        className="fixed left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.45)] active:scale-95 transition-transform"
         style={{ bottom: `calc(2.75rem + env(safe-area-inset-bottom))` }}
       >
-        <Siren className="h-6 w-6" strokeWidth={1.75} />
+        <Plus className="h-6 w-6" strokeWidth={2} />
+      </button>
+      <button
+        onClick={onEmergency}
+        aria-label="Emergency assistant"
+        className="fixed right-4 z-50 bg-emergency text-emergency-foreground rounded-full h-11 w-11 flex items-center justify-center shadow-md active:scale-95 transition-transform"
+        style={{ bottom: `calc(5.25rem + env(safe-area-inset-bottom))` }}
+      >
+        <Siren className="h-5 w-5" strokeWidth={1.75} />
       </button>
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-hairline"
