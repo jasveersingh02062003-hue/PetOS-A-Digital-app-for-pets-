@@ -234,6 +234,8 @@ const Onboarding = () => {
 
   if (step === 0) {
     return (
+      <>
+        <AiCoach step={step} />
       <StepShell
         {...sharedProps}
         title="Welcome to Petos"
