@@ -15,12 +15,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Settings, Building2, ShieldCheck, ArrowRight, Share2,
-  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search, GitBranch, Hotel,
+  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search, GitBranch, Hotel, Star,
 } from "lucide-react";
 import { differenceInYears, differenceInMonths } from "date-fns";
 import { toast } from "sonner";
 import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
+import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 
 const UserProfile = () => {
   const { userId: param } = useParams<{ userId: string }>();
@@ -255,9 +256,16 @@ const UserProfile = () => {
 
       {/* TABS */}
       {(() => null)()}
+      {org && <div className="mb-2"><RatingChip subjectType="provider" subjectId={userId} /></div>}
       <Tabs defaultValue="posts" className="mt-2">
         <TabsList
-          className={`grid w-full ${org && (org.org_type === "breeder" || org.org_type === "kennel") ? "grid-cols-6" : "grid-cols-4"} rounded-xl h-11 p-1 bg-muted/50`}
+          className={`grid w-full ${
+            org && (org.org_type === "breeder" || org.org_type === "kennel")
+              ? "grid-cols-7"
+              : org
+              ? "grid-cols-5"
+              : "grid-cols-4"
+          } rounded-xl h-11 p-1 bg-muted/50`}
         >
           <TabsTrigger value="posts" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Grid3x3 className="h-4 w-4" />
@@ -281,6 +289,11 @@ const UserProfile = () => {
           <TabsTrigger value="badges" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Award className="h-4 w-4" />
           </TabsTrigger>
+          {org && (
+            <TabsTrigger value="reviews" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <Star className="h-4 w-4" />
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="posts" className="mt-3 -mx-4 sm:-mx-6">
@@ -316,6 +329,11 @@ const UserProfile = () => {
         <TabsContent value="boarding" className="mt-3">
           {userId && <BoardingList userId={userId} isOwner={isMe} />}
         </TabsContent>
+        {org && (
+          <TabsContent value="reviews" className="mt-3">
+            {userId && <ReviewsList subjectType="provider" subjectId={userId} />}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
