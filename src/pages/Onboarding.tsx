@@ -17,7 +17,6 @@ import { StepShell } from "@/components/onboarding/StepShell";
 import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPicker";
 import { PetCardShare } from "@/components/onboarding/PetCardShare";
-import { AiCoach } from "@/components/onboarding/AiCoach";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS, GOALS } from "@/lib/breeds";
 
 const TOTAL = 7;
