@@ -7,11 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Heart, Loader2, Trash2, Check, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Heart, Loader2, Trash2, Check, X, Sparkles, Clock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgreementCard } from "@/components/AgreementCard";
 import { MatingPaymentsCard } from "@/components/MatingPaymentsCard";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-muted text-foreground",
@@ -25,6 +26,7 @@ const MatesManage = () => {
   const nav = useNavigate();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [renewListingId, setRenewListingId] = useState<string | null>(null);
 
   const { data: listings } = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -96,6 +98,19 @@ const MatesManage = () => {
       .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Listing boosted for 7 days");
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const handleRenewed = async () => {
+    if (!renewListingId) return;
+    const until = new Date();
+    until.setDate(until.getDate() + 30);
+    const { error } = await supabase
+      .from("mating_listings")
+      .update({ active: true, paid_until: until.toISOString() })
+      .eq("id", renewListingId);
+    if (error) return toast.error(error.message);
+    toast.success("Listing renewed for 30 days");
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
@@ -194,9 +209,21 @@ const MatesManage = () => {
                           <Sparkles className="h-2.5 w-2.5" /> Boosted
                         </Badge>
                       )}
+                      <ListingPaidBadge paidUntil={l.paid_until} active={l.active} />
                     </div>
                     <div className="text-xs text-muted-foreground capitalize">{l.intent} · {l.fee_inr ? `₹${l.fee_inr}` : "Free"}{l.city ? ` · ${l.city}` : ""}</div>
                   </div>
+                  {(!l.paid_until || new Date(l.paid_until) < new Date()) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setRenewListingId(l.id)}
+                      className="rounded-full text-primary"
+                      title="Renew listing"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  )}
                   {!(l.featured && l.boosted_until && new Date(l.boosted_until) > new Date()) && (
                     <Button variant="ghost" size="icon" onClick={() => boostListing(l.id)} className="rounded-full text-primary" title="Boost for 7 days">
                       <Sparkles className="h-4 w-4" />
@@ -214,7 +241,38 @@ const MatesManage = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <PaywallSheet
+        open={!!renewListingId}
+        onOpenChange={(o) => { if (!o) setRenewListingId(null); }}
+        kind="mating_listing"
+        refId={renewListingId}
+        onConfirmed={handleRenewed}
+      />
     </div>
+  );
+};
+
+const ListingPaidBadge = ({ paidUntil, active }: { paidUntil: string | null; active: boolean }) => {
+  if (!paidUntil) {
+    return (
+      <Badge className="text-[9px] bg-amber-500/15 text-amber-700 dark:text-amber-300 border-0 gap-0.5">
+        Draft · pay to publish
+      </Badge>
+    );
+  }
+  const expires = new Date(paidUntil);
+  const days = Math.ceil((expires.getTime() - Date.now()) / 86400_000);
+  if (days <= 0 || !active) {
+    return (
+      <Badge className="text-[9px] bg-destructive/15 text-destructive border-0 gap-0.5">
+        Expired
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="text-[9px] bg-muted text-muted-foreground border-0 gap-0.5">
+      <Clock className="h-2.5 w-2.5" /> {days}d left
+    </Badge>
   );
 };
 
