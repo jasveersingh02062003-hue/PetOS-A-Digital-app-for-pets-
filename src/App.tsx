@@ -51,8 +51,18 @@ import Refunds from "./pages/legal/Refunds";
 import NotFound from "./pages/NotFound";
 import DeleteAccount from "./pages/DeleteAccount";
 import AdminErrors from "./pages/admin/Errors";
+import Welcome from "./pages/Welcome";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
+import { Navigate } from "react-router-dom";
+
+const FirstTimeRedirect = ({ children }: { children: JSX.Element }) => {
+  if (typeof window !== "undefined" && !localStorage.getItem("petos_seen_intro")) {
+    return <Navigate to="/welcome" replace />;
+  }
+  return children;
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
