@@ -457,6 +457,27 @@ const SeverityDots = ({ level }: { level: number }) => (
   </div>
 );
 
+const FlagChip = ({ flag }: { flag?: "watch" | "vet_soon" | "emergency" | null }) => {
+  if (!flag) return null;
+  if (flag === "emergency") {
+    return (
+      <Badge className="text-[10px] bg-destructive text-destructive-foreground border-0">
+        Emergency
+      </Badge>
+    );
+  }
+  if (flag === "vet_soon") {
+    return (
+      <Badge className="text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-300 border-0">
+        See vet soon
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="text-[10px] bg-muted text-muted-foreground border-0">Watch</Badge>
+  );
+};
+
 /* ============== NUTRITION ============== */
 const NutritionTab = ({ petId }: { petId: string }) => {
   const [open, setOpen] = useState(false);
