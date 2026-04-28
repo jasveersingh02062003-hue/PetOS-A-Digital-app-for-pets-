@@ -101,7 +101,7 @@ const MatesManage = () => {
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
-  const handleRenewed = async () => {
+  const handleRenewed = async (): Promise<void> => {
     if (!renewListingId) return;
     const until = new Date();
     until.setDate(until.getDate() + 30);
@@ -109,9 +109,10 @@ const MatesManage = () => {
       .from("mating_listings")
       .update({ active: true, paid_until: until.toISOString() })
       .eq("id", renewListingId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Listing renewed for 30 days");
     qc.invalidateQueries({ queryKey: ["my-listings"] });
+    setRenewListingId(null);
   };
 
   return (
