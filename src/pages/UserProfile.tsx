@@ -110,6 +110,11 @@ const UserProfile = () => {
   const accountType = (profile as any)?.account_type ?? "pet_parent";
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
+  const isVerifiedOrg = useIsVerifiedOrg(userId);
+  const lookingFor = (profile as any)?.looking_for as
+    | { species?: string[] | null; breed?: string | null; city?: string | null; max_price_inr?: number | null }
+    | null
+    | undefined;
 
   const shareProfile = async () => {
     const url = handle ? `${window.location.origin}/u/${handle}` : `${window.location.origin}/u/${userId}`;
@@ -168,7 +173,7 @@ const UserProfile = () => {
 
         <div className="mb-1 flex items-center gap-2 flex-wrap">
           <h2 className="font-display text-2xl leading-tight">{profile?.full_name ?? "—"}</h2>
-          <SellerBadge type={accountType as any} verified />
+          <SellerBadge type={accountType as any} verified={isVerifiedOrg} />
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
           {handle && <span>@{handle}</span>}
