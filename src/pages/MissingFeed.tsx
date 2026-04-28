@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Eye, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Eye, Navigation, Sparkles } from "lucide-react";
 
 const formatTimeAgo = (iso: string) => {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -37,7 +37,7 @@ const MissingFeed = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("missing_pets")
-        .select("id, pet_id, photo_url, last_seen_city, last_seen_at, last_seen_lat, last_seen_lng, reward_inr, note, created_at")
+        .select("id, pet_id, photo_url, last_seen_city, last_seen_at, last_seen_lat, last_seen_lng, reward_inr, note, created_at, boosted_until")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -76,6 +76,7 @@ const MissingFeed = () => {
   const enriched = useMemo(() => {
     return (items ?? []).map((m: any) => ({
       ...m,
+      is_boosted: !!m.boosted_until && new Date(m.boosted_until) > new Date(),
       distance_km: coords && m.last_seen_lat && m.last_seen_lng
         ? haversine(coords.lat, coords.lng, Number(m.last_seen_lat), Number(m.last_seen_lng))
         : null,
@@ -83,8 +84,12 @@ const MissingFeed = () => {
   }, [items, coords]);
 
   const filtered = useMemo(() => {
-    if (radiusKm === "all") return enriched;
-    return enriched.filter((m) => m.distance_km !== null && m.distance_km <= radiusKm);
+    const base =
+      radiusKm === "all"
+        ? enriched
+        : enriched.filter((m) => m.distance_km !== null && m.distance_km <= radiusKm);
+    // Boosted always pinned to the top of their section
+    return [...base].sort((a, b) => Number(b.is_boosted) - Number(a.is_boosted));
   }, [enriched, radiusKm]);
 
   const local = filtered.filter((m: any) => userCity && m.last_seen_city?.toLowerCase() === userCity.toLowerCase());
@@ -166,8 +171,13 @@ const MissingCard = ({ m }: { m: any }) => {
   return (
     <Card
       onClick={() => nav(`/missing/${m.id}`)}
-      className="rounded-2xl border-hairline shadow-none overflow-hidden cursor-pointer hover:bg-muted/30 transition-colors"
+      className={`rounded-2xl border-hairline shadow-none overflow-hidden cursor-pointer hover:bg-muted/30 transition-colors ${m.is_boosted ? "ring-2 ring-amber-400/60" : ""}`}
     >
+      {m.is_boosted && (
+        <div className="bg-gradient-to-r from-amber-500/15 to-coral/15 px-3 py-1 text-[10px] uppercase tracking-wide font-semibold text-amber-700 flex items-center gap-1">
+          <Sparkles className="h-3 w-3" /> Boosted
+        </div>
+      )}
       <div className="flex gap-3 p-3">
         <div className="h-20 w-20 rounded-xl bg-muted overflow-hidden shrink-0">
           {m.photo_url ? <img src={m.photo_url} alt={m.pet?.name ?? "missing pet"} className="h-full w-full object-cover" /> : null}

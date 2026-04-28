@@ -1558,6 +1558,7 @@ export type Database = {
       }
       missing_pets: {
         Row: {
+          boosted_until: string | null
           created_at: string
           id: string
           last_seen_at: string
@@ -1574,6 +1575,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          boosted_until?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string
@@ -1590,6 +1592,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          boosted_until?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string
@@ -4400,6 +4403,7 @@ export type Database = {
       }
       earth: { Args: never; Returns: number }
       expire_mating_listings: { Args: never; Returns: undefined }
+      expire_missing_pet_boosts: { Args: never; Returns: number }
       expire_paid_mating_listings: { Args: never; Returns: number }
       generate_pet_public_id: { Args: never; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
