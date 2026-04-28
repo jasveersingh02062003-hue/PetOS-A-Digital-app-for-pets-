@@ -206,6 +206,98 @@ export type Database = {
           },
         ]
       }
+      missing_pet_sightings: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          missing_pet_id: string
+          note: string | null
+          photo_url: string | null
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          missing_pet_id: string
+          note?: string | null
+          photo_url?: string | null
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          missing_pet_id?: string
+          note?: string | null
+          photo_url?: string | null
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missing_pet_sightings_missing_pet_id_fkey"
+            columns: ["missing_pet_id"]
+            isOneToOne: false
+            referencedRelation: "missing_pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missing_pets: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          last_seen_city: string | null
+          last_seen_lat: number | null
+          last_seen_lng: number | null
+          note: string | null
+          owner_id: string
+          pet_id: string
+          photo_url: string | null
+          resolved_at: string | null
+          reward_inr: number | null
+          status: Database["public"]["Enums"]["missing_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          last_seen_city?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          note?: string | null
+          owner_id: string
+          pet_id: string
+          photo_url?: string | null
+          resolved_at?: string | null
+          reward_inr?: number | null
+          status?: Database["public"]["Enums"]["missing_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          last_seen_city?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          note?: string | null
+          owner_id?: string
+          pet_id?: string
+          photo_url?: string | null
+          resolved_at?: string | null
+          reward_inr?: number | null
+          status?: Database["public"]["Enums"]["missing_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -784,6 +876,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: Database["public"]["Enums"]["sub_status"]
+          tier: Database["public"]["Enums"]["sub_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["sub_status"]
+          tier?: Database["public"]["Enums"]["sub_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["sub_status"]
+          tier?: Database["public"]["Enums"]["sub_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       symptom_logs: {
         Row: {
           created_at: string
@@ -821,6 +952,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_counters: {
+        Row: {
+          count: number
+          kind: string
+          period: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          kind: string
+          period: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          kind?: string
+          period?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1128,6 +1280,10 @@ export type Database = {
       }
     }
     Functions: {
+      current_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["sub_tier"]
+      }
       get_pets_public: {
         Args: never
         Returns: {
@@ -1208,6 +1364,7 @@ export type Database = {
         | "allergy"
         | "other"
       mating_intent: "stud" | "dam" | "either"
+      missing_status: "active" | "resolved" | "cancelled"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
@@ -1241,6 +1398,8 @@ export type Database = {
         | "boarding"
         | "vet_clinic"
       social_level: "solo" | "pairs" | "crowds"
+      sub_status: "active" | "past_due" | "canceled" | "trialing"
+      sub_tier: "free" | "plus"
       verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -1406,6 +1565,7 @@ export const Constants = {
         "other",
       ],
       mating_intent: ["stud", "dam", "either"],
+      missing_status: ["active", "resolved", "cancelled"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
@@ -1443,6 +1603,8 @@ export const Constants = {
         "vet_clinic",
       ],
       social_level: ["solo", "pairs", "crowds"],
+      sub_status: ["active", "past_due", "canceled", "trialing"],
+      sub_tier: ["free", "plus"],
       verification_status: ["pending", "approved", "rejected"],
     },
   },
