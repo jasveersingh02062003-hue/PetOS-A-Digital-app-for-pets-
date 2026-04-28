@@ -2417,6 +2417,63 @@ export type Database = {
           },
         ]
       }
+      proactive_alerts: {
+        Row: {
+          body: string
+          created_at: string
+          dedupe_key: string | null
+          dismissed_at: string | null
+          id: string
+          kind: string
+          link: string | null
+          pet_id: string | null
+          severity: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          dedupe_key?: string | null
+          dismissed_at?: string | null
+          id?: string
+          kind: string
+          link?: string | null
+          pet_id?: string | null
+          severity?: number
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          dedupe_key?: string | null
+          dismissed_at?: string | null
+          id?: string
+          kind?: string
+          link?: string | null
+          pet_id?: string | null
+          severity?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proactive_alerts_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "proactive_alerts_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
