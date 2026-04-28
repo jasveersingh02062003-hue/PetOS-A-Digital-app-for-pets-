@@ -154,7 +154,49 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         maxLength={500}
       />
 
-      {preview && (
+      <div className="flex items-center justify-between gap-2 -mt-1">
+        <button
+          type="button"
+          onClick={suggestCaptions}
+          disabled={suggesting}
+          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+        >
+          {suggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          {suggesting ? "Thinking…" : "AI suggest captions"}
+        </button>
+        <span className="text-[10px] text-muted-foreground">{caption.length}/500</span>
+      </div>
+
+      {suggestions && (
+        <div className="rounded-xl border border-hairline bg-muted/30 p-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Tap to use</div>
+          {suggestions.captions.map((c, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { setCaption(c); setSuggestions(null); }}
+              className="w-full text-left text-sm px-3 py-2 rounded-lg bg-background border border-hairline hover:bg-card transition-colors"
+            >
+              {c}
+            </button>
+          ))}
+          {suggestions.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {suggestions.hashtags.map((h, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCaption((prev) => `${prev}${prev.endsWith(" ") || !prev ? "" : " "}#${h} `)}
+                  className="text-xs px-2 py-1 rounded-full bg-primary-soft text-primary"
+                >
+                  #{h}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
         <div className="relative rounded-xl overflow-hidden bg-muted">
           <img src={preview} alt="" className="w-full max-h-72 object-cover" />
           <button
