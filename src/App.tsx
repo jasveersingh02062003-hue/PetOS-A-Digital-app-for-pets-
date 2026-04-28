@@ -66,6 +66,11 @@ import { Navigate } from "react-router-dom";
 import { FirstRunGate } from "./components/FirstRunGate";
 import UserProfile from "./pages/UserProfile";
 import PetProfile from "./pages/PetProfile";
+import Groups from "./pages/Groups";
+import GroupDetail from "./pages/GroupDetail";
+import Meetups from "./pages/Meetups";
+import MeetupNew from "./pages/MeetupNew";
+import MeetupDetail from "./pages/MeetupDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +144,11 @@ const App = () => (
               <Route path="/v/:code" element={<VaultView />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/pet/:publicId" element={<PetProfile />} />
+              <Route path="/groups" element={<Groups />} />
+              <Route path="/g/:slug" element={<GroupDetail />} />
+              <Route path="/meetups" element={<Meetups />} />
+              <Route path="/meetups/new" element={<MeetupNew />} />
+              <Route path="/meetups/:id" element={<MeetupDetail />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
