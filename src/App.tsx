@@ -82,6 +82,7 @@ import WalkLive from "./pages/WalkLive";
 import Messages from "./pages/Messages";
 import MessageThread from "./pages/MessageThread";
 import PhotoVet from "./pages/PhotoVet";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/photo-vet" element={<PhotoVet />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/vet" element={<VetDashboard />} />
               <Route path="/vet/verifications" element={<VetVerifications />} />
               <Route path="/vet/legacy" element={<Vet />} />
