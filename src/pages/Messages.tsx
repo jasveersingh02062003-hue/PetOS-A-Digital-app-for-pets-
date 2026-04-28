@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { usePresenceSet } from "@/hooks/usePresence";
 
 type Row = {
   conversation_id: string;
@@ -27,6 +28,7 @@ export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const onlineSet = usePresenceSet();
 
   useEffect(() => {
     if (authLoading) return;
@@ -129,10 +131,18 @@ export default function Messages() {
                 onClick={() => nav(`/messages/${r.conversation_id}`)}
                 className="p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 active:scale-[0.99] transition"
               >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={r.other_avatar ?? undefined} />
-                  <AvatarFallback>{(r.other_name ?? "?").slice(0,1).toUpperCase()}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={r.other_avatar ?? undefined} />
+                    <AvatarFallback>{(r.other_name ?? "?").slice(0,1).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  {r.other_user_id && onlineSet.has(r.other_user_id) && (
+                    <span
+                      aria-label="online"
+                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-leaf ring-2 ring-background"
+                    />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-medium truncate">{r.other_name}</div>

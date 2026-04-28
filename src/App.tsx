@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
+import { PresenceProvider } from "@/hooks/usePresence";
 import { AppShell } from "@/components/AppShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
@@ -137,6 +138,7 @@ const App = () => (
       <BrowserRouter>
         <Splash>
         <AuthProvider>
+          <PresenceProvider>
           <CartProvider>
             <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
@@ -243,6 +245,7 @@ const App = () => (
             </Suspense>
             </RouteErrorBoundary>
           </CartProvider>
+          </PresenceProvider>
         </AuthProvider>
         </Splash>
       </BrowserRouter>

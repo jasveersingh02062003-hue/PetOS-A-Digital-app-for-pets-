@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsOnline } from "@/hooks/usePresence";
 
 type Msg = {
   id: string;
@@ -27,6 +28,7 @@ export default function MessageThread() {
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [other, setOther] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
+  const otherOnline = useIsOnline(other?.id);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | null>(null);
 
@@ -127,7 +129,15 @@ export default function MessageThread() {
               </Avatar>
               <div>
                 <div className="font-medium leading-tight">{other.name}</div>
-                <div className="text-[11px] text-muted-foreground">{otherTyping ? "typing…" : "online"}</div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  {!otherTyping && (
+                    <span
+                      aria-hidden
+                      className={`inline-block h-1.5 w-1.5 rounded-full ${otherOnline ? "bg-leaf" : "bg-muted-foreground/40"}`}
+                    />
+                  )}
+                  {otherTyping ? "typing…" : otherOnline ? "online" : "offline"}
+                </div>
               </div>
             </div>
           )}
