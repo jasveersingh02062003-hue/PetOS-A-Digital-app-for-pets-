@@ -386,15 +386,59 @@ const Profile = () => {
             </TabsContent>
           </Tabs>
 
-          {/* COMPACT MENU */}
-          <div className="space-y-1.5 mt-8 mb-6">
-            <Row label="My orders" onClick={() => nav("/orders")} />
-            <Row label="Rewards & points" onClick={() => nav("/rewards")} />
-            <Row label="Manage services" onClick={() => nav("/services/manage")} />
-            <Row label="My listings & requests" onClick={() => nav("/mates/manage")} />
-            <Row label="My appointments" onClick={() => nav("/appointments")} />
-            <Row label="Vet portal" onClick={() => nav("/vet")} />
-            {isStaff && <Row label="Admin console" onClick={() => nav("/admin")} />}
+          {/* ACHIEVEMENTS */}
+          {!!achievements?.length && (
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5" /> Achievements
+                </h2>
+                <span className="text-[11px] text-muted-foreground">{achievements.length}</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6 pb-1">
+                {achievements.map((a: any, i: number) => (
+                  <AchievementChip key={`${a.kind}-${i}`} kind={a.kind} earnedAt={a.earned_at} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PLUS UPSELL */}
+          {tier?.tier !== "plus" && (
+            <button
+              onClick={() => nav("/plus")}
+              className="w-full mt-6 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-100/60 via-card to-coral/10 p-4 text-left hover:shadow-sm transition flex items-center gap-3"
+            >
+              <div className="h-11 w-11 rounded-2xl bg-amber-500/20 grid place-items-center shrink-0">
+                <Crown className="h-5 w-5 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-base leading-tight">Upgrade to PetOS Plus</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Unlimited AI vet, priority bookings, ad-free experience.
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </button>
+          )}
+
+          {/* GROUPED MENU */}
+          <div className="mt-8 mb-6 space-y-5">
+            <MenuSection title="Activity">
+              <IconRow icon={ShoppingBag} label="My orders" onClick={() => nav("/orders")} />
+              <IconRow icon={Calendar} label="My appointments" onClick={() => nav("/appointments")} />
+              <IconRow icon={Gift} label="Rewards & points" onClick={() => nav("/rewards")} />
+            </MenuSection>
+
+            <MenuSection title="Selling & services">
+              <IconRow icon={Heart} label="My listings & requests" onClick={() => nav("/mates/manage")} />
+              <IconRow icon={Briefcase} label="Manage services" onClick={() => nav("/services/manage")} />
+            </MenuSection>
+
+            <MenuSection title="Professional">
+              <IconRow icon={Stethoscope} label="Vet portal" onClick={() => nav("/vet")} />
+              {isStaff && <IconRow icon={Wrench} label="Admin console" onClick={() => nav("/admin")} />}
+            </MenuSection>
           </div>
 
           <Button variant="outline" onClick={signOut} className="w-full rounded-2xl h-12 border-hairline">
