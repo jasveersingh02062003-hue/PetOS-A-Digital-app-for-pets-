@@ -701,13 +701,6 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "health_records_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       litter_groups: {
@@ -739,6 +732,46 @@ export type Database = {
           sire_pet_id?: string | null
         }
         Relationships: []
+      }
+      litter_pets: {
+        Row: {
+          added_at: string
+          litter_id: string
+          pet_id: string
+        }
+        Insert: {
+          added_at?: string
+          litter_id: string
+          pet_id: string
+        }
+        Update: {
+          added_at?: string
+          litter_id?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "litter_pets_litter_id_fkey"
+            columns: ["litter_id"]
+            isOneToOne: false
+            referencedRelation: "litter_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "litter_pets_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "litter_pets_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mating_agreements: {
         Row: {
@@ -842,13 +875,6 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "mating_listings_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: true
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       mating_requests: {
@@ -901,13 +927,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mating_requests_from_pet_id_fkey"
-            columns: ["from_pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "mating_requests_to_pet_id_fkey"
             columns: ["to_pet_id"]
             isOneToOne: false
@@ -919,13 +938,6 @@ export type Database = {
             columns: ["to_pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mating_requests_to_pet_id_fkey"
-            columns: ["to_pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1321,13 +1333,6 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "nutrition_logs_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       org_profiles: {
@@ -1681,13 +1686,6 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pet_listings_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2095,13 +2093,6 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "posts_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2737,13 +2728,6 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "symptom_logs_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       typing_indicators: {
@@ -2864,13 +2848,6 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "vaccinations_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       vault_documents: {
@@ -2917,13 +2894,6 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vault_documents_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3014,13 +2984,6 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vet_access_grants_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3253,13 +3216,6 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vet_consults_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3524,36 +3480,31 @@ export type Database = {
           bio: string | null
           breed: string | null
           city: string | null
+          dam_pet_id: string | null
+          date_of_birth: string | null
           discoverable_for_mating: boolean | null
           gender: Database["public"]["Enums"]["pet_gender"] | null
           id: string | null
           name: string | null
+          owner_id: string | null
+          public_id: string | null
+          sire_pet_id: string | null
           species: Database["public"]["Enums"]["pet_species"] | null
+          status_chip: string | null
           vaccination_verified: boolean | null
         }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          breed?: string | null
-          city?: string | null
-          discoverable_for_mating?: boolean | null
-          gender?: Database["public"]["Enums"]["pet_gender"] | null
-          id?: string | null
-          name?: string | null
-          species?: Database["public"]["Enums"]["pet_species"] | null
-          vaccination_verified?: boolean | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          breed?: string | null
-          city?: string | null
-          discoverable_for_mating?: boolean | null
-          gender?: Database["public"]["Enums"]["pet_gender"] | null
-          id?: string | null
-          name?: string | null
-          species?: Database["public"]["Enums"]["pet_species"] | null
-          vaccination_verified?: boolean | null
+        Relationships: []
+      }
+      profiles_public: {
+        Row: {
+          account_type: Database["public"]["Enums"]["account_type"] | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          cover_url: string | null
+          full_name: string | null
+          handle: string | null
+          id: string | null
         }
         Relationships: []
       }
@@ -3602,6 +3553,7 @@ export type Database = {
           bio: string
           breed: string
           city: string
+          dam_pet_id: string
           date_of_birth: string
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"]
@@ -3609,17 +3561,22 @@ export type Database = {
           name: string
           owner_id: string
           public_id: string
+          sire_pet_id: string
           species: Database["public"]["Enums"]["pet_species"]
+          status_chip: string
           vaccination_verified: boolean
         }[]
       }
       get_profiles_public: {
         Args: never
         Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string
           bio: string
           city: string
+          cover_url: string
           full_name: string
+          handle: string
           id: string
         }[]
       }

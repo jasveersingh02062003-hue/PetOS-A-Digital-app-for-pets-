@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut, Settings, Plus, AlertTriangle, ShieldCheck, ChevronRight, Search,
-  Camera, Share2, Edit3, Grid3x3, Tag as TagIcon, PawPrint, Heart,
+  Camera, Share2, Edit3, Grid3x3, Tag as TagIcon, PawPrint, Heart, Sparkles,
 } from "lucide-react";
 import { PlusBadge } from "@/components/PlusBadge";
 import { MissingCreateSheet } from "@/components/MissingCreateSheet";
@@ -185,6 +185,15 @@ const Profile = () => {
                 <Share2 className="h-4 w-4" /> Share
               </Button>
             </div>
+
+            {(accountType === "breeder" || accountType === "kennel") && (
+              <Button
+                onClick={() => nav("/litters/new")}
+                className="w-full rounded-xl h-10 gap-1.5 mb-4"
+              >
+                <Sparkles className="h-4 w-4" /> Record new litter
+              </Button>
+            )}
 
             {/* Counts */}
             <div className="grid grid-cols-3 gap-2 mb-5">

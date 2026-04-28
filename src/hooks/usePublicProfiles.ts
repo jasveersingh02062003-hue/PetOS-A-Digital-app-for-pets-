@@ -7,6 +7,9 @@ export type PublicProfile = {
   avatar_url: string | null;
   city: string | null;
   bio: string | null;
+  handle?: string | null;
+  cover_url?: string | null;
+  account_type?: string | null;
 };
 
 export type PublicPet = {
@@ -16,6 +19,12 @@ export type PublicPet = {
   species?: string | null;
   breed?: string | null;
   owner_id?: string | null;
+  public_id?: string | null;
+  status_chip?: string | null;
+  sire_pet_id?: string | null;
+  dam_pet_id?: string | null;
+  date_of_birth?: string | null;
+  vaccination_verified?: boolean | null;
 };
 
 /**

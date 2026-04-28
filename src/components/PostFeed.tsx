@@ -11,6 +11,7 @@ import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
+import { SellerBadge } from "./SellerBadge";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
@@ -36,7 +37,7 @@ export type FeedPost = {
   comment_count: number;
   created_at: string;
   reaction_counts?: Record<string, number> | null;
-  author?: { full_name: string | null; avatar_url: string | null } | null;
+  author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
@@ -185,9 +186,14 @@ const PostCard = ({ post, onComment }: {
           </Avatar>
         </Link>
         <div className="min-w-0 flex-1">
-          <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate block hover:underline">
-            {displayName}
-          </Link>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate hover:underline">
+              {displayName}
+            </Link>
+            {post.author?.account_type && post.author.account_type !== "pet_parent" && (
+              <SellerBadge type={post.author.account_type as any} />
+            )}
+          </div>
           <div className="text-[11px] text-muted-foreground">
             {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
           </div>

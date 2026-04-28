@@ -61,6 +61,7 @@ const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
 const MissingDetail = lazy(() => import("./pages/MissingDetail"));
 const MissingNew = lazy(() => import("./pages/MissingNew"));
+const NewLitter = lazy(() => import("./pages/NewLitter"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
@@ -184,6 +185,7 @@ const App = () => (
               <Route path="/missing" element={<MissingFeed />} />
               <Route path="/missing/new" element={<MissingNew />} />
               <Route path="/missing/:id" element={<MissingDetail />} />
+              <Route path="/litters/new" element={<NewLitter />} />
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />
