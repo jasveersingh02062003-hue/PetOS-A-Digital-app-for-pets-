@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
+import { WizardSteps } from "@/components/onboarding/WizardSteps";
 
 type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer";
 
@@ -50,7 +51,7 @@ const AccountTypeChooser = () => {
         nav("/onboarding/org");
       } else {
         toast.success("Account type saved");
-        nav("/");
+        nav("/onboarding/add-pet");
       }
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not save"),
@@ -61,6 +62,7 @@ const AccountTypeChooser = () => {
       <button onClick={() => nav(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
+      <WizardSteps current={1} />
       <h1 className="font-display text-2xl mb-1">How will you use PetOS?</h1>
       <p className="text-sm text-muted-foreground mb-5">You can change this later in Settings.</p>
 
