@@ -128,7 +128,7 @@ const App = () => (
               <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/v/:code" element={<VaultView />} />
               <Route element={<AppShell />}>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<FirstTimeRedirect><Home /></FirstTimeRedirect>} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/services" element={<Services />} />
@@ -138,6 +138,7 @@ const App = () => (
             </Routes>
           </CartProvider>
         </AuthProvider>
+        </Splash>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
