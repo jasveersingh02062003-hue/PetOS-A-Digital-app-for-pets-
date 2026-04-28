@@ -1,52 +1,36 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useRef } from "react";
-import { Home, Compass, Heart, User, Plus, Siren, Sparkles } from "lucide-react";
+import { Home, Compass, Heart, User, Siren, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { haptic } from "@/lib/haptics";
 
 /**
- * Bottom nav with a CENTER FAB that creates a post and an inline
- * "Mates" tab next to it (replacing the old hidden Health slot).
+ * Flat 5-tab bottom nav (Instagram-style information architecture):
+ *   Home · Mates · Health · Discover · Profile
  *
- * Layout:  Home · Discover · [+ FAB] · Mates · Profile
- * Health is reachable from the Pet hero card and the quick rail.
+ * No center cutout, no global "+". Creation is handled by a per-tab
+ * contextual FAB rendered in AppShell (see ContextualFab.tsx).
+ * Emergency long-press lives on the contextual FAB; the small Siren
+ * button stays pinned top-right of the nav for instant access.
  */
-const tabs = [
+const tabs: {
+  to: string;
+  label: string;
+  icon: any;
+  tone?: "coral";
+}[] = [
   { to: "/", label: "Home", icon: Home },
+  { to: "/mates", label: "Mates", icon: Heart, tone: "coral" },
+  { to: "/health", label: "Health", icon: Activity },
   { to: "/discover", label: "Discover", icon: Compass },
-  { center: true } as any,
-  { to: "/mates", label: "Mates", icon: Heart, tone: "coral" as const },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
 export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
   const loc = useLocation();
-  const pressTimer = useRef<number | null>(null);
-  const longPressed = useRef(false);
 
   const hidden = ["/auth", "/onboarding", "/ai"].some((p) => loc.pathname.startsWith(p)) || loc.pathname.startsWith("/admin");
   if (hidden) return null;
-
-  const startPress = () => {
-    longPressed.current = false;
-    pressTimer.current = window.setTimeout(() => {
-      longPressed.current = true;
-      if (navigator.vibrate) navigator.vibrate(20);
-      onEmergency();
-    }, 550);
-  };
-  const endPress = () => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
-  const handleClick = () => {
-    if (longPressed.current) return;
-    haptic(10);
-    window.dispatchEvent(new CustomEvent("petos:open-composer"));
-  };
 
   return (
     <>
@@ -66,27 +50,7 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="mx-auto max-w-[480px] grid grid-cols-5 h-[4.5rem] items-end pb-2">
-          {tabs.map((t, i) => {
-            if (t.center) {
-              return (
-                <div key="center" className="flex justify-center">
-                  <button
-                    onPointerDown={startPress}
-                    onPointerUp={endPress}
-                    onPointerLeave={endPress}
-                    onPointerCancel={endPress}
-                    onClick={handleClick}
-                    aria-label="Create post (long-press for emergency)"
-                    className="relative -mt-7 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_10px_28px_-6px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform ring-4 ring-background"
-                  >
-                    <Plus className="h-6 w-6" strokeWidth={2.4} />
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-coral flex items-center justify-center">
-                      <Sparkles className="h-2.5 w-2.5 text-white" strokeWidth={2.5} />
-                    </span>
-                  </button>
-                </div>
-              );
-            }
+          {tabs.map((t) => {
             const Icon = t.icon;
             return (
               <NavLink

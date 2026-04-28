@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { EmergencySheet } from "./EmergencySheet";
 import { NotificationBell } from "./NotificationBell";
 import { ComposerButton } from "./Composer";
+import { ContextualFab } from "./ContextualFab";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -40,6 +41,7 @@ export const AppShell = () => {
       </main>
       <BottomNav onEmergency={() => setEmergencyOpen(true)} />
       <EmergencySheet open={emergencyOpen} onOpenChange={setEmergencyOpen} />
+      {user && <ContextualFab onEmergency={() => setEmergencyOpen(true)} />}
       {user && <ComposerButton variant="global" />}
     </div>
   );
