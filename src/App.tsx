@@ -30,6 +30,13 @@ import Vet from "./pages/Vet";
 import VetApply from "./pages/VetApply";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
+import AboutYou from "./pages/settings/AboutYou";
+import NotificationsPrefs from "./pages/settings/Notifications";
+import EmergencyVet from "./pages/settings/EmergencyVet";
+import Privacy from "./pages/settings/Privacy";
+import GoalsPage from "./pages/settings/Goals";
+import PetEditor from "./pages/settings/PetEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -53,6 +60,13 @@ const App = () => (
               <Route path="/vet/consult/:id" element={<VetConsult />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/about" element={<AboutYou />} />
+              <Route path="/settings/notifications" element={<NotificationsPrefs />} />
+              <Route path="/settings/emergency" element={<EmergencyVet />} />
+              <Route path="/settings/privacy" element={<Privacy />} />
+              <Route path="/settings/goals" element={<GoalsPage />} />
+              <Route path="/settings/pet/:id" element={<PetEditor />} />
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />

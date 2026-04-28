@@ -45,7 +45,7 @@ serve(async (req) => {
     if (petId) {
       const { data: pet } = await supabase
         .from("pets")
-        .select("name, species, breed, date_of_birth, gender, weight_kg, neutered, vaccination_verified, bio")
+        .select("name, species, breed, date_of_birth, gender, weight_kg, neutered, vaccination_verified, bio, activity_level, diet_type, social_level, allergies, conditions, temperament")
         .eq("id", petId)
         .maybeSingle();
       if (pet) {
@@ -63,6 +63,10 @@ serve(async (req) => {
         petContext = [
           `Pet: ${pet.name} (${pet.species}${pet.breed ? `, ${pet.breed}` : ""})`,
           `Age: ${ageY} yrs · Gender: ${pet.gender ?? "?"} · Weight: ${pet.weight_kg ?? "?"} kg · Neutered: ${pet.neutered ? "yes" : "no"}`,
+          `Activity: ${pet.activity_level ?? "?"} · Diet: ${pet.diet_type ?? "?"} · Social: ${pet.social_level ?? "?"}`,
+          (pet.allergies?.length ? `KNOWN ALLERGIES (avoid recommending): ${pet.allergies.join(", ")}` : ""),
+          (pet.conditions?.length ? `Existing conditions: ${pet.conditions.join(", ")}` : ""),
+          (pet.temperament?.length ? `Temperament: ${pet.temperament.join(", ")}` : ""),
           `Vaccinations verified: ${pet.vaccination_verified ? "yes" : "no"}`,
           pet.bio ? `Bio: ${pet.bio}` : "",
           vax?.length

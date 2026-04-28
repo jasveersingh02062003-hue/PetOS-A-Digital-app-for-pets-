@@ -27,7 +27,7 @@ const Profile = () => {
     <div className="container-app pad-top-safe">
       <header className="pt-6 pb-6 flex items-center justify-between">
         <h1 className="font-display text-3xl">Profile</h1>
-        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10" onClick={() => nav("/settings")}>
           <Settings className="h-5 w-5" strokeWidth={1.5} />
         </Button>
       </header>
