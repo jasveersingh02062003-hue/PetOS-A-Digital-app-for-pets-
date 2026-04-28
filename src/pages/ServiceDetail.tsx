@@ -9,6 +9,8 @@ import { BookingSheet } from "@/components/BookingSheet";
 import { ReviewList } from "@/components/ReviewList";
 import { SubjectRating } from "@/components/SubjectRating";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeafletMap } from "@/components/maps/LeafletMap";
+import { pawIcon } from "@/components/maps/PawMarker";
 
 const ServiceDetail = () => {
   const { id } = useParams();
