@@ -12,6 +12,7 @@ import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { SellerBadge } from "./SellerBadge";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
