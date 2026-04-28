@@ -43,10 +43,12 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
   const { data: pets } = usePets();
   const qc = useQueryClient();
+  const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
   const [petId, setPetId] = useState<string>("none");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -72,16 +74,19 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         const { data: { publicUrl } } = supabase.storage.from("posts").getPublicUrl(path);
         image_url = publicUrl;
       }
-      const { error } = await supabase.from("posts").insert({
+      const { data: post, error } = await supabase.from("posts").insert({
         author_id: user.id,
         pet_id: petId === "none" ? null : petId,
         caption: caption.trim() || null,
         image_url,
-      });
+      }).select().single();
       if (error) throw error;
+      if (collabs.length && post) {
+        await invite.mutateAsync({ postId: post.id, userIds: collabs.map((c) => c.id) });
+      }
       toast.success("Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none");
+      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]);
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
