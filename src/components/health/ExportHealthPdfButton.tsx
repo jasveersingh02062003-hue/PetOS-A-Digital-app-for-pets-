@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useTier } from "@/hooks/useSubscription";
+import { useTier } from "@/hooks/useTier";
 
 type Range = "all" | "12m" | "6m";
 
@@ -18,8 +18,8 @@ export const ExportHealthPdfButton = ({ petId, petName }: { petId: string; petNa
   const [includeOwner, setIncludeOwner] = useState(false);
   const [busy, setBusy] = useState(false);
   const nav = useNavigate();
-  const tier = useTier();
-  const isPlus = tier === "plus";
+  const { data: tierInfo } = useTier();
+  const isPlus = tierInfo?.tier === "plus";
 
   const run = async () => {
     setBusy(true);
