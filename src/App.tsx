@@ -63,13 +63,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
 import { Navigate } from "react-router-dom";
-
-const FirstTimeRedirect = ({ children }: { children: JSX.Element }) => {
-  if (typeof window !== "undefined" && !localStorage.getItem("petos_seen_intro")) {
-    return <Navigate to="/welcome" replace />;
-  }
-  return children;
-};
+import { FirstRunGate } from "./components/FirstRunGate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,8 +135,8 @@ const App = () => (
               <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/health/:petId/timeline" element={<Timeline />} />
               <Route path="/v/:code" element={<VaultView />} />
-              <Route element={<AppShell />}>
-                <Route path="/" element={<FirstTimeRedirect><Home /></FirstTimeRedirect>} />
+              <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
+                <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/services" element={<Services />} />

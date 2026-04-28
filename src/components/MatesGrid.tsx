@@ -49,10 +49,17 @@ export const MatesGrid = () => {
       {isLoading ? (
         <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : !listings?.length ? (
-        <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
-          <Heart className="h-6 w-6 mx-auto text-primary mb-2" strokeWidth={1.5} />
-          <div className="font-display text-lg">No matches yet</div>
-          <p className="text-sm text-muted-foreground mt-1">Be among the first to list your pet.</p>
+        <Card className="rounded-2xl border-hairline bg-card shadow-none p-7 text-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Heart className="h-5 w-5 text-primary" strokeWidth={1.6} />
+          </div>
+          <div className="font-display text-lg leading-tight">No mating listings yet</div>
+          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-[280px] mx-auto">
+            Pets only show here once their owners list them with vaccination proof. Be among the first in your city.
+          </p>
+          <Button onClick={() => nav("/mates/new")} className="mt-5 rounded-xl h-11">
+            List your pet
+          </Button>
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3">
