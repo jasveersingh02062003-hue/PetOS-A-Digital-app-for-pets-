@@ -484,15 +484,13 @@ const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) =>
 
   const create = async () => {
     setCreating(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) { setCreating(false); return toast.error("Please sign in"); }
-    const code = generateCode();
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await supabase.from("vet_access_grants").insert({
-      pet_id: petId, code, expires_at: expires, created_by: u.user.id,
+    const { data, error } = await supabase.functions.invoke("vet-grant-create", {
+      body: { petId },
     });
     setCreating(false);
-    if (error) return toast.error(error.message);
+    if (error || (data as any)?.error) {
+      return toast.error((data as any)?.error || error?.message || "Could not create link");
+    }
     toast.success("Share link created — valid 24h");
     refetch();
   };

@@ -22,12 +22,31 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const body = await req.json();
-    const messages: ChatMsg[] = Array.isArray(body.messages) ? body.messages : [];
-    const petId: string | undefined = body.petId;
-    const mode: "chat" | "triage" = body.mode === "triage" ? "triage" : "chat";
+    const body = await req.json().catch(() => ({}));
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    if (!messages.length) return jsonErr("messages required", 400);
+    // Validate & sanitise inputs. Critically: drop any client-provided
+    // system messages so the prompt cannot be hijacked.
+    const rawMsgs: unknown[] = Array.isArray(body.messages) ? body.messages : [];
+    if (rawMsgs.length === 0 || rawMsgs.length > 30) {
+      return jsonErr("messages must be 1..30 items", 400);
+    }
+    const messages: ChatMsg[] = [];
+    for (const m of rawMsgs) {
+      if (!m || typeof m !== "object") continue;
+      const role = (m as any).role;
+      const content = (m as any).content;
+      if (role !== "user" && role !== "assistant") continue; // strip system
+      if (typeof content !== "string") continue;
+      if (content.length > 4000) continue;
+      messages.push({ role, content });
+    }
+    if (!messages.length) return jsonErr("no valid messages", 400);
+
+    const petIdRaw = body.petId;
+    const petId: string | undefined =
+      typeof petIdRaw === "string" && UUID_RE.test(petIdRaw) ? petIdRaw : undefined;
+    const mode: "chat" | "triage" = body.mode === "triage" ? "triage" : "chat";
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return jsonErr("unauthenticated", 401);
