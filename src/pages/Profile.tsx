@@ -186,6 +186,15 @@ const Profile = () => {
               </Button>
             </div>
 
+            {(accountType === "breeder" || accountType === "kennel") && (
+              <Button
+                onClick={() => nav("/litters/new")}
+                className="w-full rounded-xl h-10 gap-1.5 mb-4"
+              >
+                <Sparkles className="h-4 w-4" /> Record new litter
+              </Button>
+            )}
+
             {/* Counts */}
             <div className="grid grid-cols-3 gap-2 mb-5">
               <Counter label="Posts" value={counts?.posts ?? 0} />
