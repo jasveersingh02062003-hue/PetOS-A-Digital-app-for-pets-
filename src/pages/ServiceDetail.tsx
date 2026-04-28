@@ -110,6 +110,24 @@ const ServiceDetail = () => {
         )}
       </Card>
 
+      {provider.lat != null && provider.lng != null && (
+        <div className="mt-4">
+          <LeafletMap
+            center={[Number(provider.lat), Number(provider.lng)]}
+            zoom={14}
+            height="200px"
+            markers={[{
+              id: provider.id,
+              lat: Number(provider.lat),
+              lng: Number(provider.lng),
+              icon: pawIcon("#3b82f6"),
+              title: provider.name,
+              description: provider.city ?? undefined,
+            }]}
+          />
+        </div>
+      )}
+
       <div className="mt-6">
         <h3 className="font-display text-lg mb-3">Reviews</h3>
         <ReviewList subjectType="provider" subjectId={provider.id} subjectName={provider.name} />
