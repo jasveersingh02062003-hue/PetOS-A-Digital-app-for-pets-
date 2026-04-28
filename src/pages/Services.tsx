@@ -2,31 +2,23 @@ import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Footprints,
-  Hotel,
-  Scissors,
   ShoppingBag,
-  GraduationCap,
-  Stethoscope,
   Plus,
   ClipboardList,
+  Compass,
+  Footprints,
+  Scissors,
 } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import type { Database } from "@/integrations/supabase/types";
 import { SubjectRating } from "@/components/SubjectRating";
-
-type ServiceCategory = Database["public"]["Enums"]["service_category"];
+import { SERVICE_CATEGORIES, type ServiceCategory } from "@/lib/serviceCategories";
 
 const categories: { key: ServiceCategory | "all"; label: string; icon: any }[] = [
   { key: "all", label: "All", icon: ShoppingBag },
-  { key: "walking", label: "Walking", icon: Footprints },
-  { key: "boarding", label: "Boarding", icon: Hotel },
-  { key: "grooming", label: "Grooming", icon: Scissors },
-  { key: "training", label: "Training", icon: GraduationCap },
-  { key: "sitting", label: "Sitting", icon: Stethoscope },
+  ...SERVICE_CATEGORIES.map((c) => ({ key: c.key, label: c.short, icon: c.icon })),
 ];
 
 const Services = () => {
@@ -53,6 +45,11 @@ const Services = () => {
       <header className="pt-6 pb-4 flex items-center justify-between">
         <h1 className="font-display text-3xl">Services</h1>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Link to="/discover/services">
+              <Compass className="h-4 w-4 mr-1.5" /> Near me
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm" className="rounded-full">
             <Link to="/services/manage">
               <ClipboardList className="h-4 w-4 mr-1.5" />

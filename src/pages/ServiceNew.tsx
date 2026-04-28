@@ -80,6 +80,9 @@ const ServiceNew = () => {
               <SelectItem value="sitting">Sitting</SelectItem>
               <SelectItem value="boarding">Boarding</SelectItem>
               <SelectItem value="vet_clinic">Vet Clinic</SelectItem>
+              <SelectItem value="caretaker">Caretaker (in-home, long-term)</SelectItem>
+              <SelectItem value="daycare">Daycare</SelectItem>
+              <SelectItem value="pet_taxi">Pet taxi / transport</SelectItem>
             </SelectContent>
           </Select>
         </div>

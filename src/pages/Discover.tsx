@@ -8,7 +8,7 @@ import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
 import { NearMePanel } from "@/components/maps/NearMePanel";
 import {
-  Compass, Flame, Users, CalendarDays, Stethoscope, Camera, Sparkles, Heart, ArrowRight,
+  Compass, Flame, Users, CalendarDays, Stethoscope, Camera, Sparkles, Heart, ArrowRight, Scissors,
 } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 
@@ -45,16 +45,17 @@ const Discover = () => {
         />
         <HeroTile
           tone="sky"
-          title="Ask a vet"
-          subtitle="Verified Q&A in minutes"
-          icon={Stethoscope}
-          onClick={() => nav("/askvet")}
+          title="Services near you"
+          subtitle="Grooming, vets, training & more"
+          icon={Scissors}
+          onClick={() => nav("/discover/services")}
         />
       </div>
 
       {/* SECONDARY scrollable rail — colored chips */}
       <div className="-mx-5 mb-5">
         <div className="flex gap-2 overflow-x-auto px-5 no-scrollbar">
+          <ChipTile tone="sky" icon={Stethoscope} title="Ask a vet" onClick={() => nav("/askvet")} />
           <ChipTile tone="lilac" icon={Sparkles} title="AI chat" onClick={() => nav("/ai")} />
           <ChipTile tone="lilac" icon={Camera} title="Photo vet" onClick={() => nav("/photo-vet")} />
           <ChipTile tone="amber" icon={CalendarDays} title="Meetups" onClick={() => nav("/meetups")} />
@@ -135,6 +136,7 @@ const TONE_CHIP: Record<string, string> = {
   amber:    "bg-amber/15 text-amber",
   primary:  "bg-primary/10 text-primary",
   emergency:"bg-emergency/10 text-emergency",
+  sky:      "bg-sky/10 text-sky",
 };
 const ChipTile = ({ title, icon: Icon, tone, onClick }: { title: string; icon: any; tone: string; onClick: () => void }) => (
   <button
