@@ -43,9 +43,10 @@ const Discover = () => {
       </div>
 
       <Tabs defaultValue="trending" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full bg-muted rounded-xl mb-5">
+        <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl mb-5">
           <TabsTrigger value="trending" className="rounded-lg">Trending</TabsTrigger>
           <TabsTrigger value="latest" className="rounded-lg">Latest</TabsTrigger>
+          <TabsTrigger value="nearby" className="rounded-lg">Near me</TabsTrigger>
           <TabsTrigger value="mates" className="rounded-lg">Mates</TabsTrigger>
         </TabsList>
 
@@ -77,6 +78,10 @@ const Discover = () => {
               />
             }
           />
+        </TabsContent>
+
+        <TabsContent value="nearby" className="pb-10">
+          <NearMePanel />
         </TabsContent>
 
         <TabsContent value="mates" className="pb-10">
