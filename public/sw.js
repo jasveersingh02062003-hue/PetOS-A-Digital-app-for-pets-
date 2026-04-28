@@ -1,5 +1,5 @@
 /* Petos service worker — push + minimal offline shell */
-const CACHE = "petos-v1";
+const CACHE = "petos-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/favicon.ico"];
 
 self.addEventListener("install", (event) => {
@@ -24,9 +24,11 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Never intercept API / auth / supabase calls
+  // Never intercept cross-origin (API / auth / supabase) calls
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/~oauth")) return;
+
+  // CRITICAL: never touch OAuth broker paths — these must always hit the network
+  if (url.pathname.startsWith("/~oauth") || url.pathname.includes("/~oauth")) return;
 
   if (req.mode === "navigate") {
     event.respondWith(

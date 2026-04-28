@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { logError } from "@/lib/logError";
 
 export type Notification = {
   id: string;
@@ -35,26 +36,49 @@ export const useNotifications = () => {
 
   useEffect(() => {
     if (!user?.id) return;
-    // Unique channel name per mount avoids "subscribe() already called" in StrictMode
-    const channel = supabase
-      .channel(`notif-${user.id}-${Math.random().toString(36).slice(2, 8)}`)
-      .on(
-        "postgres_changes" as any,
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: any) => {
-          const n = payload.new as Notification;
-          toast(n.title, { description: n.body || undefined });
-          qc.invalidateQueries({ queryKey: ["notifications", user.id] });
-        },
-      )
-      .subscribe();
+    const channelName = `notif:${user.id}`;
+
+    // Defensive: remove any pre-existing channel with the same name
+    // (handles React StrictMode double-mount in dev).
+    try {
+      const existing = supabase
+        .getChannels()
+        .find((c) => c.topic === `realtime:${channelName}`);
+      if (existing) supabase.removeChannel(existing);
+    } catch (err) {
+      logError(err, { source: "realtime:cleanup-pre" });
+    }
+
+    const channel = supabase.channel(channelName);
+    try {
+      channel
+        .on(
+          "postgres_changes" as any,
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            const n = payload.new as Notification;
+            toast(n.title, { description: n.body || undefined });
+            qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+          },
+        )
+        .subscribe((status) => {
+          if (import.meta.env.DEV) console.info("[useNotifications] sub status", status);
+        });
+    } catch (err) {
+      logError(err, { source: "realtime:subscribe" });
+    }
+
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch (err) {
+        logError(err, { source: "realtime:cleanup" });
+      }
     };
   }, [user?.id, qc]);
 
