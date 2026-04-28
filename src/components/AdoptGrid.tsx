@@ -11,6 +11,7 @@ import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
 type Filters = {
@@ -38,6 +39,7 @@ export const AdoptGrid = () => {
   const { data: profile } = useProfile();
   const isBuyer = (profile as any)?.account_type === "buyer";
   const [filters, setFilters] = useState<Filters>({});
+  const { data: verifiedOrgs } = useVerifiedOrgs();
 
   // Seed filters from buyer's preferences on first load
   useEffect(() => {
@@ -196,7 +198,12 @@ export const AdoptGrid = () => {
                   <div className="text-xs text-muted-foreground truncate">
                     {[l.breed ?? l.species, l.age_weeks ? `${Math.floor(l.age_weeks / 4)} mo` : null].filter(Boolean).join(" · ")}
                   </div>
-                  <div className="mt-1.5"><SellerBadge type={l.seller_type ?? "pet_parent"} /></div>
+                  <div className="mt-1.5">
+                    <SellerBadge
+                      type={l.seller_type ?? "pet_parent"}
+                      verified={verifiedOrgs?.has(l.owner_id) ?? false}
+                    />
+                  </div>
                   {isRepeatSeller && (
                     <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-semibold border border-amber-500/30">
                       <AlertTriangle className="h-2.5 w-2.5" /> Repeat seller
