@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send, Loader2, ImagePlus, X, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useIsOnline } from "@/hooks/usePresence";
-import { uploadImageWithVariants } from "@/lib/uploadImageVariants";
+import { uploadImageWithVariants } from "@/lib/uploadImage";
 
 type Msg = {
   id: string;
