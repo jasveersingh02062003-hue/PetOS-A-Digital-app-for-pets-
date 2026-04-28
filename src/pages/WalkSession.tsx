@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Play, Square, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Play, Square, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { LeafletMap } from "@/components/maps/LeafletMap";
+import { pawIcon } from "@/components/maps/PawMarker";
 
 type Track = { id: string; lat: number; lng: number; recorded_at: string };
 
@@ -25,7 +26,7 @@ const WalkSession = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_bookings")
-        .select("id, customer_id, provider_id, status, scheduled_at")
+        .select("id, customer_id, provider_id, status, scheduled_at, public_share_token")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
@@ -38,6 +39,22 @@ const WalkSession = () => {
       return { ...data, provider: prov };
     },
   });
+
+  const shareLive = async () => {
+    const token = (booking as any)?.public_share_token;
+    if (!token) return toast.error("Share link not ready");
+    const url = `${window.location.origin}/walk-live/${token}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Live walk", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Live walk link copied");
+      }
+    } catch {
+      // user cancelled
+    }
+  };
 
   const { data: tracks } = useQuery({
     queryKey: ["walk-tracks", id],
