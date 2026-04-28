@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PawPrint, ShieldCheck, MapPin, Plus, BadgeCheck } from "lucide-react";
+import { PawPrint, MapPin, Plus, BadgeCheck, Sparkles } from "lucide-react";
 import { SmartImage } from "@/components/SmartImage";
 import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
+import { SellerBadge } from "@/components/SellerBadge";
 
-type Filters = { species?: string; type?: "adoption" | "rehoming" | "breeder_sale"; city?: string };
+type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
+type Filters = { species?: string; type?: "adoption" | "rehoming" | "breeder_sale"; city?: string; seller?: SellerType };
 
 const TYPE_LABEL: Record<string, string> = {
   adoption: "Adoption",
@@ -31,7 +33,7 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("pet_listings")
-        .select("id, listing_type, fee_inr, city, title, description, photos, age_weeks, species, breed, gender")
+        .select("id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id")
         .eq("active", true)
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -39,6 +41,7 @@ export const AdoptGrid = () => {
       if (filters.type) q = q.eq("listing_type", filters.type);
       if (filters.city) q = q.eq("city", filters.city);
       if (filters.species) q = q.eq("species", filters.species);
+      if (filters.seller) q = q.eq("seller_type", filters.seller);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -54,6 +57,15 @@ export const AdoptGrid = () => {
         <FilterChip label="Breeders" active={filters.type === "breeder_sale"} onClick={() => setFilters({ ...filters, type: filters.type === "breeder_sale" ? undefined : "breeder_sale" })} />
         <FilterChip label="Dogs" active={filters.species === "dog"} onClick={() => setFilters({ ...filters, species: filters.species === "dog" ? undefined : "dog" })} />
         <FilterChip label="Cats" active={filters.species === "cat"} onClick={() => setFilters({ ...filters, species: filters.species === "cat" ? undefined : "cat" })} />
+      </div>
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0 px-1">Seller</span>
+        <FilterChip label="Shelters" active={filters.seller === "shelter"} onClick={() => setFilters({ ...filters, seller: filters.seller === "shelter" ? undefined : "shelter" })} />
+        <FilterChip label="Sanctuaries" active={filters.seller === "sanctuary"} onClick={() => setFilters({ ...filters, seller: filters.seller === "sanctuary" ? undefined : "sanctuary" })} />
+        <FilterChip label="Verified breeders" active={filters.seller === "breeder"} onClick={() => setFilters({ ...filters, seller: filters.seller === "breeder" ? undefined : "breeder" })} />
+        <FilterChip label="Kennels" active={filters.seller === "kennel"} onClick={() => setFilters({ ...filters, seller: filters.seller === "kennel" ? undefined : "kennel" })} />
+        <FilterChip label="Pet parents" active={filters.seller === "pet_parent"} onClick={() => setFilters({ ...filters, seller: filters.seller === "pet_parent" ? undefined : "pet_parent" })} />
+        <FilterChip label="Rescuers" active={filters.seller === "rescuer"} onClick={() => setFilters({ ...filters, seller: filters.seller === "rescuer" ? undefined : "rescuer" })} />
       </div>
 
       <Button onClick={() => nav("/mates/adopt/new")} variant="outline" className="w-full rounded-2xl h-12 gap-2 border-dashed border-hairline">
@@ -101,12 +113,18 @@ export const AdoptGrid = () => {
                     {l.listing_type === "breeder_sale" && <BadgeCheck className="h-3 w-3" />}
                     {TYPE_LABEL[l.listing_type]}
                   </Badge>
+                  {l.bred_on_petos && (
+                    <Badge className="absolute top-2 right-2 bg-card/90 text-foreground border border-coral/30 text-[10px] gap-1">
+                      <Sparkles className="h-3 w-3 text-coral" /> Bred on PetOS
+                    </Badge>
+                  )}
                 </div>
                 <div className="p-3">
                   <div className="font-medium truncate">{l.title}</div>
                   <div className="text-xs text-muted-foreground truncate">
                     {[l.breed ?? l.species, l.age_weeks ? `${Math.floor(l.age_weeks / 4)} mo` : null].filter(Boolean).join(" · ")}
                   </div>
+                  <div className="mt-1.5"><SellerBadge type={l.seller_type ?? "pet_parent"} /></div>
                   <div className="flex items-center justify-between mt-2 text-xs">
                     {l.city ? <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{l.city}</span> : <span />}
                     {l.listing_type === "adoption" || !l.fee_inr ? (
