@@ -20,7 +20,6 @@ const items: {
   icon: any;
   tone: "coral" | "sky" | "leaf" | "amber" | "primary" | "emergency";
 }[] = [
-  { to: "/mates", label: "Mates", icon: Heart, tone: "coral" },
   { to: "/askvet", label: "Ask vet", icon: Stethoscope, tone: "sky" },
   { to: "/walk/new", label: "Walks", icon: Footprints, tone: "leaf" },
   { to: "/meetups", label: "Meetups", icon: CalendarDays, tone: "amber" },
