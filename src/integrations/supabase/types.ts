@@ -1117,32 +1117,6 @@ export type Database = {
       }
     }
     Views: {
-      pets_public: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          breed: string | null
-          city: string | null
-          discoverable_for_mating: boolean | null
-          gender: Database["public"]["Enums"]["pet_gender"] | null
-          id: string | null
-          name: string | null
-          owner_id: string | null
-          species: Database["public"]["Enums"]["pet_species"] | null
-          vaccination_verified: boolean | null
-        }
-        Relationships: []
-      }
-      profiles_public: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          city: string | null
-          full_name: string | null
-          id: string | null
-        }
-        Relationships: []
-      }
       subject_ratings: {
         Row: {
           avg_rating: number | null
