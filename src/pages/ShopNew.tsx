@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/ImageUpload";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
