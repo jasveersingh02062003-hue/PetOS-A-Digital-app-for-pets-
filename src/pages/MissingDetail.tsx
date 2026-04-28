@@ -202,7 +202,9 @@ const MissingDetail = () => {
           );
         })()}
 
+        {!isResolved && (
           <div className="space-y-2">
+
             {!isOwner && (
               <Button className="w-full h-12 rounded-2xl" onClick={() => setSightingOpen(true)}>
                 <Eye className="h-4 w-4 mr-2" /> I've seen this pet
