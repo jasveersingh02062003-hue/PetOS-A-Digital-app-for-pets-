@@ -176,6 +176,27 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       broadcasts: {
         Row: {
           body: string | null
@@ -209,6 +230,45 @@ export type Database = {
           target_city?: string | null
           target_role?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      content_moderation_log: {
+        Row: {
+          author_id: string | null
+          content_id: string | null
+          content_type: string
+          created_at: string
+          excerpt: string | null
+          id: string
+          reasons: string[]
+          score: number | null
+          source: string
+          verdict: Database["public"]["Enums"]["mod_verdict"]
+        }
+        Insert: {
+          author_id?: string | null
+          content_id?: string | null
+          content_type: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          reasons?: string[]
+          score?: number | null
+          source?: string
+          verdict: Database["public"]["Enums"]["mod_verdict"]
+        }
+        Update: {
+          author_id?: string | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          reasons?: string[]
+          score?: number | null
+          source?: string
+          verdict?: Database["public"]["Enums"]["mod_verdict"]
         }
         Relationships: []
       }
@@ -3218,6 +3278,10 @@ export type Database = {
         Args: { _kind: string; _limit: number; _window_days: number }
         Returns: Json
       }
+      is_blocked: {
+        Args: { _blocked: string; _blocker: string }
+        Returns: boolean
+      }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
@@ -3356,6 +3420,7 @@ export type Database = {
       mating_intent: "stud" | "dam" | "either"
       meetup_status: "upcoming" | "cancelled" | "done"
       missing_status: "active" | "resolved" | "cancelled"
+      mod_verdict: "allow" | "flag" | "block"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
       parasite_type:
         | "flea"
@@ -3597,6 +3662,7 @@ export const Constants = {
       mating_intent: ["stud", "dam", "either"],
       meetup_status: ["upcoming", "cancelled", "done"],
       missing_status: ["active", "resolved", "cancelled"],
+      mod_verdict: ["allow", "flag", "block"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
       parasite_type: [
         "flea",
