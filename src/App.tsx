@@ -60,6 +60,7 @@ const PetEditor = lazy(() => import("./pages/settings/PetEditor"));
 const Billing = lazy(() => import("./pages/settings/Billing"));
 const Plus = lazy(() => import("./pages/Plus"));
 const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
+const Rewards = lazy(() => import("./pages/Rewards"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
 const MissingDetail = lazy(() => import("./pages/MissingDetail"));
 const MissingNew = lazy(() => import("./pages/MissingNew"));
