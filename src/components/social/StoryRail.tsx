@@ -4,14 +4,18 @@ import { useProfile } from "@/hooks/useProfile";
 import { useActiveStories } from "@/hooks/useStories";
 import { StoryComposer } from "./StoryComposer";
 import { StoryViewer } from "./StoryViewer";
+import { SmartImage } from "@/components/SmartImage";
+import { StoryRailSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { Plus } from "lucide-react";
 
 export const StoryRail = () => {
   const { user } = useAuth();
   const { data: profile } = useProfile();
-  const { data: groups } = useActiveStories();
+  const { data: groups, isLoading } = useActiveStories();
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerIdx, setViewerIdx] = useState<number | null>(null);
+
+  if (isLoading && !groups) return <StoryRailSkeleton />;
 
   const myGroupIdx = groups?.findIndex((g) => g.author_id === user?.id) ?? -1;
   const others = (groups ?? []).filter((g) => g.author_id !== user?.id);
@@ -26,7 +30,7 @@ export const StoryRail = () => {
         >
           <div className="relative h-16 w-16 rounded-full bg-muted overflow-hidden flex items-center justify-center ring-2 ring-offset-2 ring-offset-background ring-primary/30">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="You" className="w-full h-full object-cover" />
+              <SmartImage src={profile.avatar_url} alt="You" className="w-full h-full" aspect="1/1" />
             ) : (
               <span className="font-display text-xl text-ink-soft">{profile?.full_name?.[0] ?? "·"}</span>
             )}
@@ -50,7 +54,7 @@ export const StoryRail = () => {
               className="flex flex-col items-center gap-1.5 shrink-0"
             >
               <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-background ring-primary">
-                <img src={cover.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <SmartImage src={cover.image_url} alt="" className="w-full h-full" aspect="1/1" />
               </div>
               <span className="text-[11px] text-muted-foreground max-w-[64px] truncate">{g.author_name?.split(" ")[0] ?? "Pet"}</span>
             </button>
