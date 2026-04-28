@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2, Bug } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2, Bug, Shield } from "lucide-react";
 import { formatRelative } from "@/lib/format";
 import { toast } from "sonner";
+import { InsuranceTab } from "@/components/admin/InsuranceTab";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
 
@@ -63,13 +64,14 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-10 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-11 w-full bg-muted rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="trust" className="rounded-lg gap-1.5"><FileCheck2 className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="rewards" className="rounded-lg gap-1.5"><Coins className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="insurance" className="rounded-lg gap-1.5"><Shield className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
@@ -85,6 +87,7 @@ const Admin = () => {
           <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
           <TabsContent value="trust" className="mt-4"><TrustQueueTab /></TabsContent>
           <TabsContent value="rewards" className="mt-4"><RewardsQueueTab /></TabsContent>
+          <TabsContent value="insurance" className="mt-4"><InsuranceTab /></TabsContent>
           <TabsContent value="errors" className="mt-4"><ErrorsTab /></TabsContent>
         </Tabs>
       </main>

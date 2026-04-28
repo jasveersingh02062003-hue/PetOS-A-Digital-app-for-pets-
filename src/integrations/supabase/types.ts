@@ -816,6 +816,124 @@ export type Database = {
           },
         ]
       }
+      insurance_leads: {
+        Row: {
+          commission_inr: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          partner_id: string
+          partner_ref: string | null
+          pet_age_months_snapshot: number | null
+          pet_breed_snapshot: string | null
+          pet_id: string
+          premium_inr: number | null
+          status: Database["public"]["Enums"]["insurance_lead_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_inr?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          partner_ref?: string | null
+          pet_age_months_snapshot?: number | null
+          pet_breed_snapshot?: string | null
+          pet_id: string
+          premium_inr?: number | null
+          status?: Database["public"]["Enums"]["insurance_lead_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_inr?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          partner_ref?: string | null
+          pet_age_months_snapshot?: number | null
+          pet_breed_snapshot?: string | null
+          pet_id?: string
+          premium_inr?: number | null
+          status?: Database["public"]["Enums"]["insurance_lead_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_leads_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_leads_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "insurance_leads_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_partners: {
+        Row: {
+          active: boolean
+          blurb: string | null
+          commission_pct: number
+          country: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          plan_max_inr: number | null
+          plan_min_inr: number | null
+          redirect_url: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blurb?: string | null
+          commission_pct?: number
+          country?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          plan_max_inr?: number | null
+          plan_min_inr?: number | null
+          redirect_url: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blurb?: string | null
+          commission_pct?: number
+          country?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          plan_max_inr?: number | null
+          plan_min_inr?: number | null
+          redirect_url?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       litter_groups: {
         Row: {
           birth_date: string | null
@@ -4364,6 +4482,12 @@ export type Database = {
         | "surgery"
         | "allergy"
         | "other"
+      insurance_lead_status:
+        | "new"
+        | "contacted"
+        | "quoted"
+        | "purchased"
+        | "lost"
       mating_intent: "stud" | "dam" | "either"
       meetup_status: "upcoming" | "cancelled" | "done"
       missing_status: "active" | "resolved" | "cancelled"
@@ -4646,6 +4770,13 @@ export const Constants = {
         "surgery",
         "allergy",
         "other",
+      ],
+      insurance_lead_status: [
+        "new",
+        "contacted",
+        "quoted",
+        "purchased",
+        "lost",
       ],
       mating_intent: ["stud", "dam", "either"],
       meetup_status: ["upcoming", "cancelled", "done"],
