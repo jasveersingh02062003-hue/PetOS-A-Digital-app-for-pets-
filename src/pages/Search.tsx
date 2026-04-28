@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,6 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import {
+  listSavedSearches,
+  saveSearch,
+  unsaveSearch,
+  isSearchSaved,
+  clearRecentSearches,
+  type SavedSearch,
+} from "@/lib/savedSearches";
+import { toast } from "sonner";
 
 const RECENTS_KEY = "petos:recent_searches";
 
@@ -38,6 +47,7 @@ export default function Search() {
   const [q, setQ] = useState(params.get("q") || "");
   const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "all");
   const debounced = useDebounced(q.trim(), 300);
+  const [savedTick, setSavedTick] = useState(0); // bump to refresh saved list
 
   useEffect(() => { document.title = q ? `${q} — Search · Petos` : "Search · Petos"; }, [q]);
 
@@ -97,6 +107,33 @@ export default function Search() {
   });
 
   const recents = useMemo(() => readRecents(), [debounced]);
+  const saved = useMemo<SavedSearch[]>(
+    () => listSavedSearches(),
+    // re-read whenever the user saves/removes or types a new query
+    [savedTick, debounced]
+  );
+  const isSaved = useMemo(
+    () => isSearchSaved(debounced, tab),
+    [debounced, tab, savedTick]
+  );
+
+  const toggleSave = () => {
+    if (debounced.length < 2) return;
+    if (isSaved) {
+      unsaveSearch(debounced, tab);
+      toast("Removed from saved");
+    } else {
+      const entry = saveSearch(debounced, tab);
+      if (entry) toast.success("Search saved");
+    }
+    setSavedTick((n) => n + 1);
+  };
+
+  const handleClearRecents = () => {
+    clearRecentSearches();
+    setSavedTick((n) => n + 1); // also forces recents memo recompute via debounced dep
+    toast("Recent searches cleared");
+  };
 
   const counts = data ? {
     pets: data.pets.length, people: data.people.length, posts: data.posts.length,
@@ -128,12 +165,30 @@ export default function Search() {
               </button>
             )}
           </div>
+          {debounced.length >= 2 && (
+            <button
+              onClick={toggleSave}
+              aria-label={isSaved ? "Remove from saved searches" : "Save search"}
+              aria-pressed={isSaved}
+              className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+            >
+              {isSaved
+                ? <BookmarkCheck className="h-5 w-5 text-primary" />
+                : <Bookmark className="h-5 w-5" />}
+            </button>
+          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-3 py-4 space-y-4">
         {!enabled ? (
-          <RecentsAndSuggestions recents={recents} onPick={(s) => setQ(s)} />
+          <RecentsAndSuggestions
+            recents={recents}
+            saved={saved}
+            onPick={(s, t) => { setQ(s); if (t) setTab(t as Tab); }}
+            onRemoveSaved={(s) => { unsaveSearch(s.q, s.tab); setSavedTick((n) => n + 1); }}
+            onClearRecents={handleClearRecents}
+          />
         ) : (
           <>
             <div className="text-xs text-muted-foreground">
@@ -205,7 +260,19 @@ const Empty = ({ q }: { q: string }) => (
   </Card>
 );
 
-function RecentsAndSuggestions({ recents, onPick }: { recents: string[]; onPick: (s: string) => void }) {
+function RecentsAndSuggestions({
+  recents,
+  saved,
+  onPick,
+  onRemoveSaved,
+  onClearRecents,
+}: {
+  recents: string[];
+  saved: SavedSearch[];
+  onPick: (s: string, tab?: string) => void;
+  onRemoveSaved: (s: SavedSearch) => void;
+  onClearRecents: () => void;
+}) {
   const { data: trending } = useQuery({
     queryKey: ["search-trending"],
     queryFn: async () => {
@@ -218,8 +285,45 @@ function RecentsAndSuggestions({ recents, onPick }: { recents: string[]; onPick:
 
   return (
     <div className="space-y-5">
+      {saved.length > 0 && (
+        <Section title="Saved">
+          <div className="flex flex-wrap gap-2">
+            {saved.map((s) => (
+              <div
+                key={s.id}
+                className="group flex items-center gap-1 pl-3 pr-1 py-1 rounded-full bg-primary/10 text-primary text-sm"
+              >
+                <button onClick={() => onPick(s.q, s.tab)} className="flex items-center gap-1.5">
+                  <Bookmark className="h-3 w-3" />
+                  <span className="font-medium">{s.q}</span>
+                  {s.tab && s.tab !== "all" && (
+                    <span className="opacity-60 text-xs">· {s.tab}</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => onRemoveSaved(s)}
+                  aria-label={`Remove saved search ${s.q}`}
+                  className="ml-1 p-1 rounded-full hover:bg-primary/20"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
       {recents.length > 0 && (
         <Section title="Recent">
+          <div className="flex items-center justify-between -mt-1 mb-2">
+            <span className="text-[11px] text-muted-foreground">{recents.length} recent</span>
+            <button
+              onClick={onClearRecents}
+              className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <Trash2 className="h-3 w-3" /> Clear
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {recents.map((r) => (
               <button key={r} onClick={() => onPick(r)} className="px-3 py-1.5 rounded-full bg-muted text-sm hover:bg-muted/70">
