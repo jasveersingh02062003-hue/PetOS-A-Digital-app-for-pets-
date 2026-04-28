@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { AiCoach } from "@/components/onboarding/AiCoach";
 
 type Props = {
   step: number;
@@ -17,14 +18,16 @@ type Props = {
   loading?: boolean;
   canSkip?: boolean;
   onSkip?: () => void;
+  showCoach?: boolean;
 };
 
 export const StepShell = ({
   step, total, title, subtitle, hero, children,
   onBack, onNext, nextLabel = "Continue", nextDisabled, loading,
-  canSkip, onSkip,
+  canSkip, onSkip, showCoach = true,
 }: Props) => (
   <div className="min-h-[100dvh] bg-background flex flex-col">
+    {showCoach && <AiCoach step={step} />}
     {/* Top bar */}
     <header className="container-app pt-4 pb-2 flex items-center gap-3">
       {onBack ? (

@@ -51,8 +51,18 @@ import Refunds from "./pages/legal/Refunds";
 import NotFound from "./pages/NotFound";
 import DeleteAccount from "./pages/DeleteAccount";
 import AdminErrors from "./pages/admin/Errors";
+import Welcome from "./pages/Welcome";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
+import { Navigate } from "react-router-dom";
+
+const FirstTimeRedirect = ({ children }: { children: JSX.Element }) => {
+  if (typeof window !== "undefined" && !localStorage.getItem("petos_seen_intro")) {
+    return <Navigate to="/welcome" replace />;
+  }
+  return children;
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,9 +83,11 @@ const App = () => (
       <Toaster />
       <Sonner position="top-center" />
       <BrowserRouter>
+        <Splash>
         <AuthProvider>
           <CartProvider>
             <Routes>
+              <Route path="/welcome" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -116,7 +128,7 @@ const App = () => (
               <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/v/:code" element={<VaultView />} />
               <Route element={<AppShell />}>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<FirstTimeRedirect><Home /></FirstTimeRedirect>} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/services" element={<Services />} />
@@ -126,6 +138,7 @@ const App = () => (
             </Routes>
           </CartProvider>
         </AuthProvider>
+        </Splash>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
