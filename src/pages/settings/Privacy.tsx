@@ -24,25 +24,36 @@ const Privacy = () => {
 
   return (
     <SettingsLayout title="Privacy" subtitle="Per-pet discoverability" savable={false}>
-      {(pets ?? []).map((p) => (
-        <label key={p.id} className="flex items-center justify-between gap-4 bg-card border border-hairline rounded-2xl p-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center shrink-0">
-              {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display">{p.name[0]}</span>}
-            </div>
-            <div className="min-w-0">
-              <div className="font-medium text-sm truncate">{p.name}</div>
-              <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                {p.vaccination_verified ? <><ShieldCheck className="h-3 w-3 text-primary" /> Verified</> : "Not verified"}
+      {(pets ?? []).map((p) => {
+        const isNeutered = !!p.neutered;
+        return (
+          <div key={p.id} className="bg-card border border-hairline rounded-2xl p-4 space-y-2">
+            <label className={`flex items-center justify-between gap-4 ${isNeutered ? "opacity-80" : ""}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                  {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display">{p.name[0]}</span>}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{p.name}</div>
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    {p.vaccination_verified ? <><ShieldCheck className="h-3 w-3 text-primary" /> Verified</> : "Not verified"}
+                  </div>
+                </div>
               </div>
-            </div>
+              <Switch
+                checked={isNeutered ? false : p.discoverable_for_mating}
+                disabled={isNeutered}
+                onCheckedChange={(v) => !isNeutered && toggleDiscoverable(p.id, v, p.vaccination_verified)}
+              />
+            </label>
+            {isNeutered && (
+              <p className="text-[11px] text-muted-foreground leading-snug pl-13">
+                Since {p.name} is neutered, mating discovery stays off. Every other feature still works normally.
+              </p>
+            )}
           </div>
-          <Switch
-            checked={p.discoverable_for_mating}
-            onCheckedChange={(v) => toggleDiscoverable(p.id, v, p.vaccination_verified)}
-          />
-        </label>
-      ))}
+        );
+      })}
       {(!pets || pets.length === 0) && <p className="text-sm text-muted-foreground text-center py-8">No pets yet.</p>}
     </SettingsLayout>
   );

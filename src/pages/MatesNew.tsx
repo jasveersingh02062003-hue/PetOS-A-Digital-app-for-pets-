@@ -27,7 +27,8 @@ const MatesNew = () => {
   const [saving, setSaving] = useState(false);
 
   const selected = pets?.find((p) => p.id === petId);
-  const eligible = selected?.vaccination_verified;
+  const isNeutered = !!selected?.neutered;
+  const eligible = selected?.vaccination_verified && !isNeutered;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,14 +80,27 @@ const MatesNew = () => {
             <SelectContent>
               {pets?.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name} {p.vaccination_verified ? "✓" : "(not verified)"}
+                  {p.name} {p.neutered ? "(neutered)" : p.vaccination_verified ? "✓" : "(not verified)"}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <p className="text-[11px] text-muted-foreground pl-1">Neutered pets and unverified pets are not eligible.</p>
         </div>
 
-        {selected && !eligible && (
+        {selected && isNeutered && (
+          <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <div className="font-medium">{selected.name} is marked as neutered</div>
+                <p className="text-muted-foreground mt-1">Neutered pets can't be listed for mating. Pick a different pet, or update this in the pet editor if it was a mistake.</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {selected && !isNeutered && !selected.vaccination_verified && (
           <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 p-4">
             <div className="flex items-start gap-3">
               <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5" />

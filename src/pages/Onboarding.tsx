@@ -514,15 +514,15 @@ const SelectField = ({ label, value, onChange, options }: {
   </div>
 );
 
-const ToggleRow = ({ label, desc, checked, onChange, card }: {
-  label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; card?: boolean;
+const ToggleRow = ({ label, desc, checked, onChange, card, disabled }: {
+  label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; card?: boolean; disabled?: boolean;
 }) => (
-  <label className={`flex items-center justify-between gap-4 ${card ? "bg-card border border-hairline rounded-2xl p-4" : ""}`}>
+  <label className={`flex items-center justify-between gap-4 ${card ? "bg-card border border-hairline rounded-2xl p-4" : ""} ${disabled ? "opacity-70" : ""}`}>
     <div className="min-w-0">
       <div className="font-medium text-sm">{label}</div>
       {desc && <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{desc}</div>}
     </div>
-    <Switch checked={checked} onCheckedChange={onChange} />
+    <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
   </label>
 );
 
