@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 import { ShieldAlert, AlertCircle, CheckCircle2 } from "lucide-react";
+import { PreCallCheck } from "@/components/vet/PreCallCheck";
+import { VisitNotesPanel } from "@/components/vet/VisitNotesPanel";
 
 export default function AppointmentRoom() {
   const { id } = useParams();
@@ -21,6 +23,7 @@ export default function AppointmentRoom() {
   const [sending, setSending] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [joiningVideo, setJoiningVideo] = useState(false);
+  const [callStartedAt, setCallStartedAt] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: appt } = useQuery({
@@ -110,18 +113,60 @@ export default function AppointmentRoom() {
     setJoiningVideo(false);
     if (error || data?.error) return toast.error(error?.message || data?.error || "Failed");
     setVideoUrl(`${data.url}?t=${data.token}`);
+    const joinedAt = Date.now();
+    setCallStartedAt(joinedAt);
+
+    // Auto-mark in_progress + stamp started_at when vet joins (or if confirmed and owner joins)
+    try {
+      const isVetJoining = appt && user?.id === appt.vet_id;
+      const updates: Record<string, any> = {};
+      if (
+        appt &&
+        (appt.status === "confirmed" || appt.status === "requested") &&
+        isVetJoining
+      ) {
+        updates.status = "in_progress";
+      }
+      if (appt && !appt.started_at) {
+        updates.started_at = new Date(joinedAt).toISOString();
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("appointments").update(updates).eq("id", id);
+      }
+    } catch (_) { /* best effort */ }
   };
 
   const isVet = appt && user?.id === appt.vet_id;
 
   const updateStatus = async (status: string) => {
     if (!id) return;
-    const { error } = await supabase.from("appointments").update({ status: status as any }).eq("id", id);
+    const updates: Record<string, any> = { status };
+    if (status === "in_progress" && appt && !appt.started_at) {
+      updates.started_at = new Date().toISOString();
+    }
+    if (status === "completed" && appt) {
+      const endIso = new Date().toISOString();
+      updates.ended_at = endIso;
+      const startMs = appt.started_at
+        ? new Date(appt.started_at).getTime()
+        : callStartedAt ?? new Date(endIso).getTime();
+      updates.actual_duration_min = Math.max(
+        0,
+        Math.round((new Date(endIso).getTime() - startMs) / 60000),
+      );
+    }
+    const { error } = await supabase.from("appointments").update(updates).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(`Marked ${status}`);
   };
 
   if (!appt) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+
+  const canShowLobby =
+    appt.mode === "video" &&
+    !videoUrl &&
+    appt.status !== "completed" &&
+    appt.status !== "cancelled";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -150,11 +195,22 @@ export default function AppointmentRoom() {
                 className="w-full h-full"
               />
             </div>
+          ) : appt.status === "completed" ? (
+            <Card className="rounded-2xl border-hairline p-4 text-center">
+              <CheckCircle2 className="h-6 w-6 text-leaf mx-auto mb-2" />
+              <div className="font-medium text-sm">Consultation completed</div>
+              {appt.actual_duration_min != null && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Call duration: {appt.actual_duration_min} min
+                </div>
+              )}
+            </Card>
           ) : (
-            <Button onClick={joinVideo} disabled={joiningVideo} className="w-full rounded-full">
-              {joiningVideo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Video className="h-4 w-4 mr-2" />}
-              Join video call
-            </Button>
+            <PreCallCheck
+              scheduledAt={appt.scheduled_at}
+              joining={joiningVideo}
+              onJoin={joinVideo}
+            />
           )}
         </div>
       )}
@@ -189,6 +245,10 @@ export default function AppointmentRoom() {
 
       {isVet && appt.pet_id && (
         <PrescriptionBuilder appointmentId={appt.id} petId={appt.pet_id} ownerId={appt.owner_id} />
+      )}
+
+      {isVet && (
+        <VisitNotesPanel appointmentId={appt.id} initialNotes={(appt as any).vet_visit_notes} />
       )}
 
       {isVet && appt.triage && (
