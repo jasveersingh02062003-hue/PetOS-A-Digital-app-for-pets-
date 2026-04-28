@@ -9,9 +9,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
-import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
+import { MissingPoster } from "@/components/missing/MissingPoster";
 
 const timeAgo = (iso: string) => {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -73,6 +74,7 @@ const MissingDetail = () => {
   }, [id, qc]);
 
   const [sightingOpen, setSightingOpen] = useState(false);
+  const [posterOpen, setPosterOpen] = useState(false);
   const [sightingPhoto, setSightingPhoto] = useState<string | null>(null);
   const [sightingNote, setSightingNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -240,7 +242,14 @@ const MissingDetail = () => {
                 }
               }}
             >
-              <Share2 className="h-4 w-4 mr-2" /> Share poster
+              <Share2 className="h-4 w-4 mr-2" /> Share link
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-2xl border-hairline"
+              onClick={() => setPosterOpen(true)}
+            >
+              <Printer className="h-4 w-4 mr-2" /> Download / print poster
             </Button>
           </div>
         )}
@@ -308,6 +317,20 @@ const MissingDetail = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <MissingPoster
+        open={posterOpen}
+        onOpenChange={setPosterOpen}
+        petName={missing.pet?.name ?? "Pet"}
+        species={missing.pet?.species}
+        breed={missing.pet?.breed}
+        city={missing.last_seen_city}
+        reward={missing.reward_inr}
+        note={missing.note}
+        photoUrl={missing.photo_url}
+        shareUrl={`${window.location.origin}/missing/${missing.id}`}
+        contactPhone={(missing as any).contact_phone || (missing.owner as any)?.phone || null}
+      />
     </div>
   );
 };
