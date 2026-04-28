@@ -3237,11 +3237,13 @@ export type Database = {
           bio: string
           breed: string
           city: string
+          date_of_birth: string
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"]
           id: string
           name: string
           owner_id: string
+          public_id: string
           species: Database["public"]["Enums"]["pet_species"]
           vaccination_verified: boolean
         }[]

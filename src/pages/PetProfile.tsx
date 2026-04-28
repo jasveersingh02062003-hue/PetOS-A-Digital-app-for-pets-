@@ -18,13 +18,25 @@ const PetProfile = () => {
     queryKey: ["pet-by-public", publicId],
     enabled: !!publicId,
     queryFn: async () => {
-      // Try as public_id first, fallback to id
+      // 1. Try the owner-only direct read first (full row, includes private fields when viewer = owner)
       const { data: byPub } = await supabase.from("pets").select("*").eq("public_id", publicId!).maybeSingle();
       if (byPub) return byPub;
       const { data: byId } = await supabase.from("pets").select("*").eq("id", publicId!).maybeSingle();
-      return byId;
+      if (byId) return byId;
+
+      // 2. Fall back to the public RPC so visitors can view other people's pets.
+      //    RLS hides direct row access from non-owners; get_pets_public is SECURITY DEFINER
+      //    and returns a safe subset (no DOB/microchip/insurance/lat/lng).
+      const { data: all } = await supabase.rpc("get_pets_public");
+      const list = (all ?? []) as any[];
+      return (
+        list.find((p) => p.public_id === publicId) ??
+        list.find((p) => p.id === publicId) ??
+        null
+      );
     },
   });
+
 
   const { data: owner } = useQuery({
     queryKey: ["pet-owner", pet?.owner_id],
