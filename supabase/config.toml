@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.pet-care-reminders]
+verify_jwt = false
+
+[functions.vaccination-reminders]
+verify_jwt = false
