@@ -2043,6 +2043,70 @@ export type Database = {
           },
         ]
       }
+      vet_answer_helpful: {
+        Row: {
+          answer_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          answer_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          answer_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_answer_helpful_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "vet_answers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vet_answers: {
+        Row: {
+          body: string
+          created_at: string
+          helpful_count: number
+          id: string
+          question_id: string
+          updated_at: string
+          vet_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          question_id: string
+          updated_at?: string
+          vet_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          question_id?: string
+          updated_at?: string
+          vet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "vet_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vet_applications: {
         Row: {
           bio: string | null
@@ -2301,6 +2365,57 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year_qualified?: number | null
+        }
+        Relationships: []
+      }
+      vet_questions: {
+        Row: {
+          answer_count: number
+          asker_id: string
+          best_answer_id: string | null
+          body: string
+          category: Database["public"]["Enums"]["vet_q_category"]
+          created_at: string
+          id: string
+          pet_id: string | null
+          photo_urls: string[]
+          species: string | null
+          status: Database["public"]["Enums"]["vet_q_status"]
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          answer_count?: number
+          asker_id: string
+          best_answer_id?: string | null
+          body: string
+          category?: Database["public"]["Enums"]["vet_q_category"]
+          created_at?: string
+          id?: string
+          pet_id?: string | null
+          photo_urls?: string[]
+          species?: string | null
+          status?: Database["public"]["Enums"]["vet_q_status"]
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          answer_count?: number
+          asker_id?: string
+          best_answer_id?: string | null
+          body?: string
+          category?: Database["public"]["Enums"]["vet_q_category"]
+          created_at?: string
+          id?: string
+          pet_id?: string | null
+          photo_urls?: string[]
+          species?: string | null
+          status?: Database["public"]["Enums"]["vet_q_status"]
+          title?: string
+          updated_at?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -2563,6 +2678,13 @@ export type Database = {
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
       verification_status: "pending" | "approved" | "rejected"
+      vet_q_category:
+        | "behavior"
+        | "nutrition"
+        | "medical"
+        | "training"
+        | "other"
+      vet_q_status: "open" | "answered" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2803,6 +2925,8 @@ export const Constants = {
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
       verification_status: ["pending", "approved", "rejected"],
+      vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
+      vet_q_status: ["open", "answered", "closed"],
     },
   },
 } as const
