@@ -1,159 +1,160 @@
 ## Goal
 
-Two upgrades that move PetOS toward a real production app:
-
-1. **Health tracking** — capture every clinically meaningful signal for a pet, time-stamped, exportable, with a unified timeline so an owner (or vet) can see the full history at a glance.
-2. **Vet portal in the same app at `/vet/*`** — doctor onboarding, patient lookup by short code OR permanent Pet ID, appointment scheduling (chat / video / in-clinic), patient list with full health timeline, vet schedule view. Free during beta.
+Ship a coherent Phase 1 social layer for PetOS combining Instagram-style aesthetic (clean profiles, grids, stories) with Strava-style substance (care streaks, milestones, health badges visible on profiles). Owners are the followable identity; pets are listed on their owner's profile.
 
 ---
 
-## Part 1 — Health tracking research & data model
+## What Users Will Get
 
-What a vet actually needs to make decisions, mapped to what we'll capture:
+### 1. Owner Profile pages — `/u/:userId`
+- Header: avatar, full name, city, bio, follower/following counts, **Follow / Unfollow** button
+- "Pets" rail — horizontal scroll of all pets owned (tap → pet profile)
+- **Strava-style stat strip**: care streak (days), total walks logged, milestones earned
+- Tabs:
+  - **Posts** — 3-column IG-style grid of all posts (any pet)
+  - **Pets** — full list with breed, age, verified badge
+  - **Achievements** — badges (vaccination ✓, 30-day streak, first mate, etc.)
 
-**Identity & baseline** (already in `pets`)
-- Name, species, breed, DOB, sex, neuter status, microchip ID *(new)*, insurance policy + provider *(new)*, primary vet *(new)*, allergies, chronic conditions, current medications *(new column)*, blood type *(new, optional)*
+### 2. Pet Profile pages — `/pet/:public_id`
+- Hero: big avatar, name, breed, age, gender, verified badge, "Owned by [owner]" link
+- Health-aesthetic strip: vaccination status, care streak for this pet, weight trend sparkline
+- 3-column post grid (filtered to posts tagged with this pet)
+- "Available for mating" CTA if discoverable
+- Share button → copies `petos.app/pet/PET-XXXXX` deep link
 
-**Vitals** (new table `vital_logs`) — timestamped, charted
-- Weight (kg), body condition score 1–9, temperature (°C), heart rate (bpm), respiratory rate (rpm), gum colour, hydration (skin tent)
+### 3. Follow system (owner-to-owner)
+- New `follows` table: `follower_id`, `following_id`
+- Follow/Unfollow button on owner profile + post cards (tap avatar → profile)
+- New **"Following" tab** on Home feed (alongside For You)
+- Notification on new follower
 
-**Vaccinations** (already exists) — add: route (SC/IM), site, reaction notes, certificate file
+### 4. Stories (24h ephemeral)
+- New `stories` table with `expires_at = created_at + 24h`
+- Top of Home: existing stories rail becomes real (currently links to health timelines)
+- Tap your avatar with `+` → camera/upload → 24h story
+- Tap any story → fullscreen viewer with progress bars, tap to advance
+- Auto-cleanup via existing cron infra (or filter by `expires_at > now()`)
 
-**Parasite prevention** (new table `parasite_preventatives`)
-- Product, type (flea/tick/heartworm/dewormer), date given, next due, batch
-
-**Medications** (new table `medication_logs`)
-- Name, dose, route, frequency, start date, end date, prescribing vet, adherence ticks per dose
-
-**Diet & nutrition** (extend existing `nutrition_logs`)
-- Food brand, kcal/day, treats, water intake (ml), appetite 1–5
-
-**Activity & behaviour** (new table `activity_logs`)
-- Walk minutes, energy 1–5, sleep hours, mood tags, stool score 1–7, urine frequency
-
-**Symptoms** (already exists) — add: photo, duration, body location
-
-**Visits & diagnostics** (already in `health_records`) — add: vet name, clinic, diagnosis ICD-style code, attached files
-
-**Reproductive** (cats/dogs) (new table `repro_logs`)
-- Heat cycle dates, mating dates, pregnancy confirmation, litter records
-
-**Lifecycle alerts** — auto-generated reminders for: vaccinations due, parasite prevention due, medication refills, weight trend warnings (>10 % loss in 30 days), missed vital checks for senior pets.
-
-**Timeline view** — single chronological feed across ALL of the above, filterable by type, date range, severity. Export as PDF for the vet.
-
----
-
-## Part 2 — Vet portal at `/vet/*`
-
-### Vet onboarding (after they apply & are approved)
-A 5-step wizard the first time they log in to `/vet`:
-1. Profile — full name, photo, languages
-2. Credentials — license number, issuing council, year qualified, license document upload
-3. Practice — clinic name, address, city, GPS, phone
-4. Specialisations (multi-select): general, surgery, dermatology, cardiology, oncology, dentistry, exotics, behaviour, nutrition, emergency
-5. Availability & consult modes — weekly recurring slots, which modes they offer (chat, video, in-clinic), price (₹0 during beta), consult duration (15/30/45 min)
-
-### Patient access — two paths
-- **One-off code**: owner taps "Share with vet" on a pet → 6-digit code valid 24h (extends existing `vet_access_grants`). Vet enters in dashboard → read-only access to that pet's full timeline for the grant period.
-- **Permanent Pet ID**: every pet gets a permanent code like `PET-A8F2Q` (new column `pets.public_id`). Vet enters it → owner gets a push/notification "Dr. X requests access to Buddy" → owner approves once → vet stays on Buddy's care team until revoked. Stored in new table `pet_care_team(pet_id, vet_id, granted_at, revoked_at)`.
-
-### Vet dashboard tabs
-1. **Today** — today's appointments, urgent consults, unread chats
-2. **Schedule** — week calendar, drag to mark availability, see booked slots, reschedule
-3. **Appointments** — list with filters (chat / video / in-clinic), upcoming / past
-4. **Patients** — every pet on their care team + recent code-grants, search by Pet ID or owner phone, click → full health timeline read-only, can append visit notes / prescription
-5. **Consults** — existing tele-vet queue (already built)
-6. **Verifications** — existing pet vaccination verification queue (already built)
-7. **Profile / Earnings** (Earnings hidden during beta)
-
-### Owner-side appointment booking
-On the existing `Vet` page (when not a vet), add:
-- Search vets by city + specialisation
-- View vet profile, ratings, available slots
-- Pick date + time + mode (chat / video / in-clinic) + which pet → creates an `appointments` row
-- Day of: chat opens automatically; video opens in-app (Daily.co room); in-clinic shows clinic address + directions
-
-### Video infrastructure
-Use **Daily.co** (free tier 10k participant-minutes/mo). Edge function `create-video-room` mints a room + short-lived tokens for vet & owner. Single secret: `DAILY_API_KEY`. We'll request it before deploying that function.
-
-### New tables (migrations)
-- `vet_profiles` — extends user_roles vet with onboarding fields (license, clinic, specialisations[], availability jsonb, consult_modes[], duration_min, price_inr)
-- `vet_availability_overrides` — date-specific blocks/holidays
-- `appointments` — vet_id, owner_id, pet_id, mode, status, scheduled_at, duration_min, video_room, notes, prescription
-- `appointment_messages` — chat thread per appointment
-- `pet_care_team` — persistent vet↔pet links
-- `vital_logs`, `parasite_preventatives`, `medication_logs`, `activity_logs`, `repro_logs` — health tables above
-- Add columns: `pets.public_id`, `pets.microchip_id`, `pets.insurance_provider`, `pets.insurance_policy`, `pets.current_medications`, `pets.primary_vet_id`
-
-All with strict RLS: owner full access to their pet rows; vets see only pets where they have an active grant or care-team link or appointment.
+### 5. Strava-substance touches
+- **Care streak badge** visible on every owner profile + every post card avatar
+- **Milestones** auto-awarded: "First post", "7-day streak", "First vaccination logged", "First playdate" — shown as small chips on profile
+- Replaces vanity metrics with care metrics where it matters
 
 ---
 
-## Part 3 — File-level changes
+## Technical Plan
 
-**New pages**
-- `src/pages/vet/Onboarding.tsx`
-- `src/pages/vet/Dashboard.tsx` (tabs: Today, Schedule, Appointments, Patients, Consults, Verifications)
-- `src/pages/vet/Schedule.tsx`
-- `src/pages/vet/PatientLookup.tsx` (enter code or Pet ID)
-- `src/pages/vet/PatientDetail.tsx` (read-only timeline, add visit note, write prescription)
-- `src/pages/vet/AppointmentRoom.tsx` (chat + video iframe)
-- `src/pages/BookAppointment.tsx` (owner-side flow)
-- `src/pages/health/Timeline.tsx` (unified pet timeline + PDF export)
+### Database migrations
 
-**New components**
-- `src/components/health/VitalsCard.tsx`, `MedicationTracker.tsx`, `ParasiteCard.tsx`, `ActivityChart.tsx`, `WeightTrendChart.tsx` (recharts)
-- `src/components/health/PetIdCard.tsx` (shows permanent Pet ID + QR)
-- `src/components/vet/AvailabilityGrid.tsx`, `AppointmentCard.tsx`, `VideoFrame.tsx`
+```sql
+-- 1. Owner-to-owner follows
+create table public.follows (
+  follower_id uuid not null references auth.users(id) on delete cascade,
+  following_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  check (follower_id <> following_id)
+);
+alter table public.follows enable row level security;
+-- policies: select all authed; insert/delete own (where follower_id = auth.uid())
 
-**Edge functions**
-- `create-video-room` — mints Daily.co room
-- `request-pet-access` — vet enters Pet ID → notifies owner
-- `generate-pet-id` — backfills `public_id` on existing pets
-- `export-pet-pdf` — generates printable health summary
+-- 2. Stories
+create table public.stories (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null,
+  pet_id uuid,
+  image_url text not null,
+  caption text,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default (now() + interval '24 hours'),
+  view_count int not null default 0
+);
+alter table public.stories enable row level security;
+-- policies: select where expires_at > now(); insert/delete own
 
-**Edits**
-- `src/pages/Health.tsx` — add Vitals / Meds / Parasite / Activity tabs, "Pet ID" button, "Timeline" entry
-- `src/pages/Vet.tsx` — split: vets routed to new dashboard, owners see vet-search/booking
-- `src/App.tsx` — add new routes; vet onboarding gate
-- `src/pages/Onboarding.tsx` — capture microchip + insurance optionally
+create table public.story_views (
+  story_id uuid not null,
+  viewer_id uuid not null,
+  viewed_at timestamptz not null default now(),
+  primary key (story_id, viewer_id)
+);
+
+-- 3. Achievements (lightweight, derived where possible)
+create table public.achievements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  pet_id uuid,
+  kind text not null,  -- 'first_post','streak_7','streak_30','vaccinated','first_mate', etc.
+  earned_at timestamptz not null default now(),
+  unique (user_id, pet_id, kind)
+);
+alter table public.achievements enable row level security;
+-- policies: select all authed; insert via SECURITY DEFINER trigger only
+
+-- 4. Realtime
+alter publication supabase_realtime add table public.follows;
+alter publication supabase_realtime add table public.stories;
+
+-- 5. Notification trigger on new follow
+-- on insert into follows -> notify_user(following_id, 'new_follower', ...)
+
+-- 6. Achievement triggers
+-- on first post -> insert achievement 'first_post'
+-- on activity_log streak -> handled by daily edge function or computed view
+
+-- 7. Storage bucket
+-- create 'stories' public bucket (mirrors 'posts')
+```
+
+### New components
+
+- `src/pages/UserProfile.tsx` — `/u/:userId`
+- `src/pages/PetProfile.tsx` — `/pet/:publicId`
+- `src/components/social/FollowButton.tsx` — handles follow/unfollow + optimistic UI
+- `src/components/social/StoryRail.tsx` — replaces current static stories on Home
+- `src/components/social/StoryViewer.tsx` — fullscreen modal with progress bars + tap-to-advance
+- `src/components/social/StoryComposer.tsx` — image picker, caption, upload to `stories` bucket
+- `src/components/social/PostGrid.tsx` — 3-col square grid for profiles
+- `src/components/social/AchievementChips.tsx` — horizontal scrolling badges
+- `src/components/social/CareStreakBadge.tsx` — small streak pill (reusable on avatars)
+- `src/components/social/StatStrip.tsx` — followers / following / streak / posts row
+
+### Updated files
+
+- `src/App.tsx` — add `/u/:userId` and `/pet/:publicId` routes
+- `src/components/PostFeed.tsx` — add `scope: "following"` filter; make avatars link to `/u/:userId`; tagged pet name links to `/pet/:publicId`
+- `src/pages/Home.tsx` — add Following / For You tabs; replace stub stories with real `<StoryRail />`; add `<StoryComposer />` trigger on own avatar
+- `src/pages/Discover.tsx` — add "People to follow" rail (suggested owners by city/breed overlap)
+- `src/pages/Profile.tsx` — turn into a redirect to `/u/:currentUserId` so own profile uses the same component
+- `src/hooks/useFollows.tsx` (new) — `useIsFollowing(userId)`, `useFollow()`, `useUnfollow()`, `useFollowerCount(userId)`
+- `src/hooks/useStories.tsx` (new) — fetch active stories grouped by author
+- `src/hooks/useAchievements.tsx` (new)
+
+### Hook into existing systems
+
+- Notifications: extend `notify_user` calls — `'new_follower'`, `'achievement_earned'`
+- Reuse existing `posts` storage bucket pattern for `stories` bucket
+- Reuse existing `ReportButton` on stories and profiles
 
 ---
 
-## Part 4 — Build order (so you get value fast)
+## Out of Scope (Saved for Phase 2+)
 
-Phase A — Foundations (one shot)
-1. DB migrations: all new tables + columns + RLS + `public_id` backfill
-2. Pet ID card + Timeline page
-
-Phase B — Health depth
-3. Vitals + weight chart, Medication tracker, Parasite prevention, Activity, expanded symptom logging
-4. PDF export edge function
-
-Phase C — Vet portal
-5. Vet onboarding wizard
-6. Vet dashboard (Today + Schedule + Patients + reuse Consults/Verifications)
-7. Patient lookup (code + Pet ID approval flow)
-
-Phase D — Appointments
-8. Owner booking flow + appointment table
-9. Chat thread per appointment
-10. Daily.co video integration (will request `DAILY_API_KEY` at this step)
-11. In-clinic mode with directions
-
-Phase E — Polish
-12. Reminders cron (extend `vaccination-reminders` to cover meds + parasite)
-13. Empty states, loading skeletons, vet portal walkthrough coach
+- Groups (breed/city/interest)
+- Short-form video / Reels
+- Collab posts (tag a playdate buddy on one post)
+- Daily Pet Moment prompt (BeReal-style)
+- Verified Vet Q&A feed
+- Algorithmic For You ranking (Phase 1 stays chronological + simple "Following")
 
 ---
 
-## Risks & notes
+## Risks / Decisions Made
 
-- **Daily.co key** required before Phase D step 10 — we'll prompt then.
-- Existing `vet_access_grants` keeps working; new `pet_care_team` is additive.
-- During beta, pricing fields default to ₹0 — Stripe wiring stays dormant; we already have it for the future Plus plan.
-- Each table gets RLS day-one; no client-trusted role checks.
-- Heavy pages (Patients list, Timeline) use cursor pagination from the start.
+- **Pets are not directly followable** — keeps follow graph simple; users follow owners and see all their pets
+- **Stories use storage + DB row, no separate signed URLs** — public bucket, same as posts
+- **Achievements are stored, not computed** — faster reads, awarded by triggers/edge functions
+- **No public like counts on health-related posts** — already aligned with earlier ethics note (Strava model, not TikTok)
+- **First-load cost**: ~6 new pages/components, 1 migration with 4 tables. Estimated 1 build cycle.
 
-Reply **yes** to start with **Phase A**. We'll ship phases sequentially and check in between each.
+After approval I will run the migration, create the components, wire up routes, and ensure realtime + notifications work end-to-end.

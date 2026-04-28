@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
+import { FollowButton } from "./social/FollowButton";
 
 export type FeedPost = {
   id: string;
@@ -23,15 +25,23 @@ export type FeedPost = {
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
-export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending"; emptyState?: ReactNode }) => {
+export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following"; emptyState?: ReactNode }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["feed", scope],
+    queryKey: ["feed", scope, user?.id ?? null],
     queryFn: async () => {
+      let followingIds: string[] | null = null;
+      if (scope === "following") {
+        if (!user) return [];
+        const { data: f } = await supabase.from("follows").select("following_id").eq("follower_id", user.id);
+        followingIds = (f ?? []).map((r: any) => r.following_id);
+        if (!followingIds.length) return [];
+      }
       let q = supabase.from("posts").select("*");
+      if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
         : q.order("created_at", { ascending: false }).limit(50);
@@ -135,16 +145,21 @@ const PostCard = ({ post, liked, onLike, onComment }: {
   return (
     <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
       <div className="flex items-center gap-3 p-4">
-        <Avatar className="h-9 w-9">
-          <AvatarImage src={displayImg} alt={displayName} />
-          <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
-        </Avatar>
+        <Link to={`/u/${post.author_id}`} className="shrink-0">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={displayImg} alt={displayName} />
+            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate">{displayName}</div>
+          <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate block hover:underline">
+            {displayName}
+          </Link>
           <div className="text-[11px] text-muted-foreground">
             {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
           </div>
         </div>
+        <FollowButton targetId={post.author_id} />
       </div>
 
       {post.image_url && (

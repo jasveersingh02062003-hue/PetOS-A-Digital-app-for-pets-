@@ -5,7 +5,9 @@ import { PostFeed } from "@/components/PostFeed";
 import { MissingStrip } from "@/components/MissingStrip";
 import { DailyTipCard } from "@/components/DailyTipCard";
 import { EmptyState } from "@/components/EmptyState";
-import { Heart, Plus } from "lucide-react";
+import { StoryRail } from "@/components/social/StoryRail";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Heart, Users } from "lucide-react";
 
 const Home = () => {
   const nav = useNavigate();
@@ -24,29 +26,12 @@ const Home = () => {
         <ComposerButton variant="icon" />
       </header>
 
-      {/* Stories rail */}
-      {hasPets && (
-        <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 py-3">
-          {pets!.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => nav(`/health/${p.id}/timeline`)}
-              className="flex flex-col items-center gap-1.5 shrink-0"
-            >
-              <div className="h-16 w-16 rounded-full ring-2 ring-primary/30 ring-offset-2 ring-offset-background bg-muted overflow-hidden flex items-center justify-center">
-                {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display text-xl text-ink-soft">{p.name[0]}</span>}
-              </div>
-              <span className="text-[11px] text-muted-foreground max-w-[64px] truncate">{p.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <StoryRail />
 
       <div className="mt-2 mb-3">
         <MissingStrip />
       </div>
 
-      {/* Daily care tip — seeded so the home is never empty */}
       <div className="mt-2 mb-4">
         <DailyTipCard />
       </div>
@@ -56,25 +41,46 @@ const Home = () => {
       </div>
 
       <section className="pb-10">
-        <h2 className="font-display text-xl mb-3">Feed</h2>
-        <PostFeed
-          scope="all"
-          emptyState={
-            <EmptyState
-              icon={Heart}
-              title="Your feed starts with a moment"
-              description={
-                hasPets
-                  ? `Share ${pets![0].name}'s day — a photo, a milestone, or a question. Other pet parents will see it.`
-                  : "Add your first pet to start sharing photos and following other pets nearby."
+        <Tabs defaultValue="for-you">
+          <TabsList className="grid grid-cols-2 w-full rounded-xl mb-3">
+            <TabsTrigger value="for-you">For you</TabsTrigger>
+            <TabsTrigger value="following"><Users className="h-3.5 w-3.5 mr-1.5" /> Following</TabsTrigger>
+          </TabsList>
+          <TabsContent value="for-you">
+            <PostFeed
+              scope="all"
+              emptyState={
+                <EmptyState
+                  icon={Heart}
+                  title="Your feed starts with a moment"
+                  description={
+                    hasPets
+                      ? `Share ${pets![0].name}'s day — a photo, a milestone, or a question.`
+                      : "Add your first pet to start sharing photos and following other pets."
+                  }
+                  ctaLabel={hasPets ? "Share a moment" : "Add your first pet"}
+                  onCta={() => nav(hasPets ? "/" : "/onboarding")}
+                  secondaryLabel="Explore Discover"
+                  onSecondary={() => nav("/discover")}
+                />
               }
-              ctaLabel={hasPets ? "Share a moment" : "Add your first pet"}
-              onCta={() => nav(hasPets ? "/" : "/onboarding")}
-              secondaryLabel="Explore Discover"
-              onSecondary={() => nav("/discover")}
             />
-          }
-        />
+          </TabsContent>
+          <TabsContent value="following">
+            <PostFeed
+              scope="following"
+              emptyState={
+                <EmptyState
+                  icon={Users}
+                  title="Follow other pet parents"
+                  description="Tap any avatar in the feed to visit their profile and follow."
+                  ctaLabel="Find people"
+                  onCta={() => nav("/discover")}
+                />
+              }
+            />
+          </TabsContent>
+        </Tabs>
       </section>
 
       <ComposerButton variant="fab" />
@@ -83,3 +89,4 @@ const Home = () => {
 };
 
 export default Home;
+
