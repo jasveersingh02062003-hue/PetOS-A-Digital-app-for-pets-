@@ -61,6 +61,7 @@ const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
 const MissingDetail = lazy(() => import("./pages/MissingDetail"));
 const MissingNew = lazy(() => import("./pages/MissingNew"));
+const NewLitter = lazy(() => import("./pages/NewLitter"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
