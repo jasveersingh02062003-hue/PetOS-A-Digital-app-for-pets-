@@ -101,6 +101,7 @@ const Shop = () => {
             <div className="p-3 flex-1 flex flex-col">
               <div className="text-sm font-medium line-clamp-2 leading-tight">{p.title}</div>
               <div className="text-xs text-muted-foreground capitalize mt-0.5">{p.category}</div>
+              <div className="mt-1"><SubjectRating type="product" id={p.id} size="sm" /></div>
               <div className="mt-auto pt-2 flex items-center justify-between">
                 <div className="font-display text-base">₹{p.price_inr}</div>
                 <Button
