@@ -3,6 +3,7 @@
 // that returns a structured severity classification via tool-calling.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logEdgeError } from "../_shared/logError.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -197,6 +198,7 @@ ${petContext}`;
     });
   } catch (e) {
     console.error("chat error:", e);
+    await logEdgeError("chat", e);
     return jsonErr(e instanceof Error ? e.message : "Unknown error", 500);
   }
 });
