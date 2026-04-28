@@ -120,7 +120,7 @@ export default function AppointmentRoom() {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">
-            {appt.pets?.name || "Appointment"}
+            {appt.pet?.name || "Appointment"}
           </div>
           <div className="text-xs text-muted-foreground">
             {appt.mode} · {new Date(appt.scheduled_at).toLocaleString()}
@@ -148,7 +148,7 @@ export default function AppointmentRoom() {
         </div>
       )}
 
-      {appt.mode === "clinic" && (
+      {appt.mode === "in_clinic" && (
         <Card className="mx-4 mt-3 p-4 rounded-2xl border-hairline">
           <div className="flex items-start gap-3">
             <MapPin className="h-5 w-5 mt-0.5 text-primary" />
