@@ -53,6 +53,9 @@ import DeleteAccount from "./pages/DeleteAccount";
 import AdminErrors from "./pages/admin/Errors";
 import Welcome from "./pages/Welcome";
 import Timeline from "./pages/health/Timeline";
+import VetOnboarding from "./pages/vet/Onboarding";
+import VetDashboard from "./pages/vet/Dashboard";
+import BookAppointment from "./pages/BookAppointment";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
@@ -97,9 +100,12 @@ const App = () => (
               <Route path="/legal/refunds" element={<Refunds />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
-              <Route path="/vet" element={<Vet />} />
+              <Route path="/vet" element={<VetDashboard />} />
+              <Route path="/vet/legacy" element={<Vet />} />
               <Route path="/vet/apply" element={<VetApply />} />
+              <Route path="/vet/onboarding" element={<VetOnboarding />} />
               <Route path="/vet/consult/:id" element={<VetConsult />} />
+              <Route path="/book-vet" element={<BookAppointment />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/settings" element={<Settings />} />
