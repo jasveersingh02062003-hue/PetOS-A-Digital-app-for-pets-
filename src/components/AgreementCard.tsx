@@ -90,6 +90,7 @@ export const AgreementCard = ({
   const fullySigned = mySig && theirSig;
 
   return (
+    <>
     <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
@@ -109,7 +110,7 @@ export const AgreementCard = ({
             <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(!!v)} className="mt-0.5" />
             <span>I have read and agree to these terms.</span>
           </label>
-          <Button onClick={sign} disabled={signing || !name.trim() || !agreed} size="lg" className="w-full rounded-xl">
+          <Button onClick={startSign} disabled={signing || !name.trim() || !agreed} size="lg" className="w-full rounded-xl">
             {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign agreement"}
           </Button>
         </div>
@@ -125,6 +126,14 @@ export const AgreementCard = ({
         </Card>
       )}
     </Card>
+    <PaywallSheet
+      open={paywallOpen}
+      onOpenChange={setPaywallOpen}
+      kind="agreement"
+      refId={requestId}
+      onConfirmed={finishSign}
+    />
+    </>
   );
 };
 

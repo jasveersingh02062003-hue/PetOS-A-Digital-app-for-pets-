@@ -39,7 +39,7 @@ const MatesNew = () => {
     setPaywallOpen(true);
   };
 
-  const finishSubmit = async () => {
+  const finishSubmit = async (): Promise<void> => {
     if (!selected) return;
     setSaving(true);
     if (!selected.discoverable_for_mating || selected.discoverable_for_mating !== discoverable) {
@@ -59,8 +59,8 @@ const MatesNew = () => {
     });
     setSaving(false);
     if (error) {
-      if (error.message.includes("duplicate")) return toast.error("This pet already has a listing");
-      return toast.error(error.message);
+      if (error.message.includes("duplicate")) { toast.error("This pet already has a listing"); return; }
+      toast.error(error.message); return;
     }
     toast.success("Listing live");
     nav("/discover");
