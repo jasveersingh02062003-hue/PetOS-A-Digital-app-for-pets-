@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Heart, Activity } from "lucide-react";
+import { Plus, Heart, Activity, PawPrint } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import { QuickLogSheet } from "@/components/health/QuickLogSheet";
 
@@ -41,12 +41,22 @@ export const ContextualFab = ({ onEmergency }: { onEmergency: () => void }) => {
   } else if (path === "/mates" || path.startsWith("/mates/")) {
     // Hide on sub-routes that are themselves creation/detail screens
     if (path === "/mates") {
-      config = {
-        icon: Heart,
-        label: "New mating listing",
-        tone: "bg-coral text-coral-foreground",
-        onPress: () => nav("/mates/new"),
-      };
+      const tab = new URLSearchParams(loc.search).get("tab");
+      if (tab === "adopt") {
+        config = {
+          icon: PawPrint,
+          label: "List a pet for adoption",
+          tone: "bg-leaf text-white",
+          onPress: () => nav("/mates/adopt/new"),
+        };
+      } else {
+        config = {
+          icon: Heart,
+          label: "New mating listing",
+          tone: "bg-coral text-coral-foreground",
+          onPress: () => nav("/mates/new"),
+        };
+      }
     }
   } else if (path === "/health") {
     config = {

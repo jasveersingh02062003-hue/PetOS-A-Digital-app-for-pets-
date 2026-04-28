@@ -1429,6 +1429,106 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_listings: {
+        Row: {
+          active: boolean
+          age_weeks: number
+          breed: string | null
+          breeder_cert_url: string | null
+          city: string | null
+          created_at: string
+          description: string | null
+          fee_inr: number | null
+          gender: string | null
+          id: string
+          lat: number | null
+          listing_type: Database["public"]["Enums"]["pet_listing_type"]
+          lng: number | null
+          microchip_id: string | null
+          owner_id: string
+          parents_info: Json | null
+          pet_id: string | null
+          photos: string[]
+          species: string | null
+          status: Database["public"]["Enums"]["pet_listing_status"]
+          title: string
+          updated_at: string
+          vaccination_doc_url: string
+        }
+        Insert: {
+          active?: boolean
+          age_weeks: number
+          breed?: string | null
+          breeder_cert_url?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          fee_inr?: number | null
+          gender?: string | null
+          id?: string
+          lat?: number | null
+          listing_type: Database["public"]["Enums"]["pet_listing_type"]
+          lng?: number | null
+          microchip_id?: string | null
+          owner_id: string
+          parents_info?: Json | null
+          pet_id?: string | null
+          photos?: string[]
+          species?: string | null
+          status?: Database["public"]["Enums"]["pet_listing_status"]
+          title: string
+          updated_at?: string
+          vaccination_doc_url: string
+        }
+        Update: {
+          active?: boolean
+          age_weeks?: number
+          breed?: string | null
+          breeder_cert_url?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          fee_inr?: number | null
+          gender?: string | null
+          id?: string
+          lat?: number | null
+          listing_type?: Database["public"]["Enums"]["pet_listing_type"]
+          lng?: number | null
+          microchip_id?: string | null
+          owner_id?: string
+          parents_info?: Json | null
+          pet_id?: string | null
+          photos?: string[]
+          species?: string | null
+          status?: Database["public"]["Enums"]["pet_listing_status"]
+          title?: string
+          updated_at?: string
+          vaccination_doc_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_listings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pet_listings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_listings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
@@ -1830,6 +1930,8 @@ export type Database = {
           avatar_url_full: string | null
           avatar_url_thumb: string | null
           bio: string | null
+          breeder_cert_url: string | null
+          breeder_verified: boolean
           city: string | null
           created_at: string
           emergency_vet: Json | null
@@ -1853,6 +1955,8 @@ export type Database = {
           avatar_url_full?: string | null
           avatar_url_thumb?: string | null
           bio?: string | null
+          breeder_cert_url?: string | null
+          breeder_verified?: boolean
           city?: string | null
           created_at?: string
           emergency_vet?: Json | null
@@ -1876,6 +1980,8 @@ export type Database = {
           avatar_url_full?: string | null
           avatar_url_thumb?: string | null
           bio?: string | null
+          breeder_cert_url?: string | null
+          breeder_verified?: boolean
           city?: string | null
           created_at?: string
           emergency_vet?: Json | null
@@ -3501,6 +3607,12 @@ export type Database = {
         | "agreement"
         | "missing_listing"
       pet_gender: "male" | "female"
+      pet_listing_status:
+        | "active"
+        | "pending_review"
+        | "taken_down"
+        | "completed"
+      pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
       product_category:
         | "food"
@@ -3746,6 +3858,13 @@ export const Constants = {
         "missing_listing",
       ],
       pet_gender: ["male", "female"],
+      pet_listing_status: [
+        "active",
+        "pending_review",
+        "taken_down",
+        "completed",
+      ],
+      pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
       product_category: [
         "food",

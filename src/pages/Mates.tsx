@@ -1,13 +1,21 @@
-import { useNavigate } from "react-router-dom";
-import { Heart, Plus, Sparkles, ShieldCheck } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Heart, Plus, Sparkles, ShieldCheck, PawPrint } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { MatesGrid } from "@/components/MatesGrid";
+import { AdoptGrid } from "@/components/AdoptGrid";
 import { Button } from "@/components/ui/button";
 import { useSeo } from "@/hooks/useSeo";
 
 const Mates = () => {
   const nav = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "adopt" ? "adopt" : "mating";
+  const setTab = (next: "mating" | "adopt") => {
+    const sp = new URLSearchParams(searchParams);
+    if (next === "mating") sp.delete("tab"); else sp.set("tab", "adopt");
+    setSearchParams(sp, { replace: true });
+  };
   const { data: pets } = usePets();
   const { data: profile } = useProfile();
   const myPet = pets?.[0];
@@ -25,13 +33,42 @@ const Mates = () => {
           <span className="text-[11px] uppercase tracking-[0.18em] font-semibold">Mates</span>
         </div>
         <h1 className="font-display text-[28px] leading-tight">
-          Find your pet's perfect match
+          {tab === "mating" ? "Find your pet's perfect match" : "Adopt or rehome a pet"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Verified pets, vaccination-checked, in {profile?.city || "your city"}.
+          {tab === "mating"
+            ? `Verified pets, vaccination-checked, in ${profile?.city || "your city"}.`
+            : "Help a pet find a loving family. Always meet in person."}
         </p>
       </header>
 
+      {/* Sub-tabs */}
+      <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/50 mb-4">
+        <button
+          onClick={() => setTab("mating")}
+          className={`h-10 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition ${tab === "mating" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}
+        >
+          <Heart className="h-4 w-4" /> Mating
+        </button>
+        <button
+          onClick={() => setTab("adopt")}
+          className={`h-10 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition ${tab === "adopt" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}
+        >
+          <PawPrint className="h-4 w-4" /> Adopt & Rehome
+        </button>
+      </div>
+
+      {tab === "mating" ? (
+        <MatingPane myPet={myPet} nav={nav} />
+      ) : (
+        <AdoptGrid />
+      )}
+    </div>
+  );
+};
+
+const MatingPane = ({ myPet, nav }: { myPet: any; nav: any }) => (
+  <>
       {/* Your pet hero */}
       {myPet && (
         <motion.div
@@ -91,9 +128,8 @@ const Mates = () => {
 
       <h2 className="font-display text-lg mb-3 mt-2">Browse listings</h2>
       <MatesGrid />
-    </div>
-  );
-};
+  </>
+);
 
 const FeatureChip = ({ icon: Icon, title, tone }: { icon: any; title: string; tone: string }) => {
   const tones: Record<string, string> = {
