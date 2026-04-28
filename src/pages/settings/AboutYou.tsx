@@ -32,9 +32,12 @@ const AboutYou = () => {
     setTemp(u.temp ?? "c");
   }, [profile]);
 
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const detectCity = async () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
+      setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       try {
         const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
         const j = await r.json();
@@ -47,10 +50,9 @@ const AboutYou = () => {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      full_name: fullName, city, language,
-      units: { weight, temp },
-    }).eq("id", user.id);
+    const patch: any = { full_name: fullName, city, language, units: { weight, temp } };
+    if (coords) { patch.lat = coords.lat; patch.lng = coords.lng; }
+    const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["profile"] });
