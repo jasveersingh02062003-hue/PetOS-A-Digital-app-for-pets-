@@ -107,6 +107,8 @@ const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
+const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
+const ServiceCategoryPage = lazy(() => import("./pages/ServiceCategory"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -195,6 +197,8 @@ const App = () => (
               <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
               <Route path="/services/new" element={<ServiceNew />} />
               <Route path="/services/manage" element={<ServicesManage />} />
+              <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
+              <Route path="/discover/services" element={<DiscoverServices />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/shop/new" element={<ShopNew />} />
