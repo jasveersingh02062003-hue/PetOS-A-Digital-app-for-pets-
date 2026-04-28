@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut, Settings, Plus, AlertTriangle, ShieldCheck, ChevronRight, Search,
   Camera, Share2, Edit3, Grid3x3, Tag as TagIcon, PawPrint, Heart, Sparkles,
+  ShoppingBag, Gift, Briefcase, Stethoscope, Calendar, Wrench, Trophy,
+  Award, Flame, Crown,
 } from "lucide-react";
 import { PlusBadge } from "@/components/PlusBadge";
 import { MissingCreateSheet } from "@/components/MissingCreateSheet";
@@ -61,6 +63,21 @@ const Profile = () => {
         followers: followers.count ?? 0,
         following: following.count ?? 0,
       };
+    },
+  });
+
+  const { data: achievements } = useQuery({
+    queryKey: ["profile-achievements", user?.id],
+    enabled: !!user?.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("achievements")
+        .select("kind, earned_at, pet_id")
+        .eq("user_id", user!.id)
+        .order("earned_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
     },
   });
 
