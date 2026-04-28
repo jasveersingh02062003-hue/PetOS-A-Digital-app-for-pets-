@@ -1,0 +1,38 @@
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BottomNav } from "./BottomNav";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { EmergencySheet } from "./EmergencySheet";
+
+const PUBLIC_ROUTES = ["/auth"];
+
+export const AppShell = () => {
+  const { user, loading } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const loc = useLocation();
+  const nav = useNavigate();
+  const [emergencyOpen, setEmergencyOpen] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    const isPublic = PUBLIC_ROUTES.some((p) => loc.pathname.startsWith(p));
+    if (!user && !isPublic) {
+      nav("/auth", { replace: true });
+      return;
+    }
+    if (user && !profileLoading && profile && !profile.onboarded && !loc.pathname.startsWith("/onboarding")) {
+      nav("/onboarding", { replace: true });
+    }
+  }, [user, loading, profile, profileLoading, loc.pathname, nav]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="pad-bottom-nav animate-fade-in">
+        <Outlet />
+      </main>
+      <BottomNav onEmergency={() => setEmergencyOpen(true)} />
+      <EmergencySheet open={emergencyOpen} onOpenChange={setEmergencyOpen} />
+    </div>
+  );
+};
