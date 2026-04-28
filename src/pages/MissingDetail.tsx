@@ -184,7 +184,24 @@ const MissingDetail = () => {
           )}
         </Card>
 
-        {!isResolved && (
+        {(missing.last_seen_lat && missing.last_seen_lng) && (() => {
+          const seenMarkers: MapMarker[] = [
+            { id: "last", lat: Number(missing.last_seen_lat), lng: Number(missing.last_seen_lng), color: "danger", title: "Last seen here" },
+            ...(sightings ?? []).filter((s: any) => s.lat && s.lng).map((s: any) => ({
+              id: s.id, lat: Number(s.lat), lng: Number(s.lng), color: "success" as const,
+              title: "Sighting", description: s.note ?? new Date(s.created_at).toLocaleString(),
+            })),
+          ];
+          return (
+            <LeafletMap
+              center={[Number(missing.last_seen_lat), Number(missing.last_seen_lng)]}
+              zoom={14}
+              height="280px"
+              markers={seenMarkers}
+            />
+          );
+        })()}
+
           <div className="space-y-2">
             {!isOwner && (
               <Button className="w-full h-12 rounded-2xl" onClick={() => setSightingOpen(true)}>
