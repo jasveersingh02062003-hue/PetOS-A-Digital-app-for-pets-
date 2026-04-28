@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { PlusBadge } from "@/components/PlusBadge";
 import { MissingCreateSheet } from "@/components/MissingCreateSheet";
+import { SmartImage } from "@/components/SmartImage";
+import { ProfileSkeleton, GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { differenceInMonths, differenceInYears } from "date-fns";
 
 const Profile = () => {
@@ -22,6 +24,8 @@ const Profile = () => {
   const { data: tier } = useTier();
   const [isStaff, setIsStaff] = useState(false);
   const [reportingPet, setReportingPet] = useState<any | null>(null);
+
+  const initialLoading = !profile && !pets;
 
   // Counters: posts / followers / following
   const { data: counts } = useQuery({
@@ -59,6 +63,9 @@ const Profile = () => {
         </Button>
       </header>
 
+      {initialLoading && <ProfileSkeleton />}
+      {!initialLoading && (
+      <>
       {/* COVER + AVATAR */}
       <div className="relative rounded-3xl overflow-hidden card-elev mb-4 bg-card border border-hairline">
         <div className="h-24 bg-gradient-to-br from-primary/30 via-coral/20 to-amber/20" />
@@ -66,7 +73,7 @@ const Profile = () => {
           <div className="flex items-end justify-between">
             <div className="h-[72px] w-[72px] rounded-full bg-card ring-4 ring-card overflow-hidden grid place-items-center">
               {(profile as any)?.avatar_url ? (
-                <img src={(profile as any).avatar_url} alt="" className="w-full h-full object-cover" />
+                <SmartImage src={(profile as any).avatar_url} alt="" aspect="1/1" priority className="w-full h-full" />
               ) : (
                 <div className="w-full h-full bg-primary-soft grid place-items-center font-display text-2xl text-primary">
                   {profile?.full_name?.[0]?.toUpperCase() || "·"}
@@ -127,7 +134,7 @@ const Profile = () => {
               <div className="p-4 flex items-center gap-3">
                 <div className="h-14 w-14 rounded-2xl bg-muted overflow-hidden grid place-items-center shrink-0">
                   {p.avatar_url
-                    ? <img src={p.avatar_url} alt={p.name} className="h-full w-full object-cover" />
+                    ? <SmartImage src={p.avatar_url} alt={p.name} aspect="1/1" className="h-full w-full" />
                     : <span className="font-display text-xl text-primary">{p.name[0]}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -210,6 +217,8 @@ const Profile = () => {
           onOpenChange={(o) => !o && setReportingPet(null)}
           pet={reportingPet}
         />
+      )}
+      </>
       )}
     </div>
   );
