@@ -61,18 +61,24 @@ const Admin = () => {
       </header>
 
       <main className="container-app py-6">
-        <Tabs defaultValue="reports" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl">
-            <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" />Reports</TabsTrigger>
-            <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" />Vets</TabsTrigger>
-            <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" />Verify</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid grid-cols-7 w-full bg-muted rounded-xl">
+            <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
           </TabsList>
 
+          <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
           <TabsContent value="reports" className="mt-4"><ReportsTab /></TabsContent>
           <TabsContent value="vets" className="mt-4"><VetAppsTab /></TabsContent>
           <TabsContent value="providers" className="mt-4"><ProvidersTab /></TabsContent>
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
+          <TabsContent value="broadcast" className="mt-4"><BroadcastTab /></TabsContent>
+          <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
         </Tabs>
       </main>
     </div>
