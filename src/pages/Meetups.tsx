@@ -4,6 +4,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { MeetupCard } from "@/components/social/MeetupCard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
+import { MeetupListSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { ArrowLeft, CalendarPlus, Users } from "lucide-react";
 
 const Meetups = () => {
@@ -13,6 +14,7 @@ const Meetups = () => {
   const { data: allMeetups } = useUpcomingMeetups();
 
   const list = (cityMeetups && cityMeetups.length > 0) ? cityMeetups : allMeetups;
+  const loading = cityMeetups === undefined && allMeetups === undefined;
 
   return (
     <div className="container-app pad-top-safe pb-16">
@@ -31,6 +33,10 @@ const Meetups = () => {
       )}
 
       <div className="space-y-3">
+        {loading ? (
+          <MeetupListSkeleton count={4} />
+        ) : (
+        <>
         {(list ?? []).map((m) => <MeetupCard key={m.id} meetup={m} />)}
         {(!list || list.length === 0) && (
           <EmptyState
@@ -40,6 +46,8 @@ const Meetups = () => {
             ctaLabel="Host a meetup"
             onCta={() => nav("/meetups/new")}
           />
+        )}
+        </>
         )}
       </div>
     </div>

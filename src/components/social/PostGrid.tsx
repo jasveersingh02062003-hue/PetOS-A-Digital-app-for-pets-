@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SmartImage } from "@/components/SmartImage";
 import { ImageIcon } from "lucide-react";
 
 export const PostGrid = ({
@@ -26,7 +27,7 @@ export const PostGrid = ({
 
       let q = supabase
         .from("posts")
-        .select("id, image_url, caption, like_count, author_id")
+        .select("id, image_url, image_url_thumb, image_url_feed, image_url_full, caption, like_count, author_id")
         .not("image_url", "is", null)
         .order("created_at", { ascending: false })
         .limit(60);
@@ -66,7 +67,14 @@ export const PostGrid = ({
     <div className="grid grid-cols-3 gap-0.5">
       {data.map((p: any) => (
         <div key={p.id} className="aspect-square bg-muted overflow-hidden relative">
-          <img src={p.image_url} alt={p.caption ?? ""} className="w-full h-full object-cover" loading="lazy" />
+          <SmartImage
+            src={p.image_url}
+            variants={{ thumb: p.image_url_thumb, feed: p.image_url_feed, full: p.image_url_full }}
+            variant="thumb"
+            alt={p.caption ?? ""}
+            aspect="1/1"
+            className="w-full h-full"
+          />
           {authorId && p.author_id !== authorId && (
             <div className="absolute top-1 right-1 bg-background/80 text-[9px] font-semibold px-1.5 py-0.5 rounded-full">
               COLLAB

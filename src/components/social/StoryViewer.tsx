@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { markStoryViewed, type StoryGroup } from "@/hooks/useStories";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { SmartImage } from "@/components/SmartImage";
 import { X } from "lucide-react";
 
 const STORY_DURATION_MS = 5000;
@@ -111,7 +112,13 @@ export const StoryViewer = ({
 
           {/* image + tap zones */}
           <div className="relative flex-1 flex items-center justify-center">
-            <img src={story.image_url} alt="" className="max-h-full max-w-full object-contain" />
+            <SmartImage
+              src={story.image_url}
+              alt=""
+              variant="full"
+              priority
+              className="max-h-full max-w-full"
+            />
             <button onClick={back} className="absolute top-0 left-0 bottom-0 w-1/3" aria-label="Previous" />
             <button onClick={advance} className="absolute top-0 right-0 bottom-0 w-2/3" aria-label="Next" />
           </div>
