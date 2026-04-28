@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeafletMap } from "@/components/maps/LeafletMap";
 import { pawIcon } from "@/components/maps/PawMarker";
 import { TrustBadge } from "@/components/services/TrustBadge";
+import { SocialProofBadge } from "@/components/trust/SocialProofBadge";
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -89,6 +90,9 @@ const ServiceDetail = () => {
             </div>
             <div className="mt-1.5">
               <SubjectRating type="provider" id={provider.id} size="sm" />
+            </div>
+            <div className="mt-2">
+              <SocialProofBadge providerId={provider.id} city={provider.city} />
             </div>
           </div>
           {provider.hourly_rate_inr ? (
