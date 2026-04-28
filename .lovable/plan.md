@@ -1,107 +1,84 @@
-## Petos — Journey Audit & Gap Plan
+# Wave 8.5 — Polish: Maps everywhere, Live walk sharing, "Not a Google Form" UX
 
-I walked your spec (Anika & Max, Dr. Sharma) line by line against the routes, components, tables, and edge functions in the repo. Here's the honest checklist.
+## Audit of what's already done (no rework needed)
 
----
+Wave 8 already delivered the core. Verified in code:
 
-### Is the user journey "correct"?
+- **Leaflet wrapper** `src/components/maps/LeafletMap.tsx` — markers, popups, polyline, color pins, `followLast` auto-pan.
+- **Walk tracking** `src/pages/WalkSession.tsx` — realtime channel on `walk_tracks`, live polyline, distance (haversine), Start/End for provider, customer view, route `/walk/:id`.
+- **Geo radius search** — `nearby_vets`, `nearby_providers`, `nearby_missing`, `nearby_meetups` RPCs (using `earthdistance`/`cube`, which is functionally equivalent to PostGIS `ST_DWithin` for our needs — no need to add PostGIS too, would duplicate).
+- **NearMePanel** wired into Discover.
+- **Onboarding/AboutYou** capture lat/lng.
+- **Admin panel** at `/admin` with Reports / Vet Apps / Providers / Users tabs (role-gated via `user_roles`).
 
-Mostly **yes** — your 5 pillars (Social + Mating + Doctor/AI + Vet + Services) all exist in the schema and routing. The journey order in your doc is sound. Two structural notes:
+So this wave is **polish + the truly missing pieces** from your spec, not a rebuild.
 
-1. **AI triage → Vet handoff is a broken link.** `/ai` (AiChat) and `/askvet/new` exist, but the AI does not generate a pre-filled summary and "Connect to Vet Now" doesn't auto-create an `appointments` or `vet_consults` row from the chat context. Today the user has to retype everything.
-2. **Photo → Health auto-suggest is one-way.** `Composer.tsx` lets you tag a post as a health log (we built that in Wave 5), but there is no *prompt* after posting that says "Log this as Max's walk?". The trigger fires only if the user explicitly tags.
+## What this wave will add
 
-Everything else in your journey maps to real code — but several steps are stubs or partial.
+### 1. Interactive maps in remaining detail pages
+Replace static "city text + MapPin icon" placeholders with real `LeafletMap` blocks (no iframes exist anymore — they were removed in Wave 8):
+- `MissingDetail.tsx` — already uses LeafletMap, add **marker clustering** via `leaflet.markercluster` when sightings > 10.
+- `MeetupDetail.tsx` — add map showing meetup `lat/lng` with venue popup.
+- `ServiceDetail.tsx` — add map showing provider location with name + rating popup.
+- `MissingNew.tsx` (create flow) — add a tap-to-pin map so owners set last-seen location precisely instead of relying on browser GPS.
+- All use a small dog-paw SVG `divIcon` for brand consistency.
 
----
+### 2. Public live walk share
+- New route `/walk-live/:bookingId` (page `src/pages/WalkLive.tsx`) — read-only map, no auth required, RLS-safe via a `public_share_token` column on `service_bookings` (link includes token).
+- Migration: add `public_share_token uuid` to `service_bookings` + a `SECURITY DEFINER` RPC `get_public_walk(_token uuid)` returning latest tracks/polyline only.
+- "Share live walk" button in `WalkSession.tsx` copies the link via `navigator.clipboard`.
 
-### ✅ Implemented (works end-to-end)
+### 3. Owner live view inside booking
+- BookingDetail page doesn't exist as its own route; the customer currently lands on `/walk/:id`. We'll add a banner "Live walk in progress" on the customer's `Orders`/services list that deep-links into `/walk/:id` when a booking is `in_progress`.
 
-**Owner journey**
-- Sign up + Google + onboarding + add pet (`Auth`, `Onboarding`, `PetEditor`)
-- Pet ID generation + QR (`PetIdCard`, `public_id` on `pets`)
-- Home with stories, daily prompt, missing strip, daily tip, meetups, feed (`Home.tsx`)
-- Posts: photo, caption, hashtags (`#tag` auto-extracted), trending rail, reactions (love/paw/laugh/wow/sad), comments, stories 24h (`PostFeed`, `ReactionBar`, `Hashtag`, `StoryRail`)
-- Health vault tabs: Vitals, Meds, Parasite + records timeline (`Health.tsx`, `health/Timeline.tsx`)
-- Photo→Health *manual* tagging via `HealthTagPicker` + `tg_post_to_health` trigger
-- AI chat with pet context (meds + latest weight in system prompt) (`supabase/functions/chat`)
-- Mating: discoverable pets, listings, requests, digital agreement w/ e-sign (`MatesNew`, `MateListing`, `mating_agreements`)
-- Services marketplace: providers, bookings, reviews (`Services`, `ServiceDetail`, `BookingSheet`)
-- Shop + cart + orders (`Shop`, `Cart`, `Orders`)
-- Missing pets + sightings + geo alerts (`MissingFeed`, `MissingNew`, `MissingDetail`)
-- Groups + meetups + RSVP (`Groups`, `Meetups`)
-- Daily moments + streaks + collab posts (`Daily`, `daily_streaks`, `post_collaborators`)
-- Ask-a-Vet public Q&A (`AskVet`)
-- Notifications + bell + push job processor
+### 4. Geofenced missing-pet notifications (radius, not just city)
+- New trigger / job: when a `missing_pets` row is created with `last_seen_lat/lng`, insert into `notification_jobs` with payload including coords + 5 km radius.
+- Update existing `notify_missing_pet_alerts` (currently city-string match) to also fan out to profiles within 5 km using `earth_distance`.
 
-**Vet journey**
-- Vet apply → admin verify → role grant (`VetApply`, `Admin`, `user_roles`)
-- Vet onboarding wizard (`vet/Onboarding`)
-- Vet dashboard with Today / Schedule / Lookup tabs (`vet/Dashboard`)
-- Pet ID lookup → access request flow (`pet_access_requests`, `pet_care_team`)
-- Appointments (chat / video / in-clinic), `AppointmentRoom`, video room creation edge function
-- Vet can read patient vault via `vet_can_read_pet` RLS
-- Verified vet badge
+### 5. "Not a Google Form" UX polish
+Sweep for missing feedback. Concretely:
+- Add a shared `<EmptyState illustration cta />` component and replace the 6 worst "Nothing here yet" strings (Home feed empty, Discover empty, Health vault empty, Missing feed empty, Services empty, Notifications empty).
+- Add `loading` state to all primary action buttons that currently call mutations without a spinner (audit list: Composer post, Mating request send, Booking confirm, Vet apply submit, Prescription save, Missing alert create).
+- Add `navigator.vibrate(10)` helper `src/lib/haptics.ts` and call from: like, follow, RSVP, booking, send-message.
+- Skeleton loaders: add to PostFeed (already has?), HealthTimeline, ServiceList, VetList — use existing `Skeleton` shadcn component.
 
----
+### 6. Realtime sanity pass
+Verify channels & cleanup on: `posts`, `post_comments`, `post_reactions`, `stories`, `notifications`, `mating_messages`, `appointments`, `walk_tracks`. Add any missing `removeChannel` cleanup in useEffect returns. Add `ALTER PUBLICATION supabase_realtime ADD TABLE …` for any table not yet in the publication.
 
-### ⚠️ Partial / stubbed
+## Files
 
-| Feature | What's there | What's missing |
-|---|---|---|
-| AI → Vet handoff | AI chat works, AskVet works | No "Connect to Vet Now" button that pre-fills summary + creates consult |
-| Photo → Health | Manual tag in composer | No post-upload "log this as walk?" smart prompt; no EXIF/location read |
-| Pharmacy from Rx | `health_records` stores Rx | No Rx → cart auto-fill; no prescription builder UI for vets |
-| Vet earnings | Schema implicit | No `/vet/earnings` dashboard |
-| Walker GPS | Bookings exist | No live tracking (`walk_tracks` table + map) |
-| Breeding soundness | `vaccination_verified` flag | No Brucella / hip / semen eval records; no "Breeding Verified" badge separate from vaccine |
-| Puppy listings | Mating agreement exists | No `puppy_listings` table linked to agreement; no commission stub |
-| Verifications queue (vet side) | Owner uploads cert | No vet-side queue UI to approve vaccination certificates |
-| AMA / vet articles | AskVet exists | No "knowledge post" type; no AMA scheduling |
-| Endorsements | Reviews exist for services | No skill-endorsement on vet profiles |
-| Comment-as-pet | Comments work | `post_comments` has no `pet_id`; UI has no pet picker |
+**New**
+- `src/pages/WalkLive.tsx` — public live walk viewer
+- `src/components/empty/EmptyState.tsx` — reusable illustrated empty state
+- `src/lib/haptics.ts` — `vibrate()` helper
+- `src/components/maps/PawMarker.ts` — paw `divIcon` factory
 
----
+**Edited**
+- `src/components/maps/LeafletMap.tsx` — accept custom icon prop, optional clustering flag
+- `src/pages/WalkSession.tsx` — add Share button + paw marker
+- `src/pages/MeetupDetail.tsx`, `src/pages/ServiceDetail.tsx`, `src/pages/MissingDetail.tsx`, `src/pages/MissingNew.tsx` — embed interactive maps
+- `src/pages/Home.tsx`, `src/pages/Discover.tsx`, `src/pages/MissingFeed.tsx`, `src/pages/Notifications.tsx`, `src/pages/HealthVault.tsx`, `src/pages/Services.tsx` — EmptyState
+- `src/components/Composer.tsx`, `src/components/vet/PrescriptionBuilder.tsx`, `src/pages/MissingNew.tsx`, `src/pages/VetApply.tsx` — button loading states
+- `src/App.tsx` — add `/walk-live/:token` route
 
-### ❌ Not implemented
+**Migrations**
+- Add `public_share_token uuid` to `service_bookings` + `get_public_walk(_token)` RPC
+- Replace `notify_missing_pet_alerts` with radius-aware version (5 km)
+- Add `leaflet.markercluster` already in package.json — no install needed
+- `ALTER PUBLICATION supabase_realtime ADD TABLE` for any missing tables
 
-- **Petos Points / wallet** — no table, no earn rules, no redeem
-- **Weekly photo challenges + leaderboards** (city/breed) — no `challenges`, `challenge_entries`, no city leaderboard view
-- **"1 year ago" memory cards** on Home
-- **Petfluencer tier** + brand-collab marketplace
-- **Save / Collections** (bookmarks) on posts
-- **Smart allergy filter** on Shop (hide products containing pet's allergens)
-- **Reward payment** for found missing pets (currently just a number, no payout)
-- **Health Score** shown on Home ("🟢 Next vaccine in 5 days · streak 3 🔥") — partial: streak exists, score doesn't
+## Out of scope (explicit)
+- **PostGIS** — current `earthdistance` solution covers all stated needs; adding PostGIS too would be redundant and slower migrations.
+- **Web push (FCM/APNs)** — deferred to Wave 10 per your earlier roadmap.
+- **Allergy filter & affiliate codes** — Wave 12.
+- **Drag-to-refresh** — needs a touch gesture lib; defer unless you want it now.
 
----
+## After build — manual test checklist
+1. Walker hits Start, customer's `/walk/:id` shows polyline growing in real time without refresh.
+2. Click "Share live walk" → paste in incognito → map loads with no auth.
+3. Create missing alert with GPS → another account within 5 km gets in-app notification.
+4. Open MeetupDetail / ServiceDetail / MissingDetail → see interactive Leaflet maps with popups.
+5. Empty Home feed shows illustrated CTA, not bare text.
+6. Composer "Post" button shows spinner while saving.
 
-### 🛠 Recommended build order (3 waves)
-
-**Wave 6 — Close the core loop (highest user value)**
-1. **AI → Vet handoff button** in `AiChat`: serialize last 6 messages + pet snapshot → create `vet_consults` row → route to `/askvet/:id` or `/book-vet?prefill=...`. Show "Connect to a vet" CTA after any AI reply containing risk keywords.
-2. **Smart photo→health prompt** in `Composer` after upload: detect time-of-day + caption keywords (walk/meal/weight/poop) and pre-select a `HealthTagPicker` kind. Optional EXIF location.
-3. **Health Score + status strip** on Home (`hooks/useHealthScore`): combines vaccine due dates, parasite due, log streak. Render above stories.
-4. **Comment-as-pet**: add `pet_id` nullable column to `post_comments`, pet selector in `CommentSheet`, render with pet avatar/name.
-5. **Save / Collections**: `post_saves` table + bookmark icon in `PostFeed` + `/profile` "Saved" tab.
-
-**Wave 7 — Vet practice depth + commerce loop**
-6. **Prescription Builder** in `AppointmentRoom` (vet side): structured drug/dose/duration → writes `medication_logs` AND a `pharmacy_cart_suggestions` row → owner sees "Buy prescribed meds" banner that pre-fills cart.
-7. **Vet verifications queue** (`/vet/verifications`): list pending `health_records` of type vaccination uploaded by patients on care team; approve flips `pets.vaccination_verified`.
-8. **Vet earnings page** (`/vet/earnings`): sum completed consults (beta = 0, schema-ready).
-9. **Walker GPS** — `walk_tracks(booking_id, lat, lng, t)` table + provider's "Start walk" button streams location; owner sees live map in booking detail.
-10. **Smart allergy filter** on `Shop`: hide products whose `tags` intersect active pet's `allergies`.
-
-**Wave 8 — Gamification + virality**
-11. **Petos Points wallet**: `points_ledger(user_id, delta, reason)` + earn rules trigger (post=5, health log=10, daily moment on-time=20, streak milestones). Profile widget.
-12. **Weekly photo challenges**: `challenges`, `challenge_entries`, voting via reactions. Discover rail + winner badge.
-13. **City/breed leaderboards**: SQL view ranking by points/followers, `/discover` rail.
-14. **"1 year ago" memory cards**: cron edge function `daily-memory-drop` → `notifications` of type `memory` linking the old post; `MemoryCard` component on Home top.
-15. **Breeding soundness records**: extend `health_record_type` enum with `brucella`, `hip_score`, `semen_eval`; add separate `breeding_verified` flag on `pets` flipped only when all three exist; "Breeding Verified" badge.
-16. **Puppy listings**: `puppy_listings(agreement_id, ...)`, `/mates/litter/:id`, sale → 8% commission stub.
-
----
-
-### Suggested next step
-
-Start with **Wave 6** — it makes the *daily loop* feel finished. The AI→Vet handoff and smart photo→health prompt alone turn the app from "many features" into "one habit". Approve and I'll execute Wave 6 in default mode.
+Reply **"go"** to implement.
