@@ -9,6 +9,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
 import { EmergencyButton } from "@/components/home/EmergencyButton";
+import { ProactiveAlertsCard } from "@/components/home/ProactiveAlertsCard";
 
 // Below-the-fold — code-split so they don't block first paint.
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
@@ -42,6 +43,9 @@ const Home = () => {
 
       {/* SOS — pet-context-aware AI Doctor (Phase 1) */}
       <EmergencyButton />
+
+      {/* Phase 16 — AI proactive alerts (nutrition / symptoms / weight) */}
+      <ProactiveAlertsCard />
 
       {/* Story rail — comes first because it's social */}
       <Suspense fallback={<div className="h-[88px]" />}>
