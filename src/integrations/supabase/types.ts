@@ -592,6 +592,45 @@ export type Database = {
         }
         Relationships: []
       }
+      donations: {
+        Row: {
+          amount_inr: number
+          anonymous: boolean
+          created_at: string
+          donor_id: string
+          id: string
+          message: string | null
+          org_user_id: string
+          paid_at: string | null
+          payment_intent_id: string | null
+          status: Database["public"]["Enums"]["donation_status"]
+        }
+        Insert: {
+          amount_inr: number
+          anonymous?: boolean
+          created_at?: string
+          donor_id: string
+          id?: string
+          message?: string | null
+          org_user_id: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          status?: Database["public"]["Enums"]["donation_status"]
+        }
+        Update: {
+          amount_inr?: number
+          anonymous?: boolean
+          created_at?: string
+          donor_id?: string
+          id?: string
+          message?: string | null
+          org_user_id?: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          status?: Database["public"]["Enums"]["donation_status"]
+        }
+        Relationships: []
+      }
       error_log: {
         Row: {
           created_at: string
@@ -1729,6 +1768,7 @@ export type Database = {
           description: string | null
           donation_upi: string | null
           donation_url: string | null
+          donor_count: number
           facility_photos: string[]
           lat: number | null
           lng: number | null
@@ -1743,6 +1783,7 @@ export type Database = {
           reviewed_by: string | null
           state: string | null
           status: string
+          total_donations_inr: number
           updated_at: string
           user_id: string
           website: string | null
@@ -1754,6 +1795,7 @@ export type Database = {
           description?: string | null
           donation_upi?: string | null
           donation_url?: string | null
+          donor_count?: number
           facility_photos?: string[]
           lat?: number | null
           lng?: number | null
@@ -1768,6 +1810,7 @@ export type Database = {
           reviewed_by?: string | null
           state?: string | null
           status?: string
+          total_donations_inr?: number
           updated_at?: string
           user_id: string
           website?: string | null
@@ -1779,6 +1822,7 @@ export type Database = {
           description?: string | null
           donation_upi?: string | null
           donation_url?: string | null
+          donor_count?: number
           facility_photos?: string[]
           lat?: number | null
           lng?: number | null
@@ -1793,6 +1837,7 @@ export type Database = {
           reviewed_by?: string | null
           state?: string | null
           status?: string
+          total_donations_inr?: number
           updated_at?: string
           user_id?: string
           website?: string | null
@@ -4791,6 +4836,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       diet_type: "kibble" | "raw" | "home" | "mixed" | "prescription"
+      donation_status: "pending" | "paid" | "refunded" | "beta_free"
       group_kind: "breed" | "city" | "interest"
       group_member_role: "member" | "mod" | "owner"
       health_record_type:
@@ -5090,6 +5136,7 @@ export const Constants = {
         "cancelled",
       ],
       diet_type: ["kibble", "raw", "home", "mixed", "prescription"],
+      donation_status: ["pending", "paid", "refunded", "beta_free"],
       group_kind: ["breed", "city", "interest"],
       group_member_role: ["member", "mod", "owner"],
       health_record_type: [

@@ -13,6 +13,7 @@ import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
+import { DonateDialog } from "@/components/donations/DonateDialog";
 
 const OrgProfile = () => {
   const { userId } = useParams();
@@ -50,6 +51,9 @@ const OrgProfile = () => {
   const cover = (org.facility_photos ?? [])[0];
   const isZoo = org.org_type === "zoo";
   const hasDonation = !!(org.donation_upi || org.donation_url);
+  const canReceiveDonations = ["shelter", "sanctuary", "rescuer", "ngo"].includes(
+    String(org.org_type),
+  );
 
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
@@ -102,7 +106,7 @@ const OrgProfile = () => {
             <Heart className="h-4 w-4 text-coral" />
             <div className="font-display text-base">{isZoo ? "Sponsor an animal" : "Support our work"}</div>
           </div>
-          <p className="text-[11px] text-muted-foreground mb-3">100% of your {isZoo ? "sponsorship" : "donation"} goes directly to {org.org_name}. PetOS does not process or take a cut.</p>
+          <p className="text-[11px] text-muted-foreground mb-3">UPI / external donations go directly to {org.org_name}.</p>
           {org.donation_upi && (
             <div className="space-y-2 mb-2">
               <Button
@@ -127,6 +131,50 @@ const OrgProfile = () => {
               <a href={org.donation_url} target="_blank" rel="noreferrer">{isZoo ? "Sponsor online" : "Donate online"}</a>
             </Button>
           )}
+        </Card>
+      )}
+
+      {canReceiveDonations && userId && !isOwner && (
+        <Card className="rounded-2xl bg-primary-soft/40 border-primary/20 p-4 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Heart className="h-4 w-4 text-primary" />
+            <div className="font-display text-base">Donate via PetOS</div>
+          </div>
+          {(org.donor_count ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground mb-3">
+              ₹{(org.total_donations_inr ?? 0).toLocaleString("en-IN")} raised from{" "}
+              {org.donor_count} donor{org.donor_count === 1 ? "" : "s"} on PetOS
+            </p>
+          )}
+          <DonateDialog
+            orgUserId={userId}
+            orgName={org.org_name}
+            trigger={
+              <Button className="w-full rounded-xl bg-primary hover:bg-primary/90">
+                <Heart className="h-4 w-4 mr-1" /> Donate securely
+              </Button>
+            }
+          />
+          <p className="text-[10px] text-muted-foreground text-center mt-2">
+            Secure card / UPI checkout • Email receipt
+          </p>
+        </Card>
+      )}
+
+      {canReceiveDonations && isOwner && (
+        <Card className="rounded-2xl border-hairline p-4 mb-3 flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground">Total raised on PetOS</div>
+            <div className="font-display text-xl">
+              ₹{(org.total_donations_inr ?? 0).toLocaleString("en-IN")}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {org.donor_count ?? 0} donor{org.donor_count === 1 ? "" : "s"}
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => nav("/org/donations")}>
+            View
+          </Button>
         </Card>
       )}
 
