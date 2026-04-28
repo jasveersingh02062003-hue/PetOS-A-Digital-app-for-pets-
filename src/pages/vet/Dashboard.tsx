@@ -337,6 +337,9 @@ const ApptCard = ({ a, onUpdate }: { a: any; onUpdate: (id: string, s: string) =
           </Button>
         )}
         <Button asChild size="sm" variant="outline" className="rounded-full">
+          <Link to={`/appointment/${a.id}`}>Open</Link>
+        </Button>
+        <Button asChild size="sm" variant="outline" className="rounded-full">
           <Link to={`/health/${a.pet_id}/timeline`}>Records</Link>
         </Button>
       </div>
