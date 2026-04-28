@@ -159,7 +159,7 @@ const WalkSession = () => {
               zoom={16}
               height="320px"
               followLast={tracking}
-              markers={[{ id: "last", lat: last.lat, lng: last.lng, color: "primary", title: "Current location" }]}
+              markers={[{ id: "last", lat: last.lat, lng: last.lng, icon: pawIcon("#3b82f6"), title: "Current location" }]}
               polyline={polyline}
             />
           ) : (
@@ -193,6 +193,12 @@ const WalkSession = () => {
               </>
             )}
           </div>
+        )}
+
+        {(isProvider || isCustomer) && (booking as any)?.public_share_token && (
+          <Button variant="outline" onClick={shareLive} className="rounded-full w-full">
+            <Share2 className="h-4 w-4 mr-2" /> Share live walk link
+          </Button>
         )}
 
         {isCustomer && (
