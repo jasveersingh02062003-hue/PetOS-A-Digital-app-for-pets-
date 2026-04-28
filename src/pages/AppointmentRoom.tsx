@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send, Video, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 
 export default function AppointmentRoom() {
   const { id } = useParams();
@@ -174,6 +175,10 @@ export default function AppointmentRoom() {
             <Button size="sm" className="rounded-full" onClick={() => updateStatus("completed")}>Complete</Button>
           )}
         </div>
+      )}
+
+      {isVet && appt.pet_id && (
+        <PrescriptionBuilder appointmentId={appt.id} petId={appt.pet_id} ownerId={appt.owner_id} />
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">

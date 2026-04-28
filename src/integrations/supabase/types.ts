@@ -723,6 +723,7 @@ export type Database = {
       medication_logs: {
         Row: {
           active: boolean
+          appointment_id: string | null
           created_at: string
           dose: string | null
           end_on: string | null
@@ -730,6 +731,7 @@ export type Database = {
           id: string
           name: string
           pet_id: string
+          prescribed_by_vet_id: string | null
           prescribing_vet: string | null
           reason: string | null
           route: string | null
@@ -738,6 +740,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          appointment_id?: string | null
           created_at?: string
           dose?: string | null
           end_on?: string | null
@@ -745,6 +748,7 @@ export type Database = {
           id?: string
           name: string
           pet_id: string
+          prescribed_by_vet_id?: string | null
           prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
@@ -753,6 +757,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          appointment_id?: string | null
           created_at?: string
           dose?: string | null
           end_on?: string | null
@@ -760,6 +765,7 @@ export type Database = {
           id?: string
           name?: string
           pet_id?: string
+          prescribed_by_vet_id?: string | null
           prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
@@ -1300,6 +1306,54 @@ export type Database = {
           updated_at?: string
           vaccination_verified?: boolean
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      pharmacy_suggestions: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          dose: string | null
+          duration: string | null
+          frequency: string | null
+          id: string
+          med_name: string
+          medication_log_id: string | null
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          status: string
+          vet_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          dose?: string | null
+          duration?: string | null
+          frequency?: string | null
+          id?: string
+          med_name: string
+          medication_log_id?: string | null
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          status?: string
+          vet_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          dose?: string | null
+          duration?: string | null
+          frequency?: string | null
+          id?: string
+          med_name?: string
+          medication_log_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          status?: string
+          vet_id?: string
         }
         Relationships: []
       }
@@ -1888,6 +1942,7 @@ export type Database = {
           price_inr: number
           seller_id: string
           stock: number
+          tags: string[]
           title: string
           updated_at: string
         }
@@ -1901,6 +1956,7 @@ export type Database = {
           price_inr: number
           seller_id: string
           stock?: number
+          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -1914,6 +1970,7 @@ export type Database = {
           price_inr?: number
           seller_id?: string
           stock?: number
+          tags?: string[]
           title?: string
           updated_at?: string
         }
@@ -2756,6 +2813,30 @@ export type Database = {
           respiratory_rate_rpm?: number | null
           temperature_c?: number | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      walk_tracks: {
+        Row: {
+          booking_id: string
+          id: string
+          lat: number
+          lng: number
+          recorded_at: string
+        }
+        Insert: {
+          booking_id: string
+          id?: string
+          lat: number
+          lng: number
+          recorded_at?: string
+        }
+        Update: {
+          booking_id?: string
+          id?: string
+          lat?: number
+          lng?: number
+          recorded_at?: string
         }
         Relationships: []
       }

@@ -9,6 +9,7 @@ import { StoryRail } from "@/components/social/StoryRail";
 import { DailyPromptBanner } from "@/components/social/DailyPromptBanner";
 import { MeetupCard } from "@/components/social/MeetupCard";
 import { HealthStatusStrip } from "@/components/health/HealthStatusStrip";
+import { PharmacySuggestionsBanner } from "@/components/health/PharmacySuggestionsBanner";
 import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart, Users, CalendarDays } from "lucide-react";
@@ -33,6 +34,7 @@ const Home = () => {
       </header>
 
       {hasPets && <HealthStatusStrip petId={pets![0].id} />}
+      <PharmacySuggestionsBanner />
 
       <StoryRail />
 

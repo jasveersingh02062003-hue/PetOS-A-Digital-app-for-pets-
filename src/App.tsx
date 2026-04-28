@@ -55,6 +55,7 @@ import Welcome from "./pages/Welcome";
 import Timeline from "./pages/health/Timeline";
 import VetOnboarding from "./pages/vet/Onboarding";
 import VetDashboard from "./pages/vet/Dashboard";
+import VetVerifications from "./pages/vet/Verifications";
 import BookAppointment from "./pages/BookAppointment";
 import AccessRequests from "./pages/AccessRequests";
 import AppointmentRoom from "./pages/AppointmentRoom";
@@ -76,6 +77,7 @@ import AskVetNew from "./pages/AskVetNew";
 import AskVetDetail from "./pages/AskVetDetail";
 import Daily from "./pages/Daily";
 import Hashtag from "./pages/Hashtag";
+import WalkSession from "./pages/WalkSession";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +112,7 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/vet" element={<VetDashboard />} />
+              <Route path="/vet/verifications" element={<VetVerifications />} />
               <Route path="/vet/legacy" element={<Vet />} />
               <Route path="/vet/apply" element={<VetApply />} />
               <Route path="/vet/onboarding" element={<VetOnboarding />} />
@@ -159,6 +162,7 @@ const App = () => (
               <Route path="/askvet/:id" element={<AskVetDetail />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/t/:tag" element={<Hashtag />} />
+              <Route path="/walk/:id" element={<WalkSession />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
