@@ -254,6 +254,40 @@ const MissingDetail = () => {
                 Mark as found
               </Button>
             )}
+            {isOwner && (() => {
+              const boostedUntil = (missing as any).boosted_until
+                ? new Date((missing as any).boosted_until)
+                : null;
+              const isBoosted = !!boostedUntil && boostedUntil > new Date();
+              if (isBoosted) {
+                const daysLeft = Math.max(
+                  1,
+                  Math.ceil((boostedUntil.getTime() - Date.now()) / 86_400_000),
+                );
+                return (
+                  <div className="rounded-2xl border-hairline border bg-amber-500/10 px-4 py-3 text-sm flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-600" />
+                    <span>
+                      Boost active — extra reach for {daysLeft} more {daysLeft === 1 ? "day" : "days"}.
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <Button
+                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-amber-500 to-coral text-white border-0"
+                  disabled={boosting}
+                  onClick={boostReach}
+                >
+                  {boosting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  Boost reach (₹499 · 7 days)
+                </Button>
+              );
+            })()}
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl border-hairline"
