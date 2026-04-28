@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      health_records: {
+        Row: {
+          created_at: string
+          document_path: string | null
+          id: string
+          notes: string | null
+          occurred_on: string
+          pet_id: string
+          record_type: Database["public"]["Enums"]["health_record_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          notes?: string | null
+          occurred_on?: string
+          pet_id: string
+          record_type?: Database["public"]["Enums"]["health_record_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          notes?: string | null
+          occurred_on?: string
+          pet_id?: string
+          record_type?: Database["public"]["Enums"]["health_record_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_records_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_logs: {
+        Row: {
+          created_at: string
+          fed_at: string
+          food: string
+          id: string
+          notes: string | null
+          pet_id: string
+          portion: string | null
+        }
+        Insert: {
+          created_at?: string
+          fed_at?: string
+          food: string
+          id?: string
+          notes?: string | null
+          pet_id: string
+          portion?: string | null
+        }
+        Update: {
+          created_at?: string
+          fed_at?: string
+          food?: string
+          id?: string
+          notes?: string | null
+          pet_id?: string
+          portion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           avatar_url: string | null
@@ -110,6 +192,44 @@ export type Database = {
         }
         Relationships: []
       }
+      symptom_logs: {
+        Row: {
+          created_at: string
+          id: string
+          logged_at: string
+          notes: string | null
+          pet_id: string
+          severity: number
+          symptom: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          pet_id: string
+          severity?: number
+          symptom: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          pet_id?: string
+          severity?: number
+          symptom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symptom_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -130,6 +250,141 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vaccinations: {
+        Row: {
+          administered_on: string
+          batch_number: string | null
+          created_at: string
+          document_path: string | null
+          id: string
+          next_due_on: string | null
+          notes: string | null
+          pet_id: string
+          updated_at: string
+          vaccine_name: string
+          vet_name: string | null
+        }
+        Insert: {
+          administered_on: string
+          batch_number?: string | null
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          next_due_on?: string | null
+          notes?: string | null
+          pet_id: string
+          updated_at?: string
+          vaccine_name: string
+          vet_name?: string | null
+        }
+        Update: {
+          administered_on?: string
+          batch_number?: string | null
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          next_due_on?: string | null
+          notes?: string | null
+          pet_id?: string
+          updated_at?: string
+          vaccine_name?: string
+          vet_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccinations_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vault_documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          pet_id: string
+          size_bytes: number | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          pet_id: string
+          size_bytes?: number | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          pet_id?: string
+          size_bytes?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_documents_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vet_access_grants: {
+        Row: {
+          clinic_name: string | null
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          pet_id: string
+          revoked: boolean
+          vet_name: string | null
+        }
+        Insert: {
+          clinic_name?: string | null
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          pet_id: string
+          revoked?: boolean
+          vet_name?: string | null
+        }
+        Update: {
+          clinic_name?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          pet_id?: string
+          revoked?: boolean
+          vet_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_access_grants_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -154,6 +409,13 @@ export type Database = {
         | "moderator"
         | "finance"
         | "super_admin"
+      health_record_type:
+        | "visit"
+        | "diagnostic"
+        | "prescription"
+        | "surgery"
+        | "allergy"
+        | "other"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
     }
@@ -292,6 +554,14 @@ export const Constants = {
         "moderator",
         "finance",
         "super_admin",
+      ],
+      health_record_type: [
+        "visit",
+        "diagnostic",
+        "prescription",
+        "surgery",
+        "allergy",
+        "other",
       ],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
