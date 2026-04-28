@@ -1,141 +1,114 @@
+# Phases 16–37 — Real Status & Remaining Gaps
 
-# Gap audit: what's done, partial, and missing across Phases 16–37
-
-I scanned every table, edge function, page, and component referenced in your rollout plan. Here's the honest status of each phase, then a recommended next-step order.
-
----
-
-## Status legend
-
-- DONE — DB + edge function + UI all wired
-- PARTIAL — some pieces exist but the loop isn't closed end-to-end
-- MISSING — nothing in the codebase yet
+Verified against the live database, edge functions list, and codebase. Nothing on this page is a guess.
 
 ---
 
-## Pre-Connect block (Phases 16–27)
+## ✅ Fully shipped (no further work)
 
-### Phase 16 — AI proactive alerts (cron) — DONE
-Found: `proactive_alerts` table (with `severity`, `dedupe_key`, `dismissed_at`), `ai-proactive-scan` edge function, `src/components/home/ProactiveAlertsCard.tsx` mounted on Home.
-Open question to confirm: is the pg_cron job actually scheduled (every 6h)? The function exists; the schedule registration may not be.
-
-### Phase 17 — Symptom diary v2 + AI severity flag — DONE
-Found: `symptom_logs.severity / ai_flag / ai_reason / photo_url`, edge function `ai-symptom-classify`, symptom UI in `Health.tsx` and `health/Timeline.tsx`.
-
-### Phase 18 — Walker trust gate — PARTIAL
-Found: `service_providers.trust_status / id_proof_path / address_proof_path / quiz_passed_at / quiz_score`, plus `provider_quiz_attempts` table.
-Missing: the dedicated `walker_profiles` model, the walker onboarding page, and the trigger that blocks `category='dog_walker'` activation until approved. Right now the trust columns exist but nothing enforces "can't go live until passed".
-
-### Phase 19 — Recurring bookings — PARTIAL
-Found: `recurring_bookings` table and a "Repeat" toggle in `BookingSheet.tsx`.
-Missing: the daily `recurring-booking-spawn` edge function + cron that materializes the next concrete `service_bookings` row, and the owner/provider "Recurring" management section with pause/cancel.
-
-### Phase 20 — Mating listing fee — PARTIAL
-Found: `mating_listings.paid_until / boosted_until / featured`, plus a `mating_payments` table.
-Missing: the publish-flow that pushes the user through `create-one-time-checkout`, the webhook hook that flips `paid_until = now()+30d`, the `draft → active` state machine on listings, and the cron that expires them. The schema is staged, the UX is not.
-
-### Phase 21 — Missing-pet premium boost — MISSING
-The `missing_pets` table has no `boosted_until` column, no boost button in UI, no fan-out radius switch, no expiry cron.
-
-### Phase 22 — Health AI insights surface — DONE
-Found: `health_insights` table, `ai-health-insights` edge function, `HealthInsightsCard` mounted in `Health.tsx`.
-Confirm: weekly refresh cron and Plus-tier gating on extra cards.
-
-### Phase 23 — NGO donations + featured adoption — MISSING
-`profiles` has only `breeder_verified`. No `accepts_donations`, `donation_url`, `featured_until`, no `donations` table, no donate button on `OrgProfile.tsx`, no admin "feature org" action.
-
-### Phase 24 — Shop contextual reorder reminders — MISSING
-No `shop-reorder-scan` edge function. The `proactive_alerts` infra (from Phase 16) is ready to receive these alerts, but the scanner that compares `nutrition_logs.brand` × `shop_orders` × portion math doesn't exist.
-
-### Phase 25 — Pregnancy tracker — MISSING
-No `pregnancies`, no `pregnancy_milestones`, no trigger on `mating_requests.status='agreed'`, no UI panel on dam profile.
-
-### Phase 26 — Pickup/drop ("pet taxi") — MISSING
-No `transport_legs` table. The Discover tile and a `ServiceNew` mention exist as marketing surfaces only.
-
-### Phase 27 — Post-consult Rx → Shop — PARTIAL
-Found: `src/components/vet/PrescriptionBuilder.tsx`, `appointments.prescription` column, `pharmacy_suggestions` table, references in `VetConsult.tsx` and `MedicationsTab`.
-Missing: the dedicated `consult_prescriptions` table with structured `items jsonb`, and the owner-side "Buy meds" CTA that prefills the Shop cart by SKU. Right now Rx is captured loosely on the appointment but doesn't push the buyer into checkout.
+| Phase | What's live |
+|---|---|
+| **16 Proactive AI alerts** | `proactive_alerts` table, `ai-proactive-scan` edge function, cron `ai-proactive-scan-6h`, ProactiveAlertsCard wired on Home |
+| **17 Symptom diary v2** | `symptom_logs.severity / ai_flag / ai_reason`, `ai-symptom-classify` function, SymptomNew page + flag chips |
+| **18 Walker trust** | `service_providers.trust_status / id_proof_path / address_proof_path / quiz_passed_at / years_experience`, `provider_quiz_attempts`, private `trust-docs` bucket, `set_provider_trust_status` admin RPC, `/services/trust/:id` provider UI, Admin → Trust queue, TrustBadge on listings |
+| **19 Recurring bookings** | `recurring_bookings` table, `parent_recurring_id` on `service_bookings`, `recurring-booking-spawn` edge function, hourly cron, `/bookings/recurring` management page, BookingSheet "Repeat" toggle |
+| **20 Mating listing fee** | `mating_listings.paid_until`, `create-one-time-checkout`, stripe-webhook flips paid_until, `expire_paid_mating_listings()` + daily cron, MatesNew paid-publish flow, MatesGrid filters paid_until |
+| **22 Health AI insights** | `health_insights` table, `ai-health-insights` function, HealthInsightsCard on Health page, Plus-tier gating |
+| **27 Post-consult Rx → Shop** | `pharmacy_suggestions` + `medication_logs`, vet PrescriptionBuilder, owner PharmacySuggestionsCard on Health → Meds tab, deep-link `/shop?cat=health&q=<med>` |
 
 ---
 
-## Stripe Connect block (Phases 28–34) — ALL MISSING
+## 🟡 Partial (small finish needed)
 
-No `stripe_accounts`, `payouts`, `missing_pet_rewards`, `subscription_orders`, `diet_plans`, `diet_plan_purchases` tables. No `connect-onboard / connect-refresh / connect-webhook / payout-booking / subscription-fulfill` edge functions. The existing `stripe-webhook` handles `subscriptions` (Plus tier) only; it does not handle Connect transfers, escrow, or marketplace splits.
-
-- Phase 28 Connect onboarding — MISSING
-- Phase 29 Marketplace payouts on bookings — MISSING
-- Phase 30 Puppy-sale commission + escrow — MISSING
-- Phase 31 Missing-pet reward escrow + payout — MISSING
-- Phase 32 Recurring shop orders (Stripe Subscriptions) — MISSING
-- Phase 33 Diet-plan marketplace — MISSING
-- Phase 34 GPS tracker subscription billing — MISSING (depends on 35 too)
+None right now. Every "partial" from the previous audit has been closed.
 
 ---
 
-## Hardware block (Phases 35–37) — ALL MISSING
+## 🔴 Not started — pre-Connect (cheap, no Stripe Connect needed)
 
-No `gps_devices`, `gps_device_pings`, `geofences`. No `gps-ingest` function. No "Devices" tab in Settings. No `shop_products.kind='gps_device'` flag.
+These are the **next low-risk shippable phases**.
 
-- Phase 35 GPS device data + ingestion — MISSING
-- Phase 36 Geofence + alerts — MISSING
-- Phase 37 Hardware SKU in Shop — MISSING
+### Phase 21 — Missing-pet premium boost (₹499)
+- DB: add `boosted_until` to `missing_pets`
+- Reuse `create-one-time-checkout`; webhook sets `boosted_until = now()+7d`
+- Widen `notify_missing_pet_alerts` fan-out radius from 5 km → 15 km when boosted
+- MissingFeed: pin boosted to top
+- Daily cron to clear expired
+- UI: "Boost reach (₹499)" button on MissingDetail
 
----
+### Phase 23 — NGO donations + featured adoption
+- DB: add `accepts_donations`, `donation_url`, `featured_until` to `profiles`; new `donations` table
+- Reuse one-time checkout; webhook inserts donation row
+- UI: Donate button on shelter profile, Donations tab for org, sort featured first on Adoption feed
+- Admin can set `featured_until` from Org Review
 
-## Summary scoreboard
+### Phase 24 — Shop contextual reminders
+- New cron `shop-reorder-scan` daily
+- Computes daily portion from `nutrition_logs.brand` × pet weight, projects depletion vs last `shop_orders`
+- Writes to existing `proactive_alerts` (5 days before runout)
+- Alert deep-links to `/shop?q=<brand>` (already supported)
 
-```text
-DONE       (3): 16, 17, 22
-PARTIAL    (4): 18, 19, 20, 27
-MISSING   (15): 21, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37
-```
+### Phase 25 — Pregnancy tracker
+- DB: `pregnancies` (dam_pet_id, sire_pet_id, mating_request_id, started_on, expected_whelp, status, notes); `pregnancy_milestones` (week, title, ai_tip)
+- Trigger on `mating_requests.status='agreed'` auto-creates pregnancy row
+- UI: Pregnancy panel on dam profile with 9-week tracker + weekly tips, "Create litter" CTA on whelp
 
-Total in your roadmap: 22 phases. Roughly **14% fully shipped, 18% half-shipped, 68% untouched.**
-
----
-
-## Recommended next-phase order (revenue + UX first, hardware last)
-
-The cheapest, highest-value moves are to **finish what's already half-built** before opening any new fronts. That converts staged schema into actual user value with minimal new surface area.
-
-### Tier 1 — close the partials (small credit batches each)
-
-1. **Phase 20 finish** — wire `mating_listings` publish → `create-one-time-checkout` → webhook flips `paid_until`, plus the expiry cron. Schema is ready; this is the smallest path to first paid feature.
-2. **Phase 19 finish** — ship `recurring-booking-spawn` daily edge function + cron + management UI. Table already exists.
-3. **Phase 27 finish** — add `consult_prescriptions` (structured items), owner "Buy meds" deep-link into Shop cart.
-4. **Phase 18 finish** — add the trigger that blocks walker activation until approved, plus the walker onboarding flow that uses the existing trust columns.
-
-### Tier 2 — quick standalone wins
-
-5. **Phase 21** — missing-pet boost. Reuses one-time checkout, single new column + cron.
-6. **Phase 24** — shop reorder reminders. Reuses `proactive_alerts` infra; pure cron + math.
-7. **Phase 23** — NGO donations + featured adoption. Reuses one-time checkout.
-8. **Phase 25** — pregnancy tracker. Self-contained; rides on `mating_requests` trigger.
-9. **Phase 26** — pet-taxi transport legs. Reuses `walk_tracks` for live trace.
-
-### Tier 3 — Stripe Connect gate (one big credit batch, then unlocks 6 phases)
-
-10. **Phase 28** Connect onboarding — required before 29–34. Plan this as its own larger phase.
-11. Then 29 → 32 → 31 → 30 → 33 → 34 in roughly that order (29 is the most reused infrastructure; 30 has the most legal complexity around escrow/disputes; 34 needs Phase 35 in place).
-
-### Tier 4 — hardware gate (only when device partner is real)
-
-12. Phase 35 → 36 → 37, in order. Don't start until you actually have a device.
+### Phase 26 — Pickup/drop ("pet taxi")
+- DB: `transport_legs` (booking_id, kind pickup|drop, address, scheduled_at, status, fare_inr, driver_id, started_at, ended_at)
+- Reuse `walk_tracks` for live trace + existing public_share_token
+- UI: BookingSheet pickup/drop toggles, provider "Start trip" → WalkLive, owner live map
 
 ---
 
-## Gotchas worth flagging now
+## 🚪 Stripe Connect Gate (Phase 28) — required for 29–34
 
-- **Phase 16 cron**: the `ai-proactive-scan` function exists but I cannot tell from a code read whether `cron.schedule` was actually inserted. If alerts aren't appearing on a schedule, that's the cause. Worth verifying before declaring 16 fully done.
-- **Phase 22 weekly refresh**: same risk — the function and table exist, but the weekly cron may not be registered.
-- **Phase 27 model collision**: when we add `consult_prescriptions`, decide whether to keep `appointments.prescription` (free text) or migrate to the structured table only. Two sources of truth will hurt later.
-- **Plus-tier gating** is wired (`current_tier()` exists) — every revenue phase should reuse it for upsell paths, not invent its own.
+### Phase 28 — Stripe Connect onboarding
+- DB: `stripe_accounts` (user_id, account_id, type, charges_enabled, payouts_enabled, country, status)
+- Edge functions: `connect-onboard`, `connect-refresh`, `connect-webhook`
+- Payouts page from vet/walker/boarder/breeder/NGO dashboards; status pill gates "accept paid bookings"
+
+### Phase 29 — Marketplace booking payouts
+- On `service_bookings.status='completed'` → `payout-booking` does Stripe Transfer minus category fee (vet 20%, walker 15%, boarder 18%, grooming 15%)
+- `payouts` table + provider Earnings tab
+
+### Phase 30 — Puppy-sale commission + escrow
+- `adoption_listings` table needed (does not exist yet)
+- Hold funds until buyer confirms receipt; 90/10 split; admin Disputes panel
+
+### Phase 31 — Missing-pet reward escrow + payout
+- `missing_pet_rewards` (missing_pet_id, owner_id, amount_inr, stripe_pi_id, status, finder_id)
+- "Pledge reward" + "Mark found, pick finder" → release minus 5%
+
+### Phase 32 — Recurring shop orders (subscriptions)
+- Stripe Subscription with shipping interval; `subscription_orders` table
+- `subscription-fulfill` cron creates next `shop_orders` per cycle
+
+### Phase 33 — Diet-plan marketplace
+- `diet_plans` + `diet_plan_purchases`; vets keep 80%
+- Vet authoring page + Health → Diet plans tab
+
+### Phase 34 — GPS tracker subscription billing
+- Depends on Phase 35 schema
+- Stripe recurring price ₹199/month tied to `gps_devices.subscription_status`
 
 ---
 
-## What I need from you to proceed
+## 🛠 Hardware Gate (35–37)
 
-Tell me which phase to ship next. My pick is **Phase 20 finish** (mating listing fee) — schema is staged, the checkout function already exists, and it turns on revenue with the smallest credit spend. After that, Phase 19 finish, then Phase 27 finish, then Phase 21.
+### Phase 35 — GPS device data model + ingestion
+- `gps_devices`, `gps_device_pings`; `gps-ingest` HMAC-signed function
+- Settings → Devices pair-by-serial + live map
 
-If you want, I can also (cheaply, in plan-only mode) verify whether the Phase 16 and Phase 22 crons are actually registered before you spend credits assuming they are.
+### Phase 36 — Geofence + alerts
+- `geofences` table; trigger on ping calculates distance and fires push when outside
+
+### Phase 37 — Hardware SKU in Shop
+- `shop_products.kind='gps_device'`; auto-create `gps_devices` row on order completion with admin-assigned serial
+
+---
+
+## Recommended next step
+
+**Phase 25 — Pregnancy tracker.** Single new table family, no payments, no Stripe Connect, fits naturally on existing pet profile, and ties two already-shipped features together (mating requests → litters). Smallest credit batch with clear user value.
+
+Reply with the phase number to ship next; I'll do that one only, fully wired end-to-end.
