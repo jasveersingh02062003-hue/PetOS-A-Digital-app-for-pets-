@@ -186,6 +186,7 @@ export type Database = {
           prescription: string | null
           scheduled_at: string
           status: Database["public"]["Enums"]["appointment_status"]
+          triage_session_id: string | null
           updated_at: string
           vet_id: string
           video_provider: string | null
@@ -206,6 +207,7 @@ export type Database = {
           prescription?: string | null
           scheduled_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          triage_session_id?: string | null
           updated_at?: string
           vet_id: string
           video_provider?: string | null
@@ -226,6 +228,7 @@ export type Database = {
           prescription?: string | null
           scheduled_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
+          triage_session_id?: string | null
           updated_at?: string
           vet_id?: string
           video_provider?: string | null
@@ -234,7 +237,15 @@ export type Database = {
           video_room_token_vet?: string | null
           video_room_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "appointments_triage_session_id_fkey"
+            columns: ["triage_session_id"]
+            isOneToOne: false
+            referencedRelation: "vet_triage_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blocked_users: {
         Row: {
@@ -3475,6 +3486,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vet_triage_sessions: {
+        Row: {
+          ai_summary: string | null
+          closed_at: string | null
+          created_at: string
+          escalated_to_appointment_id: string | null
+          home_care: string[] | null
+          id: string
+          owner_id: string
+          pet_id: string | null
+          recommend_vet: boolean | null
+          severity: Database["public"]["Enums"]["triage_severity"] | null
+          transcript: Json
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          closed_at?: string | null
+          created_at?: string
+          escalated_to_appointment_id?: string | null
+          home_care?: string[] | null
+          id?: string
+          owner_id: string
+          pet_id?: string | null
+          recommend_vet?: boolean | null
+          severity?: Database["public"]["Enums"]["triage_severity"] | null
+          transcript?: Json
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          closed_at?: string | null
+          created_at?: string
+          escalated_to_appointment_id?: string | null
+          home_care?: string[] | null
+          id?: string
+          owner_id?: string
+          pet_id?: string | null
+          recommend_vet?: boolean | null
+          severity?: Database["public"]["Enums"]["triage_severity"] | null
+          transcript?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_triage_sessions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "vet_triage_sessions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vital_logs: {
         Row: {
           body_condition: number | null
@@ -3933,6 +4004,7 @@ export type Database = {
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
       transfer_status: "pending" | "accepted" | "declined" | "cancelled"
+      triage_severity: "mild" | "moderate" | "severe"
       verification_status: "pending" | "approved" | "rejected"
       vet_q_category:
         | "behavior"
@@ -4210,6 +4282,7 @@ export const Constants = {
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
       transfer_status: ["pending", "accepted", "declined", "cancelled"],
+      triage_severity: ["mild", "moderate", "severe"],
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
       vet_q_status: ["open", "answered", "closed"],
