@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { format } from "date-fns";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 const DEFAULT_TERMS = `Both parties confirm:
 • Their pet is healthy, fully vaccinated, and free from communicable conditions to the best of their knowledge.
@@ -29,6 +30,7 @@ export const AgreementCard = ({
   const [name, setName] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +48,14 @@ export const AgreementCard = ({
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [requestId]);
 
-  const sign = async () => {
+  const startSign = () => {
     if (!name.trim() || !agreed) return toast.error("Type your name and tick the box");
+    // Charge only on first creation; subsequent counter-signature is free.
+    if (!agreement) setPaywallOpen(true);
+    else finishSign();
+  };
+
+  const finishSign = async () => {
     setSigning(true);
     const sigField = isFromOwner ? "from_signature" : "to_signature";
     const tsField = isFromOwner ? "from_signed_at" : "to_signed_at";

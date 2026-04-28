@@ -169,6 +169,12 @@ const MatesNew = () => {
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4" />} Publish listing
         </Button>
       </form>
+      <PaywallSheet
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        kind="mating_listing"
+        onConfirmed={finishSubmit}
+      />
     </div>
   );
 };
