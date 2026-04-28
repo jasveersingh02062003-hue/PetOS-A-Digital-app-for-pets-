@@ -3351,29 +3351,38 @@ export type Database = {
       }
       symptom_logs: {
         Row: {
+          ai_flag: string | null
+          ai_reason: string | null
           created_at: string
           id: string
           logged_at: string
           notes: string | null
           pet_id: string
+          photo_url: string | null
           severity: number
           symptom: string
         }
         Insert: {
+          ai_flag?: string | null
+          ai_reason?: string | null
           created_at?: string
           id?: string
           logged_at?: string
           notes?: string | null
           pet_id: string
+          photo_url?: string | null
           severity?: number
           symptom: string
         }
         Update: {
+          ai_flag?: string | null
+          ai_reason?: string | null
           created_at?: string
           id?: string
           logged_at?: string
           notes?: string | null
           pet_id?: string
+          photo_url?: string | null
           severity?: number
           symptom?: string
         }
