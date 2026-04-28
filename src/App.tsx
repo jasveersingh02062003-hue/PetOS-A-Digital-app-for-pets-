@@ -43,6 +43,7 @@ const Shelters = lazy(() => import("./pages/Shelters"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
+const RecurringBookings = lazy(() => import("./pages/RecurringBookings"));
 const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopNew = lazy(() => import("./pages/ShopNew"));
