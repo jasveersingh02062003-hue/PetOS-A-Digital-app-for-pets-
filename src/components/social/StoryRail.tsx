@@ -50,7 +50,7 @@ export const StoryRail = () => {
               className="flex flex-col items-center gap-1.5 shrink-0"
             >
               <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-background ring-primary">
-                <img src={cover.image_url} alt="" className="w-full h-full object-cover" />
+                <img src={cover.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </div>
               <span className="text-[11px] text-muted-foreground max-w-[64px] truncate">{g.author_name?.split(" ")[0] ?? "Pet"}</span>
             </button>

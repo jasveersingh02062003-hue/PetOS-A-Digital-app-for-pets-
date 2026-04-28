@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { uploadImageWithVariants } from "@/lib/uploadImage";
 
 type Props = {
   value: string | null;
@@ -32,21 +32,18 @@ export const ImageUpload = ({
 
   const upload = async (file: File) => {
     if (!user) return toast.error("Sign in first");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    if (file.size > 8 * 1024 * 1024) return toast.error("Max 8MB");
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    if (error) {
+    try {
+      const v = await uploadImageWithVariants(file, bucket as any);
+      // Use the `feed` size by default — callers that need the original full
+      // image can read it from the `full` URL via the surrounding state.
+      onChange(v.feed);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    } finally {
       setUploading(false);
-      return toast.error(error.message);
     }
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    onChange(data.publicUrl);
-    setUploading(false);
   };
 
   return (

@@ -1434,6 +1434,9 @@ export type Database = {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
           allergies: string[]
           avatar_url: string | null
+          avatar_url_feed: string | null
+          avatar_url_full: string | null
+          avatar_url_thumb: string | null
           bio: string | null
           blood_type: string | null
           breed: string | null
@@ -1467,6 +1470,9 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
           allergies?: string[]
           avatar_url?: string | null
+          avatar_url_feed?: string | null
+          avatar_url_full?: string | null
+          avatar_url_thumb?: string | null
           bio?: string | null
           blood_type?: string | null
           breed?: string | null
@@ -1500,6 +1506,9 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
           allergies?: string[]
           avatar_url?: string | null
+          avatar_url_feed?: string | null
+          avatar_url_full?: string | null
+          avatar_url_thumb?: string | null
           bio?: string | null
           blood_type?: string | null
           breed?: string | null
@@ -1746,6 +1755,9 @@ export type Database = {
           health_value: Json | null
           id: string
           image_url: string | null
+          image_url_feed: string | null
+          image_url_full: string | null
+          image_url_thumb: string | null
           like_count: number
           pet_id: string | null
           reaction_counts: Json
@@ -1761,6 +1773,9 @@ export type Database = {
           health_value?: Json | null
           id?: string
           image_url?: string | null
+          image_url_feed?: string | null
+          image_url_full?: string | null
+          image_url_thumb?: string | null
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
@@ -1776,6 +1791,9 @@ export type Database = {
           health_value?: Json | null
           id?: string
           image_url?: string | null
+          image_url_feed?: string | null
+          image_url_full?: string | null
+          image_url_thumb?: string | null
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
@@ -1808,6 +1826,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          avatar_url_feed: string | null
+          avatar_url_full: string | null
+          avatar_url_thumb: string | null
           bio: string | null
           city: string | null
           created_at: string
@@ -1828,6 +1849,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          avatar_url_feed?: string | null
+          avatar_url_full?: string | null
+          avatar_url_thumb?: string | null
           bio?: string | null
           city?: string | null
           created_at?: string
@@ -1848,6 +1872,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          avatar_url_feed?: string | null
+          avatar_url_full?: string | null
+          avatar_url_thumb?: string | null
           bio?: string | null
           city?: string | null
           created_at?: string
@@ -2275,6 +2302,9 @@ export type Database = {
           expires_at: string
           id: string
           image_url: string
+          media_url_feed: string | null
+          media_url_full: string | null
+          media_url_thumb: string | null
           pet_id: string | null
           view_count: number
         }
@@ -2285,6 +2315,9 @@ export type Database = {
           expires_at?: string
           id?: string
           image_url: string
+          media_url_feed?: string | null
+          media_url_full?: string | null
+          media_url_thumb?: string | null
           pet_id?: string | null
           view_count?: number
         }
@@ -2295,6 +2328,9 @@ export type Database = {
           expires_at?: string
           id?: string
           image_url?: string
+          media_url_feed?: string | null
+          media_url_full?: string | null
+          media_url_thumb?: string | null
           pet_id?: string | null
           view_count?: number
         }

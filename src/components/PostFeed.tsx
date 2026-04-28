@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
@@ -20,6 +20,8 @@ import { addReaction } from "@/lib/reactions";
 import { haptic } from "@/lib/haptics";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { toast } from "sonner";
+import { SmartImage } from "./SmartImage";
+import { FeedSkeleton } from "./skeletons/FeedSkeleton";
 
 export type FeedPost = {
   id: string;
@@ -27,6 +29,9 @@ export type FeedPost = {
   pet_id: string | null;
   caption: string | null;
   image_url: string | null;
+  image_url_thumb?: string | null;
+  image_url_feed?: string | null;
+  image_url_full?: string | null;
   like_count: number;
   comment_count: number;
   created_at: string;
@@ -53,7 +58,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
         followingIds = (f ?? []).map((r: any) => r.following_id);
         if (!followingIds.length) return [];
       }
-      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, like_count, comment_count, created_at, reaction_counts");
+      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts");
       if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
@@ -90,7 +95,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   }, [qc, scope]);
 
   if (isLoading) {
-    return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+    return <FeedSkeleton count={3} />;
   }
   if (!data?.length) {
     if (emptyState) return <>{emptyState}</>;
@@ -191,13 +196,23 @@ const PostCard = ({ post, onComment }: {
         <FollowButton targetId={post.author_id} />
       </div>
 
-      {post.image_url && (
+      {(post.image_url_feed || post.image_url) && (
         <div
-          className="relative bg-muted aspect-square overflow-hidden select-none"
+          className="relative select-none"
           onClick={handleImageTap}
           onDoubleClick={(e) => e.preventDefault()}
         >
-          <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" draggable={false} />
+          <SmartImage
+            variant="feed"
+            src={post.image_url}
+            variants={{
+              thumb: post.image_url_thumb,
+              feed: post.image_url_feed,
+              full: post.image_url_full,
+            }}
+            aspect="1/1"
+            alt=""
+          />
           {pawLayer}
         </div>
       )}
