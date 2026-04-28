@@ -59,7 +59,7 @@ serve(async (req) => {
     const { data: userRes } = await supabase.auth.getUser();
     if (!userRes?.user) return jsonErr("unauthenticated", 401);
 
-    // ---- Tier gate (free = 5 chats/day) ----
+    // ---- Tier gate (free = 3 chats / 30 days) — atomic via RPC ----
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -67,24 +67,23 @@ serve(async (req) => {
     );
     const { data: tierData } = await admin.rpc("current_tier", { _user_id: userRes.user.id });
     const tier = (tierData as string) ?? "free";
-    const today = new Date().toISOString().slice(0, 10);
     if (tier === "free") {
-      const { data: counter } = await admin
-        .from("usage_counters")
-        .select("count")
-        .eq("user_id", userRes.user.id).eq("kind", "ai_chat").eq("period", today)
-        .maybeSingle();
-      const count = counter?.count ?? 0;
-      if (count >= 5) {
-        return new Response(JSON.stringify({
-          error: "Daily AI limit reached. Upgrade to Plus for unlimited chats.",
-          code: "tier_limit",
-        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      // Use the caller's auth so auth.uid() inside the function resolves correctly
+      const { data: usage, error: usageErr } = await supabase.rpc("increment_usage", {
+        _kind: "ai_chat",
+        _limit: 3,
+        _window_days: 30,
+      });
+      if (usageErr) {
+        return jsonErr(usageErr.message, 500);
       }
-      await admin.from("usage_counters").upsert(
-        { user_id: userRes.user.id, kind: "ai_chat", period: today, count: count + 1 },
-        { onConflict: "user_id,kind,period" },
-      );
+      if (usage && (usage as any).allowed === false) {
+        return new Response(JSON.stringify({
+          error: "You've used your 3 free Petos AI chats this month. Upgrade to Plus for unlimited.",
+          code: "tier_limit",
+          resets_at: (usage as any).resets_at,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // Pull vault context for the active pet (RLS scopes by caller)
