@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TierGate } from "@/components/TierGate";
 import { useTier } from "@/hooks/useTier";
 import { useAuth } from "@/hooks/useAuth";
+import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -176,6 +177,10 @@ const AiChat = () => {
           </DropdownMenu>
         )}
       </header>
+
+      <div className="container-app pt-3">
+        <MedicalDisclaimer />
+      </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto container-app py-5">
         {messages.length === 0 ? (

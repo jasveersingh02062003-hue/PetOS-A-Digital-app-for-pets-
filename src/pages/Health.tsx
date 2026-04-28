@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
+import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -78,6 +79,8 @@ const Health = () => {
               <div className="text-xs opacity-80">Personalised to {active.name}</div>
             </div>
           </Button>
+
+          <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
 
           <Tabs defaultValue="vaccinations" className="w-full">
             <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl h-11">

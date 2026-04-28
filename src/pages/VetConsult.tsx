@@ -8,6 +8,7 @@ import { ArrowLeft, Stethoscope, ShieldCheck, Clock, AlertTriangle, X, Loader2 }
 import { VetControls } from "@/components/VetControls";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_vet: "Awaiting vet",
@@ -106,6 +107,7 @@ const VetConsult = () => {
       </header>
 
       <div className="container-app py-5 space-y-4">
+        <MedicalDisclaimer />
         {/* Severity banner */}
         <div className={`rounded-2xl border p-4 ${sevTone(consult.severity)}`}>
           <div className="flex items-center gap-2 font-display text-lg capitalize">
