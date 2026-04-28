@@ -24,7 +24,7 @@ export const HealthStatusStrip = ({ petId }: { petId?: string }) => {
         .eq("pet_id", petId!)
         .maybeSingle();
       if (error) throw error;
-      return data as Status | null;
+      return (data ?? null) as unknown as Status | null;
     },
   });
 
