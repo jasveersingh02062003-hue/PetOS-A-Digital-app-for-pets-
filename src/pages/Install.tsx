@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -52,13 +51,10 @@ export default function Install() {
     else toast.error(r.reason || "Could not enable notifications");
   }
 
+  useEffect(() => { document.title = "Install Petos — Add to Home Screen"; }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Install Petos — Add to Home Screen</title>
-        <meta name="description" content="Install Petos as an app on your phone for the best experience." />
-      </Helmet>
-
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/" aria-label="Back"><ArrowLeft className="w-5 h-5" /></Link>
