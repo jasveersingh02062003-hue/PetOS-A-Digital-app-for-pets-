@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, MapPin, Search } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
+import { RatingSummary } from "@/components/trust/RatingSummary";
 
 type Breeder = {
   id: string;
@@ -143,6 +144,9 @@ export default function Breeders() {
                 <Badge variant="secondary" className="mt-2 text-[10px]">
                   {b.account_type || "breeder"}
                 </Badge>
+                <div className="mt-1.5">
+                  <RatingSummary subjectType="pet_partner" subjectId={b.id} />
+                </div>
               </div>
             </Card>
           </Link>
