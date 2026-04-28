@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowCounts } from "@/hooks/useFollows";
 import { FollowButton } from "@/components/social/FollowButton";
+import { MessageButton } from "@/components/social/MessageButton";
 import { PostGrid } from "@/components/social/PostGrid";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,8 +81,9 @@ const UserProfile = () => {
       </div>
 
       {!isMe && userId && (
-        <div className="mb-4">
+        <div className="mb-4 flex gap-2">
           <FollowButton targetId={userId} size="default" />
+          <MessageButton userId={userId} size="default" variant="outline" />
         </div>
       )}
 
