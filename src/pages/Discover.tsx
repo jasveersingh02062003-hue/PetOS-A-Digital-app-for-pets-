@@ -136,6 +136,7 @@ const TONE_CHIP: Record<string, string> = {
   amber:    "bg-amber/15 text-amber",
   primary:  "bg-primary/10 text-primary",
   emergency:"bg-emergency/10 text-emergency",
+  sky:      "bg-sky/10 text-sky",
 };
 const ChipTile = ({ title, icon: Icon, tone, onClick }: { title: string; icon: any; tone: string; onClick: () => void }) => (
   <button
