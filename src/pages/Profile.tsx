@@ -110,6 +110,7 @@ const Profile = () => {
         <Row icon={Package} label="My orders" onClick={() => nav("/orders")} />
         <Row icon={ShoppingBag} label="Manage services" onClick={() => nav("/services/manage")} />
         <Row icon={Stethoscope} label="Vet portal" onClick={() => nav("/vet")} />
+        <Row icon={ShieldCheck} label="Vet access requests" onClick={() => nav("/access-requests")} />
         {isStaff && <Row icon={ShieldCheck} label="Admin console" onClick={() => nav("/admin")} />}
         <Row icon={Bookmark} label="Saved posts" />
         <Row icon={Wallet} label="Wallet" />
