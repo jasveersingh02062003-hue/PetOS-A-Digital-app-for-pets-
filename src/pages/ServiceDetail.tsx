@@ -6,6 +6,9 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, BadgeCheck, MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 import { BookingSheet } from "@/components/BookingSheet";
+import { ReviewList } from "@/components/ReviewList";
+import { SubjectRating } from "@/components/SubjectRating";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ServiceDetail = () => {
   const { id } = useParams();
