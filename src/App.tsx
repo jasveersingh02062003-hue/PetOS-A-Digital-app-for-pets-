@@ -104,6 +104,7 @@ const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
+const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -175,6 +176,7 @@ const App = () => (
               <Route path="/onboarding/org" element={<OrgOnboarding />} />
               <Route path="/onboarding/add-pet" element={<AddFirstPet />} />
               <Route path="/onboarding/done" element={<OnboardingDone />} />
+              <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
