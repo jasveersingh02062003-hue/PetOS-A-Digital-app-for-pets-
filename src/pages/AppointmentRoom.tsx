@@ -27,11 +27,17 @@ export default function AppointmentRoom() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, pets(name, avatar_url, public_id)")
+        .select("*")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const { data: pet } = await supabase
+        .from("pets")
+        .select("name, avatar_url, public_id")
+        .eq("id", data.pet_id)
+        .maybeSingle();
+      return { ...data, pet };
     },
   });
 
