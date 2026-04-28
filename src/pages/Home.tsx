@@ -33,6 +33,8 @@ const Home = () => {
 
       <StoryRail />
 
+      <div className="-mx-4 mt-2"><DailyPromptBanner /></div>
+
       <div className="mt-2 mb-3">
         <MissingStrip />
       </div>
