@@ -2389,6 +2389,47 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_quiz_attempts: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          passed: boolean
+          provider_id: string
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          passed: boolean
+          provider_id: string
+          score: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          passed?: boolean
+          provider_id?: string
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_quiz_attempts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2421,6 +2462,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recurring_bookings: {
+        Row: {
+          created_at: string
+          customer_id: string
+          end_date: string | null
+          frequency: string
+          id: string
+          notes: string | null
+          pet_id: string | null
+          provider_id: string
+          start_date: string
+          status: string
+          time_of_day: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          provider_id: string
+          start_date: string
+          status?: string
+          time_of_day: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          provider_id?: string
+          start_date?: string
+          status?: string
+          time_of_day?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "recurring_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reminder_log: {
         Row: {
@@ -2566,6 +2677,7 @@ export type Database = {
           customer_id: string
           id: string
           notes: string | null
+          parent_recurring_id: string | null
           pet_id: string | null
           provider_id: string
           public_share_token: string | null
@@ -2578,6 +2690,7 @@ export type Database = {
           customer_id: string
           id?: string
           notes?: string | null
+          parent_recurring_id?: string | null
           pet_id?: string | null
           provider_id: string
           public_share_token?: string | null
@@ -2590,6 +2703,7 @@ export type Database = {
           customer_id?: string
           id?: string
           notes?: string | null
+          parent_recurring_id?: string | null
           pet_id?: string | null
           provider_id?: string
           public_share_token?: string | null
@@ -2597,11 +2711,20 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_bookings_parent_recurring_id_fkey"
+            columns: ["parent_recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_providers: {
         Row: {
           active: boolean
+          address_proof_path: string | null
           bio: string | null
           category: Database["public"]["Enums"]["service_category"]
           city: string | null
@@ -2610,15 +2733,21 @@ export type Database = {
           created_at: string
           hourly_rate_inr: number | null
           id: string
+          id_proof_path: string | null
           lat: number | null
           lng: number | null
           name: string
           owner_id: string
+          quiz_passed_at: string | null
+          quiz_score: number | null
+          trust_status: string
           updated_at: string
           verified: boolean
+          years_experience: number | null
         }
         Insert: {
           active?: boolean
+          address_proof_path?: string | null
           bio?: string | null
           category: Database["public"]["Enums"]["service_category"]
           city?: string | null
@@ -2627,15 +2756,21 @@ export type Database = {
           created_at?: string
           hourly_rate_inr?: number | null
           id?: string
+          id_proof_path?: string | null
           lat?: number | null
           lng?: number | null
           name: string
           owner_id: string
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          trust_status?: string
           updated_at?: string
           verified?: boolean
+          years_experience?: number | null
         }
         Update: {
           active?: boolean
+          address_proof_path?: string | null
           bio?: string | null
           category?: Database["public"]["Enums"]["service_category"]
           city?: string | null
@@ -2644,12 +2779,17 @@ export type Database = {
           created_at?: string
           hourly_rate_inr?: number | null
           id?: string
+          id_proof_path?: string | null
           lat?: number | null
           lng?: number | null
           name?: string
           owner_id?: string
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          trust_status?: string
           updated_at?: string
           verified?: boolean
+          years_experience?: number | null
         }
         Relationships: []
       }

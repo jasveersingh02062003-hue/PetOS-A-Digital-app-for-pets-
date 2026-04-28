@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +36,10 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
   const [when, setWhen] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [recurring, setRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<"weekly" | "biweekly" | "monthly">("weekly");
+  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [endDate, setEndDate] = useState<string>("");
 
   const { data: pets } = useQuery({
     queryKey: ["my-pets", user?.id],
@@ -57,24 +63,54 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
       toast.error("Pick a date & time");
       return;
     }
+    if (recurring && weekdays.length === 0) {
+      toast.error("Pick at least one weekday for the recurring schedule");
+      return;
+    }
     setSaving(true);
+    const startDt = new Date(when);
+    let recurringId: string | null = null;
+    if (recurring) {
+      const { data: rec, error: recErr } = await supabase.from("recurring_bookings").insert({
+        customer_id: user.id,
+        provider_id: providerId,
+        pet_id: petId || null,
+        frequency,
+        weekdays,
+        time_of_day: startDt.toTimeString().slice(0, 8),
+        start_date: startDt.toISOString().slice(0, 10),
+        end_date: endDate || null,
+        notes: notes || null,
+      }).select("id").single();
+      if (recErr) { setSaving(false); toast.error(recErr.message); return; }
+      recurringId = rec.id;
+    }
     const { error } = await supabase.from("service_bookings").insert({
       provider_id: providerId,
       customer_id: user.id,
       pet_id: petId || null,
-      scheduled_at: new Date(when).toISOString(),
+      scheduled_at: startDt.toISOString(),
       notes: notes || null,
+      parent_recurring_id: recurringId,
     });
     setSaving(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success("Booking requested");
+    toast.success(recurring ? "Recurring booking created" : "Booking requested");
     onOpenChange(false);
     setNotes("");
     setWhen("");
+    setRecurring(false);
+    setWeekdays([]);
+    setEndDate("");
   };
+
+  const toggleDay = (d: number) =>
+    setWeekdays((w) => (w.includes(d) ? w.filter((x) => x !== d) : [...w, d].sort()));
+
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -114,8 +150,57 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+
+          <Card className="rounded-xl border-hairline p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Repeat this booking</div>
+                <div className="text-xs text-muted-foreground">Set up a recurring schedule</div>
+              </div>
+              <Switch checked={recurring} onCheckedChange={setRecurring} />
+            </div>
+
+            {recurring && (
+              <div className="space-y-3 pt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Frequency</Label>
+                  <Select value={frequency} onValueChange={(v: any) => setFrequency(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Every 2 weeks</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Days of week</Label>
+                  <div className="flex gap-1.5">
+                    {dayLabels.map((d, i) => {
+                      const active = weekdays.includes(i);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => toggleDay(i)}
+                          className={`h-9 w-9 rounded-full text-xs font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-card border-hairline text-muted-foreground"}`}
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">End date (optional)</Label>
+                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                </div>
+              </div>
+            )}
+          </Card>
+
           <Button onClick={submit} disabled={saving} className="w-full rounded-full h-12">
-            {saving ? "Sending…" : "Request booking"}
+            {saving ? "Sending…" : recurring ? "Create recurring booking" : "Request booking"}
           </Button>
         </div>
       </SheetContent>

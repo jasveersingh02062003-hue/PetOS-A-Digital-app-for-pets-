@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Plus } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tabs,
@@ -13,6 +14,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import type { Database } from "@/integrations/supabase/types";
+import { TrustBadge } from "@/components/services/TrustBadge";
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
 
@@ -153,11 +155,24 @@ const ServicesManage = () => {
             <p className="text-sm text-muted-foreground">No listings yet.</p>
           )}
           {listings?.map((l) => (
-            <Card key={l.id} className="rounded-2xl border-hairline p-4">
-              <div className="font-display text-base">{l.name}</div>
-              <div className="text-xs text-muted-foreground capitalize">
-                {l.category} · {l.city || "—"}
+            <Card key={l.id} className="rounded-2xl border-hairline p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-display text-base truncate">{l.name}</div>
+                  <div className="text-xs text-muted-foreground capitalize">
+                    {l.category} · {l.city || "—"}
+                  </div>
+                </div>
+                <TrustBadge provider={l as any} />
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-hairline gap-1.5"
+                onClick={() => nav(`/services/trust/${l.id}`)}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" /> Build trust
+              </Button>
             </Card>
           ))}
         </TabsContent>

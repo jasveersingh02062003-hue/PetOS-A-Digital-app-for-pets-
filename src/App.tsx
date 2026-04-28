@@ -41,6 +41,7 @@ const AdoptListingDetail = lazy(() => import("./pages/AdoptListingDetail"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
+const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopNew = lazy(() => import("./pages/ShopNew"));
 const Cart = lazy(() => import("./pages/Cart"));
@@ -199,6 +200,7 @@ const App = () => (
               <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
               <Route path="/services/new" element={<ServiceNew />} />
               <Route path="/services/manage" element={<ServicesManage />} />
+              <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
