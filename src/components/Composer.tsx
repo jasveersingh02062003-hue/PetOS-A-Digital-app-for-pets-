@@ -181,24 +181,61 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-4">
+      {/* IMAGE FIRST — big drop zone or preview */}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      {preview ? (
+        <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square">
+          <img src={preview} alt="" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => { setFile(null); setPreview(null); }}
+            className="absolute top-2 right-2 h-9 w-9 rounded-full bg-background/95 flex items-center justify-center shadow-md"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="absolute bottom-2 left-2 px-3 h-8 rounded-full bg-background/95 text-xs font-semibold flex items-center gap-1.5 shadow-md"
+          >
+            <ImagePlus className="h-3.5 w-3.5" /> Replace
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="w-full aspect-square rounded-2xl border-2 border-dashed border-coral/30 bg-gradient-to-br from-coral/5 via-card to-amber/5 flex flex-col items-center justify-center gap-3 hover:border-coral/50 transition-colors active:scale-[0.99]"
+        >
+          <div className="h-14 w-14 rounded-2xl bg-coral/15 grid place-items-center">
+            <Camera className="h-7 w-7 text-coral" strokeWidth={2} />
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-base">Add a photo</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Tap to pick from your gallery</div>
+          </div>
+        </button>
+      )}
+
+      {/* CAPTION — secondary, below image */}
       <Textarea
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
-        placeholder="What's happening with your pet?"
-        className="rounded-xl border-hairline min-h-[100px] resize-none"
+        placeholder={pets?.[0] ? `What's ${pets[0].name} up to?` : "Write a caption…"}
+        className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
         maxLength={500}
       />
 
-      <div className="flex items-center justify-between gap-2 -mt-1">
+      <div className="flex items-center justify-between gap-2 -mt-2">
         <button
           type="button"
           onClick={suggestCaptions}
           disabled={suggesting}
-          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-lilac hover:underline disabled:opacity-50"
         >
           {suggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          {suggesting ? "Thinking…" : "AI suggest captions"}
+          {suggesting ? "Thinking…" : "AI captions"}
         </button>
         <span className="text-[10px] text-muted-foreground">{caption.length}/500</span>
       </div>
@@ -223,7 +260,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
                   key={i}
                   type="button"
                   onClick={() => setCaption((prev) => `${prev}${prev.endsWith(" ") || !prev ? "" : " "}#${h} `)}
-                  className="text-xs px-2 py-1 rounded-full bg-primary-soft text-primary"
+                  className="text-xs px-2 py-1 rounded-full bg-lilac/15 text-lilac font-medium"
                 >
                   #{h}
                 </button>
@@ -233,34 +270,35 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         </div>
       )}
 
-      {preview && (
-        <div className="relative rounded-xl overflow-hidden bg-muted">
-          <img src={preview} alt="" className="w-full max-h-72 object-cover" />
+      {/* Pet tag pills */}
+      {pets && pets.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
           <button
             type="button"
-            onClick={() => { setFile(null); setPreview(null); }}
-            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/90 flex items-center justify-center"
+            onClick={() => setPetId("none")}
+            className={`shrink-0 px-3 h-8 rounded-full text-xs font-semibold border transition-colors ${
+              petId === "none" ? "bg-foreground text-background border-foreground" : "bg-card border-hairline text-muted-foreground"
+            }`}
           >
-            <X className="h-4 w-4" />
+            No pet
           </button>
+          {pets.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setPetId(p.id)}
+              className={`shrink-0 inline-flex items-center gap-1.5 pl-1 pr-3 h-8 rounded-full text-xs font-semibold border transition-colors ${
+                petId === p.id ? "bg-coral/15 text-coral border-coral/30" : "bg-card border-hairline text-foreground"
+              }`}
+            >
+              <span className="h-6 w-6 rounded-full overflow-hidden bg-muted grid place-items-center text-[10px]">
+                {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : p.name[0]}
+              </span>
+              {p.name}
+            </button>
+          ))}
         </div>
       )}
-
-      <div className="flex items-center gap-2">
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
-        <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="rounded-xl border-hairline gap-2">
-          <ImagePlus className="h-4 w-4" /> Photo
-        </Button>
-        {pets && pets.length > 0 && (
-          <Select value={petId} onValueChange={setPetId}>
-            <SelectTrigger className="h-9 rounded-xl border-hairline flex-1 text-sm"><SelectValue placeholder="Tag a pet" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No pet tag</SelectItem>
-              {pets.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
 
       <CollabPicker selected={collabs} onChange={setCollabs} />
 
@@ -268,7 +306,12 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         <HealthTagPicker pets={pets} value={healthTag} onChange={setHealthTag} />
       )}
 
-      <Button type="submit" disabled={uploading} size="lg" className="w-full rounded-xl">
+      <Button
+        type="submit"
+        disabled={uploading}
+        size="lg"
+        className="w-full rounded-2xl h-12 text-base font-semibold bg-coral text-coral-foreground hover:bg-coral/90"
+      >
         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share"}
       </Button>
     </form>
