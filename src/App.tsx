@@ -45,6 +45,7 @@ const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
 const RecurringBookings = lazy(() => import("./pages/RecurringBookings"));
 const Pregnancies = lazy(() => import("./pages/Pregnancies"));
+const OrgDonations = lazy(() => import("./pages/OrgDonations"));
 const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopNew = lazy(() => import("./pages/ShopNew"));
@@ -212,6 +213,7 @@ const App = () => (
               <Route path="/services/manage" element={<ServicesManage />} />
               <Route path="/bookings/recurring" element={<RecurringBookings />} />
               <Route path="/pregnancies" element={<Pregnancies />} />
+              <Route path="/org/donations" element={<OrgDonations />} />
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />
