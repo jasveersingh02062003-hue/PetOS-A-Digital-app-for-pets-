@@ -143,16 +143,21 @@ const PostCard = ({ post, liked, onLike, onComment }: {
   return (
     <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
       <div className="flex items-center gap-3 p-4">
-        <Avatar className="h-9 w-9">
-          <AvatarImage src={displayImg} alt={displayName} />
-          <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
-        </Avatar>
+        <Link to={`/u/${post.author_id}`} className="shrink-0">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={displayImg} alt={displayName} />
+            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate">{displayName}</div>
+          <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate block hover:underline">
+            {displayName}
+          </Link>
           <div className="text-[11px] text-muted-foreground">
             {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
           </div>
         </div>
+        <FollowButton targetId={post.author_id} />
       </div>
 
       {post.image_url && (
