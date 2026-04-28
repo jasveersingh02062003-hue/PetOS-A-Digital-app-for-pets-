@@ -5,6 +5,8 @@ import { Heart, Sparkles, ShieldCheck, Users, MapPin, ChevronRight } from "lucid
 import { Button } from "@/components/ui/button";
 import { FeatureSlide } from "@/components/welcome/FeatureSlide";
 import { PetosLogo } from "@/components/PetosLogo";
+import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
 
 const SLIDES = [
   {
@@ -45,6 +47,14 @@ export default function Welcome() {
   const nav = useNavigate();
   const [i, setI] = useState(0);
   const last = i === SLIDES.length - 1;
+
+  useSeo({
+    title: "Welcome to Petos",
+    description:
+      "Photos, friends, health records, AI vet, mating, services and missing-pet alerts — one calm home for every pet.",
+    jsonLd: [jsonLd.organization(), jsonLd.website()],
+  });
+
 
   const finish = () => {
     localStorage.setItem(SEEN_KEY, "1");

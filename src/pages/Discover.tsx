@@ -8,9 +8,14 @@ import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
 import { NearMePanel } from "@/components/maps/NearMePanel";
 import { Compass, Flame, Users, CalendarDays, Stethoscope, Camera, Sparkles } from "lucide-react";
+import { useSeo } from "@/hooks/useSeo";
 
 const Discover = () => {
   const nav = useNavigate();
+  useSeo({
+    title: "Discover pets, mates and stories",
+    description: "Find verified breeding partners, trusted vets, meetups and trending pet stories near you.",
+  });
   return (
     <div className="container-app pad-top-safe">
       <header className="pt-6 pb-4">

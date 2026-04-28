@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cake, Heart, MapPin, Share2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
 
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
@@ -42,6 +44,36 @@ const PetProfile = () => {
   };
 
   const ageYrs = pet?.date_of_birth ? Math.floor((Date.now() - new Date(pet.date_of_birth).getTime()) / 31557600000) : null;
+
+  const petUrl = pet ? `${window.location.origin}/pet/${pet.public_id ?? pet.id}` : "";
+  useSeo(
+    pet
+      ? {
+          title: `${pet.name}${pet.breed ? ` · ${pet.breed}` : ""}`,
+          description:
+            pet.bio?.slice(0, 155) ||
+            `Meet ${pet.name} on Petos${pet.city ? ` from ${pet.city}` : ""}.`,
+          image: pet.avatar_url ?? undefined,
+          canonical: petUrl,
+          type: "profile",
+          jsonLd: [
+            {
+              "@context": "https://schema.org",
+              "@type": "Person",
+              name: pet.name,
+              image: pet.avatar_url ?? undefined,
+              url: petUrl,
+              description: pet.bio ?? undefined,
+            },
+            jsonLd.breadcrumb([
+              { name: "Petos", url: window.location.origin },
+              { name: "Pets", url: `${window.location.origin}/discover` },
+              { name: pet.name, url: petUrl },
+            ]),
+          ],
+        }
+      : { title: "Pet", noIndex: true },
+  );
 
   if (isLoading) return <div className="container-app pad-top-safe pt-10 text-center text-sm text-muted-foreground">Loading…</div>;
   if (!pet) return <div className="container-app pad-top-safe pt-10 text-center text-sm text-muted-foreground">Pet not found</div>;
