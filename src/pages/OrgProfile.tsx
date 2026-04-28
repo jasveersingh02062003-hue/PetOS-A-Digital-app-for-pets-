@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart, Inbox } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useSeo } from "@/hooks/useSeo";
 import { toast } from "sonner";
@@ -114,6 +114,11 @@ const OrgProfile = () => {
           <Button onClick={() => nav("/messages")} variant="outline" className="rounded-xl">
             Contact
           </Button>
+          {isOwner && (
+            <Button onClick={() => nav("/adoption-inbox")} variant="outline" className="rounded-xl gap-1.5 col-span-2">
+              <Inbox className="h-4 w-4" /> Adoption inbox
+            </Button>
+          )}
         </div>
       ) : null}
 
