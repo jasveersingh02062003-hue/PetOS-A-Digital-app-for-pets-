@@ -8,6 +8,9 @@ import { usePets } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TierGate } from "@/components/TierGate";
+import { useTier } from "@/hooks/useTier";
+import { useAuth } from "@/hooks/useAuth";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -20,11 +23,14 @@ const SUGGESTIONS = [
 
 const AiChat = () => {
   const nav = useNavigate();
+  const { user } = useAuth();
+  const { data: tier } = useTier();
   const { data: pets } = usePets();
   const [activePetId, setActivePetId] = useState<string | undefined>();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [softGate, setSoftGate] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,6 +124,29 @@ const AiChat = () => {
       if (!assistantSoFar) setMessages(next);
     } finally {
       setStreaming(false);
+    }
+
+    // Soft-gate: free users see Plus prompt once after their 3rd chat in 30d.
+    if (tier?.tier === "free" && user?.id) {
+      try {
+        const seenKey = `petos_plus_softgate_${user.id}`;
+        const lastShown = localStorage.getItem(seenKey);
+        const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (!lastShown || Number(lastShown) < monthAgo) {
+          const since = new Date(monthAgo).toISOString().slice(0, 10);
+          const { data: rows } = await supabase
+            .from("usage_counters")
+            .select("count")
+            .eq("user_id", user.id)
+            .eq("kind", "ai_chat")
+            .gte("period", since);
+          const total = (rows ?? []).reduce((s, r: any) => s + (r.count ?? 0), 0);
+          if (total >= 3) {
+            setSoftGate(true);
+            localStorage.setItem(seenKey, String(Date.now()));
+          }
+        }
+      } catch { /* ignore */ }
     }
   };
 
@@ -223,6 +252,13 @@ const AiChat = () => {
           </Button>
         </form>
       </div>
+
+      <TierGate
+        open={softGate}
+        onOpenChange={setSoftGate}
+        feature="Loving DogtorAI?"
+        reason="Plus gives unlimited chats, vet consults, and more — at one price."
+      />
     </div>
   );
 };
