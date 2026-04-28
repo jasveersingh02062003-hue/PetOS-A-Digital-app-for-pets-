@@ -143,14 +143,14 @@ const Plus = () => {
 
               <Button
                 className="w-full h-12 rounded-2xl mt-5"
-                disabled={working}
+                disabled={working || !!notifyState}
                 onClick={upgrade}
               >
                 {working ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {notifyState ? "We'll notify you on launch" : "Upgrade to Plus"}
+                {notifyState ? "We'll let you know ✓" : "Notify me when Plus launches"}
               </Button>
               <p className="text-[11px] text-muted-foreground text-center mt-2">
-                Cancel anytime · Secure checkout via Stripe
+                Plus launches soon. Early users get the first month free.
               </p>
             </Card>
 

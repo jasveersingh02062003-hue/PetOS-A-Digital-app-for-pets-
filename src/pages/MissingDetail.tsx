@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
-import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 const timeAgo = (iso: string) => {
@@ -201,6 +201,27 @@ const MissingDetail = () => {
                 Mark as found
               </Button>
             )}
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-2xl border-hairline"
+              onClick={async () => {
+                const name = missing.pet?.name ?? "our pet";
+                const where = missing.last_seen_city ? ` near ${missing.last_seen_city}` : "";
+                const url = `${window.location.origin}/missing/${missing.id}`;
+                const text = `Help us find ${name} 🐾\nLast seen${where}.${missing.note ? `\n\n${missing.note}` : ""}\n\nDetails & sightings: ${url}`;
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ title: `Missing: ${name}`, text, url });
+                  } else {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                  }
+                } catch {
+                  // user cancelled — silent
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4 mr-2" /> Share poster
+            </Button>
           </div>
         )}
 
