@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plus, ShoppingCart, Package } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Plus, ShoppingCart, Package, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useCart } from "@/hooks/useCart";
+import { usePets } from "@/hooks/useProfile";
 import { SubjectRating } from "@/components/SubjectRating";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -23,7 +24,23 @@ const cats: { key: ProductCategory | "all"; label: string }[] = [
 const Shop = () => {
   const nav = useNavigate();
   const [cat, setCat] = useState<ProductCategory | "all">("all");
+  const [hideAllergens, setHideAllergens] = useState(true);
   const { add, count } = useCart();
+  const { data: myPets } = usePets();
+
+  const allergyTerms = useMemo(() => {
+    const set = new Set<string>();
+    (myPets ?? []).forEach((p: any) => (p.allergies ?? []).forEach((a: string) => {
+      const t = (a ?? "").trim().toLowerCase();
+      if (t.length >= 3) set.add(t);
+    }));
+    return [...set];
+  }, [myPets]);
+
+  const allergyPetName = useMemo(() => {
+    const p = (myPets ?? []).find((x: any) => (x.allergies ?? []).length > 0);
+    return p?.name as string | undefined;
+  }, [myPets]);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["shop_products", cat],
@@ -40,6 +57,15 @@ const Shop = () => {
       return data;
     },
   });
+
+  const isUnsafe = (p: any) => {
+    if (!hideAllergens || allergyTerms.length === 0) return false;
+    const hay = `${p.title ?? ""} ${p.description ?? ""}`.toLowerCase();
+    return allergyTerms.some((term) => hay.includes(term));
+  };
+
+  const visible = (products ?? []).filter((p) => !isUnsafe(p));
+  const hiddenCount = (products?.length ?? 0) - visible.length;
 
   return (
     <div className="container-app pad-top-safe pb-24">
@@ -81,15 +107,36 @@ const Shop = () => {
         ))}
       </div>
 
+      {allergyTerms.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-3 py-2">
+          <div className="flex items-center gap-2 text-xs">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="text-muted-foreground">
+              {hideAllergens
+                ? hiddenCount > 0
+                  ? `${hiddenCount} hidden — unsafe for ${allergyPetName ?? "your pet"}`
+                  : `Filtering for ${allergyPetName ?? "your pet"}'s allergies`
+                : "Allergy filter off"}
+            </span>
+          </div>
+          <button
+            onClick={() => setHideAllergens((v) => !v)}
+            className="text-xs font-medium text-primary"
+          >
+            {hideAllergens ? "Show all" : "Hide unsafe"}
+          </button>
+        </div>
+      )}
+
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {!isLoading && (products?.length ?? 0) === 0 && (
+      {!isLoading && visible.length === 0 && (
         <Card className="rounded-2xl border-hairline p-6 text-center text-sm text-muted-foreground">
-          No products yet.
+          {(products?.length ?? 0) === 0 ? "No products yet." : "Nothing matches — try turning off the allergy filter."}
         </Card>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        {products?.map((p) => (
+        {visible.map((p) => (
           <Card key={p.id} className="rounded-2xl border-hairline overflow-hidden p-0 flex flex-col">
             <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
               {p.image_url ? (

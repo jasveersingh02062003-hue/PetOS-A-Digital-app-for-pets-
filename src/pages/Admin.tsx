@@ -187,17 +187,14 @@ const UsersTab = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, full_name, city")
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const { data: profs } = await supabase.rpc("get_profiles_public");
+    const trimmed = (profs ?? []).slice(0, 100);
     const { data: rs } = await supabase.from("user_roles").select("user_id, role");
     const map: Record<string, Role[]> = {};
     (rs ?? []).forEach((r: any) => {
       map[r.user_id] = [...(map[r.user_id] ?? []), r.role];
     });
-    setProfiles(profs ?? []);
+    setProfiles(trimmed);
     setRoles(map);
     setLoading(false);
   };

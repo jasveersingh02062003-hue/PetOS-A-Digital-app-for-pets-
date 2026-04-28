@@ -1128,6 +1128,32 @@ export type Database = {
       }
     }
     Functions: {
+      get_pets_public: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          bio: string
+          breed: string
+          city: string
+          discoverable_for_mating: boolean
+          gender: Database["public"]["Enums"]["pet_gender"]
+          id: string
+          name: string
+          owner_id: string
+          species: Database["public"]["Enums"]["pet_species"]
+          vaccination_verified: boolean
+        }[]
+      }
+      get_profiles_public: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          bio: string
+          city: string
+          full_name: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
