@@ -76,6 +76,7 @@ import AskVetNew from "./pages/AskVetNew";
 import AskVetDetail from "./pages/AskVetDetail";
 import Daily from "./pages/Daily";
 import Hashtag from "./pages/Hashtag";
+import WalkSession from "./pages/WalkSession";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="/askvet/:id" element={<AskVetDetail />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/t/:tag" element={<Hashtag />} />
+              <Route path="/walk/:id" element={<WalkSession />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
