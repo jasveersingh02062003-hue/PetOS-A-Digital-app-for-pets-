@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
@@ -79,6 +79,8 @@ const Admin = () => {
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
           <TabsContent value="broadcast" className="mt-4"><BroadcastTab /></TabsContent>
           <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
+          <TabsContent value="trust" className="mt-4"><TrustQueueTab /></TabsContent>
+          <TabsContent value="rewards" className="mt-4"><RewardsQueueTab /></TabsContent>
         </Tabs>
       </main>
     </div>
