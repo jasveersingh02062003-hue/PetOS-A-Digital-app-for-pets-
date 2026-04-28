@@ -18,6 +18,8 @@ export type Meetup = {
   cover_url: string | null;
   status: "upcoming" | "cancelled" | "done";
   attending_count: number;
+  lat: number | null;
+  lng: number | null;
 };
 
 export const useUpcomingMeetups = (city?: string | null) =>
