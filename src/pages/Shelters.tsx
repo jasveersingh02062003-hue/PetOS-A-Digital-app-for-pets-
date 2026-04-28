@@ -40,7 +40,9 @@ const Shelters = () => {
   const { data: orgs, isLoading } = useQuery({
     queryKey: ["shelters-directory", type],
     queryFn: async () => {
-      const types = type === "all" ? ["shelter", "sanctuary", "rescuer", "zoo"] : [type];
+      const types = (type === "all"
+        ? (["shelter", "sanctuary", "rescuer", "zoo"] as const)
+        : ([type] as const));
       const { data } = await supabase
         .from("org_profiles")
         .select("user_id, org_name, org_type, city, description, facility_photos, donation_upi, donation_url, website")
