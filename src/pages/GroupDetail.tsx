@@ -3,7 +3,6 @@ import { useGroupBySlug, useIsMember, useToggleMembership, useGroupPosts, useGro
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users } from "lucide-react";
-import { PostGrid } from "@/components/social/PostGrid";
 import { EmptyState } from "@/components/EmptyState";
 
 const GroupDetail = () => {
@@ -54,7 +53,13 @@ const GroupDetail = () => {
 
         <TabsContent value="posts">
           {posts && posts.length > 0 ? (
-            <PostGrid posts={posts} />
+            <div className="grid grid-cols-3 gap-0.5">
+              {posts.filter((p: any) => p.image_url).map((p: any) => (
+                <div key={p.id} className="aspect-square bg-muted overflow-hidden">
+                  <img src={p.image_url} alt={p.caption ?? ""} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+              ))}
+            </div>
           ) : (
             <EmptyState icon={Users} title="No posts yet" description="Be the first to share something with this group." />
           )}
