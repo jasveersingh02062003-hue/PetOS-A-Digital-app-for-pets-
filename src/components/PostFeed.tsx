@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
+import { ReactionBar } from "./social/ReactionBar";
+import { CaptionWithTags } from "./social/CaptionWithTags";
 
 export type FeedPost = {
   id: string;
