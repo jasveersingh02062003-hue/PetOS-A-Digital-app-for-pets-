@@ -18,9 +18,9 @@ const Settings = () => {
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
   const { data: tier } = useTier();
-  const isPlus = tier === "plus";
+  const isPlus = tier?.tier === "plus";
 
-  const initials = (profile?.full_name || profile?.username || user?.email || "U")
+  const initials = (profile?.full_name || user?.email || "U")
     .split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
@@ -41,7 +41,7 @@ const Settings = () => {
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-display text-base truncate">{profile?.full_name || profile?.username || "Your account"}</div>
+              <div className="font-display text-base truncate">{profile?.full_name || "Your account"}</div>
               {isPlus && (
                 <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-0 gap-1">
                   <Crown className="h-3 w-3" /> Plus
