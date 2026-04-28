@@ -142,6 +142,10 @@ const PetProfile = () => {
   };
 
   const petUrl = pet ? `${window.location.origin}/pet/${pet.public_id ?? pet.id}` : "";
+  const ogImage = pet
+    ? pet.avatar_url ||
+      `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/og-pet?id=${pet.public_id ?? pet.id}`
+    : undefined;
   useSeo(
     pet
       ? {
@@ -149,7 +153,7 @@ const PetProfile = () => {
           description:
             pet.bio?.slice(0, 155) ||
             `Meet ${pet.name} on Petos${pet.city ? ` from ${pet.city}` : ""}.`,
-          image: pet.avatar_url ?? undefined,
+          image: ogImage,
           canonical: petUrl,
           type: "profile",
           jsonLd: [
