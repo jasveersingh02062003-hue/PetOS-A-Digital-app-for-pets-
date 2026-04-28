@@ -41,14 +41,14 @@ export const HomeHero = () => {
       if (pets && pets.length > 0) {
         const { data: vax } = await supabase
           .from("vaccinations")
-          .select("name, next_due_date")
+          .select("vaccine_name, next_due_on")
           .in("pet_id", pets.map((p) => p.id))
-          .not("next_due_date", "is", null)
-          .order("next_due_date", { ascending: true })
+          .not("next_due_on", "is", null)
+          .order("next_due_on", { ascending: true })
           .limit(1);
         if (vax && vax[0]) {
-          out.nextVaxDue = vax[0].next_due_date as string;
-          out.nextVaxName = vax[0].name as string;
+          out.nextVaxDue = (vax[0] as any).next_due_on as string;
+          out.nextVaxName = (vax[0] as any).vaccine_name as string;
         }
       }
       return out;
