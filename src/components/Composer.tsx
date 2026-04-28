@@ -197,6 +197,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         </div>
       )}
 
+      {preview && (
         <div className="relative rounded-xl overflow-hidden bg-muted">
           <img src={preview} alt="" className="w-full max-h-72 object-cover" />
           <button
