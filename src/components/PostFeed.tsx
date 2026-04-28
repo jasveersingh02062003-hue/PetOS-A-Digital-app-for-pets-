@@ -13,6 +13,7 @@ import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
+import { SaveButton } from "./social/SaveButton";
 
 export type FeedPost = {
   id: string;
@@ -161,6 +162,7 @@ const PostCard = ({ post, onComment }: {
           <MessageCircle className="h-5 w-5" strokeWidth={1.6} />
           <span className="text-sm tabular-nums">{post.comment_count}</span>
         </button>
+        <SaveButton postId={post.id} />
         <div className="ml-auto pr-1">
           <ReportButton subjectType="post" subjectId={post.id} size="icon" />
         </div>
