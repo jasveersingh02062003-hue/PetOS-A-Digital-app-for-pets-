@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets } from "@/hooks/useProfile";
@@ -13,18 +13,44 @@ import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker"
 import { useInviteCollaborators } from "@/hooks/useCollabs";
 import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
 
-export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" | "global" }) => {
-  const [open, setOpen] = useState(false);
+export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
+  ({ variant = "icon" }, ref) => {
+    const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener("petos:open-composer", handler);
-    return () => window.removeEventListener("petos:open-composer", handler);
-  }, []);
+    useEffect(() => {
+      const handler = () => setOpen(true);
+      window.addEventListener("petos:open-composer", handler);
+      return () => window.removeEventListener("petos:open-composer", handler);
+    }, []);
 
-  if (variant === "global") {
+    if (variant === "global") {
+      return (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="rounded-2xl">
+            <DialogHeader><DialogTitle className="font-display">New post</DialogTitle></DialogHeader>
+            <Composer onDone={() => setOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    const trigger = variant === "fab" ? (
+      <button ref={ref} className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform">
+        <Plus className="h-6 w-6" />
+      </button>
+    ) : variant === "inline" ? (
+      <Button ref={ref} variant="outline" className="w-full h-12 rounded-xl border-hairline justify-start text-muted-foreground gap-2">
+        <ImagePlus className="h-4 w-4" /> Share a moment
+      </Button>
+    ) : (
+      <Button ref={ref} variant="ghost" size="icon" className="rounded-full h-11 w-11 border border-hairline">
+        <Camera className="h-5 w-5" strokeWidth={1.6} />
+      </Button>
+    );
+
     return (
       <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle className="font-display">New post</DialogTitle></DialogHeader>
           <Composer onDone={() => setOpen(false)} />
@@ -32,31 +58,8 @@ export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" 
       </Dialog>
     );
   }
-
-  const trigger = variant === "fab" ? (
-    <button className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform">
-      <Plus className="h-6 w-6" />
-    </button>
-  ) : variant === "inline" ? (
-    <Button variant="outline" className="w-full h-12 rounded-xl border-hairline justify-start text-muted-foreground gap-2">
-      <ImagePlus className="h-4 w-4" /> Share a moment
-    </Button>
-  ) : (
-    <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 border border-hairline">
-      <Camera className="h-5 w-5" strokeWidth={1.6} />
-    </Button>
-  );
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="rounded-2xl">
-        <DialogHeader><DialogTitle className="font-display">New post</DialogTitle></DialogHeader>
-        <Composer onDone={() => setOpen(false)} />
-      </DialogContent>
-    </Dialog>
-  );
-};
+);
+ComposerButton.displayName = "ComposerButton";
 
 const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
