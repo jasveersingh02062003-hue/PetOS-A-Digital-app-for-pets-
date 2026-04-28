@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      cron_health: {
+        Row: {
+          job_name: string
+          last_error: string | null
+          last_run_at: string
+          last_status: string
+          updated_at: string
+        }
+        Insert: {
+          job_name: string
+          last_error?: string | null
+          last_run_at?: string
+          last_status?: string
+          updated_at?: string
+        }
+        Update: {
+          job_name?: string
+          last_error?: string | null
+          last_run_at?: string
+          last_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deletion_log: {
         Row: {
           deleted_at: string
