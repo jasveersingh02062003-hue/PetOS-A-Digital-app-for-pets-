@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PostGrid } from "@/components/social/PostGrid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cake, Heart, MapPin, Share2, ShieldCheck } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, Cake, Heart, MapPin, Share2, ShieldCheck, Grid3x3, GitBranch, Stethoscope, Award, BadgeCheck, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
+import { AchievementChips } from "@/components/social/AchievementChips";
+import { format } from "date-fns";
 
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
@@ -44,6 +46,50 @@ const PetProfile = () => {
     queryFn: async () => {
       const { data } = await supabase.rpc("get_profiles_public");
       return (data ?? []).find((p: any) => p.id === pet!.owner_id) ?? null;
+    },
+  });
+
+  // Lineage: sire + dam + littermates + offspring
+  const { data: lineage } = useQuery({
+    queryKey: ["pet-lineage", pet?.id],
+    enabled: !!pet?.id,
+    queryFn: async () => {
+      const { data: all } = await supabase.rpc("get_pets_public");
+      const list = (all ?? []) as any[];
+      const findById = (id?: string | null) => (id ? list.find((p) => p.id === id) ?? null : null);
+      return {
+        sire: findById(pet!.sire_pet_id),
+        dam: findById(pet!.dam_pet_id),
+        offspring: list.filter((p) => p.sire_pet_id === pet!.id || p.dam_pet_id === pet!.id),
+      };
+    },
+  });
+
+  // Health summary (only owner can read full data; this gracefully empties for visitors)
+  const { data: health } = useQuery({
+    queryKey: ["pet-health-summary", pet?.id],
+    enabled: !!pet?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("health_records")
+        .select("id, record_type, title, occurred_on")
+        .eq("pet_id", pet!.id)
+        .order("occurred_on", { ascending: false })
+        .limit(20);
+      return data ?? [];
+    },
+  });
+
+  // Post count for stats
+  const { data: postCount } = useQuery({
+    queryKey: ["pet-post-count", pet?.id],
+    enabled: !!pet?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("posts")
+        .select("id", { count: "exact", head: true })
+        .eq("pet_id", pet!.id);
+      return count ?? 0;
     },
   });
 
@@ -90,62 +136,191 @@ const PetProfile = () => {
   if (isLoading) return <div className="container-app pad-top-safe pt-10 text-center text-sm text-muted-foreground">Loading…</div>;
   if (!pet) return <div className="container-app pad-top-safe pt-10 text-center text-sm text-muted-foreground">Pet not found</div>;
 
-  return (
-    <div className="container-app pad-top-safe pb-20">
-      <header className="pt-4 pb-2 flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => nav(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="font-display text-lg flex-1 truncate">{pet.name}</h1>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={share}>
-          <Share2 className="h-5 w-5" />
-        </Button>
-      </header>
+  const cover = pet.cover_url ?? pet.avatar_url;
+  const bredOnPetos = !!(pet.sire_pet_id && pet.dam_pet_id);
 
-      <div className="flex flex-col items-center text-center mb-4">
-        <Avatar className="h-28 w-28 mb-3 ring-4 ring-primary-soft">
-          <AvatarImage src={pet.avatar_url ?? undefined} />
-          <AvatarFallback className="bg-primary-soft text-primary font-display text-4xl">{pet.name[0]}</AvatarFallback>
-        </Avatar>
-        <div className="flex items-center gap-2">
-          <h2 className="font-display text-2xl">{pet.name}</h2>
-          {pet.vaccination_verified && <ShieldCheck className="h-5 w-5 text-primary" />}
-        </div>
-        <div className="text-sm text-muted-foreground mt-1">
-          {[pet.breed, pet.gender].filter(Boolean).join(" · ")}
-        </div>
-        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-          {ageYrs != null && <span className="flex items-center gap-1"><Cake className="h-3.5 w-3.5" /> {ageYrs}y</span>}
-          {pet.city && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {pet.city}</span>}
+  return (
+    <div className="pb-20">
+      {/* Cover */}
+      <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary-soft to-muted overflow-hidden">
+        {cover && (
+          <img src={cover} alt={pet.name} className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background/60" />
+        <div className="absolute top-0 inset-x-0 pad-top-safe">
+          <div className="container-app pt-3 flex items-center justify-between">
+            <Button variant="secondary" size="icon" className="rounded-full bg-background/80 backdrop-blur" onClick={() => nav(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button variant="secondary" size="icon" className="rounded-full bg-background/80 backdrop-blur" onClick={share}>
+              <Share2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {owner && (
-        <Link to={`/u/${owner.id}`} className="block">
-          <Card className="rounded-2xl border-hairline shadow-none p-3 flex items-center gap-3 mb-4 hover:bg-muted/40">
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={owner.avatar_url ?? undefined} />
-              <AvatarFallback className="text-sm bg-primary-soft text-primary">{owner.full_name?.[0] ?? "·"}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-muted-foreground uppercase tracking-wider">Owned by</div>
-              <div className="text-sm font-medium truncate">{owner.full_name ?? "Pet parent"}</div>
+      <div className="container-app -mt-12 relative">
+        {/* Avatar + name */}
+        <div className="flex items-end gap-4 mb-3">
+          <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg">
+            <AvatarImage src={pet.avatar_url ?? undefined} />
+            <AvatarFallback className="bg-primary-soft text-primary font-display text-3xl">{pet.name[0]}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 pb-2 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-2xl truncate">{pet.name}</h1>
+              {pet.vaccination_verified && <ShieldCheck className="h-5 w-5 text-primary shrink-0" />}
+              {bredOnPetos && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-leaf/15 text-leaf border border-leaf/30 px-1.5 py-0.5 rounded-full">
+                  <BadgeCheck className="h-3 w-3" /> Bred on PetOS
+                </span>
+              )}
             </div>
-          </Card>
-        </Link>
-      )}
+            <div className="text-sm text-muted-foreground truncate">
+              {[pet.breed, pet.gender].filter(Boolean).join(" · ") || "—"}
+            </div>
+          </div>
+        </div>
 
-      {pet.bio && <p className="text-sm leading-relaxed mb-4">{pet.bio}</p>}
+        {/* Meta row */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3 flex-wrap">
+          {ageYrs != null && <span className="flex items-center gap-1"><Cake className="h-3.5 w-3.5" /> {ageYrs}y</span>}
+          {pet.city && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {pet.city}</span>}
+          {pet.status_chip && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{pet.status_chip}</span>}
+        </div>
 
-      {pet.discoverable_for_mating && (
-        <Button onClick={() => nav("/mates/new")} variant="outline" className="w-full rounded-xl border-hairline mb-4 gap-2">
-          <Heart className="h-4 w-4 text-primary" /> Available for mating
-        </Button>
-      )}
+        {/* Stats — IG style */}
+        <div className="grid grid-cols-3 gap-2 mb-4 py-3 border-y border-hairline">
+          <Stat n={postCount ?? 0} label="Posts" />
+          <Stat n={(lineage?.offspring.length ?? 0)} label="Offspring" />
+          <Stat n={(health?.length ?? 0)} label="Records" />
+        </div>
 
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2 mt-4">Posts</div>
-      <PostGrid petId={pet.id} />
+        {/* Bio */}
+        {pet.bio && <p className="text-sm leading-relaxed mb-3 whitespace-pre-wrap">{pet.bio}</p>}
+
+        {/* Owner pill */}
+        {owner && (
+          <Link to={`/u/${owner.handle ?? owner.id}`} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 hover:bg-muted mb-4 text-xs">
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={owner.avatar_url ?? undefined} />
+              <AvatarFallback className="text-[10px] bg-primary-soft text-primary">{owner.full_name?.[0] ?? "·"}</AvatarFallback>
+            </Avatar>
+            <span className="text-muted-foreground">Owned by</span>
+            <span className="font-medium">{owner.full_name ?? "Pet parent"}</span>
+          </Link>
+        )}
+
+        {pet.discoverable_for_mating && (
+          <Button onClick={() => nav("/mates/new")} variant="outline" className="w-full rounded-xl border-hairline mb-4 gap-2">
+            <Heart className="h-4 w-4 text-primary" /> Available for mating
+          </Button>
+        )}
+
+        {/* Tabs */}
+        <Tabs defaultValue="posts" className="mt-2">
+          <TabsList className="grid grid-cols-4 w-full bg-transparent border-b border-hairline rounded-none h-auto p-0">
+            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
+              <Grid3x3 className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="lineage" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
+              <GitBranch className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="health" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
+              <Stethoscope className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
+              <Award className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="posts" className="mt-3">
+            <PostGrid petId={pet.id} />
+          </TabsContent>
+
+          <TabsContent value="lineage" className="mt-4 space-y-4">
+            <LineageBlock title="Parents">
+              <div className="grid grid-cols-2 gap-2">
+                <PetMini label="Sire" pet={lineage?.sire} />
+                <PetMini label="Dam" pet={lineage?.dam} />
+              </div>
+            </LineageBlock>
+            <LineageBlock title={`Offspring (${lineage?.offspring.length ?? 0})`}>
+              {lineage?.offspring.length ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {lineage.offspring.map((p) => <PetMini key={p.id} pet={p} />)}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground py-4 text-center">No recorded offspring.</div>
+              )}
+            </LineageBlock>
+          </TabsContent>
+
+          <TabsContent value="health" className="mt-3">
+            {health?.length ? (
+              <div className="space-y-2">
+                {health.map((r: any) => (
+                  <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl border border-hairline">
+                    <div className="h-8 w-8 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{r.title}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {r.record_type} · {format(new Date(r.occurred_on), "MMM d, yyyy")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-sm text-muted-foreground">
+                <Stethoscope className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                No public health records.
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="achievements" className="mt-4">
+            {pet.owner_id && <AchievementChips userId={pet.owner_id} />}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
+  );
+};
+
+const Stat = ({ n, label }: { n: number; label: string }) => (
+  <div className="text-center">
+    <div className="font-display text-lg leading-none">{n}</div>
+    <div className="text-[11px] text-muted-foreground mt-1">{label}</div>
+  </div>
+);
+
+const LineageBlock = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
+    {children}
+  </div>
+);
+
+const PetMini = ({ pet, label }: { pet?: any; label?: string }) => {
+  if (!pet) {
+    return (
+      <div className="rounded-xl border border-dashed border-hairline p-3 text-center text-xs text-muted-foreground">
+        {label ? `${label} unknown` : "Unknown"}
+      </div>
+    );
+  }
+  return (
+    <Link to={`/pet/${pet.public_id ?? pet.id}`} className="rounded-xl border border-hairline p-2 flex flex-col items-center gap-1 hover:bg-muted/40">
+      <Avatar className="h-12 w-12">
+        <AvatarImage src={pet.avatar_url ?? undefined} />
+        <AvatarFallback className="bg-primary-soft text-primary text-sm">{pet.name?.[0] ?? "·"}</AvatarFallback>
+      </Avatar>
+      {label && <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</div>}
+      <div className="text-xs font-medium truncate w-full text-center">{pet.name}</div>
+    </Link>
   );
 };
 

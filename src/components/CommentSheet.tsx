@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Loader2, Trash2, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { SellerBadge } from "@/components/SellerBadge";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
@@ -99,8 +100,11 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium">{name}</span>
+                    {!asPet && c.author?.account_type && c.author.account_type !== "pet_parent" && (
+                      <SellerBadge type={c.author.account_type} className="text-[9px] py-0 px-1.5 h-4" />
+                    )}
                     {asPet && <span className="text-[10px] text-primary">🐾 as pet</span>}
                     <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
                   </div>
