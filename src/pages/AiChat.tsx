@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Sparkles, Send, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Sparkles, Send, Loader2, ChevronDown, Stethoscope } from "lucide-react";
 import { usePets } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -232,6 +232,9 @@ const AiChat = () => {
                 </div>
               </div>
             )}
+            {!streaming && messages.length >= 2 && messages[messages.length - 1]?.role === "assistant" && (
+              <ConnectToVetCTA messages={messages} petId={activePetId} petName={activePet?.name} />
+            )}
           </div>
         )}
       </div>
@@ -269,3 +272,54 @@ const AiChat = () => {
 };
 
 export default AiChat;
+
+const ConnectToVetCTA = ({ messages, petId, petName }: { messages: Msg[]; petId?: string; petName?: string }) => {
+  const nav = useNavigate();
+  const { user } = useAuth();
+  const [creating, setCreating] = useState(false);
+
+  const handoff = async () => {
+    if (!user) return toast.error("Please sign in");
+    setCreating(true);
+    try {
+      const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+      const lastAi = [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "";
+      const summary = `From AI chat${petName ? ` about ${petName}` : ""}.\n\nOwner said: ${lastUser.slice(0, 400)}\n\nAI suggested: ${lastAi.slice(0, 600)}`;
+      const title = (lastUser.split("\n")[0] || "Vet review").slice(0, 80);
+      const { data, error } = await supabase
+        .from("vet_questions")
+        .insert({
+          asker_id: user.id,
+          title,
+          body: summary,
+          category: "general" as any,
+          pet_id: petId,
+          ai_summary: summary,
+          ai_transcript: messages,
+          source: "ai_handoff",
+        } as any)
+        .select("id")
+        .single();
+      if (error) throw error;
+      toast.success("Sent to a vet — they'll reply soon");
+      nav(`/askvet/${data.id}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not connect to vet");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="flex justify-start mt-2">
+      <button
+        onClick={handoff}
+        disabled={creating}
+        className="inline-flex items-center gap-2 text-sm px-4 py-2.5 rounded-full bg-primary-soft text-primary border border-primary/20 hover:bg-primary/10 transition-colors disabled:opacity-50"
+      >
+        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Stethoscope className="h-4 w-4" />}
+        Connect to a vet now
+      </button>
+    </div>
+  );
+};

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { StoryRail } from "@/components/social/StoryRail";
 import { DailyPromptBanner } from "@/components/social/DailyPromptBanner";
 import { MeetupCard } from "@/components/social/MeetupCard";
+import { HealthStatusStrip } from "@/components/health/HealthStatusStrip";
 import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart, Users, CalendarDays } from "lucide-react";
@@ -30,6 +31,8 @@ const Home = () => {
         </div>
         <ComposerButton variant="icon" />
       </header>
+
+      {hasPets && <HealthStatusStrip petId={pets![0].id} />}
 
       <StoryRail />
 

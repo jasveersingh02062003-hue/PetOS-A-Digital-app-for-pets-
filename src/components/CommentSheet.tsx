@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePets } from "@/hooks/useProfile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Trash2 } from "lucide-react";
+import { Send, Loader2, Trash2, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
+  const { data: pets } = usePets();
   const qc = useQueryClient();
   const [body, setBody] = useState("");
+  const [asPetId, setAsPetId] = useState<string | "self">("self");
   const [sending, setSending] = useState(false);
 
   const { data: comments, isLoading } = useQuery({
@@ -23,12 +26,17 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
       const { data, error } = await supabase.from("post_comments").select("*").eq("post_id", postId!).order("created_at");
       if (error) throw error;
       const ids = [...new Set((data ?? []).map((c) => c.author_id))];
+      const petIds = [...new Set((data ?? []).map((c: any) => c.pet_id).filter(Boolean))];
       const profsRes = ids.length
         ? await supabase.rpc("get_profiles_public")
         : { data: [] as any[] };
       const profs = (profsRes.data ?? []).filter((p: any) => ids.includes(p.id));
       const m = new Map((profs ?? []).map((p: any) => [p.id, p]));
-      return (data ?? []).map((c) => ({ ...c, author: m.get(c.author_id) }));
+      const petsRes = petIds.length
+        ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds as any)
+        : { data: [] as any[] };
+      const petMap = new Map((petsRes.data ?? []).map((p: any) => [p.id, p]));
+      return (data ?? []).map((c: any) => ({ ...c, author: m.get(c.author_id), pet: c.pet_id ? petMap.get(c.pet_id) : null }));
     },
   });
 
@@ -49,9 +57,13 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
     if (!user) return toast.error("Please sign in");
     if (!body.trim() || !postId) return;
     setSending(true);
-    const { error } = await supabase.from("post_comments").insert({
-      post_id: postId, author_id: user.id, body: body.trim(),
-    });
+    const payload: any = {
+      post_id: postId,
+      author_id: user.id,
+      body: body.trim(),
+    };
+    if (asPetId !== "self") payload.pet_id = asPetId;
+    const { error } = await supabase.from("post_comments").insert(payload);
     setSending(false);
     if (error) return toast.error(error.message);
     setBody("");
@@ -74,40 +86,69 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
           ) : !comments?.length ? (
             <div className="text-center text-sm text-muted-foreground py-12">Be the first to comment.</div>
-          ) : comments.map((c: any) => (
-            <div key={c.id} className="flex gap-3 group">
-              <Avatar className="h-8 w-8 shrink-0">
-                <AvatarImage src={c.author?.avatar_url} />
-                <AvatarFallback className="bg-primary-soft text-primary text-xs">
-                  {(c.author?.full_name?.[0] ?? "P").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-medium">{c.author?.full_name ?? "Pet parent"}</span>
-                  <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
+          ) : comments.map((c: any) => {
+            const asPet = !!c.pet;
+            const name = asPet ? c.pet.name : (c.author?.full_name ?? "Pet parent");
+            const avatar = asPet ? c.pet.avatar_url : c.author?.avatar_url;
+            return (
+              <div key={c.id} className="flex gap-3 group">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={avatar ?? undefined} />
+                  <AvatarFallback className="bg-primary-soft text-primary text-xs">
+                    {(name?.[0] ?? "P").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-medium">{name}</span>
+                    {asPet && <span className="text-[10px] text-primary">🐾 as pet</span>}
+                    <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
+                  </div>
+                  <p className="text-sm text-ink-soft mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
                 </div>
-                <p className="text-sm text-ink-soft mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
+                {c.author_id === user?.id && (
+                  <button onClick={() => del(c.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1 transition-opacity">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
-              {c.author_id === user?.id && (
-                <button onClick={() => del(c.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1 transition-opacity">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <form onSubmit={submit} className="p-4 border-t border-hairline flex items-center gap-2 bg-card">
-          <Input
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Add a comment…"
-            className="h-11 rounded-full border-hairline bg-background flex-1"
-          />
-          <Button type="submit" size="icon" disabled={sending || !body.trim()} className="h-11 w-11 rounded-full shrink-0">
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+        <form onSubmit={submit} className="p-4 border-t border-hairline bg-card space-y-2">
+          {pets && pets.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+              <button
+                type="button"
+                onClick={() => setAsPetId("self")}
+                className={`shrink-0 flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition-colors ${asPetId === "self" ? "bg-primary text-primary-foreground border-primary" : "border-hairline bg-background"}`}
+              >
+                <UserIcon className="h-3 w-3" /> as me
+              </button>
+              {pets.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setAsPetId(p.id)}
+                  className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border transition-colors ${asPetId === p.id ? "bg-primary text-primary-foreground border-primary" : "border-hairline bg-background"}`}
+                >
+                  🐾 as {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Input
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={asPetId === "self" ? "Add a comment…" : "Comment as your pet…"}
+              className="h-11 rounded-full border-hairline bg-background flex-1"
+            />
+            <Button type="submit" size="icon" disabled={sending || !body.trim()} className="h-11 w-11 rounded-full shrink-0">
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
         </form>
       </SheetContent>
     </Sheet>
