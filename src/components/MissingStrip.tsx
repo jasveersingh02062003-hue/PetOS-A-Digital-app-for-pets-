@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { usePublicPets } from "@/hooks/usePublicProfiles";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 
 /**
@@ -11,12 +12,13 @@ import { AlertTriangle, ChevronRight } from "lucide-react";
 export const MissingStrip = () => {
   const nav = useNavigate();
   const { data: profile } = useProfile();
+  const { data: publicPets } = usePublicPets();
   const userCity = profile?.city;
 
   const { data: items } = useQuery({
     queryKey: ["missing-strip", userCity],
     enabled: !!userCity,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("missing_pets")
@@ -26,8 +28,7 @@ export const MissingStrip = () => {
         .order("created_at", { ascending: false })
         .limit(10);
       if (!data?.length) return [];
-      const { data: pets } = await supabase.rpc("get_pets_public");
-      const map = Object.fromEntries((pets ?? []).map((p: any) => [p.id, p]));
+      const map = Object.fromEntries((publicPets ?? []).map((p: any) => [p.id, p]));
       return data.map((m: any) => ({ ...m, pet: map[m.pet_id] }));
     },
   });
