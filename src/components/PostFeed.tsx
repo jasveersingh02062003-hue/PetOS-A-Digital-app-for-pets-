@@ -36,7 +36,7 @@ export type FeedPost = {
   comment_count: number;
   created_at: string;
   reaction_counts?: Record<string, number> | null;
-  author?: { full_name: string | null; avatar_url: string | null } | null;
+  author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
