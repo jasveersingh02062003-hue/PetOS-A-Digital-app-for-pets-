@@ -109,6 +109,7 @@ const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
 const ServiceCategoryPage = lazy(() => import("./pages/ServiceCategory"));
+const VetTriage = lazy(() => import("./pages/VetTriage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -148,6 +149,7 @@ const App = () => (
               <Route path="/legal/refunds" element={<Refunds />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
+              <Route path="/vet-triage" element={<VetTriage />} />
               <Route path="/photo-vet" element={<PhotoVet />} />
               <Route path="/install" element={<Install />} />
               <Route path="/search" element={<Search />} />
