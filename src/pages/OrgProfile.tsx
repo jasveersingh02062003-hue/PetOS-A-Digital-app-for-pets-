@@ -86,7 +86,7 @@ const OrgProfile = () => {
             Sponsor the daily care, food and medical needs of the animals at {org.org_name}. This is a donation — animals stay safe at the wildlife centre and are not transferred.
           </p>
           {!hasDonation && isOwner && (
-            <Button onClick={() => nav("/org/edit")} variant="outline" className="w-full rounded-xl">
+            <Button onClick={() => nav("/onboarding/org")} variant="outline" className="w-full rounded-xl">
               <Sparkles className="h-4 w-4 mr-1" /> Add donation details to enable sponsorship
             </Button>
           )}
