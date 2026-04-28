@@ -35,27 +35,26 @@ export const useNotifications = () => {
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel(`notif-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const n = payload.new as Notification;
-          toast(n.title, { description: n.body || undefined });
-          qc.invalidateQueries({ queryKey: ["notifications", user.id] });
-        },
-      )
-      .subscribe();
+    const channel = supabase.channel(`notif-${user.id}`);
+    channel.on(
+      "postgres_changes" as any,
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${user.id}`,
+      },
+      (payload: any) => {
+        const n = payload.new as Notification;
+        toast(n.title, { description: n.body || undefined });
+        qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+      },
+    );
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, qc]);
+  }, [user?.id, qc]);
 
   const unreadCount = (query.data ?? []).filter((n) => !n.read_at).length;
 
