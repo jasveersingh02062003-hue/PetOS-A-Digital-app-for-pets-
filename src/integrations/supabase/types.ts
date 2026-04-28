@@ -3926,6 +3926,9 @@ export type Database = {
         | "sitting"
         | "boarding"
         | "vet_clinic"
+        | "caretaker"
+        | "daycare"
+        | "pet_taxi"
       social_level: "solo" | "pairs" | "crowds"
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
@@ -4199,6 +4202,9 @@ export const Constants = {
         "sitting",
         "boarding",
         "vet_clinic",
+        "caretaker",
+        "daycare",
+        "pet_taxi",
       ],
       social_level: ["solo", "pairs", "crowds"],
       sub_status: ["active", "past_due", "canceled", "trialing"],
