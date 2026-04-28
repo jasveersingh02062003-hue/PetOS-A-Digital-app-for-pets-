@@ -2,6 +2,8 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useRef } from "react";
 import { Home, Compass, Heart, ShoppingBag, User, Plus, Siren } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { haptic } from "@/lib/haptics";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home },
@@ -72,6 +74,7 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
                 key={t.to}
                 to={t.to}
                 end={t.to === "/"}
+                onClick={() => haptic(8)}
                 className={({ isActive }) =>
                   cn(
                     "flex flex-col items-center justify-center gap-1 text-[10px] tracking-wide uppercase transition-colors",
@@ -80,8 +83,18 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
                   )
                 }
               >
-                <Icon className="h-[22px] w-[22px]" strokeWidth={1.6} />
-                <span className="font-medium">{t.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <motion.span
+                      animate={{ y: isActive ? -2 : 0, scale: isActive ? 1.08 : 1 }}
+                      whileTap={{ scale: 0.85 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    >
+                      <Icon className="h-[22px] w-[22px]" strokeWidth={1.6} />
+                    </motion.span>
+                    <span className="font-medium">{t.label}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}
