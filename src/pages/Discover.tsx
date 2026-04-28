@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
+import { NearMePanel } from "@/components/maps/NearMePanel";
 import { Compass, Flame, Users, CalendarDays, Stethoscope } from "lucide-react";
 
 const Discover = () => {
