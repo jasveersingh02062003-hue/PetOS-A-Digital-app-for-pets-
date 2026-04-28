@@ -1,164 +1,130 @@
-# Implementation Plan — 5 Priority Features
+# Finish PetOS — Closing Plan (Option E, ordered)
 
-Builds on what already exists. Nothing here throws away current work — it extends it.
-
----
-
-## Priority 1 — Buyer-only mode ("Looking for a pet")
-
-**Goal:** Let a user sign up purely to browse & buy, without forcing them to add a pet.
-
-**DB migration**
-- Add `'buyer'` to the `account_type` enum.
-- Add `profiles.looking_for jsonb` (nullable) — stores buyer preferences `{ species, breed, city, max_price_inr }`.
-
-**UI changes**
-- `src/pages/AccountTypeChooser.tsx` — add a new option at the top:
-  - value: `buyer`, title: "Looking to get a pet", sub: "Browse adoption & breeders, no pet required", icon: `Search`, `needsOrg: false`, `skipAddPet: true`.
-- After selecting `buyer`: skip `/onboarding/add-pet`, go straight to `/onboarding/buyer-prefs` (new lightweight 1-screen form: species multi-select + city + price range, all optional → Save → `/mates?tab=adopt`).
-- `src/components/onboarding/WizardSteps.tsx` — show 2-step flow (Account type → Preferences) for buyers instead of 3.
-- `src/pages/Profile.tsx` — when `account_type === 'buyer'` AND no pets, show a "Looking for a pet 🔍" hero card instead of the empty pet rail, with a CTA to edit preferences.
-
-**Routing**
-- `src/App.tsx` — add `/onboarding/buyer-prefs` route.
+This plan executes the remaining items in dependency order so each step unblocks the next. All five items below ship in this single round.
 
 ---
 
-## Priority 2 — Split `/mates` into "Find a mate" vs "Adopt or buy"
+## Step 1 — Patch the public RPCs (3b)
 
-**Already in place:** `src/pages/Mates.tsx` already has a 2-tab toggle (`mating` / `adopt`) wired via `?tab=` query param. The split exists; it just needs polish + entry-point clarity.
+**Why:** `UserProfile.tsx` and pet cards across the app go through `get_profiles_public` / `get_pets_public`. They currently don't return `cover_url`, `handle`, `account_type`, `status_chip`, or `bred_on_petos`, so the new Instagram-style profile and the breeding/sale chips are invisible to anyone but the owner.
 
-**Changes**
-- `src/pages/Mates.tsx`
-  - Promote tabs visually: bigger labels, active-tab underline accent, distinct icons (Heart for Mate, PawPrint for Adopt).
-  - Different sub-headlines per tab (already there) — keep.
-  - For buyers (`account_type === 'buyer'`), default tab → `adopt`, hide the "List your pet" CTA in the mating tab.
-  - For pet parents with no opposite-sex pet, show a soft hint in the mating tab: "Mating works best when your pet's profile is complete."
-- `src/components/BottomNav.tsx` — keep single Mates entry; deep-link from Home quick-actions: "Buy a pet" → `/mates?tab=adopt`, "Find a mate" → `/mates?tab=mating`.
-- `src/components/AdoptGrid.tsx` — already has city + Bred-on-PetOS filters. Add a price-range slider (min/max INR) and a species chip row at the top. Persist filter state in URL params so links are shareable.
+**Migration:**
+- `DROP` and recreate `public.get_profiles_public()` to also return: `handle`, `cover_url`, `account_type`.
+- `DROP` and recreate `public.get_pets_public()` to also return: `status_chip`, `bred_on_petos`, `date_of_birth` (already there), `sire_id`, `dam_id` (needed for lineage on pet profile).
+- Recreate the `profiles_public` and `pets_public` views on top.
+- Re-grant `EXECUTE` to `authenticated` only.
 
----
-
-## Priority 3 — Instagram-like profile (3 zones)
-
-**Goal:** Profile page = human header + pet rail + content tabs.
-
-**DB migration**
-- `profiles.cover_url text` (nullable).
-- `profiles.handle text unique` (nullable; lowercase, alphanumeric + underscore). Backfill from email local-part on first save.
-- `pets.status_chip text` (nullable, enum-like: `available_for_stud` | `for_sale` | `chilling`).
-
-**UI — `src/pages/Profile.tsx` (own profile) and `src/pages/UserProfile.tsx` (others)**
-
-Three zones:
-1. **Header zone**
-   - Cover photo (16:6 aspect). Tap-to-upload on own profile (uses existing `ImageUpload` + `uploadImage` lib).
-   - Avatar (already exists), name, `@handle`, city, `SellerBadge` (account-type chip).
-   - Bio (one-liner from `profiles.bio`).
-   - Action buttons: own profile → `[Edit] [Share]`; others → `[Follow] [Message] [Share]` (Follow + Message components already exist).
-   - Counts row: posts · followers · following (already there).
-
-2. **Pet rail (horizontal scroll)**
-   - One card per pet from `usePets()` + a trailing `[+ Add]` card.
-   - Each card: avatar, name, species emoji, age, status chip if any.
-   - Tap → `/pet/:id` (already routed to `PetProfile.tsx`).
-
-3. **Content tabs**
-   - Tabs: `Posts` | `Tagged` | `Pets`.
-   - Posts: existing `PostGrid` filtered by `author_id`.
-   - Tagged: posts where this user's pets appear in `post_collabs` (table already exists per `useCollabs`).
-   - Pets: vertical list view of all pets with bio + status chip.
-
-**Pet mini-profile polish — `src/pages/PetProfile.tsx`**
-- Surface `pets.bio`, age, breed, sex, weight at the top.
-- Add `LineageTree` component (already built) below health section.
-- Add a status chip selector (own pet only): Chilling / Available for stud / For sale.
-- "All posts tagged with this pet" rail at the bottom.
-
-**Settings stays separate** — `/settings` already has bio/pets/privacy editors. Add a "Cover photo" + "Handle" row to `src/pages/settings/AboutYou.tsx`.
+**Code:** No client changes needed for existing call sites (they spread `*`). `UserProfile.tsx` will switch from the direct table read fallback back to the RPC for handle resolution.
 
 ---
 
-## Priority 4 — Litter creation flow
+## Step 2 — Litter Creation Flow (Priority 4)
 
-**Goal:** Breeders can link sire + dam + pups, auto-tagging pups as "Bred on PetOS".
+**Why:** the `tg_pets_auto_bred` trigger only fires when both `sire_id` and `dam_id` on a pup point at registered pets. Today there is no UI to set those FKs, so the "Bred on PetOS" badge never appears.
 
-**Already in place:** `litter_groups` table with sire/dam/birth_date; `pets.litter_id`, `sire_pet_id`, `dam_pet_id`, `bred_on_petos` columns.
+**DB (migration):**
+- Add `pets.sire_id uuid` and `pets.dam_id uuid` columns if not already present (check first; trigger from Priority 1 already references them — confirm and add if missing).
+- Add `litter_groups.litter_pet_ids uuid[]` for fast read, OR use a join table `litter_pets(litter_id, pet_id)`. Pick the join table — cleaner.
+- Migration: `CREATE TABLE public.litter_pets (litter_id uuid REFERENCES litter_groups ON DELETE CASCADE, pet_id uuid REFERENCES pets ON DELETE CASCADE, PRIMARY KEY(litter_id, pet_id))` with RLS mirroring `litter_groups`.
 
-**DB**
-- DB trigger on `pets` insert/update: when `sire_pet_id` AND `dam_pet_id` are both set AND both reference real pets in our DB, set `bred_on_petos = true` automatically. (Replaces relying on UI to set it.)
+**UI — new route `/litters/new` (4-step wizard):**
+1. **Pick dam** — searchable list of user's female pets.
+2. **Pick sire** — two tabs: "My pets" (males I own) or "Partner's sire" (search any pet by `@handle` or public_id, sends an attribution request).
+3. **Add pups** — multi-add: each pup gets name, gender, DOB (defaults to litter birth date), avatar. Creates `pets` rows owned by the dam owner with `sire_id`/`dam_id` set → trigger flips `bred_on_petos = true`.
+4. **Review & publish** — creates `litter_groups` row + `litter_pets` rows, optionally creates a feed post "New litter born".
 
-**UI — new page `src/pages/LitterNew.tsx`**
-- Step 1: Pick dam (mother) — must be one of my pets, female.
-- Step 2: Pick sire (father) — search by `public_id` or username; can be my pet or another user's. If another user's, store the reference.
-- Step 3: Birth date + notes.
-- Step 4: Add pups loop — for each pup: name, gender, color/markings, photo. Each pup is inserted into `pets` with `owner_id = me`, `litter_id`, `sire_pet_id`, `dam_pet_id` set → trigger flips `bred_on_petos`.
-- Final: "List this litter for sale?" → bulk-create `pet_listings` rows pointing at each pup.
-
-**UI — extension to existing pages**
-- `src/pages/Profile.tsx` (when `account_type` ∈ `breeder` | `kennel`) → add tabs `Available litters` and `Past litters` to the content-tabs zone.
-- Entry point: a `[+ New litter]` button in the breeder profile header.
-
-**Route**
-- Add `/litters/new` and `/litters/:id` to `src/App.tsx`.
+**Profile integration:**
+- Breeder profile gets a **"Litters"** tab listing `litter_groups` they created, each card showing dam, sire, pups (with "Bred on PetOS" ribbon).
+- "+ New Litter" CTA visible only to `breeder` / `kennel` account types.
 
 ---
 
-## Priority 5 — Shelter donate button (UPI deep link)
+## Step 3 — Donate Button on Shelter Profiles (Priority 5)
 
-**Already in place:** `org_profiles.donation_upi`, `donation_url`, status approval flow.
+**Why:** unlocks the NGO use case; data already exists.
 
-**UI changes**
-- `src/pages/OrgProfile.tsx`
-  - When `org_type` ∈ `shelter` | `sanctuary` AND `status === 'approved'` AND `donation_upi` present → primary CTA becomes `[💗 Donate]` (purple/pink).
-  - Tap opens a sheet with two actions:
-    - "Pay via UPI app" → `upi://pay?pa=<donation_upi>&pn=<org_name>&cu=INR` (works on Android; falls back to copy on desktop).
-    - "Open donation page" → external link (`donation_url`).
-    - "Copy UPI ID" → toast.
-- `src/components/AdoptGrid.tsx` — for shelter listings, swap the price chip for a "Free · adoption" chip and surface a small "💗 Donate" link under the seller name.
-- `src/pages/settings/AboutYou.tsx` (org users) — add UPI ID + donation URL fields with a small QR preview (use any QR lib already in deps, or skip QR if none).
+**UI:**
+- New component `<DonateButton orgProfile={...} />` — primary CTA on `UserProfile` when viewed user's `org_profile.org_type` is `shelter` or `ngo` and `status = 'approved'`.
+- Click opens a sheet `<DonateSheet />`:
+  - If `donation_url` → "Donate via website" button (opens external).
+  - If `donation_upi` → shows UPI ID with copy button + auto-generated `upi://pay?pa=...&pn=...` deep link (opens UPI apps on mobile).
+  - Footer: "PetOS does not process donations. You're paying the shelter directly."
+- Settings: shelter owners get fields for `donation_url` and `donation_upi` in their org settings page (extend existing `OrgSettings` form).
 
 ---
 
-## Cross-cutting: account-type differentiation in feeds
+## Step 4 — Account-Type Badges & Verification Tick everywhere
 
-Already mostly done via `SellerBadge` + `BredOnPetosRibbon`. Two small adds:
+**Why:** trust signal; users can't tell a breeder apart from a pet parent today outside of Mates.
 
-- `src/components/AdoptGrid.tsx` cards
-  - Show coloured badge tone matching account type (already does).
-  - Add a yellow `⚠️ Repeat seller` chip when the listing's owner is a `pet_parent` with ≥3 active `pet_listings`. Compute via a small Postgres view `repeat_sellers` selecting `owner_id` having `count(*) >= 3` from active listings; query alongside the grid.
+**Touchpoints (reuse existing `<SellerBadge>`):**
+- `UserProfile.tsx` and `Profile.tsx` headers — already done; verify it reads `account_type` from RPC after Step 1.
+- `PostCard` author row — add small badge next to the name.
+- `PostGrid` / search result rows — same.
+- Comments author line — same.
+- `AdoptGrid` already has it.
 
----
-
-## Build order (suggested)
-
-1. DB migration (one combined): enum value `buyer`, `profiles.cover_url` + `handle` + `looking_for`, `pets.status_chip`, `bred_on_petos` trigger, `repeat_sellers` view.
-2. Buyer mode: AccountTypeChooser + buyer-prefs page + Profile empty-state.
-3. Mates tab polish + filter additions.
-4. Profile redesign zones (cover upload, pet rail polish, tabs).
-5. Pet mini-profile polish (status chip, lineage, tagged posts rail).
-6. Litter creation flow.
-7. Shelter donate sheet + listing-card free chip.
-8. Repeat-seller warning chip.
+**Verification tick logic (centralize in `SellerBadge`):**
+- For `breeder` / `kennel` / `shelter` / `ngo` / `vet`: show a blue check **only if** there's an `org_profiles` row for that user with `status = 'approved'`.
+- Add a small `useVerifiedOrgs(userIds)` hook that batch-fetches approved org_profiles for a set of user IDs and caches via React Query, so we don't N+1.
 
 ---
 
-## Technical details
+## Step 5 — Instagram-style Pet Profile (`/pet/:id`)
 
-- All new tables/columns use RLS following the existing patterns (owner-only writes, public-or-approved reads).
-- `handle` uniqueness enforced via Postgres unique index, case-insensitive (`lower(handle)`).
-- The `bred_on_petos` trigger is idempotent — re-runs safely on update.
-- UPI deep links are client-side only; no backend.
-- Buyer accounts skip pet-based RLS — most of their reads are on public listings, so existing policies already cover them.
-- Repeat-seller view is a regular `view`, not materialized — counts are small.
+**Why:** the pet rail links here, but the page is the legacy layout. Pet mini-profile is a key buyer trust surface (lineage, vaccinations, posts).
+
+**New layout for `PetProfile.tsx`:**
+- **Header:** cover photo (full-bleed), avatar overlapping bottom-left, name + species/breed chip + age, status chip (`available_for_stud` / `for_sale` / `chilling`), "Bred on PetOS" ribbon if true.
+- **Owner row:** "Owned by @handle" with `<SellerBadge>` — links to user profile.
+- **Action row:** Follow pet · Message owner · (if for_sale → "View listing") · (if stud → "Request mating").
+- **Stat strip:** Posts · Followers · Litters · Achievements counts.
+- **Tabs:**
+  - **Posts** — feed posts where this pet is tagged (uses existing `post_pets` table).
+  - **Lineage** — reuses `<LineageTree>` (already built) showing sire/dam/grandparents.
+  - **Health** — vaccination verified badge, dewormer status (read-only public summary; full records stay owner/vet only).
+  - **Gallery** — reuses `<PhotoGallery>`.
+  - **Achievements** — rows from `achievements` table.
+
+**Data:** all reads via `get_pets_public` (now richer after Step 1). Owner-only edit affordances appear when `owner_id === auth.uid()`.
 
 ---
 
-## Out of scope for this plan (intentional)
+## Technical Details
 
-- Reels (mentioned in profile mockup but not in priorities).
-- Symbolic adoption / zoo donate flow.
-- Staff sub-accounts for kennels.
-- Adoption applications (treat as a future replacement for ownership-transfer for shelters).
+```text
+Order of execution:
+  1. Migration A: extend public RPCs            → unblocks 4, 5
+  2. Migration B: litter_pets table + sire/dam  → unblocks 2, 5 lineage
+  3. Code: Litter wizard + breeder profile tab
+  4. Code: DonateSheet + org settings fields
+  5. Code: badges in PostCard/PostGrid/comments + useVerifiedOrgs hook
+  6. Code: PetProfile redesign
+```
 
-If you approve, I'll start with the migration + Priority 1 in the next message.
+**Files created:**
+- `supabase/migrations/<ts>_extend_public_rpcs.sql`
+- `supabase/migrations/<ts>_litter_pets.sql`
+- `src/pages/litters/NewLitter.tsx` (wizard)
+- `src/components/litters/PickDam.tsx`, `PickSire.tsx`, `AddPups.tsx`, `LitterReview.tsx`
+- `src/components/DonateButton.tsx`, `DonateSheet.tsx`
+- `src/hooks/useVerifiedOrgs.ts`
+
+**Files edited:**
+- `src/pages/UserProfile.tsx` — donate CTA, switch back to RPC
+- `src/pages/Profile.tsx` — Litters tab for breeders
+- `src/components/social/PostCard.tsx`, `PostGrid.tsx` — author badges
+- `src/components/CommentList.tsx` (or equivalent) — author badge
+- `src/components/SellerBadge.tsx` — verified-from-hook
+- `src/pages/settings/OrgSettings.tsx` — donation fields
+- `src/pages/PetProfile.tsx` — full redesign
+- `src/App.tsx` — route for `/litters/new`
+
+**Risks / notes:**
+- Adding `sire_id`/`dam_id` columns: if the Priority 1 migration already added them, the new migration uses `ADD COLUMN IF NOT EXISTS` to stay idempotent.
+- `useVerifiedOrgs` must batch — render-time per-row queries would crater the feed. One query per visible page.
+- Donate sheet: explicitly disclaim PetOS is not the payment processor (legal hygiene).
+
+---
+
+**Approve this and I'll execute Steps 1 → 5 in order.**
