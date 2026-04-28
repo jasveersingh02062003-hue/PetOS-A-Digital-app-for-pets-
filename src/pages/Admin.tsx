@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2 } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2, Bug } from "lucide-react";
+import { formatRelative } from "@/lib/format";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
@@ -62,7 +63,7 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-9 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-10 w-full bg-muted rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
@@ -72,6 +73,7 @@ const Admin = () => {
             <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="broadcast" className="rounded-lg gap-1.5"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="flags" className="rounded-lg gap-1.5"><ToggleRight className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="errors" className="rounded-lg gap-1.5"><Bug className="h-3.5 w-3.5" /></TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
@@ -83,6 +85,7 @@ const Admin = () => {
           <TabsContent value="flags" className="mt-4"><FlagsTab /></TabsContent>
           <TabsContent value="trust" className="mt-4"><TrustQueueTab /></TabsContent>
           <TabsContent value="rewards" className="mt-4"><RewardsQueueTab /></TabsContent>
+          <TabsContent value="errors" className="mt-4"><ErrorsTab /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -143,6 +146,83 @@ const ReportsTab = () => {
               <Button size="sm" variant="ghost" onClick={() => setStatus(r.id, "dismissed")}>Dismiss</Button>
             </div>
           )}
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Errors tab — surfaces recent client/runtime errors to admins.       */
+/* ------------------------------------------------------------------ */
+const ErrorsTab = () => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<string>("");
+
+  const load = async () => {
+    setLoading(true);
+    let q = supabase
+      .from("error_log")
+      .select("id, created_at, source, route, message, stack, user_id")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (sourceFilter.trim()) q = q.ilike("source", `%${sourceFilter.trim()}%`);
+    const { data, error } = await q;
+    if (error) toast.error(error.message);
+    setRows(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  if (loading) {
+    return <div className="grid place-items-center py-10"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2 items-center">
+        <Input
+          placeholder="Filter by source (e.g. window, client, edge)"
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") load(); }}
+        />
+        <Button size="sm" variant="outline" onClick={load}>Refresh</Button>
+      </div>
+
+      {rows.length === 0 && (
+        <div className="text-sm text-muted-foreground py-8 text-center">No errors logged 🎉</div>
+      )}
+
+      {rows.map((r) => (
+        <Card key={r.id} className="p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Badge variant="outline" className="text-[10px]">{r.source}</Badge>
+                {r.route && <span className="text-[11px] text-muted-foreground truncate">{r.route}</span>}
+                <span className="text-[11px] text-muted-foreground ml-auto">
+                  {formatRelative(r.created_at)}
+                </span>
+              </div>
+              <div className="text-sm font-medium break-words">{r.message}</div>
+              {r.stack && (
+                <details className="mt-2">
+                  <summary className="text-[11px] text-muted-foreground cursor-pointer">stack</summary>
+                  <pre className="mt-1 text-[10px] bg-muted/50 rounded p-2 overflow-x-auto whitespace-pre-wrap">
+                    {r.stack.slice(0, 2000)}
+                  </pre>
+                </details>
+              )}
+              {r.user_id && (
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  user {r.user_id.slice(0, 8)}…
+                </div>
+              )}
+            </div>
+          </div>
         </Card>
       ))}
     </div>
