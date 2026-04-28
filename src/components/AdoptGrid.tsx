@@ -62,7 +62,7 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("pet_listings")
-        .select("id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id")
+        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id")
         .eq("active", true)
         .eq("status", "active")
         .order("created_at", { ascending: false })
