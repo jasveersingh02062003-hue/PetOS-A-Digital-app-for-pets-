@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
 import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
+import { uploadImageWithVariants } from "@/lib/uploadImage";
 
 export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
   ({ variant = "icon" }, ref) => {
@@ -148,19 +149,24 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       }
 
       let image_url: string | null = null;
+      let image_url_thumb: string | null = null;
+      let image_url_feed: string | null = null;
+      let image_url_full: string | null = null;
       if (file) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${user.id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("posts").upload(path, file, { upsert: false, contentType: file.type });
-        if (upErr) throw upErr;
-        const { data: { publicUrl } } = supabase.storage.from("posts").getPublicUrl(path);
-        image_url = publicUrl;
+        const v = await uploadImageWithVariants(file, "posts");
+        image_url_thumb = v.thumb;
+        image_url_feed = v.feed;
+        image_url_full = v.full;
+        image_url = v.feed; // keep legacy column populated for backwards compat
       }
       const { data: post, error } = await supabase.from("posts").insert({
         author_id: user.id,
         pet_id: petId === "none" ? null : petId,
         caption: caption.trim() || null,
         image_url,
+        image_url_thumb,
+        image_url_feed,
+        image_url_full,
         health_kind: healthTag?.kind ?? null,
         health_pet_id: healthTag?.pet_id ?? null,
         health_value: healthTag?.value ?? null,
