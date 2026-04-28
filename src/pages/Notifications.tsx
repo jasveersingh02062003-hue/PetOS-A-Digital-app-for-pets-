@@ -9,6 +9,8 @@ import { formatDistanceToNow } from "date-fns";
 const Notifications = () => {
   const nav = useNavigate();
   const { data, unreadCount, markAllRead, markRead } = useNotifications();
+  const { data: invites } = usePendingCollabInvites();
+  const respond = useRespondCollab();
 
   return (
     <div className="container-app pad-top-safe pb-24">
