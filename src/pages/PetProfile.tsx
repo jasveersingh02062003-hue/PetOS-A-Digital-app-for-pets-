@@ -1,11 +1,13 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PostGrid } from "@/components/social/PostGrid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Cake, Heart, MapPin, Share2, ShieldCheck, Grid3x3, GitBranch, Stethoscope, Award, BadgeCheck, FileText } from "lucide-react";
+import { ArrowLeft, Cake, Heart, MapPin, Share2, ShieldCheck, Grid3x3, GitBranch, Stethoscope, Award, BadgeCheck, FileText, Tag, Sparkles } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
@@ -15,6 +17,8 @@ import { format } from "date-fns";
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
   const nav = useNavigate();
+  const { user } = useAuth();
+  const qc = useQueryClient();
 
   const { data: pet, isLoading } = useQuery({
     queryKey: ["pet-by-public", publicId],
@@ -102,6 +106,40 @@ const PetProfile = () => {
   };
 
   const ageYrs = pet?.date_of_birth ? Math.floor((Date.now() - new Date(pet.date_of_birth).getTime()) / 31557600000) : null;
+
+  const isOwner = !!(user && pet && pet.owner_id === user.id);
+
+  const updatePet = async (patch: Record<string, any>) => {
+    if (!pet) return;
+    const { error } = await supabase.from("pets").update(patch as any).eq("id", pet.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await qc.invalidateQueries({ queryKey: ["pet-by-public", publicId] });
+    toast.success("Updated");
+  };
+
+  const toggleStud = async (v: boolean) => {
+    await updatePet({
+      discoverable_for_mating: v,
+      status_chip: v
+        ? "available_for_stud"
+        : pet?.status_chip === "available_for_stud"
+          ? null
+          : pet?.status_chip,
+    });
+  };
+
+  const toggleForSale = async (v: boolean) => {
+    await updatePet({
+      status_chip: v
+        ? "for_sale"
+        : pet?.status_chip === "for_sale"
+          ? null
+          : pet?.status_chip,
+    });
+  };
 
   const petUrl = pet ? `${window.location.origin}/pet/${pet.public_id ?? pet.id}` : "";
   useSeo(
@@ -215,6 +253,49 @@ const PetProfile = () => {
           <Button onClick={() => nav("/mates/new")} variant="outline" className="w-full rounded-xl border-hairline mb-4 gap-2">
             <Heart className="h-4 w-4 text-primary" /> Available for mating
           </Button>
+        )}
+
+        {/* Owner-only inline controls */}
+        {isOwner && (
+          <div className="rounded-2xl border border-hairline bg-card/50 p-3 mb-4 space-y-2">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3" /> Owner controls
+            </div>
+            <div className="flex items-center justify-between gap-3 py-1.5">
+              <div className="min-w-0">
+                <div className="text-sm font-medium flex items-center gap-1.5">
+                  <Heart className="h-3.5 w-3.5 text-primary" /> Available for stud
+                </div>
+                <div className="text-[11px] text-muted-foreground">Show on Find a mate.</div>
+              </div>
+              <Switch
+                checked={!!pet.discoverable_for_mating || pet.status_chip === "available_for_stud"}
+                onCheckedChange={toggleStud}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3 py-1.5 border-t border-hairline">
+              <div className="min-w-0">
+                <div className="text-sm font-medium flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5 text-primary" /> Listed for sale
+                </div>
+                <div className="text-[11px] text-muted-foreground">Marks profile, doesn't create a listing.</div>
+              </div>
+              <Switch
+                checked={pet.status_chip === "for_sale"}
+                onCheckedChange={toggleForSale}
+              />
+            </div>
+            {pet.status_chip === "for_sale" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full rounded-xl border-hairline mt-1 gap-1.5"
+                onClick={() => nav(`/mates/adopt/new?pet=${pet.id}`)}
+              >
+                <Tag className="h-3.5 w-3.5" /> Create adopt/sale listing
+              </Button>
+            )}
+          </div>
         )}
 
         {/* Tabs */}
