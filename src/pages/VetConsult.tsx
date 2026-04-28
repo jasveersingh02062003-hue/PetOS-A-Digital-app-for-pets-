@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Stethoscope, ShieldCheck, Clock, AlertTriangle, X, Loader2 } from "lucide-react";
+import { VetControls } from "@/components/VetControls";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -187,6 +188,14 @@ const VetConsult = () => {
             </ul>
           ) : <p className="text-sm text-muted-foreground">None logged</p>}
         </Card>
+
+        <VetControls
+          consultId={consult.id}
+          vetId={consult.vet_id}
+          status={consult.status}
+          prescription={consult.prescription}
+          notes={consult.notes}
+        />
 
         {active && (
           <Button variant="outline" onClick={cancel} className="w-full rounded-2xl h-12 gap-2 border-hairline">

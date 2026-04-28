@@ -1,86 +1,119 @@
-# Stage 4 — AI Assistant + Tele-vet Handoff
+# Phase 2 — Closing the Loop
 
-Wires the AI chat to Lovable AI Gateway with real streaming, grounds every reply in the active pet's health vault, adds an Emergency triage that classifies severity, and creates a tele-vet handoff flow so moderate/severe cases land in a vet queue with the AI summary attached.
+Phase 1 shipped every core surface (pets, vault, social, AI, mating, services, shop). Phase 2 adds the trust, retention, and polish layers that turn the marketplaces into something people actually transact on.
 
-## What gets built
+We'll ship in 5 focused stages. Each stage is independently shippable so you can pause at any point.
 
-### 1. Database — new `vet_consults` table
-Stores every tele-vet handoff created from the triage flow.
+---
 
-Columns: `pet_id`, `owner_id`, optional `vet_id`, `severity` (mild/moderate/severe), `status` (awaiting_vet → assigned → in_progress → completed → cancelled), `ai_summary`, `symptoms[]`, `prescription`, `notes`, `completed_at`.
+## Stage A — Vet Portal & Vaccination Verification
 
-Adds a `vet` value to the `app_role` enum.
+The `vet` role exists in the DB but has no UI. This stage gives vets a real workspace and turns the manual "vaccination_verified" boolean into a workflow.
 
-Access rules in plain English:
-- Owners can view, create, and cancel their own consults.
-- Assigned vets (or anyone with the `vet` role) can view and update consults assigned to them.
-- Super admins and moderators can view all.
+**What gets built**
+- `/vet` dashboard — queue of `awaiting_vet` consults sorted by severity, with claim/assign action.
+- `/vet/consult/:id` upgraded with vet-only controls: status transitions, prescription field, completion notes, mark complete.
+- Vaccination verification queue: vet (or admin) reviews uploaded vaccine docs and flips `vaccination_verified` on the pet.
+- Owner-side: "Request verification" button on each pet → creates a `verification_requests` row.
+- Vet onboarding: `/vet/apply` form (clinic name, license #, city) creating a `vet_applications` row that admins approve to grant the `vet` role.
 
-### 2. Edge function — `supabase/functions/chat/index.ts`
-- Reads the caller's pet vault (vaccinations, recent symptoms, recent records, pet bio) using their auth token, so RLS automatically scopes data.
-- Builds a system prompt with that context + safe-pet-care guardrails (never prescribe, escalate emergencies).
-- Two modes:
-  - **`chat`** (default): streams tokens via SSE from Lovable AI Gateway (`google/gemini-3-flash-preview`).
-  - **`triage`**: non-streaming structured tool call returning `{ severity, summary, recommend_vet, home_care[] }`.
-- Surfaces 429 (rate limit) and 402 (out of credits) with friendly messages.
+**DB changes**
+- New `verification_requests` (pet_id, status, reviewer_id, notes)
+- New `vet_applications` (user_id, clinic, license_number, status)
 
-### 3. Frontend — full-screen chat at `/ai`
-Replaces the placeholder `AiChat` page:
-- Top bar with active-pet selector chip (uses `usePets` hook).
-- Streaming token-by-token rendering of assistant replies (markdown via `react-markdown`).
-- Composer with send button and disabled state while streaming.
-- Suggested prompts on first open ("Diet for a 2-year-old Labrador", "He's scratching a lot", "When is the next vaccine due?").
-- Toast on rate-limit / credit errors.
+---
 
-### 4. Emergency sheet upgrade
-The floating Emergency button now opens an expanded sheet:
-- Quick triage textarea ("What's happening?")
-- Calls the `chat` function in `triage` mode → shows a colored severity banner (mild = sage, moderate = amber, severe = red), summary, and home-care steps.
-- For moderate/severe: a primary **"Connect to vet"** button creates a row in `vet_consults` with the AI summary and routes to `/vet/consult/:id`.
-- For mild: shows tips and a **"Open full chat"** button.
+## Stage B — Reviews, Ratings & Trust
 
-### 5. Tele-vet handoff screen — `/vet/consult/:id`
-- Status pill (Awaiting vet · Assigned · In progress · Completed)
-- Pet snapshot card (name, breed, age, verified badge)
-- AI summary block
-- Vault snapshot (latest vaccinations + recent symptoms — pulled live)
-- Cancel button for the owner
-- "Awaiting first available vet — we'll notify you" placeholder for v1 (real vet matching is Phase 2)
+Reviews unlock the marketplace. Without them, providers, sellers, and mating partners are anonymous strangers.
 
-### 6. Health page integration
-The "Recent consults" section on `/health` now lists real `vet_consults` rows with status pills, click-through to the consult screen.
+**What gets built**
+- Generic `reviews` table keyed by `subject_type` (`provider` | `product` | `pet_partner` | `vet`) + `subject_id`, with rating 1–5, body, and `verified_purchase` flag (auto-set when a matching `service_bookings`/`shop_orders`/`mating_agreements` row exists).
+- Star ratings on every provider card, product card, and pet listing (aggregate via a SQL view).
+- Review composer sheet that opens after a booking is `completed` or an order is `delivered`.
+- "Reviews" tab on Service Detail and Shop product pages.
+- One review per (user, subject) — enforced by unique index.
+
+---
+
+## Stage C — Notifications & Realtime
+
+Right now nothing tells you "your booking was confirmed." This stage adds an in-app inbox and live toasts.
+
+**What gets built**
+- `notifications` table (user_id, type, title, body, link, read_at).
+- DB triggers fan out events to recipients:
+  - booking created → provider owner; status changed → customer
+  - order placed → each seller; status changed → customer
+  - mating request received / agreement signed
+  - consult assigned / updated
+  - comment on your post / like on your post
+- Bell icon in the AppShell header with unread count, opening `/notifications`.
+- Realtime subscription in a `useNotifications` hook — Sonner toast pops live.
+- (Stub) Twilio + Web Push hooks left as documented TODO points where the trigger can later call an edge function.
+
+---
+
+## Stage D — Image Uploads, Search & Discovery
+
+Currently products and provider covers are URL-only; nothing is searchable beyond category filters.
+
+**What gets built**
+- Reusable `<ImageUpload />` component using existing `posts` bucket pattern; new `marketplace` storage bucket (public read).
+- Wire upload into `ServiceNew`, `ShopNew`, `MatesNew`, and provider/product edit screens.
+- Universal search at the top of Discover: searches pets, providers, products by name/breed/title (Postgres `ilike` + `pg_trgm` index for speed).
+- Empty states with illustrations across all marketplace screens.
+
+---
+
+## Stage E — Admin Console, Google Sign-in & PWA
+
+Operational and login polish.
+
+**What gets built**
+- Google sign-in on `/auth` via `lovable.auth.signInWithOAuth("google", …)` — the social-login configurator runs first.
+- `/admin` dashboard (super_admin / moderator only): user list with role assignment, vet-application review, content moderation queue (reported posts/comments), platform metrics.
+- Report action on posts, comments, listings → `reports` table → admin queue.
+- PWA manifest + service worker (`vite-plugin-pwa`) with `/~oauth` denylist so the app installs to home screen.
+- HIBP leaked-password protection enabled via `configure_auth`.
+
+---
 
 ## Technical details
 
-- **Model**: `google/gemini-3-flash-preview` (fast, cheap, good for chat + triage). System prompt + pet RAG context built server-side; client never sees or sets the prompt.
-- **Streaming**: SSE parsed line-by-line on the client (depth-tracked, handles CRLF, partial JSON, `[DONE]`, final flush).
-- **Auth**: edge function reads JWT from `Authorization` header and uses an RLS-scoped Supabase client so the model can never see another user's pets.
-- **`config.toml`**: adds a `[functions.chat]` block (default `verify_jwt`).
-- **Validation**: messages array required; petId optional; mode whitelisted.
-- **Rate limiting**: relies on Lovable AI Gateway's per-workspace limits; client-side toast on 429/402.
+- **Schema additions:** `verification_requests`, `vet_applications`, `reviews`, `notifications`, `reports` — all RLS-protected. Aggregate ratings exposed via a `subject_ratings` view (avg + count).
+- **Trigger pattern:** notification fan-out uses `SECURITY DEFINER` triggers writing into `notifications`; recipient list computed inline (no queue table).
+- **Realtime:** `ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;` and a single channel filtered by `user_id`.
+- **Storage:** new public `marketplace` bucket; folder convention `{user_id}/{uuid}.{ext}` so RLS by path prefix works.
+- **Search:** add `pg_trgm` extension and GIN indexes on `pets.name`, `pets.breed`, `service_providers.name`, `shop_products.title`. Single edge function `search` returns merged results.
+- **Auth:** `lovable.auth.signInWithOAuth` is the only client call; do **not** touch `src/integrations/lovable/`.
+- **PWA:** `VitePWA({ workbox: { navigateFallbackDenylist: [/^\/~oauth/] }})` — required for OAuth to keep working on installed PWA.
 
-## Files
+## Explicitly out of scope (still Phase 3)
+- Real Twilio SMS / Stripe payments wiring — code paths remain stubbed; we'll do these when you're ready to connect accounts.
+- Video tele-vet calls.
+- AI image input (X-rays, stool photos).
+- Multilingual support.
+
+## Files (high level)
 
 ```text
-NEW   supabase/migrations/<ts>_vet_consults.sql
-NEW   supabase/functions/chat/index.ts
-EDIT  supabase/config.toml          (add [functions.chat] block)
-EDIT  src/pages/AiChat.tsx          (full streaming chat UI)
-EDIT  src/components/EmergencySheet.tsx (triage mode)
-NEW   src/pages/VetConsult.tsx      (handoff screen)
-EDIT  src/pages/Health.tsx          (real consult list)
-EDIT  src/App.tsx                   (route /vet/consult/:id)
+NEW   supabase/migrations/<ts>_phase2_vet.sql
+NEW   supabase/migrations/<ts>_phase2_reviews.sql
+NEW   supabase/migrations/<ts>_phase2_notifications.sql
+NEW   supabase/migrations/<ts>_phase2_reports.sql
+NEW   supabase/migrations/<ts>_phase2_search.sql
+
+NEW   src/pages/Vet.tsx, VetApply.tsx, Notifications.tsx, Admin.tsx
+NEW   src/components/ImageUpload.tsx, ReviewSheet.tsx, ReviewList.tsx,
+      RatingStars.tsx, NotificationBell.tsx, ReportButton.tsx,
+      SearchBar.tsx
+NEW   src/hooks/useNotifications.tsx
+EDIT  ServiceDetail, MateListing, Shop, Discover, AppShell,
+      ServiceNew, ShopNew, MatesNew, Auth, App.tsx, vite.config.ts
 ```
 
-No new dependencies — `react-markdown` is already installed.
-
-## Out of scope this stage
-- Real video tele-vet calls
-- Vet matching / assignment automation
-- AI image input (stool photo, X-rays)
-- OCR vaccination parsing
-
-These remain placeholders, called out in the PRD checklist for Phase 2.
+No new paid dependencies. Will add `vite-plugin-pwa` and run `configure_social_auth` for Google.
 
 ## What I need from you
-Just approval. No new secrets — `LOVABLE_API_KEY` is already provisioned.
+Just approval. If you want to drop or reorder a stage, say so and I'll revise.

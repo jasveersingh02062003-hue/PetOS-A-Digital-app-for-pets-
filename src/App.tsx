@@ -26,6 +26,9 @@ import Shop from "./pages/Shop";
 import ShopNew from "./pages/ShopNew";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
+import Vet from "./pages/Vet";
+import VetApply from "./pages/VetApply";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -44,7 +47,10 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
+              <Route path="/vet" element={<Vet />} />
+              <Route path="/vet/apply" element={<VetApply />} />
               <Route path="/vet/consult/:id" element={<VetConsult />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />

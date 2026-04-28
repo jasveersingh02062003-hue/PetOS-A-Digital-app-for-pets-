@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import { SubjectRating } from "@/components/SubjectRating";
 
 type ServiceCategory = Database["public"]["Enums"]["service_category"];
 
@@ -128,6 +129,9 @@ const Services = () => {
                 </div>
                 <div className="text-xs text-muted-foreground capitalize">
                   {p.category} · {p.city || "—"}
+                </div>
+                <div className="mt-0.5">
+                  <SubjectRating type="provider" id={p.id} size="sm" />
                 </div>
               </div>
               {p.hourly_rate_inr ? (

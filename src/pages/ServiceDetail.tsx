@@ -6,6 +6,9 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, BadgeCheck, MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 import { BookingSheet } from "@/components/BookingSheet";
+import { ReviewList } from "@/components/ReviewList";
+import { SubjectRating } from "@/components/SubjectRating";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -73,6 +76,9 @@ const ServiceDetail = () => {
             <div className="text-sm text-muted-foreground capitalize mt-1">
               {provider.category}
             </div>
+            <div className="mt-1.5">
+              <SubjectRating type="provider" id={provider.id} size="sm" />
+            </div>
           </div>
           {provider.hourly_rate_inr ? (
             <div className="text-right">
@@ -101,6 +107,11 @@ const ServiceDetail = () => {
           </p>
         )}
       </Card>
+
+      <div className="mt-6">
+        <h3 className="font-display text-lg mb-3">Reviews</h3>
+        <ReviewList subjectType="provider" subjectId={provider.id} subjectName={provider.name} />
+      </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-hairline">
         <div className="container-app">

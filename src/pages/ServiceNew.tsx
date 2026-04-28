@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/ImageUpload";
 import type { Database } from "@/integrations/supabase/types";
 
 type ServiceCategory = Database["public"]["Enums"]["service_category"];
@@ -28,6 +29,7 @@ const ServiceNew = () => {
   const [bio, setBio] = useState("");
   const [rate, setRate] = useState<string>("");
   const [phone, setPhone] = useState("");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -42,6 +44,7 @@ const ServiceNew = () => {
       bio: bio || null,
       hourly_rate_inr: rate ? parseInt(rate) : null,
       contact_phone: phone || null,
+      cover_url: coverUrl,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -58,6 +61,10 @@ const ServiceNew = () => {
         <h1 className="font-display text-xl">List a service</h1>
       </header>
       <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label>Cover image</Label>
+          <ImageUpload value={coverUrl} onChange={setCoverUrl} aspect="video" label="Add cover photo" />
+        </div>
         <div className="space-y-1.5">
           <Label>Business name</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />

@@ -206,6 +206,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrition_logs: {
         Row: {
           created_at: string
@@ -439,6 +472,42 @@ export type Database = {
           onboarded?: boolean
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          rating: number
+          reviewer_id: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["review_subject"]
+          updated_at: string
+          verified_purchase: boolean
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          reviewer_id: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["review_subject"]
+          updated_at?: string
+          verified_purchase?: boolean
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_id?: string
+          subject_id?: string
+          subject_type?: Database["public"]["Enums"]["review_subject"]
+          updated_at?: string
+          verified_purchase?: boolean
         }
         Relationships: []
       }
@@ -787,6 +856,45 @@ export type Database = {
           },
         ]
       }
+      verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_notes: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vet_access_grants: {
         Row: {
           clinic_name: string | null
@@ -830,6 +938,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vet_applications: {
+        Row: {
+          bio: string | null
+          city: string | null
+          clinic_name: string
+          created_at: string
+          id: string
+          license_number: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
+          clinic_name: string
+          created_at?: string
+          id?: string
+          license_number: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          clinic_name?: string
+          created_at?: string
+          id?: string
+          license_number?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       vet_consults: {
         Row: {
@@ -889,7 +1039,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      subject_ratings: {
+        Row: {
+          avg_rating: number | null
+          review_count: number | null
+          subject_id: string | null
+          subject_type: Database["public"]["Enums"]["review_subject"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -899,6 +1057,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_user: {
+        Args: {
+          _body: string
+          _link: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role:
@@ -910,6 +1080,7 @@ export type Database = {
         | "moderator"
         | "finance"
         | "super_admin"
+      application_status: "pending" | "approved" | "rejected"
       booking_status:
         | "pending"
         | "confirmed"
@@ -947,6 +1118,7 @@ export type Database = {
         | "declined"
         | "withdrawn"
         | "agreed"
+      review_subject: "provider" | "product" | "vet" | "pet_partner"
       service_category:
         | "grooming"
         | "training"
@@ -954,6 +1126,7 @@ export type Database = {
         | "sitting"
         | "boarding"
         | "vet_clinic"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1091,6 +1264,7 @@ export const Constants = {
         "finance",
         "super_admin",
       ],
+      application_status: ["pending", "approved", "rejected"],
       booking_status: [
         "pending",
         "confirmed",
@@ -1133,6 +1307,7 @@ export const Constants = {
         "withdrawn",
         "agreed",
       ],
+      review_subject: ["provider", "product", "vet", "pet_partner"],
       service_category: [
         "grooming",
         "training",
@@ -1141,6 +1316,7 @@ export const Constants = {
         "boarding",
         "vet_clinic",
       ],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
