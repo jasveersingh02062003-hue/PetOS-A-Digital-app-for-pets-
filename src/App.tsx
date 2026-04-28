@@ -14,19 +14,19 @@ import { logError } from "./lib/logError";
 import { FirstRunGate } from "./components/FirstRunGate";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
-// Eager — main tab-bar pages, loaded immediately after auth
+// Eager — only the entry route the user sees first.
 import Home from "./pages/Home";
-import Discover from "./pages/Discover";
-import Health from "./pages/Health";
-import Services from "./pages/Services";
-import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
-import Explore from "./pages/Explore";
 import PostAuth from "./pages/PostAuth";
 
 // Lazy — every other route, code-split into separate chunks
+const Discover = lazy(() => import("./pages/Discover"));
+const Health = lazy(() => import("./pages/Health"));
+const Services = lazy(() => import("./pages/Services"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Explore = lazy(() => import("./pages/Explore"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AiChat = lazy(() => import("./pages/AiChat"));
 const VaultView = lazy(() => import("./pages/VaultView"));
