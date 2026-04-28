@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, ImagePlus, X, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
+import { useInviteCollaborators } from "@/hooks/useCollabs";
 
 export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" }) => {
   const [open, setOpen] = useState(false);
