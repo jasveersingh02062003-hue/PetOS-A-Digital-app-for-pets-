@@ -559,6 +559,7 @@ export type Database = {
           interests: string[] | null
           language: string | null
           notif_prefs: Json
+          notify_plus_launch: boolean
           onboarded: boolean
           phone: string | null
           units: Json
@@ -576,6 +577,7 @@ export type Database = {
           interests?: string[] | null
           language?: string | null
           notif_prefs?: Json
+          notify_plus_launch?: boolean
           onboarded?: boolean
           phone?: string | null
           units?: Json
@@ -593,6 +595,7 @@ export type Database = {
           interests?: string[] | null
           language?: string | null
           notif_prefs?: Json
+          notify_plus_launch?: boolean
           onboarded?: boolean
           phone?: string | null
           units?: Json
