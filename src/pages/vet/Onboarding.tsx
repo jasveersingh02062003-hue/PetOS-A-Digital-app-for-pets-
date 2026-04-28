@@ -68,12 +68,13 @@ const VetOnboarding = () => {
       license_number: license,
       city: city || null,
       bio: bio || null,
-      years_experience: yearsExp ? parseInt(yearsExp) : null,
-      specializations: specs,
-      fee_chat_inr: feeChat ? parseInt(feeChat) : null,
-      fee_video_inr: feeVideo ? parseInt(feeVideo) : null,
-      fee_clinic_inr: feeClinic ? parseInt(feeClinic) : null,
-    });
+      year_qualified: yearsExp ? new Date().getFullYear() - parseInt(yearsExp) : null,
+      specialisations: specs,
+      price_chat_inr: feeChat ? parseInt(feeChat) : 0,
+      price_video_inr: feeVideo ? parseInt(feeVideo) : 0,
+      price_clinic_inr: feeClinic ? parseInt(feeClinic) : 0,
+      onboarded: true,
+    }, { onConflict: "user_id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Vet profile saved");
