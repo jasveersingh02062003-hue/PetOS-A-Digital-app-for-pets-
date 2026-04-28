@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     const since = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
     const [weights, nutrition, symptoms, vax, meds] = await Promise.all([
       admin
-        .from("vitals_logs")
+        .from("vital_logs")
         .select("weight_kg, recorded_at")
         .eq("pet_id", petId)
         .gte("recorded_at", since)
@@ -93,10 +93,10 @@ Deno.serve(async (req) => {
         .limit(50),
       admin
         .from("nutrition_logs")
-        .select("food_name, portion_g, calories, logged_at")
+        .select("food, portion, fed_at")
         .eq("pet_id", petId)
-        .gte("logged_at", since)
-        .order("logged_at", { ascending: false })
+        .gte("fed_at", since)
+        .order("fed_at", { ascending: false })
         .limit(100),
       admin
         .from("symptom_logs")
@@ -107,13 +107,13 @@ Deno.serve(async (req) => {
         .limit(50),
       admin
         .from("vaccinations")
-        .select("vaccine, administered_on, next_due_on")
+        .select("vaccine_name, administered_on, next_due_on")
         .eq("pet_id", petId)
         .order("administered_on", { ascending: false })
         .limit(20),
       admin
-        .from("medications")
-        .select("name, dosage, active, end_date")
+        .from("medication_logs")
+        .select("name, dose, frequency, active, end_on")
         .eq("pet_id", petId)
         .limit(20),
     ]);
