@@ -7,6 +7,7 @@ import { EmergencySheet } from "./EmergencySheet";
 import { NotificationBell } from "./NotificationBell";
 import { ComposerButton } from "./Composer";
 import { ContextualFab } from "./ContextualFab";
+import { OfflineBanner } from "./OfflineBanner";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -31,6 +32,7 @@ export const AppShell = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <OfflineBanner />
       {user && (
         <div className="fixed top-3 right-3 z-40 pad-top-safe">
           <NotificationBell />
