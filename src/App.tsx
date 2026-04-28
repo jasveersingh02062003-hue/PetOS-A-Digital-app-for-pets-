@@ -49,12 +49,25 @@ import Terms from "./pages/legal/Terms";
 import LegalPrivacy from "./pages/legal/Privacy";
 import Refunds from "./pages/legal/Refunds";
 import NotFound from "./pages/NotFound";
+import DeleteAccount from "./pages/DeleteAccount";
+import AdminErrors from "./pages/admin/Errors";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { logError } from "./lib/logError";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000 } },
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+    },
+    mutations: {
+      onError: (err) => logError(err, { source: "client:mutation" }),
+    },
+  },
 });
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -99,6 +112,8 @@ const App = () => (
               <Route path="/shop/new" element={<ShopNew />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/account/delete" element={<DeleteAccount />} />
+              <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/v/:code" element={<VaultView />} />
               <Route element={<AppShell />}>
                 <Route path="/" element={<Home />} />
@@ -114,6 +129,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
