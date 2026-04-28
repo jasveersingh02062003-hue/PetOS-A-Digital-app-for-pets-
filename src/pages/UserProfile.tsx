@@ -8,13 +8,14 @@ import { MessageButton } from "@/components/social/MessageButton";
 import { PostGrid } from "@/components/social/PostGrid";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { SellerBadge } from "@/components/SellerBadge";
+import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { SmartImage } from "@/components/SmartImage";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Settings, Building2, ShieldCheck, ArrowRight, Share2,
-  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award,
+  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search,
 } from "lucide-react";
 import { differenceInYears, differenceInMonths } from "date-fns";
 import { toast } from "sonner";
@@ -109,6 +110,11 @@ const UserProfile = () => {
   const accountType = (profile as any)?.account_type ?? "pet_parent";
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
+  const isVerifiedOrg = useIsVerifiedOrg(userId);
+  const lookingFor = (profile as any)?.looking_for as
+    | { species?: string[] | null; breed?: string | null; city?: string | null; max_price_inr?: number | null }
+    | null
+    | undefined;
 
   const shareProfile = async () => {
     const url = handle ? `${window.location.origin}/u/${handle}` : `${window.location.origin}/u/${userId}`;
@@ -167,7 +173,12 @@ const UserProfile = () => {
 
         <div className="mb-1 flex items-center gap-2 flex-wrap">
           <h2 className="font-display text-2xl leading-tight">{profile?.full_name ?? "—"}</h2>
-          <SellerBadge type={accountType as any} verified />
+          <SellerBadge type={accountType as any} verified={isVerifiedOrg} />
+          {accountType === "buyer" && (
+            <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full bg-primary/12 text-primary border border-primary/30 text-[11px] font-semibold">
+              <Search className="h-3 w-3" /> Looking for a pet
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
           {handle && <span>@{handle}</span>}
@@ -175,6 +186,16 @@ const UserProfile = () => {
           {profile?.city && <span>{profile.city}</span>}
         </div>
         {profile?.bio && <p className="text-sm leading-relaxed mb-3 whitespace-pre-line">{profile.bio}</p>}
+        {accountType === "buyer" && lookingFor && (lookingFor.species?.length || lookingFor.breed || lookingFor.city || lookingFor.max_price_inr) ? (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {lookingFor.species?.map((s) => (
+              <span key={s} className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px] capitalize">{s}</span>
+            ))}
+            {lookingFor.breed && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.breed}</span>}
+            {lookingFor.city && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.city}</span>}
+            {lookingFor.max_price_inr ? <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">≤ ₹{lookingFor.max_price_inr.toLocaleString()}</span> : null}
+          </div>
+        ) : null}
 
         {!isMe && userId && (
           <div className="flex items-center gap-2 mb-4">
@@ -307,15 +328,28 @@ const PetRailCard = ({ pet, onClick }: { pet: any; onClick: () => void }) => {
   const ageYears = dob ? differenceInYears(new Date(), dob) : null;
   const ageStr = dob ? (ageYears! >= 1 ? `${ageYears}y` : `${differenceInMonths(new Date(), dob)}m`) : null;
   const speciesEmoji: Record<string, string> = { dog: "🐕", cat: "🐱", bird: "🐦", rabbit: "🐰" };
+  const statusKey: "stud" | "sale" | "chilling" =
+    pet.status_chip === "for_sale" ? "sale" :
+    (pet.status_chip === "available_for_stud" || pet.discoverable_for_mating) ? "stud" :
+    "chilling";
+  const statusMeta: Record<typeof statusKey, { label: string; tone: string }> = {
+    stud: { label: "Stud", tone: "bg-coral text-coral-foreground" },
+    sale: { label: "For sale", tone: "bg-amber-500 text-white" },
+    chilling: { label: "Chilling", tone: "bg-leaf/90 text-white" },
+  };
+  const m = statusMeta[statusKey];
   return (
     <button onClick={onClick} className="shrink-0 w-[88px] flex flex-col items-center gap-1.5">
-      <div className="h-[72px] w-[72px] rounded-2xl bg-muted overflow-hidden grid place-items-center ring-2 ring-transparent hover:ring-primary/30 transition">
+      <div className="relative h-[72px] w-[72px] rounded-2xl bg-muted overflow-hidden grid place-items-center ring-2 ring-transparent hover:ring-primary/30 transition">
         {pet.avatar_url
           ? <SmartImage src={pet.avatar_url} alt={pet.name} aspect="1/1" className="w-full h-full" />
           : <span className="font-display text-2xl text-primary">{pet.name[0]}</span>}
+        <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 h-4 rounded-full text-[9px] font-semibold leading-none flex items-center ${m.tone} shadow-sm whitespace-nowrap`}>
+          {m.label}
+        </span>
       </div>
       <div className="text-center w-full">
-        <div className="text-xs font-medium truncate">{pet.name}</div>
+        <div className="text-xs font-medium truncate mt-1">{pet.name}</div>
         <div className="text-[10px] text-muted-foreground">
           {speciesEmoji[pet.species] ?? "🐾"} {ageStr ?? ""}
         </div>

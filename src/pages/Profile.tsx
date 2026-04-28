@@ -18,6 +18,7 @@ import { SmartImage } from "@/components/SmartImage";
 import { ProfileSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
 import { PostGrid } from "@/components/social/PostGrid";
+import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { toast } from "sonner";
 import { differenceInMonths, differenceInYears } from "date-fns";
@@ -43,6 +44,7 @@ const Profile = () => {
     | undefined;
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
+  const isVerifiedOrg = useIsVerifiedOrg(user?.id);
 
   const { data: counts } = useQuery({
     queryKey: ["profile-counts", user?.id],
@@ -160,7 +162,12 @@ const Profile = () => {
             {/* Name + handle + badge */}
             <div className="mb-1 flex items-center gap-2 flex-wrap">
               <h1 className="font-display text-2xl leading-tight">{profile?.full_name || "Set your name"}</h1>
-              <SellerBadge type={accountType as any} verified />
+              <SellerBadge type={accountType as any} verified={isVerifiedOrg} />
+              {isBuyer && (
+                <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full bg-primary/12 text-primary border border-primary/30 text-[11px] font-semibold">
+                  <Search className="h-3 w-3" /> Looking for a pet
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               {handle ? <span>@{handle}</span> : <button onClick={() => nav("/settings/about")} className="text-primary">Set @handle</button>}
@@ -442,15 +449,29 @@ const PetRailCard = ({ pet, onClick }: { pet: any; onClick: () => void }) => {
   const ageYears = dob ? differenceInYears(new Date(), dob) : null;
   const ageStr = dob ? (ageYears! >= 1 ? `${ageYears}y` : `${differenceInMonths(new Date(), dob)}m`) : null;
   const speciesEmoji: Record<string, string> = { dog: "🐕", cat: "🐱", bird: "🐦", rabbit: "🐰" };
+  // Status takes priority: explicit status_chip > available_for_stud > chilling
+  const statusKey: "stud" | "sale" | "chilling" =
+    pet.status_chip === "for_sale" ? "sale" :
+    (pet.status_chip === "available_for_stud" || pet.discoverable_for_mating) ? "stud" :
+    "chilling";
+  const statusMeta: Record<typeof statusKey, { label: string; tone: string }> = {
+    stud: { label: "Stud", tone: "bg-coral text-coral-foreground" },
+    sale: { label: "For sale", tone: "bg-amber-500 text-white" },
+    chilling: { label: "Chilling", tone: "bg-leaf/90 text-white" },
+  };
+  const m = statusMeta[statusKey];
   return (
     <button onClick={onClick} className="shrink-0 w-[88px] flex flex-col items-center gap-1.5">
-      <div className="h-[72px] w-[72px] rounded-2xl bg-muted overflow-hidden grid place-items-center ring-2 ring-transparent hover:ring-primary/30 transition">
+      <div className="relative h-[72px] w-[72px] rounded-2xl bg-muted overflow-hidden grid place-items-center ring-2 ring-transparent hover:ring-primary/30 transition">
         {pet.avatar_url
           ? <SmartImage src={pet.avatar_url} alt={pet.name} aspect="1/1" className="w-full h-full" />
           : <span className="font-display text-2xl text-primary">{pet.name[0]}</span>}
+        <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 h-4 rounded-full text-[9px] font-semibold leading-none flex items-center ${m.tone} shadow-sm whitespace-nowrap`}>
+          {m.label}
+        </span>
       </div>
       <div className="text-center w-full">
-        <div className="text-xs font-medium truncate">{pet.name}</div>
+        <div className="text-xs font-medium truncate mt-1">{pet.name}</div>
         <div className="text-[10px] text-muted-foreground">
           {speciesEmoji[pet.species] ?? "🐾"} {ageStr ?? ""}
         </div>

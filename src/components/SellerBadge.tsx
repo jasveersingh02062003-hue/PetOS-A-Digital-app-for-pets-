@@ -26,7 +26,7 @@ export const SellerBadge = ({
     <Badge className={`border ${m.tone} gap-1 font-normal ${className ?? ""}`}>
       <Icon className="h-3 w-3" />
       {m.label}
-      {verified && (t === "breeder" || t === "kennel") && (
+      {verified && t !== "pet_parent" && t !== "buyer" && (
         <BadgeCheck className="h-3 w-3 text-leaf" />
       )}
     </Badge>

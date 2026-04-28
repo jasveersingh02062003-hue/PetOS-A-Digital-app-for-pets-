@@ -12,6 +12,7 @@ import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { SellerBadge } from "./SellerBadge";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
@@ -129,6 +130,8 @@ const PostCard = ({ post, onComment }: {
 }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { data: verifiedOrgs } = useVerifiedOrgs();
+  const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
   const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
   const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
   const initial = displayName[0]?.toUpperCase() || "P";
@@ -191,7 +194,7 @@ const PostCard = ({ post, onComment }: {
               {displayName}
             </Link>
             {post.author?.account_type && post.author.account_type !== "pet_parent" && (
-              <SellerBadge type={post.author.account_type as any} />
+              <SellerBadge type={post.author.account_type as any} verified={authorVerified} />
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
