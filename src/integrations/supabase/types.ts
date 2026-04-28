@@ -442,6 +442,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          rating: number
+          reviewer_id: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["review_subject"]
+          updated_at: string
+          verified_purchase: boolean
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          reviewer_id: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["review_subject"]
+          updated_at?: string
+          verified_purchase?: boolean
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_id?: string
+          subject_id?: string
+          subject_type?: Database["public"]["Enums"]["review_subject"]
+          updated_at?: string
+          verified_purchase?: boolean
+        }
+        Relationships: []
+      }
       service_bookings: {
         Row: {
           created_at: string
@@ -970,7 +1006,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      subject_ratings: {
+        Row: {
+          avg_rating: number | null
+          review_count: number | null
+          subject_id: string | null
+          subject_type: Database["public"]["Enums"]["review_subject"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -1029,6 +1073,7 @@ export type Database = {
         | "declined"
         | "withdrawn"
         | "agreed"
+      review_subject: "provider" | "product" | "vet" | "pet_partner"
       service_category:
         | "grooming"
         | "training"
@@ -1217,6 +1262,7 @@ export const Constants = {
         "withdrawn",
         "agreed",
       ],
+      review_subject: ["provider", "product", "vet", "pet_partner"],
       service_category: [
         "grooming",
         "training",
