@@ -66,7 +66,7 @@ const VetApply = () => {
           <p className="text-sm text-muted-foreground">
             {existing.status === "pending" && "We'll review your credentials and get back to you soon."}
             {existing.status === "approved" && "You're a verified vet. Open the vet dashboard."}
-            {existing.status === "rejected" && (existing.reviewer_notes || "Application was not approved.")}
+            {existing.status === "rejected" && "Application was not approved."}
           </p>
           {existing.status === "approved" && (
             <Button onClick={() => nav("/vet")} className="rounded-full mt-2">
