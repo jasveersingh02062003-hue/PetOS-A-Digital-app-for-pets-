@@ -1,97 +1,104 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { AppShell } from "@/components/AppShell";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Splash } from "./components/Splash";
+import { RouteFallback } from "./components/RouteFallback";
+import { logError } from "./lib/logError";
+import { FirstRunGate } from "./components/FirstRunGate";
+
+// Eager — main tab-bar pages, loaded immediately after auth
 import Home from "./pages/Home";
 import Discover from "./pages/Discover";
 import Health from "./pages/Health";
 import Services from "./pages/Services";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import AiChat from "./pages/AiChat";
-import VaultView from "./pages/VaultView";
-import VetConsult from "./pages/VetConsult";
-import MatesNew from "./pages/MatesNew";
-import MateListing from "./pages/MateListing";
-import MatesManage from "./pages/MatesManage";
-import ServiceDetail from "./pages/ServiceDetail";
-import ServiceNew from "./pages/ServiceNew";
-import ServicesManage from "./pages/ServicesManage";
-import Shop from "./pages/Shop";
-import ShopNew from "./pages/ShopNew";
-import Cart from "./pages/Cart";
-import Orders from "./pages/Orders";
-import Vet from "./pages/Vet";
-import VetApply from "./pages/VetApply";
-import Notifications from "./pages/Notifications";
-import Admin from "./pages/Admin";
-import Settings from "./pages/Settings";
-import AboutYou from "./pages/settings/AboutYou";
-import NotificationsPrefs from "./pages/settings/Notifications";
-import EmergencyVet from "./pages/settings/EmergencyVet";
-import Privacy from "./pages/settings/Privacy";
-import GoalsPage from "./pages/settings/Goals";
-import PetEditor from "./pages/settings/PetEditor";
-import Billing from "./pages/settings/Billing";
-import Plus from "./pages/Plus";
-import PlusSuccess from "./pages/PlusSuccess";
-import MissingFeed from "./pages/MissingFeed";
-import MissingDetail from "./pages/MissingDetail";
-import MissingNew from "./pages/MissingNew";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Terms from "./pages/legal/Terms";
-import LegalPrivacy from "./pages/legal/Privacy";
-import Refunds from "./pages/legal/Refunds";
-import NotFound from "./pages/NotFound";
-import DeleteAccount from "./pages/DeleteAccount";
-import AdminErrors from "./pages/admin/Errors";
 import Welcome from "./pages/Welcome";
-import Timeline from "./pages/health/Timeline";
-import VetOnboarding from "./pages/vet/Onboarding";
-import VetDashboard from "./pages/vet/Dashboard";
-import VetVerifications from "./pages/vet/Verifications";
-import BookAppointment from "./pages/BookAppointment";
-import AccessRequests from "./pages/AccessRequests";
-import AppointmentRoom from "./pages/AppointmentRoom";
-import MyAppointments from "./pages/MyAppointments";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { Splash } from "./components/Splash";
-import { logError } from "./lib/logError";
-import { Navigate } from "react-router-dom";
-import { FirstRunGate } from "./components/FirstRunGate";
-import UserProfile from "./pages/UserProfile";
-import PetProfile from "./pages/PetProfile";
-import Groups from "./pages/Groups";
-import GroupDetail from "./pages/GroupDetail";
-import Meetups from "./pages/Meetups";
-import MeetupNew from "./pages/MeetupNew";
-import MeetupDetail from "./pages/MeetupDetail";
-import AskVet from "./pages/AskVet";
-import AskVetNew from "./pages/AskVetNew";
-import AskVetDetail from "./pages/AskVetDetail";
-import Daily from "./pages/Daily";
-import Hashtag from "./pages/Hashtag";
-import WalkSession from "./pages/WalkSession";
-import WalkLive from "./pages/WalkLive";
-import Messages from "./pages/Messages";
-import MessageThread from "./pages/MessageThread";
-import PhotoVet from "./pages/PhotoVet";
-import Install from "./pages/Install";
-import Search from "./pages/Search";
-import BlockedAccounts from "./pages/settings/BlockedAccounts";
-import ModerationQueue from "./pages/admin/Moderation";
+import NotFound from "./pages/NotFound";
+
+// Lazy — every other route, code-split into separate chunks
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const AiChat = lazy(() => import("./pages/AiChat"));
+const VaultView = lazy(() => import("./pages/VaultView"));
+const VetConsult = lazy(() => import("./pages/VetConsult"));
+const MatesNew = lazy(() => import("./pages/MatesNew"));
+const MateListing = lazy(() => import("./pages/MateListing"));
+const MatesManage = lazy(() => import("./pages/MatesManage"));
+const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
+const ServiceNew = lazy(() => import("./pages/ServiceNew"));
+const ServicesManage = lazy(() => import("./pages/ServicesManage"));
+const Shop = lazy(() => import("./pages/Shop"));
+const ShopNew = lazy(() => import("./pages/ShopNew"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Vet = lazy(() => import("./pages/Vet"));
+const VetApply = lazy(() => import("./pages/VetApply"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Settings = lazy(() => import("./pages/Settings"));
+const AboutYou = lazy(() => import("./pages/settings/AboutYou"));
+const NotificationsPrefs = lazy(() => import("./pages/settings/Notifications"));
+const EmergencyVet = lazy(() => import("./pages/settings/EmergencyVet"));
+const Privacy = lazy(() => import("./pages/settings/Privacy"));
+const GoalsPage = lazy(() => import("./pages/settings/Goals"));
+const PetEditor = lazy(() => import("./pages/settings/PetEditor"));
+const Billing = lazy(() => import("./pages/settings/Billing"));
+const Plus = lazy(() => import("./pages/Plus"));
+const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
+const MissingFeed = lazy(() => import("./pages/MissingFeed"));
+const MissingDetail = lazy(() => import("./pages/MissingDetail"));
+const MissingNew = lazy(() => import("./pages/MissingNew"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
+const LegalPrivacy = lazy(() => import("./pages/legal/Privacy"));
+const Refunds = lazy(() => import("./pages/legal/Refunds"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const AdminErrors = lazy(() => import("./pages/admin/Errors"));
+const Timeline = lazy(() => import("./pages/health/Timeline"));
+const VetOnboarding = lazy(() => import("./pages/vet/Onboarding"));
+const VetDashboard = lazy(() => import("./pages/vet/Dashboard"));
+const VetVerifications = lazy(() => import("./pages/vet/Verifications"));
+const BookAppointment = lazy(() => import("./pages/BookAppointment"));
+const AccessRequests = lazy(() => import("./pages/AccessRequests"));
+const AppointmentRoom = lazy(() => import("./pages/AppointmentRoom"));
+const MyAppointments = lazy(() => import("./pages/MyAppointments"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const PetProfile = lazy(() => import("./pages/PetProfile"));
+const Groups = lazy(() => import("./pages/Groups"));
+const GroupDetail = lazy(() => import("./pages/GroupDetail"));
+const Meetups = lazy(() => import("./pages/Meetups"));
+const MeetupNew = lazy(() => import("./pages/MeetupNew"));
+const MeetupDetail = lazy(() => import("./pages/MeetupDetail"));
+const AskVet = lazy(() => import("./pages/AskVet"));
+const AskVetNew = lazy(() => import("./pages/AskVetNew"));
+const AskVetDetail = lazy(() => import("./pages/AskVetDetail"));
+const Daily = lazy(() => import("./pages/Daily"));
+const Hashtag = lazy(() => import("./pages/Hashtag"));
+const WalkSession = lazy(() => import("./pages/WalkSession"));
+const WalkLive = lazy(() => import("./pages/WalkLive"));
+const Messages = lazy(() => import("./pages/Messages"));
+const MessageThread = lazy(() => import("./pages/MessageThread"));
+const PhotoVet = lazy(() => import("./pages/PhotoVet"));
+const Install = lazy(() => import("./pages/Install"));
+const Search = lazy(() => import("./pages/Search"));
+const BlockedAccounts = lazy(() => import("./pages/settings/BlockedAccounts"));
+const ModerationQueue = lazy(() => import("./pages/admin/Moderation"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
       gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
     mutations: {
       onError: (err) => logError(err, { source: "client:mutation" }),
@@ -109,6 +116,7 @@ const App = () => (
         <Splash>
         <AuthProvider>
           <CartProvider>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/welcome" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
@@ -188,6 +196,7 @@ const App = () => (
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </CartProvider>
         </AuthProvider>
         </Splash>
