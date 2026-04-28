@@ -4400,6 +4400,7 @@ export type Database = {
       }
       earth: { Args: never; Returns: number }
       expire_mating_listings: { Args: never; Returns: undefined }
+      expire_paid_mating_listings: { Args: never; Returns: number }
       generate_pet_public_id: { Args: never; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_pets_public: {
