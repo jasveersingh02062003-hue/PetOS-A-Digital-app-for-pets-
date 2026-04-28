@@ -67,7 +67,7 @@ const Mates = () => {
   );
 };
 
-const MatingPane = ({ myPet, nav }: { myPet: any; nav: (path: string) => void }) => (
+const MatingPane = ({ myPet, nav }: { myPet: any; nav: (path: string) => void | Promise<void> }) => (
   <>
       {/* Your pet hero */}
       {myPet && (
