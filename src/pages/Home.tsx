@@ -8,6 +8,7 @@ import { Heart, Users } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
+import { EmergencyButton } from "@/components/home/EmergencyButton";
 
 // Below-the-fold — code-split so they don't block first paint.
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
@@ -38,6 +39,9 @@ const Home = () => {
 
       {/* Hero pet card — big avatar, animated health ring, streak, 3 quick actions */}
       <PetHeroCard />
+
+      {/* SOS — pet-context-aware AI Doctor (Phase 1) */}
+      <EmergencyButton />
 
       {/* Story rail — comes first because it's social */}
       <Suspense fallback={<div className="h-[88px]" />}>
