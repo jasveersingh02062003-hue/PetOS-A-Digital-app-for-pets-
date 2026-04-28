@@ -49,7 +49,7 @@ export function HealthInsightsCard({ petId, petName }: { petId: string; petName:
         .eq("pet_id", petId)
         .maybeSingle();
       if (error && (error as any).code !== "PGRST116") throw error;
-      return (data ?? null) as InsightRow | null;
+      return (data ?? null) as unknown as InsightRow | null;
     },
   });
 
