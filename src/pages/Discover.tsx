@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PostFeed } from "@/components/PostFeed";
 import { MatesGrid } from "@/components/MatesGrid";
@@ -8,22 +10,77 @@ import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
 import { NearMePanel } from "@/components/maps/NearMePanel";
 import {
-  Compass, Flame, Users, CalendarDays, Stethoscope, Camera, Sparkles, Heart, ArrowRight, Scissors,
+  Compass, Flame, Users, CalendarDays, Stethoscope, Heart, ArrowRight,
+  Scissors, GraduationCap, Hotel, Sun, Home, Footprints, Car, AlertTriangle,
+  type LucideIcon,
 } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
+import { useUserLocation } from "@/hooks/useUserLocation";
+
+type TileTone = "coral" | "sky" | "leaf" | "amber" | "lilac" | "primary" | "emergency";
+type ServiceKey =
+  | "grooming" | "vet_clinic" | "training" | "boarding" | "daycare"
+  | "caretaker" | "sitting" | "walking" | "pet_taxi";
+type Tile = {
+  key: string;
+  title: string;
+  subtitle: string;
+  icon: LucideIcon;
+  tone: TileTone;
+  to: string;
+  serviceKey?: ServiceKey; // when set we show "X near you"
+};
+
+const TILES: Tile[] = [
+  { key: "mate",      title: "Find a mate",      subtitle: "Verified pets near you",        icon: Heart,        tone: "coral",     to: "/mates" },
+  { key: "askvet",    title: "Ask a vet",        subtitle: "Verified Q&A in minutes",       icon: Stethoscope,  tone: "sky",       to: "/askvet" },
+  { key: "grooming",  title: "Grooming",         subtitle: "Baths, haircuts & spa",         icon: Scissors,     tone: "coral",     to: "/services/category/grooming",  serviceKey: "grooming" },
+  { key: "vet_clinic",title: "Vet clinics",      subtitle: "In-person clinics nearby",      icon: Stethoscope,  tone: "sky",       to: "/services/category/vet_clinic",serviceKey: "vet_clinic" },
+  { key: "daycare",   title: "Daycare",          subtitle: "Daytime drop-off care",         icon: Sun,          tone: "amber",     to: "/services/category/daycare",   serviceKey: "daycare" },
+  { key: "caretaker", title: "Caretakers",       subtitle: "Long-term in-home care",        icon: Home,         tone: "leaf",      to: "/services/category/caretaker", serviceKey: "caretaker" },
+  { key: "training",  title: "Training centers", subtitle: "Obedience & puppy schools",     icon: GraduationCap,tone: "amber",     to: "/services/category/training",  serviceKey: "training" },
+  { key: "boarding",  title: "Boarding",         subtitle: "Overnight stays nearby",        icon: Hotel,        tone: "lilac",     to: "/services/category/boarding",  serviceKey: "boarding" },
+  { key: "sitting",   title: "Sitters",          subtitle: "Drop-ins & check-ups",          icon: Heart,        tone: "coral",     to: "/services/category/sitting",   serviceKey: "sitting" },
+  { key: "walking",   title: "Walkers",          subtitle: "Daily walks & exercise",        icon: Footprints,   tone: "leaf",      to: "/services/category/walking",   serviceKey: "walking" },
+  { key: "pet_taxi",  title: "Pet taxi",         subtitle: "Safe transport & pickups",      icon: Car,          tone: "primary",   to: "/services/category/pet_taxi",  serviceKey: "pet_taxi" },
+  { key: "meetups",   title: "Meetups",          subtitle: "Local events & playdates",      icon: CalendarDays, tone: "amber",     to: "/meetups" },
+  { key: "groups",    title: "Groups",           subtitle: "Communities by breed & city",   icon: Users,        tone: "primary",   to: "/groups" },
+  { key: "missing",   title: "Missing pets",     subtitle: "Help reunite pets nearby",      icon: AlertTriangle,tone: "emergency", to: "/missing" },
+];
 
 const Discover = () => {
   const nav = useNavigate();
+  const { coords } = useUserLocation();
   useSeo({
     title: "Discover pets, mates and stories",
     description: "Find verified breeding partners, trusted vets, meetups and trending pet stories near you.",
   });
+
+  // ONE batched query — counts grouped by category for all service tiles
+  const { data: counts } = useQuery({
+    queryKey: ["discover-nearby-counts", coords?.lat, coords?.lng],
+    enabled: !!coords,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("nearby_providers" as any, {
+        _lat: coords!.lat,
+        _lng: coords!.lng,
+        _radius_km: 25,
+      });
+      const map: Record<string, number> = {};
+      for (const row of (data as any[]) ?? []) {
+        const k = String(row.category);
+        map[k] = (map[k] ?? 0) + 1;
+      }
+      return map;
+    },
+  });
+
   return (
     <div className="container-app pad-top-safe">
       <header className="pt-6 pb-4">
         <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Explore</div>
         <h1 className="font-display text-[28px] mt-1 leading-tight">Discover</h1>
-        <p className="text-sm text-muted-foreground mt-1">Pets, mates and stories from your city.</p>
+        <p className="text-sm text-muted-foreground mt-1">Everything for your pet — scroll, tap, done.</p>
       </header>
 
       <div className="mb-5">
@@ -31,37 +88,19 @@ const Discover = () => {
       </div>
 
       <TrendingHashtagsRail />
-
       <LocalPackRail />
 
-      {/* TWO HERO CARDS — the engagement engines, not buried in a 6-tile grid */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <HeroTile
-          tone="coral"
-          title="Find a mate"
-          subtitle="Verified pets near you"
-          icon={Heart}
-          onClick={() => nav("/mates")}
-        />
-        <HeroTile
-          tone="sky"
-          title="Services near you"
-          subtitle="Grooming, vets, training & more"
-          icon={Scissors}
-          onClick={() => nav("/discover/services")}
-        />
-      </div>
-
-      {/* SECONDARY scrollable rail — colored chips */}
-      <div className="-mx-5 mb-5">
-        <div className="flex gap-2 overflow-x-auto px-5 no-scrollbar">
-          <ChipTile tone="sky" icon={Stethoscope} title="Ask a vet" onClick={() => nav("/askvet")} />
-          <ChipTile tone="lilac" icon={Sparkles} title="AI chat" onClick={() => nav("/ai")} />
-          <ChipTile tone="lilac" icon={Camera} title="Photo vet" onClick={() => nav("/photo-vet")} />
-          <ChipTile tone="amber" icon={CalendarDays} title="Meetups" onClick={() => nav("/meetups")} />
-          <ChipTile tone="primary" icon={Users} title="Groups" onClick={() => nav("/groups")} />
-          <ChipTile tone="emergency" icon={Compass} title="Missing" onClick={() => nav("/missing")} />
-        </div>
+      {/* BIG-BOX GRID — the new primary discovery surface */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {TILES.map((t) => (
+          <BigTile
+            key={t.key}
+            tile={t}
+            count={t.serviceKey ? counts?.[t.serviceKey] : undefined}
+            locationOn={!!coords}
+            onClick={() => nav(t.to)}
+          />
+        ))}
       </div>
 
       <Tabs defaultValue="trending" className="w-full">
@@ -109,43 +148,42 @@ const Discover = () => {
   );
 };
 
-const TONE_HERO: Record<string, string> = {
-  coral: "from-coral/20 via-card to-coral/5 border-coral/25 text-coral",
-  sky:   "from-sky/20 via-card to-sky/5 border-sky/25 text-sky",
+const TONE_GRADIENT: Record<TileTone, string> = {
+  coral:     "from-coral/25 via-card to-coral/5 border-coral/25 text-coral",
+  sky:       "from-sky/25 via-card to-sky/5 border-sky/25 text-sky",
+  leaf:      "from-leaf/25 via-card to-leaf/5 border-leaf/25 text-leaf",
+  amber:     "from-amber/25 via-card to-amber/5 border-amber/25 text-amber",
+  lilac:     "from-lilac/25 via-card to-lilac/5 border-lilac/25 text-lilac",
+  primary:   "from-primary/20 via-card to-primary/5 border-primary/25 text-primary",
+  emergency: "from-emergency/20 via-card to-emergency/5 border-emergency/25 text-emergency",
 };
-const HeroTile = ({
-  title, subtitle, icon: Icon, tone, onClick,
-}: { title: string; subtitle: string; icon: any; tone: string; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`text-left rounded-3xl border bg-gradient-to-br ${TONE_HERO[tone]} p-4 active:scale-[0.98] transition-transform card-elev`}
-  >
-    <div className="h-9 w-9 rounded-xl bg-background/80 grid place-items-center mb-3">
-      <Icon className="h-4 w-4" strokeWidth={2.2} />
-    </div>
-    <div className="font-display text-base text-foreground leading-tight">{title}</div>
-    <div className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</div>
-    <div className={`mt-3 text-[11px] font-semibold inline-flex items-center gap-1`}>
-      Open <ArrowRight className="h-3 w-3" />
-    </div>
-  </button>
-);
 
-const TONE_CHIP: Record<string, string> = {
-  lilac:    "bg-lilac/10 text-lilac",
-  amber:    "bg-amber/15 text-amber",
-  primary:  "bg-primary/10 text-primary",
-  emergency:"bg-emergency/10 text-emergency",
-  sky:      "bg-sky/10 text-sky",
+const BigTile = ({
+  tile, count, locationOn, onClick,
+}: { tile: Tile; count?: number; locationOn: boolean; onClick: () => void }) => {
+  const Icon = tile.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left rounded-3xl border bg-gradient-to-br ${TONE_GRADIENT[tile.tone]} p-4 min-h-[140px] flex flex-col active:scale-[0.98] transition-transform card-elev`}
+    >
+      <div className="h-10 w-10 rounded-xl bg-background/80 grid place-items-center mb-3">
+        <Icon className="h-5 w-5" strokeWidth={2.2} />
+      </div>
+      <div className="font-display text-[15px] text-foreground leading-tight">{tile.title}</div>
+      <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{tile.subtitle}</div>
+      <div className="mt-auto pt-2 flex items-center justify-between">
+        <span className="text-[11px] font-semibold inline-flex items-center gap-1">
+          Open <ArrowRight className="h-3 w-3" />
+        </span>
+        {tile.serviceKey && locationOn && typeof count === "number" && count > 0 && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-background/80 text-foreground">
+            {count} near you
+          </span>
+        )}
+      </div>
+    </button>
+  );
 };
-const ChipTile = ({ title, icon: Icon, tone, onClick }: { title: string; icon: any; tone: string; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`shrink-0 inline-flex items-center gap-1.5 px-3 h-10 rounded-full font-semibold text-sm ${TONE_CHIP[tone]} active:scale-95 transition-transform`}
-  >
-    <Icon className="h-4 w-4" strokeWidth={2.2} />
-    {title}
-  </button>
-);
 
 export default Discover;
