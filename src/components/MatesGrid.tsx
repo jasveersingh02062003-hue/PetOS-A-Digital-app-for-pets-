@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck, MapPin, Plus, Loader2 } from "lucide-react";
+import { Heart, ShieldCheck, MapPin, Plus } from "lucide-react";
+import { SmartImage } from "@/components/SmartImage";
+import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 
 type Filters = { species?: string; intent?: string; city?: string };
 
@@ -47,7 +49,7 @@ export const MatesGrid = () => {
       </Button>
 
       {isLoading ? (
-        <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        <GridSkeleton count={6} cols={2} />
       ) : !listings?.length ? (
         <Card className="rounded-2xl border-hairline bg-card shadow-none p-7 text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -71,7 +73,7 @@ export const MatesGrid = () => {
             >
               <div className="aspect-square bg-muted relative">
                 {l.pets?.avatar_url ? (
-                  <img src={l.pets.avatar_url} alt={l.pets.name} className="w-full h-full object-cover" />
+                  <SmartImage src={l.pets.avatar_url} alt={l.pets.name} aspect="1/1" className="w-full h-full" />
                 ) : (
                   <div className="w-full h-full grid place-items-center font-display text-3xl text-primary">{l.pets?.name?.[0] ?? "?"}</div>
                 )}
