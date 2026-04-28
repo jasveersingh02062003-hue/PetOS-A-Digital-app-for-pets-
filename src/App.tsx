@@ -185,6 +185,7 @@ const App = () => (
               <Route path="/missing" element={<MissingFeed />} />
               <Route path="/missing/new" element={<MissingNew />} />
               <Route path="/missing/:id" element={<MissingDetail />} />
+              <Route path="/litters/new" element={<NewLitter />} />
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />
