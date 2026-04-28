@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +23,7 @@ export type FeedPost = {
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
-export const PostFeed = ({ scope = "all" }: { scope?: "all" | "trending" }) => {
+export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending"; emptyState?: ReactNode }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
@@ -98,6 +98,7 @@ export const PostFeed = ({ scope = "all" }: { scope?: "all" | "trending" }) => {
     return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
   }
   if (!data?.length) {
+    if (emptyState) return <>{emptyState}</>;
     return (
       <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
         <div className="font-display text-lg">Nothing here yet</div>
