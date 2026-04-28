@@ -107,6 +107,7 @@ const App = () => (
               <Route path="/vet/onboarding" element={<VetOnboarding />} />
               <Route path="/vet/consult/:id" element={<VetConsult />} />
               <Route path="/book-vet" element={<BookAppointment />} />
+              <Route path="/access-requests" element={<AccessRequests />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/settings" element={<Settings />} />
