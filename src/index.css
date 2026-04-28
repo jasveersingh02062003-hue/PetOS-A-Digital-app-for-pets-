@@ -1,51 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Petos — Premium Minimal design system. All colors HSL. */
+/* Petos — Warm modern pet-app system. All colors HSL. */
 
 @layer base {
   :root {
-    /* Warm off-white surface, deep charcoal ink, restrained sage-teal accent */
-    --background: 36 33% 97%;
-    --foreground: 200 15% 12%;
+    /* Warmer cream surface for human-feel; ink stays deep charcoal */
+    --background: 38 38% 96%;
+    --foreground: 200 18% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 200 15% 12%;
+    --card-foreground: 200 18% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 15% 12%;
+    --popover-foreground: 200 18% 11%;
 
-    /* Sage-teal */
-    --primary: 174 32% 28%;
-    --primary-foreground: 36 33% 97%;
-    --primary-soft: 174 28% 92%;
+    /* Brand: sage-teal */
+    --primary: 174 36% 26%;
+    --primary-foreground: 38 38% 97%;
+    --primary-soft: 174 30% 92%;
 
-    --secondary: 36 20% 92%;
-    --secondary-foreground: 200 15% 18%;
+    --secondary: 38 24% 91%;
+    --secondary-foreground: 200 18% 16%;
 
-    --muted: 36 20% 94%;
-    --muted-foreground: 200 8% 42%;
+    --muted: 38 24% 93%;
+    --muted-foreground: 200 8% 40%;
 
-    --accent: 174 32% 28%;
-    --accent-foreground: 36 33% 97%;
+    --accent: 174 36% 26%;
+    --accent-foreground: 38 38% 97%;
 
-    --destructive: 8 62% 48%;
-    --destructive-foreground: 36 33% 97%;
+    --destructive: 8 72% 50%;
+    --destructive-foreground: 38 38% 97%;
 
-    --border: 36 12% 88%;
-    --input: 36 12% 88%;
-    --ring: 174 32% 28%;
+    --border: 38 14% 86%;
+    --input: 38 14% 86%;
+    --ring: 174 36% 26%;
 
-    --radius: 0.875rem;
+    --radius: 1rem;
 
     /* App-specific */
-    --hairline: 36 10% 86%;
+    --hairline: 38 12% 84%;
     --ink-soft: 200 10% 30%;
-    --emergency: 8 62% 48%;
-    --emergency-foreground: 36 33% 97%;
+    --emergency: 8 72% 50%;
+    --emergency-foreground: 38 38% 97%;
+
+    /* Section accents — give every part of the app a recognisable hue */
+    --coral: 8 78% 64%;          /* Social, likes, mating */
+    --coral-foreground: 0 0% 100%;
+    --coral-soft: 8 78% 95%;
+
+    --amber: 36 92% 56%;         /* Health alerts, streaks */
+    --amber-foreground: 36 60% 14%;
+    --amber-soft: 36 92% 94%;
+
+    --sky: 208 70% 60%;          /* Services, vets, bookings */
+    --sky-foreground: 0 0% 100%;
+    --sky-soft: 208 70% 94%;
+
+    --lilac: 276 52% 70%;        /* AI, photo-vet */
+    --lilac-foreground: 0 0% 100%;
+    --lilac-soft: 276 52% 95%;
+
+    --leaf: 142 44% 50%;         /* Walks, outdoors */
+    --leaf-foreground: 0 0% 100%;
+    --leaf-soft: 142 44% 93%;
+
+    /* Elevation */
+    --shadow-card: 0 1px 2px hsl(200 18% 11% / 0.04), 0 8px 24px -12px hsl(200 18% 11% / 0.10);
+    --shadow-pop: 0 2px 4px hsl(200 18% 11% / 0.06), 0 18px 40px -16px hsl(200 18% 11% / 0.18);
 
     --sidebar-background: 36 33% 97%;
     --sidebar-foreground: 200 15% 12%;
