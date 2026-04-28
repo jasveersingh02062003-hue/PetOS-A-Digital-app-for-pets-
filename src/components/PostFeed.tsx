@@ -197,7 +197,7 @@ const PostCard = ({ post, onComment }: {
           onClick={handleImageTap}
           onDoubleClick={(e) => e.preventDefault()}
         >
-          <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" draggable={false} />
+          <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" draggable={false} />
           {pawLayer}
         </div>
       )}
