@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
 import { NearMePanel } from "@/components/maps/NearMePanel";
-import { Compass, Flame, Users, CalendarDays, Stethoscope } from "lucide-react";
+import { Compass, Flame, Users, CalendarDays, Stethoscope, Camera, Sparkles } from "lucide-react";
 
 const Discover = () => {
   const nav = useNavigate();
@@ -40,6 +40,21 @@ const Discover = () => {
           <Stethoscope className="h-5 w-5 text-primary mb-2" />
           <div className="font-display text-sm">AskVet</div>
           <div className="text-[10px] text-muted-foreground">Verified Q&amp;A</div>
+        </button>
+        <button onClick={() => nav("/ai")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
+          <Sparkles className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-sm">AI chat</div>
+          <div className="text-[10px] text-muted-foreground">Ask anything</div>
+        </button>
+        <button onClick={() => nav("/photo-vet")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
+          <Camera className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-sm">Photo vet</div>
+          <div className="text-[10px] text-muted-foreground">Skin · breed · mood</div>
+        </button>
+        <button onClick={() => nav("/missing")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
+          <Compass className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-sm">Missing</div>
+          <div className="text-[10px] text-muted-foreground">Help reunite</div>
         </button>
       </div>
 
