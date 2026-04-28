@@ -119,6 +119,16 @@ const Profile = () => {
         <LogOut className="h-4 w-4 mr-2" /> Sign out
       </Button>
 
+      <div className="mt-8 pt-6 border-t border-hairline">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Danger zone</div>
+        <button
+          onClick={() => nav("/account/delete")}
+          className="w-full text-left text-sm text-destructive hover:underline flex items-center gap-2"
+        >
+          <AlertTriangle className="h-4 w-4" /> Delete my account
+        </button>
+      </div>
+
       <div className="mt-6 mb-10 flex justify-center gap-4 text-xs text-muted-foreground">
         <a href="/legal/terms" className="hover:text-foreground">Terms</a>
         <a href="/legal/privacy" className="hover:text-foreground">Privacy</a>
