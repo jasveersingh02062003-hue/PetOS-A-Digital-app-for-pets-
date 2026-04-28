@@ -13,6 +13,7 @@ import { PharmacySuggestionsBanner } from "@/components/health/PharmacySuggestio
 import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart, Users, CalendarDays } from "lucide-react";
+import { useSeo } from "@/hooks/useSeo";
 
 const Home = () => {
   const nav = useNavigate();
@@ -22,6 +23,9 @@ const Home = () => {
   const firstName = profile?.full_name?.split(" ")[0];
   const hasPets = !!pets && pets.length > 0;
   const upcoming = (nextMeetups ?? []).slice(0, 1);
+
+  useSeo({ title: "Home", description: "Your daily Petos feed: stories, meetups, health and missing-pet alerts.", noIndex: true });
+
 
   return (
     <div className="container-app pad-top-safe">
