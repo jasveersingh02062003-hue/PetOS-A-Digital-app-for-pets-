@@ -70,14 +70,25 @@ const OrgProfile = () => {
           <div className="flex items-center gap-2 mb-2">
             <Heart className="h-4 w-4 text-coral" /> <div className="font-display text-base">Support our work</div>
           </div>
+          <p className="text-[11px] text-muted-foreground mb-3">100% of your donation goes directly to {org.org_name}. PetOS does not process or take a cut.</p>
           {org.donation_upi && (
-            <button
-              onClick={() => { navigator.clipboard.writeText(org.donation_upi!); toast.success("UPI copied"); }}
-              className="w-full text-left rounded-xl bg-card p-3 flex items-center justify-between text-sm border border-hairline mb-2"
-            >
-              <span><span className="text-muted-foreground">UPI: </span><span className="font-mono">{org.donation_upi}</span></span>
-              <Copy className="h-3 w-3" />
-            </button>
+            <div className="space-y-2 mb-2">
+              <Button
+                asChild
+                className="w-full rounded-xl bg-coral hover:bg-coral/90 text-white"
+              >
+                <a href={`upi://pay?pa=${encodeURIComponent(org.donation_upi)}&pn=${encodeURIComponent(org.org_name)}&cu=INR`}>
+                  <Heart className="h-4 w-4 mr-1" /> Donate via UPI
+                </a>
+              </Button>
+              <button
+                onClick={() => { navigator.clipboard.writeText(org.donation_upi!); toast.success("UPI copied"); }}
+                className="w-full text-left rounded-xl bg-card p-2.5 flex items-center justify-between text-xs border border-hairline"
+              >
+                <span><span className="text-muted-foreground">UPI ID: </span><span className="font-mono">{org.donation_upi}</span></span>
+                <Copy className="h-3 w-3" />
+              </button>
+            </div>
           )}
           {org.donation_url && (
             <Button asChild variant="outline" className="w-full rounded-xl">
