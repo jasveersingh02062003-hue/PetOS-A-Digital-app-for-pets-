@@ -2,18 +2,23 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
+import { useTier } from "@/hooks/useTier";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Plus, Wallet, Bookmark, Heart, Stethoscope, ShoppingBag, Package, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, Plus, Wallet, Bookmark, Heart, Stethoscope, ShoppingBag, Package, ShieldCheck, AlertTriangle, Sparkles } from "lucide-react";
 import { PetVerifyBadge } from "@/components/PetVerifyBadge";
+import { PlusBadge } from "@/components/PlusBadge";
+import { MissingCreateSheet } from "@/components/MissingCreateSheet";
 
 const Profile = () => {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
+  const { data: tier } = useTier();
   const [isStaff, setIsStaff] = useState(false);
+  const [reportingPet, setReportingPet] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -38,11 +43,30 @@ const Profile = () => {
             {profile?.full_name?.[0]?.toUpperCase() || "·"}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display text-xl truncate">{profile?.full_name || "—"}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-display text-xl truncate">{profile?.full_name || "—"}</div>
+              {tier?.tier === "plus" && <PlusBadge />}
+            </div>
             <div className="text-sm text-muted-foreground">{profile?.city || "Set your city"}</div>
           </div>
         </div>
       </Card>
+
+      {tier?.tier !== "plus" && (
+        <Card
+          onClick={() => nav("/plus")}
+          className="rounded-2xl border-hairline bg-primary/5 shadow-none p-4 mb-4 flex items-center gap-3 cursor-pointer hover:bg-primary/10 transition-colors"
+        >
+          <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.8} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm">Try Petos Plus</div>
+            <div className="text-xs text-muted-foreground">Unlimited AI, 2 vet consults/mo, more</div>
+          </div>
+          <span className="text-xs text-primary font-medium">See plans</span>
+        </Card>
+      )}
 
       <h2 className="font-display text-lg mt-6 mb-3 flex items-center justify-between">
         <span>My pets</span>
@@ -53,17 +77,25 @@ const Profile = () => {
 
       <div className="space-y-3 mb-8">
         {pets?.map((p) => (
-          <Card key={p.id} className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center font-display text-lg overflow-hidden">
-              {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="h-full w-full object-cover" /> : p.name[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <div className="font-medium truncate">{p.name}</div>
-                <PetVerifyBadge petId={p.id} verified={p.vaccination_verified} />
+          <Card key={p.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center font-display text-lg overflow-hidden">
+                {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="h-full w-full object-cover" /> : p.name[0]}
               </div>
-              <div className="text-xs text-muted-foreground">{p.breed} · {p.species}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="font-medium truncate">{p.name}</div>
+                  <PetVerifyBadge petId={p.id} verified={p.vaccination_verified} />
+                </div>
+                <div className="text-xs text-muted-foreground">{p.breed} · {p.species}</div>
+              </div>
             </div>
+            <button
+              onClick={() => setReportingPet(p)}
+              className="mt-3 w-full text-xs text-destructive font-medium border-t border-hairline pt-3 flex items-center justify-center gap-1.5 hover:bg-destructive/5 -mx-4 -mb-4 px-4 pb-3 rounded-b-2xl transition-colors"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" /> Report missing
+            </button>
           </Card>
         ))}
         {(!pets || pets.length === 0) && (
@@ -86,6 +118,14 @@ const Profile = () => {
       <Button variant="outline" onClick={signOut} className="w-full rounded-xl h-12 border-hairline">
         <LogOut className="h-4 w-4 mr-2" /> Sign out
       </Button>
+
+      {reportingPet && (
+        <MissingCreateSheet
+          open={!!reportingPet}
+          onOpenChange={(o) => !o && setReportingPet(null)}
+          pet={reportingPet}
+        />
+      )}
     </div>
   );
 };

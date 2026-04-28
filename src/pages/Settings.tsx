@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, ChevronRight, User, Bell, Phone, Shield, PawPrint, Target,
-  LogOut,
+  LogOut, CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets } from "@/hooks/useProfile";
@@ -46,6 +46,10 @@ const Settings = () => {
           <Row icon={Bell} label="Notifications" desc="Push, email, SMS" onClick={() => nav("/settings/notifications")} />
           <Row icon={Phone} label="Emergency vet" desc="Used by SOS button" onClick={() => nav("/settings/emergency")} />
           <Row icon={Shield} label="Privacy" desc="Mating discoverability per pet" onClick={() => nav("/settings/privacy")} />
+        </Section>
+
+        <Section title="Plan">
+          <Row icon={CreditCard} label="Billing & subscription" desc="Manage Petos Plus" onClick={() => nav("/settings/billing")} />
         </Section>
 
         <Button variant="outline" onClick={signOut} className="w-full rounded-xl h-12 border-hairline">

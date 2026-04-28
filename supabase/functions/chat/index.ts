@@ -59,6 +59,34 @@ serve(async (req) => {
     const { data: userRes } = await supabase.auth.getUser();
     if (!userRes?.user) return jsonErr("unauthenticated", 401);
 
+    // ---- Tier gate (free = 5 chats/day) ----
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const { data: tierData } = await admin.rpc("current_tier", { _user_id: userRes.user.id });
+    const tier = (tierData as string) ?? "free";
+    const today = new Date().toISOString().slice(0, 10);
+    if (tier === "free") {
+      const { data: counter } = await admin
+        .from("usage_counters")
+        .select("count")
+        .eq("user_id", userRes.user.id).eq("kind", "ai_chat").eq("period", today)
+        .maybeSingle();
+      const count = counter?.count ?? 0;
+      if (count >= 5) {
+        return new Response(JSON.stringify({
+          error: "Daily AI limit reached. Upgrade to Plus for unlimited chats.",
+          code: "tier_limit",
+        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      await admin.from("usage_counters").upsert(
+        { user_id: userRes.user.id, kind: "ai_chat", period: today, count: count + 1 },
+        { onConflict: "user_id,kind,period" },
+      );
+    }
+
     // Pull vault context for the active pet (RLS scopes by caller)
     let petContext = "No specific pet selected.";
     if (petId) {
