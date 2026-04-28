@@ -101,6 +101,7 @@ const AccountTypeChooser = lazy(() => import("./pages/AccountTypeChooser"));
 const OrgOnboarding = lazy(() => import("./pages/OrgOnboarding"));
 const OrgProfile = lazy(() => import("./pages/OrgProfile"));
 const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -171,6 +172,7 @@ const App = () => (
               <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
               <Route path="/onboarding/org" element={<OrgOnboarding />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
               <Route path="/missing" element={<MissingFeed />} />
