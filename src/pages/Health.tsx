@@ -14,10 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
+import { PetIdButton } from "@/components/health/PetIdCard";
+import { VitalsTab } from "@/components/health/VitalsTab";
+import { MedicationsTab } from "@/components/health/MedicationsTab";
+import { ParasiteTab } from "@/components/health/ParasiteTab";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -55,8 +59,8 @@ const Health = () => {
         <>
           <Card className="rounded-2xl border-hairline bg-card shadow-none p-5 mb-3">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <div className="font-display text-2xl">{active.name}</div>
                   {active.vaccination_verified && (
                     <Badge variant="secondary" className="bg-primary-soft text-primary border-0 gap-1">
@@ -67,10 +71,21 @@ const Health = () => {
                 <div className="text-sm text-muted-foreground">
                   {[active.breed, active.species].filter(Boolean).join(" · ")}
                 </div>
+                {(active as any).public_id && (
+                  <div className="text-[11px] text-muted-foreground mt-1 tracking-wider font-mono">{(active as any).public_id}</div>
+                )}
               </div>
-              <VetShareButton petId={active.id} petName={active.name} />
+              <div className="flex flex-col gap-2 shrink-0">
+                <PetIdButton publicId={(active as any).public_id} petName={active.name} />
+                <VetShareButton petId={active.id} petName={active.name} />
+              </div>
             </div>
           </Card>
+
+          <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="w-full rounded-2xl h-12 mb-3 justify-start gap-3 border-hairline">
+            <ListOrdered className="h-4 w-4" />
+            <span className="text-sm">View full timeline</span>
+          </Button>
 
           <Button onClick={() => nav("/ai")} size="lg" className="w-full rounded-2xl h-14 mb-5 justify-start gap-3">
             <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
@@ -82,18 +97,26 @@ const Health = () => {
 
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
 
-          <Tabs defaultValue="vaccinations" className="w-full">
-            <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl h-11">
-              <TabsTrigger value="vaccinations" className="rounded-lg gap-1.5 text-xs"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
-              <TabsTrigger value="records" className="rounded-lg gap-1.5 text-xs"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
-              <TabsTrigger value="symptoms" className="rounded-lg gap-1.5 text-xs"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
-              <TabsTrigger value="nutrition" className="rounded-lg gap-1.5 text-xs"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="vitals" className="w-full">
+            <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
+              <TabsList className="inline-flex w-max bg-muted rounded-xl h-11 p-1">
+                <TabsTrigger value="vitals" className="rounded-lg gap-1.5 text-xs px-3"><Heart className="h-3.5 w-3.5" />Vitals</TabsTrigger>
+                <TabsTrigger value="vaccinations" className="rounded-lg gap-1.5 text-xs px-3"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
+                <TabsTrigger value="meds" className="rounded-lg gap-1.5 text-xs px-3"><Pill className="h-3.5 w-3.5" />Meds</TabsTrigger>
+                <TabsTrigger value="parasite" className="rounded-lg gap-1.5 text-xs px-3"><Bug className="h-3.5 w-3.5" />Parasite</TabsTrigger>
+                <TabsTrigger value="symptoms" className="rounded-lg gap-1.5 text-xs px-3"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
+                <TabsTrigger value="nutrition" className="rounded-lg gap-1.5 text-xs px-3"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
+                <TabsTrigger value="records" className="rounded-lg gap-1.5 text-xs px-3"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
+              </TabsList>
+            </div>
 
+            <TabsContent value="vitals" className="mt-4"><VitalsTab petId={active.id} /></TabsContent>
             <TabsContent value="vaccinations" className="mt-4"><VaccinationsTab petId={active.id} /></TabsContent>
-            <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
+            <TabsContent value="meds" className="mt-4"><MedicationsTab petId={active.id} /></TabsContent>
+            <TabsContent value="parasite" className="mt-4"><ParasiteTab petId={active.id} /></TabsContent>
             <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
+            <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
           </Tabs>
 
           <ConsultsList petId={active.id} />
