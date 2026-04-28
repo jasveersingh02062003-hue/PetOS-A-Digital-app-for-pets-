@@ -7,22 +7,53 @@ import { FollowButton } from "@/components/social/FollowButton";
 import { MessageButton } from "@/components/social/MessageButton";
 import { PostGrid } from "@/components/social/PostGrid";
 import { AchievementChips } from "@/components/social/AchievementChips";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SellerBadge } from "@/components/SellerBadge";
+import { SmartImage } from "@/components/SmartImage";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Settings, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft, Settings, Building2, ShieldCheck, ArrowRight, Share2,
+  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award,
+} from "lucide-react";
+import { differenceInYears, differenceInMonths } from "date-fns";
+import { toast } from "sonner";
 
 const UserProfile = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: param } = useParams<{ userId: string }>();
   const nav = useNavigate();
   const { user } = useAuth();
-  const isMe = user?.id === userId;
 
+  // Allow @handle or uuid in the URL
+  const isUuid = !!param && /^[0-9a-f-]{36}$/i.test(param);
+
+  const { data: handleResolved } = useQuery({
+    queryKey: ["handle->id", param],
+    enabled: !!param && !isUuid,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("handle", param!)
+        .maybeSingle();
+      return (data as any)?.id ?? null;
+    },
+  });
+
+  const userId: string | null = isUuid ? (param as string) : (handleResolved ?? null);
+  const isMe = !!user?.id && user.id === userId;
+
+  // Try to read full profile (works only if it's me; falls back to public RPC)
   const { data: profile } = useQuery({
     queryKey: ["profile-public", userId],
     enabled: !!userId,
     queryFn: async () => {
+      // For own profile we have full access
+      if (user?.id === userId) {
+        const { data } = await supabase.from("profiles").select("*").eq("id", userId!).maybeSingle();
+        return data;
+      }
+      // For others: public RPC
       const { data } = await supabase.rpc("get_profiles_public");
       return (data ?? []).find((p: any) => p.id === userId) ?? null;
     },
@@ -37,7 +68,7 @@ const UserProfile = () => {
     },
   });
 
-  const { data: counts } = useFollowCounts(userId);
+  const { data: counts } = useFollowCounts(userId ?? undefined);
 
   const { data: org } = useQuery({
     queryKey: ["org-public", userId],
@@ -48,7 +79,6 @@ const UserProfile = () => {
         .select("user_id, org_name, org_type, status, city")
         .eq("user_id", userId!)
         .maybeSingle();
-      // Only show if approved, or to the owner themselves
       if (!data) return null;
       if (data.status === "approved") return data;
       return null;
@@ -59,50 +89,112 @@ const UserProfile = () => {
     queryKey: ["post-count", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { count } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", userId!);
+      const { count } = await supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("author_id", userId!);
       return count ?? 0;
     },
   });
 
+  if (param && !isUuid && handleResolved === null) {
+    return (
+      <div className="container-app pt-8 text-center">
+        <div className="font-display text-xl mb-2">User not found</div>
+        <Button onClick={() => nav("/")} variant="outline">Go home</Button>
+      </div>
+    );
+  }
+
+  const accountType = (profile as any)?.account_type ?? "pet_parent";
+  const handle = (profile as any)?.handle as string | null | undefined;
+  const coverUrl = (profile as any)?.cover_url as string | null | undefined;
+
+  const shareProfile = async () => {
+    const url = handle ? `${window.location.origin}/u/${handle}` : `${window.location.origin}/u/${userId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: profile?.full_name ?? "PetOS profile", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch {}
+  };
+
   return (
-    <div className="container-app pad-top-safe pb-20">
-      <header className="pt-4 pb-2 flex items-center gap-2">
+    <div className="container-app pad-top-safe pb-24">
+      <header className="pt-3 pb-2 flex items-center gap-2">
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => nav(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-display text-lg flex-1 truncate">{profile?.full_name ?? "Profile"}</h1>
-        {isMe && (
+        <h1 className="font-display text-base flex-1 truncate">
+          {handle ? `@${handle}` : profile?.full_name ?? "Profile"}
+        </h1>
+        {isMe ? (
           <Button variant="ghost" size="icon" className="rounded-full" onClick={() => nav("/settings")}>
             <Settings className="h-5 w-5" />
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={shareProfile}>
+            <Share2 className="h-5 w-5" />
           </Button>
         )}
       </header>
 
-      <div className="flex items-center gap-4 mb-4">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={profile?.avatar_url ?? undefined} />
-          <AvatarFallback className="bg-primary-soft text-primary font-display text-2xl">{profile?.full_name?.[0] ?? "·"}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 grid grid-cols-3 text-center">
-          <Stat label="Posts" value={postCount ?? 0} />
-          <Stat label="Followers" value={counts?.followers ?? 0} />
-          <Stat label="Following" value={counts?.following ?? 0} />
+      {/* COVER */}
+      <div className="-mx-4 sm:-mx-6 mb-0">
+        <div className="aspect-[16/6] w-full bg-muted relative overflow-hidden">
+          {coverUrl ? (
+            <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/30 via-coral/20 to-amber/20" />
+          )}
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="font-display text-xl">{profile?.full_name ?? "—"}</div>
-        {profile?.city && <div className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="h-3.5 w-3.5" /> {profile.city}</div>}
-        {profile?.bio && <p className="text-sm mt-2 leading-relaxed">{profile.bio}</p>}
+      {/* Header */}
+      <div className="px-1 -mt-10">
+        <div className="h-[88px] w-[88px] rounded-full bg-card ring-4 ring-card overflow-hidden grid place-items-center shadow-lg mb-3">
+          {profile?.avatar_url ? (
+            <SmartImage src={profile.avatar_url} alt="" aspect="1/1" priority className="w-full h-full" />
+          ) : (
+            <div className="w-full h-full bg-primary-soft grid place-items-center font-display text-3xl text-primary">
+              {profile?.full_name?.[0]?.toUpperCase() || "·"}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-1 flex items-center gap-2 flex-wrap">
+          <h2 className="font-display text-2xl leading-tight">{profile?.full_name ?? "—"}</h2>
+          <SellerBadge type={accountType as any} verified />
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+          {handle && <span>@{handle}</span>}
+          {handle && profile?.city && <span>·</span>}
+          {profile?.city && <span>{profile.city}</span>}
+        </div>
+        {profile?.bio && <p className="text-sm leading-relaxed mb-3 whitespace-pre-line">{profile.bio}</p>}
+
+        {!isMe && userId && (
+          <div className="flex items-center gap-2 mb-4">
+            <FollowButton targetId={userId} size="default" />
+            <MessageButton userId={userId} size="default" variant="outline" />
+            <Button onClick={shareProfile} variant="outline" size="icon" className="rounded-xl h-10 w-10 shrink-0">
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Counts */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <Counter label="Posts" value={postCount ?? 0} />
+          <Counter label="Followers" value={counts?.followers ?? 0} />
+          <Counter label="Following" value={counts?.following ?? 0} />
+        </div>
       </div>
 
-      {!isMe && userId && (
-        <div className="mb-4 flex gap-2">
-          <FollowButton targetId={userId} size="default" />
-          <MessageButton userId={userId} size="default" variant="outline" />
-        </div>
-      )}
-
+      {/* Org callout */}
       {org && userId && (
         <Card
           onClick={() => nav(`/org/${userId}`)}
@@ -126,42 +218,56 @@ const UserProfile = () => {
         </Card>
       )}
 
+      {/* PET RAIL */}
       {pets && pets.length > 0 && (
         <div className="mb-5">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Pets</div>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">Pets</h2>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6 pb-1">
             {pets.map((p: any) => (
-              <button key={p.id} onClick={() => nav(`/pet/${p.id}`)} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
-                <div className="h-14 w-14 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                  {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display text-lg">{p.name[0]}</span>}
-                </div>
-                <span className="text-[11px] text-center truncate w-full">{p.name}</span>
-              </button>
+              <PetRailCard key={p.id} pet={p} onClick={() => nav(`/pet/${p.public_id ?? p.id}`)} />
             ))}
           </div>
         </div>
       )}
 
+      {/* TABS */}
       <Tabs defaultValue="posts" className="mt-2">
-        <TabsList className="grid w-full grid-cols-3 rounded-xl">
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="pets">Pets</TabsTrigger>
-          <TabsTrigger value="badges">Badges</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 rounded-xl h-11 p-1 bg-muted/50">
+          <TabsTrigger value="posts" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+            <Grid3x3 className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="tagged" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+            <TagIcon className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="pets" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+            <PawPrint className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="badges" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+            <Award className="h-4 w-4" />
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="posts" className="mt-3">
-          {userId && <PostGrid authorId={userId} includeCollabs />}
+
+        <TabsContent value="posts" className="mt-3 -mx-4 sm:-mx-6">
+          {userId && <PostGrid authorId={userId} />}
+        </TabsContent>
+        <TabsContent value="tagged" className="mt-3 -mx-4 sm:-mx-6">
+          {userId && <PostGrid authorId={userId} collabsOnly />}
         </TabsContent>
         <TabsContent value="pets" className="mt-3 space-y-2">
           {pets?.length ? pets.map((p: any) => (
-            <Card key={p.id} onClick={() => nav(`/pet/${p.id}`)} className="rounded-2xl border-hairline shadow-none p-4 flex items-center gap-3 cursor-pointer hover:bg-muted/40">
-              <div className="h-12 w-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display">{p.name[0]}</span>}
+            <Card key={p.id} onClick={() => nav(`/pet/${p.public_id ?? p.id}`)} className="rounded-2xl border-hairline shadow-none p-4 flex items-center gap-3 cursor-pointer hover:bg-muted/40">
+              <div className="h-12 w-12 rounded-2xl bg-muted overflow-hidden flex items-center justify-center">
+                {p.avatar_url ? <SmartImage src={p.avatar_url} alt={p.name} aspect="1/1" className="w-full h-full" /> : <span className="font-display">{p.name[0]}</span>}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground">{p.breed ?? p.species}</div>
+                <div className="text-xs text-muted-foreground truncate">{[p.breed, p.species].filter(Boolean).join(" · ")}</div>
+                {p.bio && <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{p.bio}</div>}
               </div>
-              {p.vaccination_verified && <span className="text-[10px] bg-primary-soft text-primary px-2 py-0.5 rounded-full">Verified</span>}
+              <div className="flex flex-col items-end gap-1">
+                {p.vaccination_verified && <ShieldCheck className="h-4 w-4 text-sky" />}
+                <StatusChip pet={p} />
+              </div>
             </Card>
           )) : <div className="text-center text-sm text-muted-foreground py-6">No pets yet</div>}
         </TabsContent>
@@ -173,11 +279,49 @@ const UserProfile = () => {
   );
 };
 
-const Stat = ({ label, value }: { label: string; value: number }) => (
-  <div>
-    <div className="font-display text-lg tabular-nums">{value}</div>
-    <div className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</div>
+const Counter = ({ label, value }: { label: string; value: number }) => (
+  <div className="rounded-2xl bg-muted/50 py-2.5 text-center">
+    <div className="font-display text-xl leading-none tabular-nums">{value}</div>
+    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-semibold">{label}</div>
   </div>
 );
+
+const StatusChip = ({ pet }: { pet: any }) => {
+  if (!pet.status_chip) return null;
+  const map: Record<string, { label: string; tone: string }> = {
+    available_for_stud: { label: "Stud", tone: "bg-coral/12 text-coral" },
+    for_sale: { label: "For sale", tone: "bg-amber-500/15 text-amber-700" },
+    chilling: { label: "Chilling", tone: "bg-leaf/15 text-leaf" },
+  };
+  const m = map[pet.status_chip];
+  if (!m) return null;
+  return (
+    <span className={`inline-flex items-center px-2 h-5 rounded-full text-[10px] font-semibold ${m.tone}`}>
+      {m.label}
+    </span>
+  );
+};
+
+const PetRailCard = ({ pet, onClick }: { pet: any; onClick: () => void }) => {
+  const dob = pet.date_of_birth ? new Date(pet.date_of_birth) : null;
+  const ageYears = dob ? differenceInYears(new Date(), dob) : null;
+  const ageStr = dob ? (ageYears! >= 1 ? `${ageYears}y` : `${differenceInMonths(new Date(), dob)}m`) : null;
+  const speciesEmoji: Record<string, string> = { dog: "🐕", cat: "🐱", bird: "🐦", rabbit: "🐰" };
+  return (
+    <button onClick={onClick} className="shrink-0 w-[88px] flex flex-col items-center gap-1.5">
+      <div className="h-[72px] w-[72px] rounded-2xl bg-muted overflow-hidden grid place-items-center ring-2 ring-transparent hover:ring-primary/30 transition">
+        {pet.avatar_url
+          ? <SmartImage src={pet.avatar_url} alt={pet.name} aspect="1/1" className="w-full h-full" />
+          : <span className="font-display text-2xl text-primary">{pet.name[0]}</span>}
+      </div>
+      <div className="text-center w-full">
+        <div className="text-xs font-medium truncate">{pet.name}</div>
+        <div className="text-[10px] text-muted-foreground">
+          {speciesEmoji[pet.species] ?? "🐾"} {ageStr ?? ""}
+        </div>
+      </div>
+    </button>
+  );
+};
 
 export default UserProfile;
