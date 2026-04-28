@@ -60,7 +60,13 @@ export default function Welcome() {
   const finish = async () => {
     localStorage.setItem(SEEN_KEY, "1");
     const { data } = await supabase.auth.getSession();
-    nav(data.session ? "/" : "/auth", { replace: true });
+    if (data.session) {
+      nav("/post-auth", { replace: true });
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    nav(redirect ? `/auth?redirect=${encodeURIComponent(redirect)}` : "/auth", { replace: true });
   };
 
   const next = () => (last ? finish() : setI(i + 1));

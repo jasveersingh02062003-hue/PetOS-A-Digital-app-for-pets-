@@ -12,6 +12,7 @@ import { Splash } from "./components/Splash";
 import { RouteFallback } from "./components/RouteFallback";
 import { logError } from "./lib/logError";
 import { FirstRunGate } from "./components/FirstRunGate";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
 // Eager — main tab-bar pages, loaded immediately after auth
 import Home from "./pages/Home";
@@ -23,6 +24,7 @@ import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 import Explore from "./pages/Explore";
+import PostAuth from "./pages/PostAuth";
 
 // Lazy — every other route, code-split into separate chunks
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -117,10 +119,12 @@ const App = () => (
         <Splash>
         <AuthProvider>
           <CartProvider>
+            <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/welcome" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/post-auth" element={<PostAuth />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -199,6 +203,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
+            </RouteErrorBoundary>
           </CartProvider>
         </AuthProvider>
         </Splash>
