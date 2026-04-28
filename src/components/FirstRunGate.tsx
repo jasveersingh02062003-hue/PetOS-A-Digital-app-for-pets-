@@ -20,13 +20,11 @@ export const FirstRunGate = ({ children }: { children: ReactNode }) => {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: pets, isLoading: petsLoading } = usePets();
 
-  // 1. Never seen the brand intro? Show the welcome reel first.
-  if (typeof window !== "undefined" && !localStorage.getItem("petos_seen_intro")) {
-    return <Navigate to="/welcome" replace />;
-  }
-
-  // 2. Not signed in → auth
+  // 1. Not signed in → auth (signed-in users skip the welcome reel — they've already chosen to join)
   if (!authLoading && !user) {
+    if (typeof window !== "undefined" && !localStorage.getItem("petos_seen_intro")) {
+      return <Navigate to="/welcome" replace />;
+    }
     return <Navigate to={`/auth?redirect=${encodeURIComponent(pathname)}`} replace />;
   }
 
