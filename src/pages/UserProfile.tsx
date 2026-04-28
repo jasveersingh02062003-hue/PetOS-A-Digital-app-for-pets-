@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Settings, Building2, ShieldCheck, ArrowRight, Share2,
-  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award,
+  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search,
 } from "lucide-react";
 import { differenceInYears, differenceInMonths } from "date-fns";
 import { toast } from "sonner";
@@ -174,6 +174,11 @@ const UserProfile = () => {
         <div className="mb-1 flex items-center gap-2 flex-wrap">
           <h2 className="font-display text-2xl leading-tight">{profile?.full_name ?? "—"}</h2>
           <SellerBadge type={accountType as any} verified={isVerifiedOrg} />
+          {accountType === "buyer" && (
+            <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full bg-primary/12 text-primary border border-primary/30 text-[11px] font-semibold">
+              <Search className="h-3 w-3" /> Looking for a pet
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
           {handle && <span>@{handle}</span>}
