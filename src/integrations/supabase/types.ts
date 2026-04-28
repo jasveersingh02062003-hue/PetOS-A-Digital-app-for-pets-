@@ -167,6 +167,42 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcasts: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          recipients_count: number | null
+          sender_id: string
+          target_city: string | null
+          target_role: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          recipients_count?: number | null
+          sender_id: string
+          target_city?: string | null
+          target_role?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          recipients_count?: number | null
+          sender_id?: string
+          target_city?: string | null
+          target_role?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       cron_health: {
         Row: {
           job_name: string
@@ -341,6 +377,30 @@ export type Database = {
           source?: string
           stack?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -2951,6 +3011,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_kpis: { Args: never; Returns: Json }
       check_daily_limit: {
         Args: { _limit: number; _table: string; _user: string }
         Returns: undefined
@@ -3079,6 +3140,16 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      send_broadcast: {
+        Args: {
+          _body: string
+          _link: string
+          _target_city?: string
+          _target_role?: string
+          _title: string
+        }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
