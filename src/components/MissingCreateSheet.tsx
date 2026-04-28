@@ -12,6 +12,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { Loader2, MapPin, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 type Pet = { id: string; name: string; avatar_url: string | null; city: string | null };
 
@@ -35,6 +36,7 @@ export const MissingCreateSheet = ({ open, onOpenChange, pet }: Props) => {
   const [note, setNote] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const useMyLocation = () => {
     if (!navigator.geolocation) return toast.error("Geolocation not supported on this device");
@@ -54,9 +56,14 @@ export const MissingCreateSheet = ({ open, onOpenChange, pet }: Props) => {
     );
   };
 
-  const submit = async () => {
+  const startSubmit = () => {
     if (!user) return;
     if (!city.trim() && !lat) return toast.error("Add a city or share your location");
+    setPaywallOpen(true);
+  };
+
+  const finishSubmit = async () => {
+    if (!user) return;
     setSubmitting(true);
     const { data, error } = await supabase
       .from("missing_pets")
