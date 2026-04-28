@@ -22,6 +22,7 @@ import { PetIdButton } from "@/components/health/PetIdCard";
 import { VitalsTab } from "@/components/health/VitalsTab";
 import { MedicationsTab } from "@/components/health/MedicationsTab";
 import { ParasiteTab } from "@/components/health/ParasiteTab";
+import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDialog";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -136,6 +137,7 @@ const Health = () => {
 const VaccinationsTab = ({ petId }: { petId: string }) => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["vaccinations", petId],
     queryFn: async () => {
@@ -147,7 +149,16 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
 
   return (
     <div className="space-y-3">
-      <AddButton label="Add vaccination" onClick={() => setOpen(true)} />
+      <div className="grid grid-cols-2 gap-2">
+        <Button onClick={() => setScanOpen(true)} variant="outline" size="lg"
+          className="h-12 rounded-xl border-hairline gap-2 border-primary/40 text-primary hover:bg-primary-soft">
+          <Sparkles className="h-4 w-4" /> Scan card
+        </Button>
+        <Button onClick={() => setOpen(true)} variant="outline" size="lg"
+          className="h-12 rounded-xl border-hairline gap-2">
+          <Plus className="h-4 w-4" /> Add manually
+        </Button>
+      </div>
       {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" /> : data.map((v) => (
         <Card key={v.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
@@ -164,6 +175,7 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
         </Card>
       ))}
       <VaccinationDialog open={open} onOpenChange={setOpen} petId={petId} />
+      <ScanVaccinationsDialog open={scanOpen} onOpenChange={setScanOpen} petId={petId} />
     </div>
   );
 };
