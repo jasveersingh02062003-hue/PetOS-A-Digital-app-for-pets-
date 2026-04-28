@@ -52,6 +52,7 @@ import NotFound from "./pages/NotFound";
 import DeleteAccount from "./pages/DeleteAccount";
 import AdminErrors from "./pages/admin/Errors";
 import Welcome from "./pages/Welcome";
+import Timeline from "./pages/health/Timeline";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
@@ -126,6 +127,7 @@ const App = () => (
               <Route path="/orders" element={<Orders />} />
               <Route path="/account/delete" element={<DeleteAccount />} />
               <Route path="/admin/errors" element={<AdminErrors />} />
+              <Route path="/health/:petId/timeline" element={<Timeline />} />
               <Route path="/v/:code" element={<VaultView />} />
               <Route element={<AppShell />}>
                 <Route path="/" element={<FirstTimeRedirect><Home /></FirstTimeRedirect>} />

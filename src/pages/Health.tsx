@@ -97,18 +97,26 @@ const Health = () => {
 
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
 
-          <Tabs defaultValue="vaccinations" className="w-full">
-            <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl h-11">
-              <TabsTrigger value="vaccinations" className="rounded-lg gap-1.5 text-xs"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
-              <TabsTrigger value="records" className="rounded-lg gap-1.5 text-xs"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
-              <TabsTrigger value="symptoms" className="rounded-lg gap-1.5 text-xs"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
-              <TabsTrigger value="nutrition" className="rounded-lg gap-1.5 text-xs"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="vitals" className="w-full">
+            <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
+              <TabsList className="inline-flex w-max bg-muted rounded-xl h-11 p-1">
+                <TabsTrigger value="vitals" className="rounded-lg gap-1.5 text-xs px-3"><Heart className="h-3.5 w-3.5" />Vitals</TabsTrigger>
+                <TabsTrigger value="vaccinations" className="rounded-lg gap-1.5 text-xs px-3"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
+                <TabsTrigger value="meds" className="rounded-lg gap-1.5 text-xs px-3"><Pill className="h-3.5 w-3.5" />Meds</TabsTrigger>
+                <TabsTrigger value="parasite" className="rounded-lg gap-1.5 text-xs px-3"><Bug className="h-3.5 w-3.5" />Parasite</TabsTrigger>
+                <TabsTrigger value="symptoms" className="rounded-lg gap-1.5 text-xs px-3"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
+                <TabsTrigger value="nutrition" className="rounded-lg gap-1.5 text-xs px-3"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
+                <TabsTrigger value="records" className="rounded-lg gap-1.5 text-xs px-3"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
+              </TabsList>
+            </div>
 
+            <TabsContent value="vitals" className="mt-4"><VitalsTab petId={active.id} /></TabsContent>
             <TabsContent value="vaccinations" className="mt-4"><VaccinationsTab petId={active.id} /></TabsContent>
-            <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
+            <TabsContent value="meds" className="mt-4"><MedicationsTab petId={active.id} /></TabsContent>
+            <TabsContent value="parasite" className="mt-4"><ParasiteTab petId={active.id} /></TabsContent>
             <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
+            <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
           </Tabs>
 
           <ConsultsList petId={active.id} />
