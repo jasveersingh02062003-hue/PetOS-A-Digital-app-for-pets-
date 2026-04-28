@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 
 const timeAgo = (iso: string) => {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
