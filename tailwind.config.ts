@@ -40,6 +40,31 @@ export default {
           DEFAULT: "hsl(var(--emergency))",
           foreground: "hsl(var(--emergency-foreground))",
         },
+        coral: {
+          DEFAULT: "hsl(var(--coral))",
+          foreground: "hsl(var(--coral-foreground))",
+          soft: "hsl(var(--coral-soft))",
+        },
+        amber: {
+          DEFAULT: "hsl(var(--amber))",
+          foreground: "hsl(var(--amber-foreground))",
+          soft: "hsl(var(--amber-soft))",
+        },
+        sky: {
+          DEFAULT: "hsl(var(--sky))",
+          foreground: "hsl(var(--sky-foreground))",
+          soft: "hsl(var(--sky-soft))",
+        },
+        lilac: {
+          DEFAULT: "hsl(var(--lilac))",
+          foreground: "hsl(var(--lilac-foreground))",
+          soft: "hsl(var(--lilac-soft))",
+        },
+        leaf: {
+          DEFAULT: "hsl(var(--leaf))",
+          foreground: "hsl(var(--leaf-foreground))",
+          soft: "hsl(var(--leaf-soft))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
