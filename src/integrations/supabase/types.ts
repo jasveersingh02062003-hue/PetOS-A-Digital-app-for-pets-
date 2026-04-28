@@ -1727,6 +1727,7 @@ export type Database = {
           sire_pet_id: string | null
           social_level: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
+          status_chip: string | null
           temperament: string[]
           updated_at: string
           vaccination_verified: boolean
@@ -1766,6 +1767,7 @@ export type Database = {
           sire_pet_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
+          status_chip?: string | null
           temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean
@@ -1805,6 +1807,7 @@ export type Database = {
           sire_pet_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species?: Database["public"]["Enums"]["pet_species"]
+          status_chip?: string | null
           temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean
@@ -2114,15 +2117,18 @@ export type Database = {
           breeder_cert_url: string | null
           breeder_verified: boolean
           city: string | null
+          cover_url: string | null
           created_at: string
           emergency_vet: Json | null
           full_name: string | null
           goals: string[]
+          handle: string | null
           id: string
           interests: string[] | null
           language: string | null
           lat: number | null
           lng: number | null
+          looking_for: Json | null
           notif_prefs: Json
           notify_plus_launch: boolean
           onboarded: boolean
@@ -2140,15 +2146,18 @@ export type Database = {
           breeder_cert_url?: string | null
           breeder_verified?: boolean
           city?: string | null
+          cover_url?: string | null
           created_at?: string
           emergency_vet?: Json | null
           full_name?: string | null
           goals?: string[]
+          handle?: string | null
           id: string
           interests?: string[] | null
           language?: string | null
           lat?: number | null
           lng?: number | null
+          looking_for?: Json | null
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
@@ -2166,15 +2175,18 @@ export type Database = {
           breeder_cert_url?: string | null
           breeder_verified?: boolean
           city?: string | null
+          cover_url?: string | null
           created_at?: string
           emergency_vet?: Json | null
           full_name?: string | null
           goals?: string[]
+          handle?: string | null
           id?: string
           interests?: string[] | null
           language?: string | null
           lat?: number | null
           lng?: number | null
+          looking_for?: Json | null
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
@@ -3545,6 +3557,13 @@ export type Database = {
         }
         Relationships: []
       }
+      repeat_sellers: {
+        Row: {
+          active_listings: number | null
+          owner_id: string | null
+        }
+        Relationships: []
+      }
       subject_ratings: {
         Row: {
           avg_rating: number | null
@@ -3737,6 +3756,7 @@ export type Database = {
         | "sanctuary"
         | "zoo"
         | "rescuer"
+        | "buyer"
       activity_level: "low" | "medium" | "high"
       app_role:
         | "user"
@@ -3990,6 +4010,7 @@ export const Constants = {
         "sanctuary",
         "zoo",
         "rescuer",
+        "buyer",
       ],
       activity_level: ["low", "medium", "high"],
       app_role: [
