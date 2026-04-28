@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, ChevronRight, User, Bell, Phone, Shield, PawPrint, Target,
   LogOut, CreditCard, UserX, Crown, Globe, Moon, HelpCircle, FileText,
-  Sparkles, Mail, Trash2,
+  Sparkles, Mail, Trash2, Repeat,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets, useProfile } from "@/hooks/useProfile";
@@ -101,6 +101,10 @@ const Settings = () => {
 
         <Section title="Plan">
           <Row icon={CreditCard} label="Billing & subscription" desc="Manage Petos Plus" onClick={() => nav("/settings/billing")} />
+        </Section>
+
+        <Section title="Bookings">
+          <Row icon={Repeat} label="Recurring bookings" desc="Pause, resume or cancel schedules" onClick={() => nav("/bookings/recurring")} />
         </Section>
 
         <Section title="App">
