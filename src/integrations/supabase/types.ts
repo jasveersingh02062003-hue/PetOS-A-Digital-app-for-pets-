@@ -889,10 +889,18 @@ export type Database = {
       mating_agreements: {
         Row: {
           created_at: string
+          deal_type: string
+          extra_terms: string | null
           from_signature: string | null
           from_signed_at: string | null
           id: string
+          meeting_date: string | null
+          meeting_location: string | null
+          puppy_split_owner_pct: number | null
+          puppy_split_partner_pct: number | null
           request_id: string
+          stud_fee_inr: number | null
+          terms_locked: boolean
           terms_text: string
           to_signature: string | null
           to_signed_at: string | null
@@ -900,10 +908,18 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deal_type?: string
+          extra_terms?: string | null
           from_signature?: string | null
           from_signed_at?: string | null
           id?: string
+          meeting_date?: string | null
+          meeting_location?: string | null
+          puppy_split_owner_pct?: number | null
+          puppy_split_partner_pct?: number | null
           request_id: string
+          stud_fee_inr?: number | null
+          terms_locked?: boolean
           terms_text: string
           to_signature?: string | null
           to_signed_at?: string | null
@@ -911,10 +927,18 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deal_type?: string
+          extra_terms?: string | null
           from_signature?: string | null
           from_signed_at?: string | null
           id?: string
+          meeting_date?: string | null
+          meeting_location?: string | null
+          puppy_split_owner_pct?: number | null
+          puppy_split_partner_pct?: number | null
           request_id?: string
+          stud_fee_inr?: number | null
+          terms_locked?: boolean
           terms_text?: string
           to_signature?: string | null
           to_signed_at?: string | null
@@ -933,9 +957,11 @@ export type Database = {
       mating_listings: {
         Row: {
           active: boolean
+          boosted_until: string | null
           city: string | null
           created_at: string
           description: string | null
+          featured: boolean
           fee_inr: number | null
           id: string
           intent: Database["public"]["Enums"]["mating_intent"]
@@ -947,9 +973,11 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          boosted_until?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
+          featured?: boolean
           fee_inr?: number | null
           id?: string
           intent?: Database["public"]["Enums"]["mating_intent"]
@@ -961,9 +989,11 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          boosted_until?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
+          featured?: boolean
           fee_inr?: number | null
           id?: string
           intent?: Database["public"]["Enums"]["mating_intent"]
@@ -986,6 +1016,65 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: true
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mating_payments: {
+        Row: {
+          amount_inr: number
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          marked_paid_at: string | null
+          method: string
+          notes: string | null
+          payee_id: string
+          payer_id: string
+          reference: string | null
+          request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_inr: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          marked_paid_at?: string | null
+          method?: string
+          notes?: string | null
+          payee_id: string
+          payer_id: string
+          reference?: string | null
+          request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_inr?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          marked_paid_at?: string | null
+          method?: string
+          notes?: string | null
+          payee_id?: string
+          payer_id?: string
+          reference?: string | null
+          request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mating_payments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "mating_requests"
             referencedColumns: ["id"]
           },
         ]

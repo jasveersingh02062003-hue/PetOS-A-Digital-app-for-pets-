@@ -7,10 +7,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Heart, Loader2, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Heart, Loader2, Trash2, Check, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgreementCard } from "@/components/AgreementCard";
+import { MatingPaymentsCard } from "@/components/MatingPaymentsCard";
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-muted text-foreground",
@@ -86,6 +87,18 @@ const MatesManage = () => {
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
+  const boostListing = async (id: string) => {
+    const until = new Date();
+    until.setDate(until.getDate() + 7);
+    const { error } = await supabase
+      .from("mating_listings")
+      .update({ featured: true, boosted_until: until.toISOString() })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Listing boosted for 7 days");
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="container-app pad-top-safe pt-4 pb-3 flex items-center gap-3 border-b border-hairline">
@@ -130,7 +143,10 @@ const MatesManage = () => {
                   ) : null
                 }
                 agreement={["accepted", "agreed"].includes(r.status) ? (
-                  <AgreementCard requestId={r.id} isFromOwner={false} contactInfo={{ name: r.from_profile?.full_name, phone: r.from_profile?.phone }} />
+                  <>
+                    <AgreementCard requestId={r.id} isFromOwner={false} contactInfo={{ name: r.from_profile?.full_name, phone: r.from_profile?.phone }} />
+                    <MatingPaymentsCard requestId={r.id} otherUserId={r.from_owner_id} />
+                  </>
                 ) : null}
               />
             ))}
@@ -152,7 +168,10 @@ const MatesManage = () => {
                   ) : null
                 }
                 agreement={["accepted", "agreed"].includes(r.status) ? (
-                  <AgreementCard requestId={r.id} isFromOwner={true} contactInfo={{ name: r.to_profile?.full_name, phone: r.to_profile?.phone }} />
+                  <>
+                    <AgreementCard requestId={r.id} isFromOwner={true} contactInfo={{ name: r.to_profile?.full_name, phone: r.to_profile?.phone }} />
+                    <MatingPaymentsCard requestId={r.id} otherUserId={r.to_owner_id} />
+                  </>
                 ) : null}
               />
             ))}
@@ -168,9 +187,21 @@ const MatesManage = () => {
                     <div className="h-12 w-12 rounded-xl bg-primary-soft text-primary grid place-items-center font-display">{l.pets?.name?.[0]}</div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{l.pets?.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium truncate">{l.pets?.name}</div>
+                      {l.featured && l.boosted_until && new Date(l.boosted_until) > new Date() && (
+                        <Badge className="text-[9px] bg-primary text-primary-foreground border-0 gap-0.5">
+                          <Sparkles className="h-2.5 w-2.5" /> Boosted
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground capitalize">{l.intent} · {l.fee_inr ? `₹${l.fee_inr}` : "Free"}{l.city ? ` · ${l.city}` : ""}</div>
                   </div>
+                  {!(l.featured && l.boosted_until && new Date(l.boosted_until) > new Date()) && (
+                    <Button variant="ghost" size="icon" onClick={() => boostListing(l.id)} className="rounded-full text-primary" title="Boost for 7 days">
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" onClick={() => nav(`/mates/listing/${l.id}`)} className="rounded-full">
                     <Heart className="h-4 w-4 text-primary" />
                   </Button>
