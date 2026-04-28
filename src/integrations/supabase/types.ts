@@ -876,6 +876,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: Database["public"]["Enums"]["sub_status"]
+          tier: Database["public"]["Enums"]["sub_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["sub_status"]
+          tier?: Database["public"]["Enums"]["sub_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["sub_status"]
+          tier?: Database["public"]["Enums"]["sub_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       symptom_logs: {
         Row: {
           created_at: string
@@ -913,6 +952,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_counters: {
+        Row: {
+          count: number
+          kind: string
+          period: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          kind: string
+          period: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          kind?: string
+          period?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1220,6 +1280,10 @@ export type Database = {
       }
     }
     Functions: {
+      current_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["sub_tier"]
+      }
       get_pets_public: {
         Args: never
         Returns: {
@@ -1334,6 +1398,8 @@ export type Database = {
         | "boarding"
         | "vet_clinic"
       social_level: "solo" | "pairs" | "crowds"
+      sub_status: "active" | "past_due" | "canceled" | "trialing"
+      sub_tier: "free" | "plus"
       verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -1537,6 +1603,8 @@ export const Constants = {
         "vet_clinic",
       ],
       social_level: ["solo", "pairs", "crowds"],
+      sub_status: ["active", "past_due", "canceled", "trialing"],
+      sub_tier: ["free", "plus"],
       verification_status: ["pending", "approved", "rejected"],
     },
   },
