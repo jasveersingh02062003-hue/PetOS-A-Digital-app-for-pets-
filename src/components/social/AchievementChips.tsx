@@ -12,6 +12,9 @@ const ICONS: Record<string, any> = {
   meetup_host: Calendar,
   social_butterfly: Users,
   helpful_vet: Stethoscope,
+  daily_moment_first: Sparkles,
+  daily_streak_7: Flame,
+  daily_streak_30: Flame,
   default: Award,
 };
 const LABELS: Record<string, string> = {
@@ -24,6 +27,9 @@ const LABELS: Record<string, string> = {
   meetup_host: "Meetup host",
   social_butterfly: "Social butterfly",
   helpful_vet: "Helpful vet",
+  daily_moment_first: "First moment",
+  daily_streak_7: "7-day moments",
+  daily_streak_30: "30-day moments",
 };
 
 export const AchievementChips = ({ userId }: { userId: string }) => {
