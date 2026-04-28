@@ -25,6 +25,7 @@ import { ParasiteTab } from "@/components/health/ParasiteTab";
 import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDialog";
 import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton";
 import { InsuranceCard } from "@/components/health/InsuranceCard";
+import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -106,6 +107,8 @@ const Health = () => {
           </Button>
 
           <InsuranceCard petId={active.id} currentProvider={(active as any).insurance_provider} />
+
+          <HealthInsightsCard petId={active.id} petName={active.name} />
 
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
 
