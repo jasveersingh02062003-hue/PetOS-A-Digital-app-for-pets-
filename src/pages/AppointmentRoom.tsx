@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send, Video, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 
 export default function AppointmentRoom() {
   const { id } = useParams();
