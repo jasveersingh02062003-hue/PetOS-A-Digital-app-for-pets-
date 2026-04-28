@@ -14,6 +14,8 @@ import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart, Users, CalendarDays } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
+import { HomeHero } from "@/components/HomeHero";
+import { QuickAccessRail } from "@/components/QuickAccessRail";
 
 const Home = () => {
   const nav = useNavigate();
@@ -36,6 +38,10 @@ const Home = () => {
         </div>
         <ComposerButton variant="icon" />
       </header>
+
+      <HomeHero />
+
+      <QuickAccessRail />
 
       {hasPets && <HealthStatusStrip petId={pets![0].id} />}
       <PharmacySuggestionsBanner />
@@ -112,6 +118,7 @@ const Home = () => {
       </section>
 
       <ComposerButton variant="fab" />
+      <ComposerButton variant="global" />
     </div>
   );
 };
