@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  LogOut, Settings, Plus, Sparkles, AlertTriangle, Heart, ShieldCheck, ChevronRight,
+  LogOut, Settings, Plus, Sparkles, AlertTriangle, Heart, ShieldCheck, ChevronRight, Search,
 } from "lucide-react";
 import { PlusBadge } from "@/components/PlusBadge";
 import { MissingCreateSheet } from "@/components/MissingCreateSheet";
@@ -26,6 +26,11 @@ const Profile = () => {
   const [reportingPet, setReportingPet] = useState<any | null>(null);
 
   const initialLoading = !profile && !pets;
+  const isBuyer = (profile as any)?.account_type === "buyer";
+  const lookingFor = (profile as any)?.looking_for as
+    | { species?: string[] | null; breed?: string | null; city?: string | null; max_price_inr?: number | null }
+    | null
+    | undefined;
 
   // Counters: posts / followers / following
   const { data: counts } = useQuery({
@@ -114,12 +119,14 @@ const Profile = () => {
       )}
 
       {/* MY PETS — richer cards */}
-      <div className="flex items-center justify-between mt-2 mb-3">
-        <h2 className="font-display text-lg">My pets</h2>
-        <Button variant="ghost" size="sm" className="text-primary" onClick={() => nav("/onboarding")}>
-          <Plus className="h-4 w-4 mr-1" /> Add
-        </Button>
-      </div>
+      {!(isBuyer && (!pets || pets.length === 0)) && (
+        <div className="flex items-center justify-between mt-2 mb-3">
+          <h2 className="font-display text-lg">My pets</h2>
+          <Button variant="ghost" size="sm" className="text-primary" onClick={() => nav("/onboarding")}>
+            <Plus className="h-4 w-4 mr-1" /> Add
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-3 mb-8">
         {pets?.map((p: any) => {
@@ -171,12 +178,49 @@ const Profile = () => {
             </Card>
           );
         })}
-        {(!pets || pets.length === 0) && (
+        {(!pets || pets.length === 0) && !isBuyer && (
           <Card className="rounded-3xl border-hairline bg-card card-elev p-6 text-center">
             <div className="text-sm text-muted-foreground mb-3">No pets yet</div>
             <Button onClick={() => nav("/onboarding")} className="rounded-2xl h-11 bg-coral text-coral-foreground hover:bg-coral/90">
               <Plus className="h-4 w-4 mr-1" /> Add your first pet
             </Button>
+          </Card>
+        )}
+        {(!pets || pets.length === 0) && isBuyer && (
+          <Card className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card card-elev p-5">
+            <div className="flex items-start gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-primary/15 grid place-items-center shrink-0">
+                <Search className="h-6 w-6 text-primary" strokeWidth={2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-lg leading-tight">Looking for a pet</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  We'll help you find verified breeders, shelters and rehome listings.
+                </div>
+                {lookingFor && (lookingFor.species?.length || lookingFor.breed || lookingFor.city || lookingFor.max_price_inr) ? (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {lookingFor.species?.map((s) => (
+                      <span key={s} className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px] capitalize">{s}</span>
+                    ))}
+                    {lookingFor.breed && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.breed}</span>}
+                    {lookingFor.city && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.city}</span>}
+                    {lookingFor.max_price_inr ? <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">≤ ₹{lookingFor.max_price_inr.toLocaleString()}</span> : null}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <Button onClick={() => nav("/mates?tab=adopt")} className="rounded-2xl h-11">Browse listings</Button>
+              <Button variant="outline" onClick={() => nav("/onboarding/buyer-prefs")} className="rounded-2xl h-11">
+                Edit preferences
+              </Button>
+            </div>
+            <button
+              onClick={() => nav("/onboarding/account-type")}
+              className="w-full mt-3 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Got a pet now? Switch account type →
+            </button>
           </Card>
         )}
       </div>
