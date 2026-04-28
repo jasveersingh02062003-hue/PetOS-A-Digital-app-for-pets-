@@ -1,21 +1,24 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useSeo } from "@/hooks/useSeo";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
+import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
 
 const OrgProfile = () => {
   const { userId } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();
   const isOwner = !!user && user.id === userId;
+  const [volunteerOpen, setVolunteerOpen] = useState(false);
 
   const { data: org, isLoading } = useQuery({
     queryKey: ["org-profile", userId],
@@ -104,9 +107,14 @@ const OrgProfile = () => {
       )}
 
       {org.org_type === "shelter" || org.org_type === "sanctuary" || org.org_type === "rescuer" ? (
-        <Button onClick={() => nav("/messages")} variant="outline" className="w-full rounded-xl mb-4">
-          Volunteer or contact
-        </Button>
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <Button onClick={() => setVolunteerOpen(true)} variant="outline" className="rounded-xl gap-1.5">
+            <HandHeart className="h-4 w-4 text-coral" /> Volunteer
+          </Button>
+          <Button onClick={() => nav("/messages")} variant="outline" className="rounded-xl">
+            Contact
+          </Button>
+        </div>
       ) : null}
 
       {!!listings?.length && (
@@ -138,6 +146,15 @@ const OrgProfile = () => {
           <h2 className="font-display text-lg mb-2">Boarding & services</h2>
           <BoardingList userId={userId} isOwner={isOwner} />
         </div>
+      )}
+
+      {userId && (
+        <AdoptionApplicationSheet
+          open={volunteerOpen}
+          onOpenChange={setVolunteerOpen}
+          shelterId={userId}
+          isVolunteer
+        />
       )}
     </div>
   );
