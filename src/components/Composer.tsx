@@ -134,6 +134,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         )}
       </div>
 
+      <CollabPicker selected={collabs} onChange={setCollabs} />
+
+
       <Button type="submit" disabled={uploading} size="lg" className="w-full rounded-xl">
         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share"}
       </Button>
