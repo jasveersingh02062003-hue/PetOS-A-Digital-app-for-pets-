@@ -96,26 +96,32 @@ serve(async (req) => {
         .eq("id", petId)
         .maybeSingle();
       if (pet) {
-        const [{ data: vax }, { data: symp }, { data: rec }] = await Promise.all([
+        const [{ data: vax }, { data: symp }, { data: rec }, { data: meds }] = await Promise.all([
           supabase.from("vaccinations").select("vaccine_name, administered_on, next_due_on")
             .eq("pet_id", petId).order("administered_on", { ascending: false }).limit(8),
           supabase.from("symptom_logs").select("symptom, severity, notes, logged_at")
             .eq("pet_id", petId).order("logged_at", { ascending: false }).limit(10),
           supabase.from("health_records").select("title, record_type, notes, occurred_on")
             .eq("pet_id", petId).order("occurred_on", { ascending: false }).limit(8),
+          supabase.from("medication_logs").select("name, dose, frequency, start_on, end_on, active")
+            .eq("pet_id", petId).eq("active", true).order("start_on", { ascending: false }).limit(8),
         ]);
         const ageY = pet.date_of_birth
           ? ((Date.now() - new Date(pet.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)).toFixed(1)
           : "unknown";
+        const latestWeight = pet.weight_kg;
         petContext = [
           `Pet: ${pet.name} (${pet.species}${pet.breed ? `, ${pet.breed}` : ""})`,
-          `Age: ${ageY} yrs · Gender: ${pet.gender ?? "?"} · Weight: ${pet.weight_kg ?? "?"} kg · Neutered: ${pet.neutered ? "yes" : "no"}`,
+          `Age: ${ageY} yrs · Gender: ${pet.gender ?? "?"} · Weight: ${latestWeight ?? "?"} kg · Neutered: ${pet.neutered ? "yes" : "no"}`,
           `Activity: ${pet.activity_level ?? "?"} · Diet: ${pet.diet_type ?? "?"} · Social: ${pet.social_level ?? "?"}`,
           (pet.allergies?.length ? `KNOWN ALLERGIES (avoid recommending): ${pet.allergies.join(", ")}` : ""),
           (pet.conditions?.length ? `Existing conditions: ${pet.conditions.join(", ")}` : ""),
           (pet.temperament?.length ? `Temperament: ${pet.temperament.join(", ")}` : ""),
           `Vaccinations verified: ${pet.vaccination_verified ? "yes" : "no"}`,
           pet.bio ? `Bio: ${pet.bio}` : "",
+          meds?.length
+            ? `ACTIVE MEDICATIONS (consider drug interactions): ${meds.map((m: any) => `${m.name}${m.dose ? ` ${m.dose}` : ""}${m.frequency ? ` ${m.frequency}` : ""}`).join("; ")}`
+            : "Active medications: none",
           vax?.length
             ? `Recent vaccinations: ${vax.map((v: any) => `${v.vaccine_name} (${v.administered_on}${v.next_due_on ? `, next ${v.next_due_on}` : ""})`).join("; ")}`
             : "Vaccinations: none recorded",

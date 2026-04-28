@@ -5,6 +5,7 @@ import { MatesGrid } from "@/components/MatesGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LocalPackRail } from "@/components/social/LocalPackRail";
+import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
 import { Compass, Flame, Users, CalendarDays, Stethoscope } from "lucide-react";
 
 const Discover = () => {
@@ -18,6 +19,8 @@ const Discover = () => {
       <div className="mb-5">
         <SearchBar />
       </div>
+
+      <TrendingHashtagsRail />
 
       <LocalPackRail />
 

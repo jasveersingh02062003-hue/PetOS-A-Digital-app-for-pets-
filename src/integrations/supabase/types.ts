@@ -478,6 +478,7 @@ export type Database = {
           occurred_on: string
           pet_id: string
           record_type: Database["public"]["Enums"]["health_record_type"]
+          source_post_id: string | null
           title: string
           updated_at: string
         }
@@ -489,6 +490,7 @@ export type Database = {
           occurred_on?: string
           pet_id: string
           record_type?: Database["public"]["Enums"]["health_record_type"]
+          source_post_id?: string | null
           title: string
           updated_at?: string
         }
@@ -500,6 +502,7 @@ export type Database = {
           occurred_on?: string
           pet_id?: string
           record_type?: Database["public"]["Enums"]["health_record_type"]
+          source_post_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1332,6 +1335,24 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          created_at: string
+          post_id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          tag?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -1358,16 +1379,44 @@ export type Database = {
           },
         ]
       }
+      post_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string
           caption: string | null
           comment_count: number
           created_at: string
+          health_kind: string | null
+          health_pet_id: string | null
+          health_value: Json | null
           id: string
           image_url: string | null
           like_count: number
           pet_id: string | null
+          reaction_counts: Json
           updated_at: string
         }
         Insert: {
@@ -1375,10 +1424,14 @@ export type Database = {
           caption?: string | null
           comment_count?: number
           created_at?: string
+          health_kind?: string | null
+          health_pet_id?: string | null
+          health_value?: Json | null
           id?: string
           image_url?: string | null
           like_count?: number
           pet_id?: string | null
+          reaction_counts?: Json
           updated_at?: string
         }
         Update: {
@@ -1386,10 +1439,14 @@ export type Database = {
           caption?: string | null
           comment_count?: number
           created_at?: string
+          health_kind?: string | null
+          health_pet_id?: string | null
+          health_value?: Json | null
           id?: string
           image_url?: string | null
           like_count?: number
           pet_id?: string | null
+          reaction_counts?: Json
           updated_at?: string
         }
         Relationships: [
@@ -2642,6 +2699,14 @@ export type Database = {
           review_count: number | null
           subject_id: string | null
           subject_type: Database["public"]["Enums"]["review_subject"] | null
+        }
+        Relationships: []
+      }
+      trending_hashtags: {
+        Row: {
+          last_used: string | null
+          post_count: number | null
+          tag: string | null
         }
         Relationships: []
       }
