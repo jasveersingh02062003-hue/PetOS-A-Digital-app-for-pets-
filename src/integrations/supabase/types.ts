@@ -206,6 +206,98 @@ export type Database = {
           },
         ]
       }
+      missing_pet_sightings: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          missing_pet_id: string
+          note: string | null
+          photo_url: string | null
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          missing_pet_id: string
+          note?: string | null
+          photo_url?: string | null
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          missing_pet_id?: string
+          note?: string | null
+          photo_url?: string | null
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missing_pet_sightings_missing_pet_id_fkey"
+            columns: ["missing_pet_id"]
+            isOneToOne: false
+            referencedRelation: "missing_pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missing_pets: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          last_seen_city: string | null
+          last_seen_lat: number | null
+          last_seen_lng: number | null
+          note: string | null
+          owner_id: string
+          pet_id: string
+          photo_url: string | null
+          resolved_at: string | null
+          reward_inr: number | null
+          status: Database["public"]["Enums"]["missing_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          last_seen_city?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          note?: string | null
+          owner_id: string
+          pet_id: string
+          photo_url?: string | null
+          resolved_at?: string | null
+          reward_inr?: number | null
+          status?: Database["public"]["Enums"]["missing_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          last_seen_city?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          note?: string | null
+          owner_id?: string
+          pet_id?: string
+          photo_url?: string | null
+          resolved_at?: string | null
+          reward_inr?: number | null
+          status?: Database["public"]["Enums"]["missing_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1208,6 +1300,7 @@ export type Database = {
         | "allergy"
         | "other"
       mating_intent: "stud" | "dam" | "either"
+      missing_status: "active" | "resolved" | "cancelled"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
@@ -1406,6 +1499,7 @@ export const Constants = {
         "other",
       ],
       mating_intent: ["stud", "dam", "either"],
+      missing_status: ["active", "resolved", "cancelled"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
