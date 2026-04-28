@@ -48,6 +48,11 @@ serve(async (req) => {
     const petId: string | undefined =
       typeof petIdRaw === "string" && UUID_RE.test(petIdRaw) ? petIdRaw : undefined;
     const mode: "chat" | "triage" = body.mode === "triage" ? "triage" : "chat";
+    const triageSessionIdRaw = body.triageSessionId;
+    const triageSessionId: string | undefined =
+      typeof triageSessionIdRaw === "string" && UUID_RE.test(triageSessionIdRaw)
+        ? triageSessionIdRaw
+        : undefined;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return jsonErr("unauthenticated", 401);
@@ -183,6 +188,23 @@ ${petContext}`;
       const json = await r.json();
       const call = json.choices?.[0]?.message?.tool_calls?.[0];
       const args = call?.function?.arguments ? JSON.parse(call.function.arguments) : null;
+
+      // Persist triage classification + transcript on the session, if one was provided
+      if (triageSessionId && args) {
+        const { error: upErr } = await supabase
+          .from("vet_triage_sessions")
+          .update({
+            transcript: messages,
+            severity: args.severity,
+            ai_summary: args.summary,
+            recommend_vet: !!args.recommend_vet,
+            home_care: Array.isArray(args.home_care) ? args.home_care.slice(0, 5) : [],
+          })
+          .eq("id", triageSessionId)
+          .eq("owner_id", userRes.user.id); // RLS belt-and-braces
+        if (upErr) console.error("triage session update failed", upErr);
+      }
+
       return new Response(JSON.stringify({ triage: args }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
