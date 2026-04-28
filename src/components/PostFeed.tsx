@@ -121,9 +121,54 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
 const PostCard = ({ post, onComment }: {
   post: FeedPost; onComment: () => void;
 }) => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
   const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
   const initial = displayName[0]?.toUpperCase() || "P";
+  const { burst, node: pawLayer } = usePawBurst();
+  const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
+
+  const handleImageTap = async (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    let cx: number, cy: number;
+    if ("touches" in e || "changedTouches" in e) {
+      const t = (e as React.TouchEvent).changedTouches?.[0] ?? (e as React.TouchEvent).touches?.[0];
+      if (!t) return;
+      cx = t.clientX - rect.left;
+      cy = t.clientY - rect.top;
+    } else {
+      cx = (e as React.MouseEvent).clientX - rect.left;
+      cy = (e as React.MouseEvent).clientY - rect.top;
+    }
+    const now = Date.now();
+    const last = lastTapRef.current;
+    const isDouble =
+      last &&
+      now - last.t < 320 &&
+      Math.abs(cx - last.x) < 24 &&
+      Math.abs(cy - last.y) < 24;
+    if (isDouble) {
+      lastTapRef.current = null;
+      burst(cx, cy);
+      haptic(15);
+      if (!user) {
+        toast.message("Sign in to react");
+        return;
+      }
+      try {
+        const inserted = await addReaction(post.id, user.id, "love");
+        if (inserted) {
+          qc.invalidateQueries({ queryKey: ["post-reactions-counts", post.id] });
+          qc.invalidateQueries({ queryKey: ["post-reactions-mine", post.id] });
+        }
+      } catch {
+        // silent — animation already gave feedback
+      }
+    } else {
+      lastTapRef.current = { t: now, x: cx, y: cy };
+    }
+  };
 
   return (
     <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
@@ -147,8 +192,13 @@ const PostCard = ({ post, onComment }: {
       </div>
 
       {post.image_url && (
-        <div className="bg-muted aspect-square overflow-hidden">
-          <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        <div
+          className="relative bg-muted aspect-square overflow-hidden select-none"
+          onClick={handleImageTap}
+          onDoubleClick={(e) => e.preventDefault()}
+        >
+          <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" draggable={false} />
+          {pawLayer}
         </div>
       )}
 
@@ -163,7 +213,7 @@ const PostCard = ({ post, onComment }: {
         <ReactionBar postId={post.id} initialCounts={post.reaction_counts ?? {}} />
         <button
           onClick={onComment}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-110"
           aria-label="Comment"
         >
           <MessageCircle className="h-5 w-5" strokeWidth={1.6} />
@@ -177,3 +227,4 @@ const PostCard = ({ post, onComment }: {
     </Card>
   );
 };
+
