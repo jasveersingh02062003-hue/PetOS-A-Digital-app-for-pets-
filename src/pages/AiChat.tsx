@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Sparkles, Send, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Sparkles, Send, Loader2, ChevronDown, Stethoscope } from "lucide-react";
 import { usePets } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
