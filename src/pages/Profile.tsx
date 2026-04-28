@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Settings, Plus, Wallet, Bookmark, Heart } from "lucide-react";
 
 const Profile = () => {
+  const nav = useNavigate();
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
@@ -57,7 +59,7 @@ const Profile = () => {
       </div>
 
       <div className="space-y-2 mb-8">
-        <Row icon={Heart} label="My mating listings" />
+        <Row icon={Heart} label="My mating listings & requests" onClick={() => nav("/mates/manage")} />
         <Row icon={Bookmark} label="Saved posts" />
         <Row icon={Wallet} label="Wallet" />
       </div>
@@ -69,8 +71,8 @@ const Profile = () => {
   );
 };
 
-const Row = ({ icon: Icon, label }: { icon: any; label: string }) => (
-  <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/40 transition-colors">
+const Row = ({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) => (
+  <Card onClick={onClick} className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/40 transition-colors">
     <Icon className="h-5 w-5 text-primary" strokeWidth={1.5} />
     <span className="text-sm font-medium">{label}</span>
   </Card>
