@@ -14,10 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
+import { PetIdButton } from "@/components/health/PetIdCard";
+import { VitalsTab } from "@/components/health/VitalsTab";
+import { MedicationsTab } from "@/components/health/MedicationsTab";
+import { ParasiteTab } from "@/components/health/ParasiteTab";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -55,8 +59,8 @@ const Health = () => {
         <>
           <Card className="rounded-2xl border-hairline bg-card shadow-none p-5 mb-3">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <div className="font-display text-2xl">{active.name}</div>
                   {active.vaccination_verified && (
                     <Badge variant="secondary" className="bg-primary-soft text-primary border-0 gap-1">
@@ -67,10 +71,21 @@ const Health = () => {
                 <div className="text-sm text-muted-foreground">
                   {[active.breed, active.species].filter(Boolean).join(" · ")}
                 </div>
+                {(active as any).public_id && (
+                  <div className="text-[11px] text-muted-foreground mt-1 tracking-wider font-mono">{(active as any).public_id}</div>
+                )}
               </div>
-              <VetShareButton petId={active.id} petName={active.name} />
+              <div className="flex flex-col gap-2 shrink-0">
+                <PetIdButton publicId={(active as any).public_id} petName={active.name} />
+                <VetShareButton petId={active.id} petName={active.name} />
+              </div>
             </div>
           </Card>
+
+          <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="w-full rounded-2xl h-12 mb-3 justify-start gap-3 border-hairline">
+            <ListOrdered className="h-4 w-4" />
+            <span className="text-sm">View full timeline</span>
+          </Button>
 
           <Button onClick={() => nav("/ai")} size="lg" className="w-full rounded-2xl h-14 mb-5 justify-start gap-3">
             <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
