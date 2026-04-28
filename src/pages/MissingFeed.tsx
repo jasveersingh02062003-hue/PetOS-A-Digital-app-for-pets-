@@ -187,11 +187,31 @@ const MissingCard = ({ m }: { m: any }) => {
           <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{m.last_seen_city ?? "—"}</span>
             <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{formatTimeAgo(m.created_at)}</span>
+            {m.distance_km !== null && m.distance_km !== undefined && (
+              <span className="inline-flex items-center gap-1 text-foreground font-medium">
+                <Navigation className="h-3 w-3" />{m.distance_km < 1 ? "<1" : Math.round(m.distance_km)} km
+              </span>
+            )}
+            {m.sighting_count > 0 && (
+              <span className="inline-flex items-center gap-1 text-coral font-semibold">
+                <Eye className="h-3 w-3" />{m.sighting_count} sighting{m.sighting_count > 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
       </div>
     </Card>
   );
 };
+
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 export default MissingFeed;
