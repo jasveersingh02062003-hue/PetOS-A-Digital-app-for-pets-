@@ -4252,6 +4252,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      provider_social_proof: {
+        Args: { _city?: string; _provider_id: string }
+        Returns: Json
+      }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       redeem_reward: {
         Args: {
@@ -4264,6 +4268,25 @@ export type Database = {
         Returns: string
       }
       release_due_rewards: { Args: never; Returns: number }
+      review_summaries_bulk: {
+        Args: {
+          _ids: string[]
+          _subject_type: Database["public"]["Enums"]["review_subject"]
+        }
+        Returns: {
+          avg: number
+          count: number
+          subject_id: string
+          verified_count: number
+        }[]
+      }
+      review_summary: {
+        Args: {
+          _subject_id: string
+          _subject_type: Database["public"]["Enums"]["review_subject"]
+        }
+        Returns: Json
+      }
       send_broadcast: {
         Args: {
           _body: string
