@@ -4,6 +4,7 @@ import { BottomNav } from "./BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { EmergencySheet } from "./EmergencySheet";
+import { NotificationBell } from "./NotificationBell";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -28,6 +29,11 @@ export const AppShell = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {user && (
+        <div className="fixed top-3 right-3 z-40 pad-top-safe">
+          <NotificationBell />
+        </div>
+      )}
       <main className="pad-bottom-nav animate-fade-in">
         <Outlet />
       </main>
