@@ -11,6 +11,7 @@ import { Send, Loader2, Trash2, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { SellerBadge } from "@/components/SellerBadge";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
   const [body, setBody] = useState("");
   const [asPetId, setAsPetId] = useState<string | "self">("self");
   const [sending, setSending] = useState(false);
+  const { data: verifiedOrgs } = useVerifiedOrgs();
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ["comments", postId],
@@ -103,7 +105,11 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium">{name}</span>
                     {!asPet && c.author?.account_type && c.author.account_type !== "pet_parent" && (
-                      <SellerBadge type={c.author.account_type} className="text-[9px] py-0 px-1.5 h-4" />
+                      <SellerBadge
+                        type={c.author.account_type}
+                        verified={verifiedOrgs?.has(c.author_id) ?? false}
+                        className="text-[9px] py-0 px-1.5 h-4"
+                      />
                     )}
                     {asPet && <span className="text-[10px] text-primary">🐾 as pet</span>}
                     <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>

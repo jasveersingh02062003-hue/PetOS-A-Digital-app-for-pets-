@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { SellerBadge } from "@/components/SellerBadge";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 
 const RECENTS_KEY = "petos:recent_searches";
 
@@ -275,7 +276,9 @@ const PetsList = ({ items }: { items: any[] }) => items.length ? (
   </div>
 ) : <Empty q="" />;
 
-const PeopleList = ({ items }: { items: any[] }) => items.length ? (
+const PeopleList = ({ items }: { items: any[] }) => {
+  const { data: verifiedOrgs } = useVerifiedOrgs();
+  return items.length ? (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
     {items.map((p) => (
       <Link key={p.id} to={`/u/${p.handle ? p.handle : p.id}`} className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted/60">
@@ -284,7 +287,11 @@ const PeopleList = ({ items }: { items: any[] }) => items.length ? (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-sm font-medium truncate">{p.full_name || "Pet parent"}</span>
             {p.account_type && p.account_type !== "pet_parent" && (
-              <SellerBadge type={p.account_type} className="text-[9px] py-0 px-1.5 h-4" />
+              <SellerBadge
+                type={p.account_type}
+                verified={verifiedOrgs?.has(p.id) ?? false}
+                className="text-[9px] py-0 px-1.5 h-4"
+              />
             )}
           </div>
           {(p.city || p.bio) && <div className="text-xs text-muted-foreground truncate">{p.city || p.bio?.slice(0, 60)}</div>}
@@ -293,6 +300,7 @@ const PeopleList = ({ items }: { items: any[] }) => items.length ? (
     ))}
   </div>
 ) : <Empty q="" />;
+};
 
 const PostsList = ({ items }: { items: any[] }) => items.length ? (
   <div className="grid grid-cols-3 gap-1">
