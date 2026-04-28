@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
+import { usePendingCollabInvites, useRespondCollab } from "@/hooks/useCollabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Bell, Check } from "lucide-react";
+import { ArrowLeft, Bell, Check, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const Notifications = () => {
