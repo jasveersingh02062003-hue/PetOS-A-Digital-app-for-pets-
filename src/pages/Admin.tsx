@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
@@ -59,14 +59,16 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="reports" className="w-full">
-          <TabsList className="grid grid-cols-3 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl">
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" />Reports</TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" />Vets</TabsTrigger>
+            <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" />Verify</TabsTrigger>
             <TabsTrigger value="users" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports" className="mt-4"><ReportsTab /></TabsContent>
           <TabsContent value="vets" className="mt-4"><VetAppsTab /></TabsContent>
+          <TabsContent value="providers" className="mt-4"><ProvidersTab /></TabsContent>
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         </Tabs>
       </main>
@@ -175,6 +177,65 @@ const VetAppsTab = () => {
           )}
         </Card>
       ))}
+    </div>
+  );
+};
+
+const ProvidersTab = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"unverified" | "all">("unverified");
+
+  const load = async () => {
+    setLoading(true);
+    let q = supabase.from("service_providers").select("*").order("created_at", { ascending: false }).limit(100);
+    if (filter === "unverified") q = q.eq("verified", false);
+    const { data } = await q;
+    setItems(data ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const setVerified = async (id: string, verified: boolean) => {
+    const { error } = await supabase.from("service_providers").update({ verified }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success(verified ? "Verified" : "Unverified"); load(); }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Button size="sm" variant={filter === "unverified" ? "default" : "outline"} onClick={() => setFilter("unverified")}>Pending</Button>
+        <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+      </div>
+      {loading ? (
+        <Loader2 className="h-5 w-5 animate-spin mx-auto mt-8" />
+      ) : !items.length ? (
+        <p className="text-center text-sm text-muted-foreground py-12">Nothing to review.</p>
+      ) : (
+        items.map(p => (
+          <Card key={p.id} className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  {p.name}
+                  {p.verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                </div>
+                <div className="text-xs text-muted-foreground capitalize">{p.category}{p.city ? ` · ${p.city}` : ""}</div>
+              </div>
+              <Badge variant={p.verified ? "secondary" : "default"}>{p.verified ? "Verified" : "Pending"}</Badge>
+            </div>
+            {p.bio && <div className="text-sm text-muted-foreground">{p.bio}</div>}
+            {p.contact_phone && <div className="text-xs text-muted-foreground">📞 {p.contact_phone}</div>}
+            <div className="flex gap-2 pt-1">
+              {!p.verified ? (
+                <Button size="sm" onClick={() => setVerified(p.id, true)}>Verify</Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setVerified(p.id, false)}>Revoke</Button>
+              )}
+            </div>
+          </Card>
+        ))
+      )}
     </div>
   );
 };
