@@ -97,6 +97,10 @@ const Install = lazy(() => import("./pages/Install"));
 const Search = lazy(() => import("./pages/Search"));
 const BlockedAccounts = lazy(() => import("./pages/settings/BlockedAccounts"));
 const ModerationQueue = lazy(() => import("./pages/admin/Moderation"));
+const AccountTypeChooser = lazy(() => import("./pages/AccountTypeChooser"));
+const OrgOnboarding = lazy(() => import("./pages/OrgOnboarding"));
+const OrgProfile = lazy(() => import("./pages/OrgProfile"));
+const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,6 +167,10 @@ const App = () => (
               <Route path="/settings/billing" element={<Billing />} />
               <Route path="/settings/blocked" element={<BlockedAccounts />} />
               <Route path="/admin/moderation" element={<ModerationQueue />} />
+              <Route path="/admin/orgs" element={<OrgReview />} />
+              <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
+              <Route path="/onboarding/org" element={<OrgOnboarding />} />
+              <Route path="/org/:userId" element={<OrgProfile />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
               <Route path="/missing" element={<MissingFeed />} />
