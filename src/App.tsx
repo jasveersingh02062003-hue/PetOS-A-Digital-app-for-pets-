@@ -74,6 +74,7 @@ import MeetupDetail from "./pages/MeetupDetail";
 import AskVet from "./pages/AskVet";
 import AskVetNew from "./pages/AskVetNew";
 import AskVetDetail from "./pages/AskVetDetail";
+import Daily from "./pages/Daily";
 
 const queryClient = new QueryClient({
   defaultOptions: {
