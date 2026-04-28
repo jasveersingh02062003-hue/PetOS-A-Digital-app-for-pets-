@@ -1,13 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Award, Camera, Flame, Heart, Shield, Sparkles } from "lucide-react";
+import { Award, Bug, Calendar, Camera, Flame, Heart, Shield, Sparkles, Stethoscope, Users } from "lucide-react";
 
 const ICONS: Record<string, any> = {
   first_post: Camera,
   streak_7: Flame,
   streak_30: Flame,
   vaccinated: Shield,
+  dewormed_recent: Bug,
   first_mate: Heart,
+  meetup_host: Calendar,
+  social_butterfly: Users,
+  helpful_vet: Stethoscope,
   default: Award,
 };
 const LABELS: Record<string, string> = {
@@ -15,7 +19,11 @@ const LABELS: Record<string, string> = {
   streak_7: "7-day streak",
   streak_30: "30-day streak",
   vaccinated: "Vaccinated",
+  dewormed_recent: "Dewormed",
   first_mate: "First mate",
+  meetup_host: "Meetup host",
+  social_butterfly: "Social butterfly",
+  helpful_vet: "Helpful vet",
 };
 
 export const AchievementChips = ({ userId }: { userId: string }) => {
