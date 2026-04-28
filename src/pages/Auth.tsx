@@ -78,24 +78,16 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        // If email confirmation is required, no session is returned.
+        // Email auto-confirm is on — sign the user straight in if no session was returned.
         if (!data.session) {
-          setVerifyEmail(email);
-          return;
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) throw signInErr;
         }
-        toast.success("Account created — welcome to Petos");
+        toast.success("Welcome to Petos");
         nav("/onboarding", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          // Surface the unverified-email path clearly
-          const msg = (error.message || "").toLowerCase();
-          if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
-            setVerifyEmail(email);
-            return;
-          }
-          throw error;
-        }
+        if (error) throw error;
         nav("/", { replace: true });
       }
     } catch (err: any) {
