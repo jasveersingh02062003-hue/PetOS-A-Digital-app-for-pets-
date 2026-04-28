@@ -490,6 +490,58 @@ const Row = ({ label, onClick }: { label: string; onClick?: () => void }) => (
   </button>
 );
 
+const MenuSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 px-1">
+      {title}
+    </div>
+    <div className="rounded-2xl border border-hairline bg-card divide-y divide-hairline overflow-hidden">
+      {children}
+    </div>
+  </div>
+);
+
+const IconRow = ({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className="w-full px-4 h-12 flex items-center gap-3 text-sm font-medium hover:bg-muted/30 transition-colors"
+  >
+    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+    <span className="flex-1 text-left">{label}</span>
+    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+  </button>
+);
+
+const ACHIEVEMENT_META: Record<string, { label: string; icon: any; tone: string }> = {
+  first_post: { label: "First post", icon: Sparkles, tone: "bg-amber-500/15 text-amber-700" },
+  vaccinated: { label: "Vaccinated", icon: ShieldCheck, tone: "bg-sky/15 text-sky" },
+  dewormed_recent: { label: "Dewormed", icon: ShieldCheck, tone: "bg-leaf/15 text-leaf" },
+  daily_moment_first: { label: "Daily debut", icon: Sparkles, tone: "bg-lilac/15 text-lilac" },
+  daily_streak_7: { label: "7-day streak", icon: Flame, tone: "bg-coral/15 text-coral" },
+  daily_streak_30: { label: "30-day streak", icon: Flame, tone: "bg-coral/20 text-coral" },
+  social_butterfly: { label: "Social butterfly", icon: Heart, tone: "bg-coral/15 text-coral" },
+  meetup_host: { label: "Meetup host", icon: Trophy, tone: "bg-amber-500/15 text-amber-700" },
+  helpful_vet: { label: "Helpful vet", icon: Award, tone: "bg-sky/15 text-sky" },
+};
+
+const AchievementChip = ({ kind, earnedAt }: { kind: string; earnedAt: string }) => {
+  const meta = ACHIEVEMENT_META[kind] ?? { label: kind.replace(/_/g, " "), icon: Trophy, tone: "bg-muted text-muted-foreground" };
+  const Icon = meta.icon;
+  return (
+    <div
+      className="shrink-0 flex flex-col items-center gap-1.5 w-[84px]"
+      title={`${meta.label} · ${new Date(earnedAt).toLocaleDateString()}`}
+    >
+      <div className={`h-14 w-14 rounded-2xl grid place-items-center ${meta.tone}`}>
+        <Icon className="h-6 w-6" strokeWidth={2.2} />
+      </div>
+      <div className="text-[10px] text-center font-medium leading-tight capitalize line-clamp-2">
+        {meta.label}
+      </div>
+    </div>
+  );
+};
+
 const StatusChip = ({ pet }: { pet: any }) => {
   if (!pet.status_chip) return null;
   const map: Record<string, { label: string; tone: string }> = {
