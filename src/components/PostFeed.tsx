@@ -159,6 +159,7 @@ const PostCard = ({ post, liked, onLike, onComment }: {
           <div className="text-[11px] text-muted-foreground">
             {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
           </div>
+          <CollabBadge postId={post.id} />
         </div>
         <FollowButton targetId={post.author_id} />
       </div>
