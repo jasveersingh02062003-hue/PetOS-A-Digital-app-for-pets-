@@ -101,8 +101,6 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
           <PostCard
             key={post.id}
             post={post}
-            liked={myLikes?.has(post.id) ?? false}
-            onLike={() => toggleLike(post)}
             onComment={() => setCommentsFor(post.id)}
           />
         ))}
@@ -112,8 +110,8 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   );
 };
 
-const PostCard = ({ post, liked, onLike, onComment }: {
-  post: FeedPost; liked: boolean; onLike: () => void; onComment: () => void;
+const PostCard = ({ post, onComment }: {
+  post: FeedPost; onComment: () => void;
 }) => {
   const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
   const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
@@ -147,18 +145,14 @@ const PostCard = ({ post, liked, onLike, onComment }: {
       )}
 
       {post.caption && (
-        <p className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap">{post.caption}</p>
+        <CaptionWithTags
+          text={post.caption}
+          className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap"
+        />
       )}
 
       <div className="flex items-center gap-1 px-2 py-2">
-        <button
-          onClick={onLike}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors"
-          aria-label="Like"
-        >
-          <Heart className={`h-5 w-5 transition-all ${liked ? "fill-destructive text-destructive scale-110" : "text-foreground"}`} strokeWidth={1.6} />
-          <span className="text-sm tabular-nums">{post.like_count}</span>
-        </button>
+        <ReactionBar postId={post.id} initialCounts={post.reaction_counts ?? {}} />
         <button
           onClick={onComment}
           className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors"
