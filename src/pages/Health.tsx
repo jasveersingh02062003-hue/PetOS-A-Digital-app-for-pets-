@@ -82,10 +82,16 @@ const Health = () => {
             </div>
           </Card>
 
-          <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="w-full rounded-2xl h-12 mb-3 justify-start gap-3 border-hairline">
-            <ListOrdered className="h-4 w-4" />
-            <span className="text-sm">View full timeline</span>
-          </Button>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <ListOrdered className="h-4 w-4" />
+              <span className="text-sm">Timeline</span>
+            </Button>
+            <Button onClick={() => nav(`/book-vet?pet=${active.id}`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <Stethoscope className="h-4 w-4" />
+              <span className="text-sm">Book a vet</span>
+            </Button>
+          </div>
 
           <Button onClick={() => nav("/ai")} size="lg" className="w-full rounded-2xl h-14 mb-5 justify-start gap-3">
             <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
