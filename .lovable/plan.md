@@ -1,116 +1,75 @@
-# Mates → Two sub-tabs: Mating + Adopt / Rehome
+## Phase 1: Organizations, Lineage & Seller Identity
 
-## Goal
-Keep `/mates` as the home for "pet-to-pet life events," but cleanly separate two very different intents so users (and trust signals) don't get mixed up:
+Build the full seller-identity, organization-onboarding, and "Bred on PetOS" lineage system on top of the existing Adopt & Rehome marketplace.
 
-1. **Mating** — current flow (stud / dam, vaccination-verified, agreements). No change in behavior.
-2. **Adopt / Rehome / Breeder sale** — a new, safety-first listing flow.
+### 1. Database migration
 
-## Why a sub-tab (not Discover, not a new top tab)
-- One mental home for "I'm looking for another pet's owner."
-- Discover stays focused on services, shop, meetups, exploration.
-- Avoids adding a 6th bottom-nav slot (5 is already optimal).
+**New enum**
+- `account_type`: `pet_parent`, `breeder`, `kennel`, `shelter`, `sanctuary`, `zoo`, `rescuer`
 
-## UX layout
+**`profiles` additions**
+- `account_type account_type not null default 'pet_parent'`
+- `seller_type` snapshot (mirrors account_type for fast listing queries)
 
-```text
-/mates
- ├── Header: "Find your pet's perfect match"
- ├── Your-pet hero card (unchanged)
- ├── Segmented control:  [ Mating ]  [ Adopt & Rehome ]
- │      ↑ sticky, swipeable
- └── Grid below changes per tab
-```
+**New table `org_profiles`** (1:1 with profile for orgs)
+- `user_id` (PK, FK profiles)
+- `org_name`, `org_type` (account_type), `registration_no`, `registration_doc_url`
+- `address`, `city`, `state`, `pincode`, `lat`, `lng`
+- `phone`, `website`, `description`
+- `facility_photos text[]`
+- `donation_upi`, `donation_url` (shelters/sanctuaries/zoos)
+- `status` (`pending` / `approved` / `rejected`), `reviewed_by`, `reviewed_at`, `rejection_reason`
+- `created_at`, `updated_at`
+- RLS: owner can read/insert/update own; everyone can read approved; admins/moderators can read+update all
 
-- Default tab = **Mating** (preserves current behavior).
-- Contextual FAB on `/mates` already navigates to `/mates/new`. We extend it: long-press or a small chevron opens a chooser — "List for mating" vs "List for adoption / rehome".
-- URL state via `?tab=mating|adopt` so back-button and deep links work.
+**New table `litter_groups`**
+- `id`, `sire_pet_id`, `dam_pet_id`, `birth_date`, `notes`, `created_by`, `created_at`
+- RLS: creator can CRUD; everyone authenticated can read
 
-## Adopt / Rehome — listing types
+**`pets` additions**
+- `sire_pet_id uuid`, `dam_pet_id uuid`, `litter_id uuid` (FK litter_groups)
 
-Three listing types, picked at creation time:
+**`pet_listings` additions**
+- `litter_id uuid`, `bred_on_petos boolean default false`
+- `seller_type account_type` (snapshotted at insert)
 
-| Type | Who | Fee allowed | Required proofs |
-|---|---|---|---|
-| **Adoption** | Anyone rehoming a rescue / personal pet | Free only | Vax record, dewormer, age ≥ 8 weeks |
-| **Rehoming** | Owner who can no longer keep pet | Token fee (₹0–₹2,000) | Vax record, reason, ownership proof |
-| **Breeder sale** | Verified breeders only | Any fee | Breeder cert upload + KYC + parents' info + microchip |
+**Triggers**
+- `tg_listing_seller_snapshot` — copy `profiles.account_type` into `pet_listings.seller_type` on insert
+- `tg_listing_zoo_block` — block any insert when seller_type = 'zoo'
+- `tg_listing_shelter_free` — force `fee_inr = 0` and `listing_type = 'adoption'` for shelters/sanctuaries/rescuers
+- `tg_listing_bred_on_petos` — set `bred_on_petos = true` when both sire+dam are linked PetOS pets
+- `tg_org_approval` — when `org_profiles.status` flips to `approved`, also flip `profiles.breeder_verified = true` for breeders/kennels
 
-### Mandatory guardrails for every adopt listing
-- Vaccination record upload (image)
-- Age field — block puppies/kittens under 8 weeks
-- City + approximate location (no exact address publicly)
-- Phone verified (already part of profile)
-- "No in-app payment for the pet itself." Listings show fee transparently; transfer happens in person.
-- Optional refundable visit-deposit (₹500) via existing payment_intents flow — protects sellers from no-shows, refundable if either party cancels.
+**Storage**
+- New public bucket `org-docs` for registration certificates and facility photos
+- RLS: owner can upload to their own folder; everyone can read
 
-### Breeder verification (one-time)
-- Upload breeder registration certificate (state Animal Welfare Board / Kennel Club India number).
-- Manual moderation queue → flips a `breeder_verified` flag on the user.
-- Only verified breeders see "Breeder sale" as a listing option.
+### 2. Frontend components & pages
 
-### Buyer-side trust signals on each card
-- Vax-verified badge (existing pattern)
-- Listing type badge: green "Adoption" / amber "Rehoming" / blue "Breeder ✓"
-- Age, parents (if breeder), microchip indicator
-- Report button (existing `ReportButton`)
+| File | Purpose |
+|---|---|
+| `src/pages/AccountTypeChooser.tsx` | First-run picker shown after signup: "I'm a pet parent / breeder / kennel / shelter / sanctuary / zoo / rescuer" |
+| `src/pages/OrgOnboarding.tsx` | Multi-step KYC form. Fields & required docs vary by type (KCI no. for kennels, 80G/AWBI for shelters, etc.) |
+| `src/pages/OrgProfile.tsx` | Public org page: photos, mission, donate CTA (UPI), volunteer CTA, listings rail |
+| `src/components/SellerBadge.tsx` | Color-coded chip: Pet Parent (gray), Breeder (amber), Verified Breeder (green ✓), Kennel (blue), Shelter (purple), Sanctuary (teal), Rescuer (orange) |
+| `src/components/BredOnPetosRibbon.tsx` | Ribbon on listing cards/detail showing sire+dam links to their PetOS profiles |
+| `src/pages/admin/OrgReview.tsx` | Admin/moderator queue: pending org applications with doc preview + approve/reject |
+| `src/components/OrgDiscoveryRails.tsx` | Home/Adopt rails: "Shelters near you", "Sanctuaries & Gaushalas" |
+| `src/components/AdoptGrid.tsx` (edit) | Add seller-type filter chips |
+| `src/pages/AdoptListingDetail.tsx` (edit) | Show SellerBadge + BredOnPetosRibbon; soft warning for repeat pet-parent sellers (>2 active sale listings) |
+| `src/App.tsx` (edit) | Routes: `/onboarding/account-type`, `/onboarding/org`, `/org/:userId`, `/admin/orgs` |
 
-### Anti-abuse
-- Same seller > 2 active "breeder sale" listings in 30 days → flag for moderation
-- Auto-takedown if reported by 3+ users until reviewed
-- Cool-off interstitial before contacting seller: "A pet is a 10–15 year commitment. Continue?"
+### 3. Compliance behavior
 
-## Data model
+- **Zoos**: profile + donate/volunteer only; DB blocks listings
+- **Shelters/Sanctuaries/Rescuers**: only free adoption listings; DB enforces
+- **Pet parents**: soft warning chip "Repeat seller" if >2 active sale listings; no hard block
+- **Breeders/Kennels**: must be approved by admin before `breeder_sale` listings unlock
 
-New table `pet_listings` (separate from `mating_listings` to keep mating untouched):
+### 4. Out of scope (Phase 2)
 
-```text
-pet_listings
-  id, owner_id, pet_id (nullable for rescues without a pet record)
-  listing_type   enum: 'adoption' | 'rehoming' | 'breeder_sale'
-  fee_inr        int nullable
-  city, lat, lng
-  age_weeks      int  (>= 8 enforced by trigger)
-  vaccination_doc_url  text not null
-  breeder_cert_url     text nullable
-  parents_info         jsonb nullable   (sire/dam names, breed)
-  microchip_id         text nullable
-  description          text
-  active               bool default true
-  status               enum: 'active' | 'pending_review' | 'taken_down' | 'completed'
-  created_at, updated_at
-```
+Per-puppy litter UI, donation payment processing, AI-assisted document OCR, public org search page, volunteer request flow.
 
-Plus:
-- `profiles.breeder_verified  bool default false`
-- `profiles.breeder_cert_url  text`
-- RLS: anyone can SELECT active rows; owner can INSERT/UPDATE/DELETE own rows; only `breeder_verified=true` users can insert with `listing_type='breeder_sale'` (enforced via trigger + policy).
+### Approval
 
-## Routes & files
-
-New:
-- `src/components/AdoptGrid.tsx` — grid of `pet_listings`, filters (type, species, city, age range)
-- `src/pages/AdoptListingNew.tsx` — `/mates/adopt/new` 3-step form (type → pet info → proofs)
-- `src/pages/AdoptListingDetail.tsx` — `/mates/adopt/:id`
-- `src/components/AdoptListingCard.tsx`
-- `src/components/CommitmentInterstitial.tsx` — cool-off dialog before "Contact seller"
-- `src/pages/settings/BreederVerification.tsx` — upload cert, status badge
-
-Updated:
-- `src/pages/Mates.tsx` — add segmented `[Mating | Adopt & Rehome]` with `?tab=` URL sync; mount `MatesGrid` or `AdoptGrid`.
-- `src/components/ContextualFab.tsx` — on `/mates?tab=adopt`, FAB navigates to `/mates/adopt/new`.
-- `src/App.tsx` — new routes.
-
-## Out of scope (later)
-- In-app payment for the pet (intentionally excluded)
-- Shipping / inter-city transport
-- Breed-specific marketplaces
-
-## Open question
-You started typing "where the different peo…" — please finish that thought before we build, in case it changes the buyer/seller flow. Best guesses:
-- "where different people can sell" → covered by listing types above
-- "where different people meet" → handled by existing Meetups in Discover
-- something else → tell me and I'll fold it in
-
----
-Approve and I'll implement: migration → RLS → pages → segmented Mates tab → FAB wiring.
+Reply "approve" to run the migration and build all 9 components/pages above.
