@@ -6,4 +6,4 @@ Disallow: /admin
 Disallow: /messages
 Disallow: /notifications
 
-Sitemap: /sitemap.xml
+Sitemap: https://pyqudgtmpnxnzzjbcdvc.supabase.co/functions/v1/sitemap
