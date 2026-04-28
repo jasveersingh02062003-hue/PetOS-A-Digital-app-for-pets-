@@ -329,7 +329,7 @@ const MissingDetail = () => {
         note={missing.note}
         photoUrl={missing.photo_url}
         shareUrl={`${window.location.origin}/missing/${missing.id}`}
-        contactPhone={missing.contact_phone || (missing.owner as any)?.phone || null}
+        contactPhone={(missing as any).contact_phone || (missing.owner as any)?.phone || null}
       />
     </div>
   );
