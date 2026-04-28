@@ -23,6 +23,7 @@ import { VitalsTab } from "@/components/health/VitalsTab";
 import { MedicationsTab } from "@/components/health/MedicationsTab";
 import { ParasiteTab } from "@/components/health/ParasiteTab";
 import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDialog";
+import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -79,6 +80,7 @@ const Health = () => {
               <div className="flex flex-col gap-2 shrink-0">
                 <PetIdButton publicId={(active as any).public_id} petName={active.name} />
                 <VetShareButton petId={active.id} petName={active.name} />
+                <ExportHealthPdfButton petId={active.id} petName={active.name} />
               </div>
             </div>
           </Card>
