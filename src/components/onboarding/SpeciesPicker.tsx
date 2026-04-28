@@ -1,16 +1,11 @@
 import { motion } from "framer-motion";
-import dogImg from "/onboarding/dog.jpg";
-import catImg from "/onboarding/cat.jpg";
-import birdImg from "/onboarding/bird.jpg";
-import rabbitImg from "/onboarding/rabbit.jpg";
-import otherImg from "/onboarding/other.jpg";
 
 const SPECIES = [
-  { value: "dog",    label: "Dog",    img: dogImg },
-  { value: "cat",    label: "Cat",    img: catImg },
-  { value: "bird",   label: "Bird",   img: birdImg },
-  { value: "rabbit", label: "Rabbit", img: rabbitImg },
-  { value: "other",  label: "Other",  img: otherImg },
+  { value: "dog",    label: "Dog",    img: "/onboarding/dog.jpg" },
+  { value: "cat",    label: "Cat",    img: "/onboarding/cat.jpg" },
+  { value: "bird",   label: "Bird",   img: "/onboarding/bird.jpg" },
+  { value: "rabbit", label: "Rabbit", img: "/onboarding/rabbit.jpg" },
+  { value: "other",  label: "Other",  img: "/onboarding/other.jpg" },
 ] as const;
 
 export type Species = typeof SPECIES[number]["value"];
