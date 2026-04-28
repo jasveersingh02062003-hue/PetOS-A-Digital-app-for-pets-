@@ -79,6 +79,8 @@ import Daily from "./pages/Daily";
 import Hashtag from "./pages/Hashtag";
 import WalkSession from "./pages/WalkSession";
 import WalkLive from "./pages/WalkLive";
+import Messages from "./pages/Messages";
+import MessageThread from "./pages/MessageThread";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -123,6 +125,8 @@ const App = () => (
               <Route path="/appointments" element={<MyAppointments />} />
               <Route path="/appointment/:id" element={<AppointmentRoom />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:id" element={<MessageThread />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/about" element={<AboutYou />} />
