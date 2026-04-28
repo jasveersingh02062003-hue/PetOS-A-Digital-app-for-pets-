@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
