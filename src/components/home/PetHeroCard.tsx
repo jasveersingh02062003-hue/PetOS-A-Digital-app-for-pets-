@@ -6,6 +6,7 @@ import { Camera, Flame, ShieldCheck, Syringe, Sparkles, Heart } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile, usePets } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { SmartImage } from "@/components/SmartImage";
 
 /**
  * The hero of the home screen: shows whose pet you're parenting,
@@ -123,7 +124,7 @@ export const PetHeroCard = () => {
           </svg>
           <div className="absolute inset-1.5 rounded-full overflow-hidden bg-muted grid place-items-center">
             {pet.avatar_url ? (
-              <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+              <SmartImage src={pet.avatar_url} alt={pet.name} aspect="1/1" priority className="w-full h-full" />
             ) : (
               <span className="font-display text-2xl text-primary">{pet.name?.[0] ?? "·"}</span>
             )}
