@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import AiChat from "./pages/AiChat";
 import VaultView from "./pages/VaultView";
+import VetConsult from "./pages/VetConsult";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/ai" element={<AiChat />} />
+            <Route path="/vet/consult/:id" element={<VetConsult />} />
             <Route path="/v/:code" element={<VaultView />} />
             <Route element={<AppShell />}>
               <Route path="/" element={<Home />} />

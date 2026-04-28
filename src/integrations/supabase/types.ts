@@ -488,6 +488,62 @@ export type Database = {
           },
         ]
       }
+      vet_consults: {
+        Row: {
+          ai_summary: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          prescription: string | null
+          severity: Database["public"]["Enums"]["consult_severity"]
+          status: Database["public"]["Enums"]["consult_status"]
+          symptoms: string[] | null
+          updated_at: string
+          vet_id: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          prescription?: string | null
+          severity?: Database["public"]["Enums"]["consult_severity"]
+          status?: Database["public"]["Enums"]["consult_status"]
+          symptoms?: string[] | null
+          updated_at?: string
+          vet_id?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          prescription?: string | null
+          severity?: Database["public"]["Enums"]["consult_severity"]
+          status?: Database["public"]["Enums"]["consult_status"]
+          symptoms?: string[] | null
+          updated_at?: string
+          vet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_consults_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -511,6 +567,13 @@ export type Database = {
         | "moderator"
         | "finance"
         | "super_admin"
+      consult_severity: "mild" | "moderate" | "severe"
+      consult_status:
+        | "awaiting_vet"
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
       health_record_type:
         | "visit"
         | "diagnostic"
@@ -656,6 +719,14 @@ export const Constants = {
         "moderator",
         "finance",
         "super_admin",
+      ],
+      consult_severity: ["mild", "moderate", "severe"],
+      consult_status: [
+        "awaiting_vet",
+        "assigned",
+        "in_progress",
+        "completed",
+        "cancelled",
       ],
       health_record_type: [
         "visit",
