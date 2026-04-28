@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, ImagePlus, X, Loader2, Plus } from "lucide-react";
+import { Camera, ImagePlus, X, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
@@ -52,7 +52,34 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ captions: string[]; hashtags: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const suggestCaptions = async () => {
+    setSuggesting(true);
+    setSuggestions(null);
+    try {
+      const pet = pets?.find((p) => p.id === petId);
+      const { data, error } = await supabase.functions.invoke("ai-suggest-caption", {
+        body: {
+          draft: caption,
+          pet_name: pet?.name,
+          pet_species: pet?.species,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      setSuggestions(data);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not get suggestions");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const onFile = (f: File | null) => {
     if (!f) return;
