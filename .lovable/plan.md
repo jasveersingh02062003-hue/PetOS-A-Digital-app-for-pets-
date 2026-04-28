@@ -1,93 +1,78 @@
-# Merge C — Final Production Readiness
+# First-Launch Experience — Splash, Feature Showcase, AI Coach
 
-This is the last merge before Petos is ready for an invite-only soft launch. It closes the remaining P0/P1 items from the audit: account lifecycle (DPDP Act compliance), in-app observability, and a global crash safety net.
+A polished first impression for new users: animated logo splash → swipeable feature showcase → "Get started" → existing onboarding (now with an AI coach assistant that explains why each step matters).
 
-## What this merge ships
+## What the user sees
 
-### 1. Account deletion (DPDP Act 2023 requirement) — P1
-- New edge function `delete-account` (verify_jwt = true) that:
-  - Verifies the caller's JWT and re-checks identity
-  - Logs to `deletion_log` (user_id, email_hash, reason, timestamp) before destruction
-  - Deletes from `auth.users` using the service-role key — the existing `ON DELETE CASCADE` chain (added in Merge A) wipes profiles, pets, posts, vault docs, etc.
-  - Returns 200, then client signs out
-- New page `src/pages/DeleteAccount.tsx` with:
-  - Hard warning copy (irreversible, X days of data lost, list of what's removed)
-  - Type-to-confirm input ("delete my account")
-  - Optional reason textarea
-  - Final confirm button → calls edge function → signs out → redirects to `/`
-- Link added to `Profile.tsx` under a "Danger zone" section
+### 1. Splash screen (Netflix-style logo reveal) — every cold start
+- Full-screen, brand background (cream / Petos primary)
+- Animated **Petos** wordmark — letters fade-and-rise in sequence (~1.2s), then a soft pulse of the paw mark
+- Tagline fades in below: *"A complete digital life for every pet"*
+- Auto-dismisses after 1.6s OR on tap
+- Shown on every cold start (not on every navigation), gated by `sessionStorage` so it doesn't replay during the same session
+- `prefers-reduced-motion` honoured — falls back to a static logo + 600ms fade
 
-### 2. Global error boundary + client error logging — P0
-- New `src/components/ErrorBoundary.tsx` (React class component) wrapping the app in `App.tsx`
-  - Catches render errors, shows a calm fallback ("Something went wrong. We've been notified.")
-  - Inserts the error into `error_log` (source='client', route, message, stack, user_id)
-  - "Try again" button resets the boundary; "Go home" navigates to `/`
-- New helper `src/lib/logError.ts` — small utility for non-render errors (try/catch in event handlers, mutations) to also write to `error_log`
-- Wire into the existing react-query `QueryClient` `onError` defaults so failed mutations get logged
+### 2. Feature showcase carousel — first launch only
+- Triggers only when `localStorage.petos_seen_intro` is missing
+- 5 swipeable, full-screen cards with framer-motion enter animations:
+  1. **Your pet's whole life, in one app** — feed + vault icon montage
+  2. **Petos AI** — "Ask anything about your pet, anytime" (chat bubble animation)
+  3. **Health vault & vaccination reminders** — auto-reminders 5 days before due
+  4. **Find a mate, a vet, or a sitter** — three-icon split
+  5. **If they go missing, the city helps** — pulsing map pin
+- Each card: large illustration/icon, headline, one-line copy, dot indicators
+- Bottom: **Skip** (top-right) and **Get started** (final card) → routes to `/auth`
+- Sets `localStorage.petos_seen_intro = "1"` on completion or skip
 
-### 3. In-app error log viewer — P1
-- New page `src/pages/admin/Errors.tsx` at route `/admin/errors`
-  - Gated by `has_role('super_admin')` or `has_role('moderator')` — non-admins see "Not authorized"
-  - Lists last 200 errors from `error_log`, newest first
-  - Filters: source (client/edge), route, time range (24h/7d/30d)
-  - Row expands to show full stack + meta JSON
-  - Cursor pagination on `created_at`
+### 3. AI Coach in onboarding — first onboarding only
+- A small, friendly toast-card that slides in from the top-right of `Onboarding.tsx`, contextual to the current step
+- Each step has a 1-2 sentence "why this matters" message, e.g.:
+  - Step 1 (About you): *"I use your city to find nearby vets and your language to reply in your tongue."*
+  - Step 3 (Body & lifestyle): *"Weight + diet lets me catch unsafe food recommendations before you see them."*
+  - Step 6 (Safety): *"A vaccination certificate unlocks the verified badge and mating discoverability."*
+- Card has a small AI sparkle icon, "Petos AI" label, and a dismiss × that hides it for the current step only
+- Auto-shows for ~6 seconds on first arrival to each step, then collapses to a small floating "?" pill the user can re-open
+- Honours `prefers-reduced-motion`
 
-### 4. Edge function error logging — P0
-- New helper `supabase/functions/_shared/logError.ts` that any function can import to write to `error_log` with `source='edge:<fn-name>'`
-- Wire it into the catch blocks of the highest-risk functions only:
-  - `chat`
-  - `process-notification-jobs`
-  - `vault-view`
-  - `vaccination-reminders`
-- Strips obvious PII (emails, phone numbers via regex) before storing the message
+## Routing flow
 
-### 5. Pagination defaults — P1
-- Update React Query default options in `App.tsx`:
-  - `staleTime: 30_000`, `gcTime: 5 * 60_000`
-  - Global `onError` → `logError`
-- Add cursor pagination (limit 30, "Load more" button) to:
-  - `src/pages/Notifications.tsx`
-  - `src/pages/MissingDetail.tsx` sightings list
-  - `src/pages/Orders.tsx` (if list view exists)
-
-### 6. Vaccination reminders cron sanity check — verification only
-- The audit confirmed `vaccination-reminders-daily` is scheduled. We add a `last_run_at` row to a small `cron_health` table updated on every run, and surface "Cron last ran: X ago" on `/admin/errors`. Lets you spot a stalled cron without leaving the app.
+```
+Cold start
+  ↓
+Splash (1.6s) — every session
+  ↓
+First-time user? ─yes→ /welcome (showcase) → /auth → /onboarding (with coach)
+  ↓ no
+Existing route (Home / Auth / etc.)
+```
 
 ## Files to create
 
-- `supabase/functions/delete-account/index.ts`
-- `supabase/functions/_shared/logError.ts`
-- `src/components/ErrorBoundary.tsx`
-- `src/lib/logError.ts`
-- `src/pages/DeleteAccount.tsx`
-- `src/pages/admin/Errors.tsx`
+- `src/components/Splash.tsx` — animated logo reveal, sessionStorage gate
+- `src/components/PetosLogo.tsx` — reusable SVG wordmark + paw mark
+- `src/pages/Welcome.tsx` — feature showcase carousel
+- `src/components/welcome/FeatureSlide.tsx` — individual showcase card
+- `src/components/onboarding/AiCoach.tsx` — contextual AI helper
 
 ## Files to edit
 
-- `src/App.tsx` — wrap in ErrorBoundary, add 2 new routes, update QueryClient defaults
-- `src/pages/Profile.tsx` — add "Danger zone" link
-- `supabase/functions/chat/index.ts` — wrap catch in logError
-- `supabase/functions/process-notification-jobs/index.ts` — same
-- `supabase/functions/vault-view/index.ts` — same
-- `supabase/functions/vaccination-reminders/index.ts` — same + write to cron_health
+- `src/App.tsx` — wrap routes in `<Splash>`; redirect first-time users from `/` to `/welcome`; add `/welcome` route
+- `src/pages/Onboarding.tsx` — mount `<AiCoach step={step} />` overlay
+- `src/index.css` — add 3 keyframes: `letter-rise`, `paw-pulse`, `coach-slide-in` (only if not already covered by the existing animations)
 
-## DB migration (one)
+## Technical notes
 
-- `cron_health` table (singleton row per job_name, `last_run_at`, `last_status`, `last_error`)
-- RLS: admin-select only (same pattern as `error_log`)
-- One trigger-free design — functions write directly via service role
+- Use **framer-motion** (already a dep — used in Onboarding.tsx) for orchestrated sequences
+- Splash uses a single `AnimatePresence` with staggered children for the wordmark
+- Showcase uses `embla-carousel-react` if already installed, otherwise a lightweight `useState` + framer-motion swipe handler (simpler, no new dep)
+- Coach copy lives in a `STEP_COACH_MESSAGES` const inside `AiCoach.tsx` — easy to tune later
+- All new copy is calm, mobile-first (393px), no scammy phrasing — matches existing brand laws
 
-## What is intentionally NOT in this merge
+## What is NOT in this plan
 
-- **Sentry** — replaced by in-app `error_log` + `/admin/errors`. No external account needed; matches your "no Stripe / no Google" constraint. You can swap in Sentry later by replacing `logError.ts` internals.
-- **Push notifications (web push / FCM)** — deferred to v1.1 per audit §11
-- **Image moderation API** — relies on the existing reports queue + admin review
-- **Block-user feature** — deferred to v1.1
-- **Per-IP rate limiting on vault-view** — needs infrastructure primitives the platform doesn't have yet (per the no-rate-limiting directive)
-
-## After this merge
-
-Petos closes every P0 from the audit that doesn't require an external paid service. Status: **ready for invite-only soft launch (≤500 users)**. Run a 2-week beta, monitor `/admin/errors`, then open the gates.
+- No backend / DB changes
+- No new edge functions
+- No video assets — pure CSS/SVG/framer-motion (keeps bundle small, instant load)
+- No re-skin of existing onboarding steps — only the coach overlay is added
 
 Reply "yes" to ship.
