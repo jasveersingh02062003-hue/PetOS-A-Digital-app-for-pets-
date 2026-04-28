@@ -56,9 +56,10 @@ export default function Welcome() {
   });
 
 
-  const finish = () => {
+  const finish = async () => {
     localStorage.setItem(SEEN_KEY, "1");
-    nav("/auth", { replace: true });
+    const { data } = await supabase.auth.getSession();
+    nav(data.session ? "/" : "/auth", { replace: true });
   };
 
   const next = () => (last ? finish() : setI(i + 1));
