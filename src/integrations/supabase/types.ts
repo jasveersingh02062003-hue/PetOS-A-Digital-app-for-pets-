@@ -3809,6 +3809,7 @@ export type Database = {
         | "pending_review"
         | "taken_down"
         | "completed"
+        | "sold"
       pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
       product_category:
@@ -4070,6 +4071,7 @@ export const Constants = {
         "pending_review",
         "taken_down",
         "completed",
+        "sold",
       ],
       pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
