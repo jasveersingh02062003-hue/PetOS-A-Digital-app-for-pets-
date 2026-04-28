@@ -131,7 +131,7 @@ export default function AppointmentRoom() {
         updates.started_at = new Date(joinedAt).toISOString();
       }
       if (Object.keys(updates).length > 0) {
-        await supabase.from("appointments").update(updates).eq("id", id);
+        await supabase.from("appointments").update(updates as any).eq("id", id);
       }
     } catch (_) { /* best effort */ }
   };
@@ -155,7 +155,7 @@ export default function AppointmentRoom() {
         Math.round((new Date(endIso).getTime() - startMs) / 60000),
       );
     }
-    const { error } = await supabase.from("appointments").update(updates).eq("id", id);
+    const { error } = await supabase.from("appointments").update(updates as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(`Marked ${status}`);
   };
