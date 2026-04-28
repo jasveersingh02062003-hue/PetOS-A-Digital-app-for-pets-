@@ -2246,6 +2246,27 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_attempts: {
+        Row: {
+          attempted_at: string
+          email_hash: string
+          id: string
+          ip_hash: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          email_hash: string
+          id?: string
+          ip_hash?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          email_hash?: string
+          id?: string
+          ip_hash?: string | null
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           author_id: string
@@ -3360,6 +3381,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      purge_old_signup_attempts: { Args: never; Returns: undefined }
       send_broadcast: {
         Args: {
           _body: string

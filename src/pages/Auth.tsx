@@ -68,6 +68,24 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
+        // Pre-flight rate-limit check (fail-open on infra errors).
+        try {
+          const { data: rl } = await supabase.functions.invoke("signup-rate-limit", {
+            body: { email },
+          });
+          if (rl && rl.allowed === false) {
+            const msg =
+              rl.reason === "too_many_attempts_email"
+                ? "Too many signup attempts for this email. Please try again in an hour."
+                : rl.reason === "too_many_attempts_ip"
+                ? "Too many signup attempts from your network. Please try again in an hour."
+                : "Signup temporarily unavailable. Please try again later.";
+            toast.error(msg);
+            setLoading(false);
+            return;
+          }
+        } catch { /* fail-open */ }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
