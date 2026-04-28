@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      deletion_log: {
+        Row: {
+          deleted_at: string
+          email_hash: string | null
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          email_hash?: string | null
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          email_hash?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      error_log: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          meta: Json | null
+          route: string | null
+          source: string
+          stack: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          meta?: Json | null
+          route?: string | null
+          source: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       health_records: {
         Row: {
           created_at: string
@@ -54,6 +111,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "health_records_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -153,6 +217,13 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mating_listings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       mating_requests: {
@@ -198,10 +269,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "mating_requests_from_pet_id_fkey"
+            columns: ["from_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mating_requests_to_pet_id_fkey"
             columns: ["to_pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mating_requests_to_pet_id_fkey"
+            columns: ["to_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -298,6 +383,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          payload: Json
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          payload: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -365,6 +483,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -578,6 +703,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1008,6 +1140,13 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "symptom_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       usage_counters: {
@@ -1016,18 +1155,21 @@ export type Database = {
           kind: string
           period: string
           user_id: string
+          window_start: string
         }
         Insert: {
           count?: number
           kind: string
           period: string
           user_id: string
+          window_start?: string
         }
         Update: {
           count?: number
           kind?: string
           period?: string
           user_id?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -1100,6 +1242,13 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vaccinations_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       vault_documents: {
@@ -1139,6 +1288,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_documents_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1222,6 +1378,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vet_access_grants_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1322,10 +1485,56 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vet_consults_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
+      pets_public: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          breed: string | null
+          city: string | null
+          discoverable_for_mating: boolean | null
+          gender: Database["public"]["Enums"]["pet_gender"] | null
+          id: string | null
+          name: string | null
+          species: Database["public"]["Enums"]["pet_species"] | null
+          vaccination_verified: boolean | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          breed?: string | null
+          city?: string | null
+          discoverable_for_mating?: boolean | null
+          gender?: Database["public"]["Enums"]["pet_gender"] | null
+          id?: string | null
+          name?: string | null
+          species?: Database["public"]["Enums"]["pet_species"] | null
+          vaccination_verified?: boolean | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          breed?: string | null
+          city?: string | null
+          discoverable_for_mating?: boolean | null
+          gender?: Database["public"]["Enums"]["pet_gender"] | null
+          id?: string | null
+          name?: string | null
+          species?: Database["public"]["Enums"]["pet_species"] | null
+          vaccination_verified?: boolean | null
+        }
+        Relationships: []
+      }
       subject_ratings: {
         Row: {
           avg_rating: number | null
@@ -1337,6 +1546,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_daily_limit: {
+        Args: { _limit: number; _table: string; _user: string }
+        Returns: undefined
+      }
       current_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["sub_tier"]
@@ -1373,6 +1586,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_usage: {
+        Args: { _kind: string; _limit: number; _window_days: number }
+        Returns: Json
       }
       notify_user: {
         Args: {
