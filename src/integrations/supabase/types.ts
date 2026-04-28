@@ -710,6 +710,36 @@ export type Database = {
           },
         ]
       }
+      litter_groups: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          created_by: string
+          dam_pet_id: string | null
+          id: string
+          notes: string | null
+          sire_pet_id: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          created_by: string
+          dam_pet_id?: string | null
+          id?: string
+          notes?: string | null
+          sire_pet_id?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string
+          dam_pet_id?: string | null
+          id?: string
+          notes?: string | null
+          sire_pet_id?: string | null
+        }
+        Relationships: []
+      }
       mating_agreements: {
         Row: {
           created_at: string
@@ -1300,6 +1330,84 @@ export type Database = {
           },
         ]
       }
+      org_profiles: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          description: string | null
+          donation_upi: string | null
+          donation_url: string | null
+          facility_photos: string[]
+          lat: number | null
+          lng: number | null
+          org_name: string
+          org_type: Database["public"]["Enums"]["account_type"]
+          phone: string | null
+          pincode: string | null
+          registration_doc_url: string | null
+          registration_no: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          donation_upi?: string | null
+          donation_url?: string | null
+          facility_photos?: string[]
+          lat?: number | null
+          lng?: number | null
+          org_name: string
+          org_type: Database["public"]["Enums"]["account_type"]
+          phone?: string | null
+          pincode?: string | null
+          registration_doc_url?: string | null
+          registration_no?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          donation_upi?: string | null
+          donation_url?: string | null
+          facility_photos?: string[]
+          lat?: number | null
+          lng?: number | null
+          org_name?: string
+          org_type?: Database["public"]["Enums"]["account_type"]
+          phone?: string | null
+          pincode?: string | null
+          registration_doc_url?: string | null
+          registration_no?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       parasite_preventatives: {
         Row: {
           batch_number: string | null
@@ -1433,6 +1541,7 @@ export type Database = {
         Row: {
           active: boolean
           age_weeks: number
+          bred_on_petos: boolean
           breed: string | null
           breeder_cert_url: string | null
           city: string | null
@@ -1443,12 +1552,14 @@ export type Database = {
           id: string
           lat: number | null
           listing_type: Database["public"]["Enums"]["pet_listing_type"]
+          litter_id: string | null
           lng: number | null
           microchip_id: string | null
           owner_id: string
           parents_info: Json | null
           pet_id: string | null
           photos: string[]
+          seller_type: Database["public"]["Enums"]["account_type"] | null
           species: string | null
           status: Database["public"]["Enums"]["pet_listing_status"]
           title: string
@@ -1458,6 +1569,7 @@ export type Database = {
         Insert: {
           active?: boolean
           age_weeks: number
+          bred_on_petos?: boolean
           breed?: string | null
           breeder_cert_url?: string | null
           city?: string | null
@@ -1468,12 +1580,14 @@ export type Database = {
           id?: string
           lat?: number | null
           listing_type: Database["public"]["Enums"]["pet_listing_type"]
+          litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
           owner_id: string
           parents_info?: Json | null
           pet_id?: string | null
           photos?: string[]
+          seller_type?: Database["public"]["Enums"]["account_type"] | null
           species?: string | null
           status?: Database["public"]["Enums"]["pet_listing_status"]
           title: string
@@ -1483,6 +1597,7 @@ export type Database = {
         Update: {
           active?: boolean
           age_weeks?: number
+          bred_on_petos?: boolean
           breed?: string | null
           breeder_cert_url?: string | null
           city?: string | null
@@ -1493,12 +1608,14 @@ export type Database = {
           id?: string
           lat?: number | null
           listing_type?: Database["public"]["Enums"]["pet_listing_type"]
+          litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
           owner_id?: string
           parents_info?: Json | null
           pet_id?: string | null
           photos?: string[]
+          seller_type?: Database["public"]["Enums"]["account_type"] | null
           species?: string | null
           status?: Database["public"]["Enums"]["pet_listing_status"]
           title?: string
@@ -1506,6 +1623,13 @@ export type Database = {
           vaccination_doc_url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pet_listings_litter_id_fkey"
+            columns: ["litter_id"]
+            isOneToOne: false
+            referencedRelation: "litter_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pet_listings_pet_id_fkey"
             columns: ["pet_id"]
@@ -1544,6 +1668,7 @@ export type Database = {
           conditions: string[]
           created_at: string
           current_medications: string | null
+          dam_pet_id: string | null
           date_of_birth: string | null
           diet_type: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating: boolean
@@ -1552,6 +1677,7 @@ export type Database = {
           insurance_policy: string | null
           insurance_provider: string | null
           lat: number | null
+          litter_id: string | null
           lng: number | null
           microchip_id: string | null
           name: string
@@ -1559,6 +1685,7 @@ export type Database = {
           owner_id: string
           primary_vet_id: string | null
           public_id: string | null
+          sire_pet_id: string | null
           social_level: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           temperament: string[]
@@ -1580,6 +1707,7 @@ export type Database = {
           conditions?: string[]
           created_at?: string
           current_medications?: string | null
+          dam_pet_id?: string | null
           date_of_birth?: string | null
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
@@ -1588,6 +1716,7 @@ export type Database = {
           insurance_policy?: string | null
           insurance_provider?: string | null
           lat?: number | null
+          litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
           name: string
@@ -1595,6 +1724,7 @@ export type Database = {
           owner_id: string
           primary_vet_id?: string | null
           public_id?: string | null
+          sire_pet_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           temperament?: string[]
@@ -1616,6 +1746,7 @@ export type Database = {
           conditions?: string[]
           created_at?: string
           current_medications?: string | null
+          dam_pet_id?: string | null
           date_of_birth?: string | null
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
@@ -1624,6 +1755,7 @@ export type Database = {
           insurance_policy?: string | null
           insurance_provider?: string | null
           lat?: number | null
+          litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
           name?: string
@@ -1631,6 +1763,7 @@ export type Database = {
           owner_id?: string
           primary_vet_id?: string | null
           public_id?: string | null
+          sire_pet_id?: string | null
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species?: Database["public"]["Enums"]["pet_species"]
           temperament?: string[]
@@ -1638,7 +1771,15 @@ export type Database = {
           vaccination_verified?: boolean
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pets_litter_id_fkey"
+            columns: ["litter_id"]
+            isOneToOne: false
+            referencedRelation: "litter_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pharmacy_suggestions: {
         Row: {
@@ -1925,6 +2066,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
           avatar_url_feed: string | null
           avatar_url_full: string | null
@@ -1950,6 +2092,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
@@ -1975,6 +2118,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
@@ -3540,6 +3684,14 @@ export type Database = {
     }
     Enums: {
       access_request_status: "pending" | "approved" | "rejected" | "expired"
+      account_type:
+        | "pet_parent"
+        | "breeder"
+        | "kennel"
+        | "shelter"
+        | "sanctuary"
+        | "zoo"
+        | "rescuer"
       activity_level: "low" | "medium" | "high"
       app_role:
         | "user"
@@ -3783,6 +3935,15 @@ export const Constants = {
   public: {
     Enums: {
       access_request_status: ["pending", "approved", "rejected", "expired"],
+      account_type: [
+        "pet_parent",
+        "breeder",
+        "kennel",
+        "shelter",
+        "sanctuary",
+        "zoo",
+        "rescuer",
+      ],
       activity_level: ["low", "medium", "high"],
       app_role: [
         "user",

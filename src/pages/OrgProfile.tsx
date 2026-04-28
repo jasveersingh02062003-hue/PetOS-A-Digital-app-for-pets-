@@ -1,0 +1,116 @@
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy } from "lucide-react";
+import { SellerBadge } from "@/components/SellerBadge";
+import { useSeo } from "@/hooks/useSeo";
+import { toast } from "sonner";
+
+const OrgProfile = () => {
+  const { userId } = useParams();
+  const nav = useNavigate();
+
+  const { data: org, isLoading } = useQuery({
+    queryKey: ["org-profile", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("org_profiles").select("*").eq("user_id", userId!).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: listings } = useQuery({
+    queryKey: ["org-listings", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("pet_listings")
+        .select("id, title, photos, listing_type")
+        .eq("owner_id", userId!).eq("active", true).eq("status", "active").limit(20);
+      return data ?? [];
+    },
+  });
+
+  useSeo({ title: org?.org_name ?? "Organisation", description: org?.description?.slice(0, 150) });
+
+  if (isLoading) return <div className="container-app pt-10 text-center text-muted-foreground">Loading…</div>;
+  if (!org || org.status !== "approved")
+    return <div className="container-app pt-10 text-center text-muted-foreground">Organisation not found or not yet verified.</div>;
+
+  const cover = (org.facility_photos ?? [])[0];
+
+  return (
+    <div className="container-app pt-4 pb-24 max-w-lg">
+      <button onClick={() => nav(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+
+      {cover && <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-muted mb-4"><img src={cover} alt={org.org_name} className="w-full h-full object-cover" /></div>}
+
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <h1 className="font-display text-2xl leading-tight">{org.org_name}</h1>
+        <SellerBadge type={org.org_type} verified />
+      </div>
+
+      <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3 flex-wrap">
+        {org.city && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{org.city}</span>}
+        {org.website && <a href={org.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline"><Globe className="h-3 w-3" />Website</a>}
+        {org.phone && <a href={`tel:${org.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{org.phone}</a>}
+      </div>
+
+      {org.description && (
+        <Card className="rounded-2xl border-hairline p-4 mb-3">
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{org.description}</p>
+        </Card>
+      )}
+
+      {(org.donation_upi || org.donation_url) && (
+        <Card className="rounded-2xl bg-coral/10 border-coral/30 p-4 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Heart className="h-4 w-4 text-coral" /> <div className="font-display text-base">Support our work</div>
+          </div>
+          {org.donation_upi && (
+            <button
+              onClick={() => { navigator.clipboard.writeText(org.donation_upi!); toast.success("UPI copied"); }}
+              className="w-full text-left rounded-xl bg-card p-3 flex items-center justify-between text-sm border border-hairline mb-2"
+            >
+              <span><span className="text-muted-foreground">UPI: </span><span className="font-mono">{org.donation_upi}</span></span>
+              <Copy className="h-3 w-3" />
+            </button>
+          )}
+          {org.donation_url && (
+            <Button asChild variant="outline" className="w-full rounded-xl">
+              <a href={org.donation_url} target="_blank" rel="noreferrer">Donate online</a>
+            </Button>
+          )}
+        </Card>
+      )}
+
+      {org.org_type === "shelter" || org.org_type === "sanctuary" || org.org_type === "rescuer" ? (
+        <Button onClick={() => nav("/messages")} variant="outline" className="w-full rounded-xl mb-4">
+          Volunteer or contact
+        </Button>
+      ) : null}
+
+      {!!listings?.length && (
+        <>
+          <h2 className="font-display text-lg mb-2">Available pets</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {listings.map((l: any) => {
+              const photo = Array.isArray(l.photos) && l.photos.length ? l.photos[0] : null;
+              return (
+                <button key={l.id} onClick={() => nav(`/mates/adopt/${l.id}`)} className="text-left rounded-2xl border border-hairline overflow-hidden bg-card">
+                  <div className="aspect-square bg-muted">{photo && <img src={photo} alt="" className="w-full h-full object-cover" />}</div>
+                  <div className="p-2 text-sm truncate">{l.title}</div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default OrgProfile;
