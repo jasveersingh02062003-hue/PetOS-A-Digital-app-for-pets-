@@ -23,10 +23,11 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
       const { data, error } = await supabase.from("post_comments").select("*").eq("post_id", postId!).order("created_at");
       if (error) throw error;
       const ids = [...new Set((data ?? []).map((c) => c.author_id))];
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id, full_name, avatar_url").in("id", ids)
+      const profsRes = ids.length
+        ? await supabase.rpc("get_profiles_public")
         : { data: [] as any[] };
-      const m = new Map((profs ?? []).map((p) => [p.id, p]));
+      const profs = (profsRes.data ?? []).filter((p: any) => ids.includes(p.id));
+      const m = new Map((profs ?? []).map((p: any) => [p.id, p]));
       return (data ?? []).map((c) => ({ ...c, author: m.get(c.author_id) }));
     },
   });

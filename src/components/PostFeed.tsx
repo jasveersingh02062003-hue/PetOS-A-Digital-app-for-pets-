@@ -42,10 +42,12 @@ export const PostFeed = ({ scope = "all" }: { scope?: "all" | "trending" }) => {
       const authorIds = [...new Set(posts.map((p) => p.author_id))];
       const petIds = [...new Set(posts.map((p) => p.pet_id).filter(Boolean) as string[])];
       const [{ data: profiles }, { data: pets }] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds),
+        supabase.rpc("get_profiles_public").then((r) => ({
+          data: (r.data ?? []).filter((p: any) => authorIds.includes(p.id)),
+        })),
         petIds.length ? supabase.from("pets").select("id, name, avatar_url").in("id", petIds) : Promise.resolve({ data: [] as any[] }),
       ]);
-      const pMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+      const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
       const petMap = new Map((pets ?? []).map((p: any) => [p.id, p]));
       return posts.map((p) => ({
         ...p,
