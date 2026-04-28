@@ -2671,6 +2671,150 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_accounts: {
+        Row: {
+          available_points: number
+          created_at: string
+          lifetime_earned: number
+          lifetime_redeemed: number
+          pending_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_points?: number
+          created_at?: string
+          lifetime_earned?: number
+          lifetime_redeemed?: number
+          pending_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_points?: number
+          created_at?: string
+          lifetime_earned?: number
+          lifetime_redeemed?: number
+          pending_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reward_ledger: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["reward_kind"]
+          metadata: Json
+          points: number
+          reason: string
+          reference_id: string | null
+          reference_type: string | null
+          release_after: string | null
+          status: Database["public"]["Enums"]["reward_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["reward_kind"]
+          metadata?: Json
+          points: number
+          reason: string
+          reference_id?: string | null
+          reference_type?: string | null
+          release_after?: string | null
+          status?: Database["public"]["Enums"]["reward_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["reward_kind"]
+          metadata?: Json
+          points?: number
+          reason?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          release_after?: string | null
+          status?: Database["public"]["Enums"]["reward_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          applied_to_reference_id: string | null
+          applied_to_reference_type: string | null
+          created_at: string
+          id: string
+          inr_value: number
+          kind: Database["public"]["Enums"]["redemption_kind"]
+          notes: string | null
+          points_spent: number
+          status: Database["public"]["Enums"]["redemption_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_to_reference_id?: string | null
+          applied_to_reference_type?: string | null
+          created_at?: string
+          id?: string
+          inr_value?: number
+          kind: Database["public"]["Enums"]["redemption_kind"]
+          notes?: string | null
+          points_spent: number
+          status?: Database["public"]["Enums"]["redemption_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_to_reference_id?: string | null
+          applied_to_reference_type?: string | null
+          created_at?: string
+          id?: string
+          inr_value?: number
+          kind?: Database["public"]["Enums"]["redemption_kind"]
+          notes?: string | null
+          points_spent?: number
+          status?: Database["public"]["Enums"]["redemption_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reward_rules: {
+        Row: {
+          active: boolean
+          description: string | null
+          escrow_days: number
+          kind: string
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          description?: string | null
+          escrow_days?: number
+          kind: string
+          points: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          description?: string | null
+          escrow_days?: number
+          kind?: string
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_bookings: {
         Row: {
           created_at: string
@@ -3937,6 +4081,16 @@ export type Database = {
     }
     Functions: {
       admin_kpis: { Args: never; Returns: Json }
+      award_reward: {
+        Args: {
+          _reason?: string
+          _reference_id?: string
+          _reference_type?: string
+          _rule_kind: string
+          _user_id: string
+        }
+        Returns: string
+      }
       check_daily_limit: {
         Args: { _limit: number; _table: string; _user: string }
         Returns: undefined
@@ -4091,6 +4245,17 @@ export type Database = {
         Returns: undefined
       }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
+      redeem_reward: {
+        Args: {
+          _applied_to_reference_id?: string
+          _applied_to_reference_type?: string
+          _kind: Database["public"]["Enums"]["redemption_kind"]
+          _notes?: string
+          _points: number
+        }
+        Returns: string
+      }
+      release_due_rewards: { Args: never; Returns: number }
       send_broadcast: {
         Args: {
           _body: string
@@ -4203,6 +4368,17 @@ export type Database = {
         | "health"
         | "grooming"
         | "other"
+      redemption_kind:
+        | "booking_discount"
+        | "listing_boost"
+        | "plus_credit"
+        | "cash_out"
+      redemption_status:
+        | "requested"
+        | "approved"
+        | "applied"
+        | "rejected"
+        | "cancelled"
       report_status: "open" | "reviewing" | "resolved" | "dismissed"
       report_subject:
         | "post"
@@ -4218,6 +4394,8 @@ export type Database = {
         | "withdrawn"
         | "agreed"
       review_subject: "provider" | "product" | "vet" | "pet_partner"
+      reward_kind: "earn" | "release" | "redeem" | "expire" | "adjust"
+      reward_status: "pending" | "available" | "redeemed" | "expired" | "void"
       rsvp_status: "going" | "maybe" | "declined"
       service_category:
         | "grooming"
@@ -4478,6 +4656,19 @@ export const Constants = {
         "grooming",
         "other",
       ],
+      redemption_kind: [
+        "booking_discount",
+        "listing_boost",
+        "plus_credit",
+        "cash_out",
+      ],
+      redemption_status: [
+        "requested",
+        "approved",
+        "applied",
+        "rejected",
+        "cancelled",
+      ],
       report_status: ["open", "reviewing", "resolved", "dismissed"],
       report_subject: [
         "post",
@@ -4495,6 +4686,8 @@ export const Constants = {
         "agreed",
       ],
       review_subject: ["provider", "product", "vet", "pet_partner"],
+      reward_kind: ["earn", "release", "redeem", "expire", "adjust"],
+      reward_status: ["pending", "available", "redeemed", "expired", "void"],
       rsvp_status: ["going", "maybe", "declined"],
       service_category: [
         "grooming",
