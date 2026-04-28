@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, Play, Square, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { LeafletMap } from "@/components/maps/LeafletMap";
 
 type Track = { id: string; lat: number; lng: number; recorded_at: string };
 
@@ -102,9 +103,18 @@ const WalkSession = () => {
   }, []);
 
   const last = tracks?.[tracks.length - 1];
-  const mapSrc = last
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${last.lng - 0.005},${last.lat - 0.005},${last.lng + 0.005},${last.lat + 0.005}&layer=mapnik&marker=${last.lat},${last.lng}`
-    : null;
+  const polyline = (tracks ?? []).map((t) => [t.lat, t.lng] as [number, number]);
+  // Distance covered (haversine sum, km)
+  const distanceKm = polyline.reduce((acc, pt, i) => {
+    if (i === 0) return 0;
+    const [la1, lo1] = polyline[i - 1];
+    const [la2, lo2] = pt;
+    const R = 6371;
+    const dLat = ((la2 - la1) * Math.PI) / 180;
+    const dLon = ((lo2 - lo1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos((la1 * Math.PI) / 180) * Math.cos((la2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+    return acc + 2 * R * Math.asin(Math.sqrt(a));
+  }, 0);
 
   if (!booking) {
     return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
@@ -126,19 +136,25 @@ const WalkSession = () => {
 
       <div className="container-app pt-4 space-y-3">
         <Card className="rounded-2xl border-hairline overflow-hidden p-0">
-          <div className="aspect-square bg-muted">
-            {mapSrc ? (
-              <iframe title="Walk map" src={mapSrc} className="w-full h-full border-0" />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-                <MapPin className="h-8 w-8" />
-                <div className="text-xs">No location yet</div>
-              </div>
-            )}
-          </div>
+          {last ? (
+            <LeafletMap
+              center={[last.lat, last.lng]}
+              zoom={16}
+              height="320px"
+              followLast={tracking}
+              markers={[{ id: "last", lat: last.lat, lng: last.lng, color: "primary", title: "Current location" }]}
+              polyline={polyline}
+            />
+          ) : (
+            <div className="aspect-square bg-muted h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+              <MapPin className="h-8 w-8" />
+              <div className="text-xs">No location yet</div>
+            </div>
+          )}
           {last && (
-            <div className="p-3 text-xs text-muted-foreground">
-              Last update {new Date(last.recorded_at).toLocaleTimeString()}
+            <div className="p-3 text-xs text-muted-foreground flex items-center justify-between">
+              <span>Last update {new Date(last.recorded_at).toLocaleTimeString()}</span>
+              <span className="font-medium text-foreground">{distanceKm.toFixed(2)} km</span>
             </div>
           )}
         </Card>
