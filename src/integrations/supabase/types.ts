@@ -279,55 +279,73 @@ export type Database = {
       }
       pets: {
         Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"] | null
+          allergies: string[]
           avatar_url: string | null
           bio: string | null
           breed: string | null
           city: string | null
+          conditions: string[]
           created_at: string
           date_of_birth: string | null
+          diet_type: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"] | null
           id: string
           name: string
           neutered: boolean | null
           owner_id: string
+          social_level: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
+          temperament: string[]
           updated_at: string
           vaccination_verified: boolean
           weight_kg: number | null
         }
         Insert: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          allergies?: string[]
           avatar_url?: string | null
           bio?: string | null
           breed?: string | null
           city?: string | null
+          conditions?: string[]
           created_at?: string
           date_of_birth?: string | null
+          diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
           id?: string
           name: string
           neutered?: boolean | null
           owner_id: string
+          social_level?: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
+          temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean
           weight_kg?: number | null
         }
         Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          allergies?: string[]
           avatar_url?: string | null
           bio?: string | null
           breed?: string | null
           city?: string | null
+          conditions?: string[]
           created_at?: string
           date_of_birth?: string | null
+          diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
           id?: string
           name?: string
           neutered?: boolean | null
           owner_id?: string
+          social_level?: Database["public"]["Enums"]["social_level"] | null
           species?: Database["public"]["Enums"]["pet_species"]
+          temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean
           weight_kg?: number | null
@@ -442,11 +460,16 @@ export type Database = {
           bio: string | null
           city: string | null
           created_at: string
+          emergency_vet: Json | null
           full_name: string | null
+          goals: string[]
           id: string
           interests: string[] | null
+          language: string | null
+          notif_prefs: Json
           onboarded: boolean
           phone: string | null
+          units: Json
           updated_at: string
         }
         Insert: {
@@ -454,11 +477,16 @@ export type Database = {
           bio?: string | null
           city?: string | null
           created_at?: string
+          emergency_vet?: Json | null
           full_name?: string | null
+          goals?: string[]
           id: string
           interests?: string[] | null
+          language?: string | null
+          notif_prefs?: Json
           onboarded?: boolean
           phone?: string | null
+          units?: Json
           updated_at?: string
         }
         Update: {
@@ -466,11 +494,16 @@ export type Database = {
           bio?: string | null
           city?: string | null
           created_at?: string
+          emergency_vet?: Json | null
           full_name?: string | null
+          goals?: string[]
           id?: string
           interests?: string[] | null
+          language?: string | null
+          notif_prefs?: Json
           onboarded?: boolean
           phone?: string | null
+          units?: Json
           updated_at?: string
         }
         Relationships: []
@@ -1116,6 +1149,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
+      activity_level: "low" | "medium" | "high"
       app_role:
         | "user"
         | "pet_pal"
@@ -1139,6 +1173,7 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled"
+      diet_type: "kibble" | "raw" | "home" | "mixed" | "prescription"
       health_record_type:
         | "visit"
         | "diagnostic"
@@ -1179,6 +1214,7 @@ export type Database = {
         | "sitting"
         | "boarding"
         | "vet_clinic"
+      social_level: "solo" | "pairs" | "crowds"
       verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -1307,6 +1343,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_level: ["low", "medium", "high"],
       app_role: [
         "user",
         "pet_pal",
@@ -1333,6 +1370,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      diet_type: ["kibble", "raw", "home", "mixed", "prescription"],
       health_record_type: [
         "visit",
         "diagnostic",
@@ -1378,6 +1416,7 @@ export const Constants = {
         "boarding",
         "vet_clinic",
       ],
+      social_level: ["solo", "pairs", "crowds"],
       verification_status: ["pending", "approved", "rejected"],
     },
   },
