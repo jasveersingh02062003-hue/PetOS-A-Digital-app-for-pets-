@@ -88,8 +88,8 @@ const ShopNew = () => {
           </div>
         </div>
         <div className="space-y-1.5">
-          <Label>Image URL</Label>
-          <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" />
+          <Label>Product image</Label>
+          <ImageUpload value={imageUrl || null} onChange={(u) => setImageUrl(u || "")} aspect="square" label="Add product photo" />
         </div>
         <div className="space-y-1.5">
           <Label>Description</Label>
