@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePets } from "@/hooks/useProfile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Trash2 } from "lucide-react";
+import { Send, Loader2, Trash2, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
+  const { data: pets } = usePets();
   const qc = useQueryClient();
   const [body, setBody] = useState("");
+  const [asPetId, setAsPetId] = useState<string | "self">("self");
   const [sending, setSending] = useState(false);
 
   const { data: comments, isLoading } = useQuery({
@@ -23,12 +26,17 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
       const { data, error } = await supabase.from("post_comments").select("*").eq("post_id", postId!).order("created_at");
       if (error) throw error;
       const ids = [...new Set((data ?? []).map((c) => c.author_id))];
+      const petIds = [...new Set((data ?? []).map((c: any) => c.pet_id).filter(Boolean))];
       const profsRes = ids.length
         ? await supabase.rpc("get_profiles_public")
         : { data: [] as any[] };
       const profs = (profsRes.data ?? []).filter((p: any) => ids.includes(p.id));
       const m = new Map((profs ?? []).map((p: any) => [p.id, p]));
-      return (data ?? []).map((c) => ({ ...c, author: m.get(c.author_id) }));
+      const petsRes = petIds.length
+        ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds as any)
+        : { data: [] as any[] };
+      const petMap = new Map((petsRes.data ?? []).map((p: any) => [p.id, p]));
+      return (data ?? []).map((c: any) => ({ ...c, author: m.get(c.author_id), pet: c.pet_id ? petMap.get(c.pet_id) : null }));
     },
   });
 
@@ -49,9 +57,13 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
     if (!user) return toast.error("Please sign in");
     if (!body.trim() || !postId) return;
     setSending(true);
-    const { error } = await supabase.from("post_comments").insert({
-      post_id: postId, author_id: user.id, body: body.trim(),
-    });
+    const payload: any = {
+      post_id: postId,
+      author_id: user.id,
+      body: body.trim(),
+    };
+    if (asPetId !== "self") payload.pet_id = asPetId;
+    const { error } = await supabase.from("post_comments").insert(payload);
     setSending(false);
     if (error) return toast.error(error.message);
     setBody("");
