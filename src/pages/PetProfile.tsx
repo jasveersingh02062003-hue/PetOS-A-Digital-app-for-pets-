@@ -111,7 +111,7 @@ const PetProfile = () => {
 
   const updatePet = async (patch: Record<string, any>) => {
     if (!pet) return;
-    const { error } = await supabase.from("pets").update(patch).eq("id", pet.id);
+    const { error } = await supabase.from("pets").update(patch as any).eq("id", pet.id);
     if (error) {
       toast.error(error.message);
       return;
