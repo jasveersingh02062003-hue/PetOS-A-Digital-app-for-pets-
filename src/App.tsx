@@ -37,6 +37,12 @@ import EmergencyVet from "./pages/settings/EmergencyVet";
 import Privacy from "./pages/settings/Privacy";
 import GoalsPage from "./pages/settings/Goals";
 import PetEditor from "./pages/settings/PetEditor";
+import Billing from "./pages/settings/Billing";
+import Plus from "./pages/Plus";
+import PlusSuccess from "./pages/PlusSuccess";
+import MissingFeed from "./pages/MissingFeed";
+import MissingDetail from "./pages/MissingDetail";
+import MissingNew from "./pages/MissingNew";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -67,6 +73,12 @@ const App = () => (
               <Route path="/settings/privacy" element={<Privacy />} />
               <Route path="/settings/goals" element={<GoalsPage />} />
               <Route path="/settings/pet/:id" element={<PetEditor />} />
+              <Route path="/settings/billing" element={<Billing />} />
+              <Route path="/plus" element={<Plus />} />
+              <Route path="/plus/success" element={<PlusSuccess />} />
+              <Route path="/missing" element={<MissingFeed />} />
+              <Route path="/missing/new" element={<MissingNew />} />
+              <Route path="/missing/:id" element={<MissingDetail />} />
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />

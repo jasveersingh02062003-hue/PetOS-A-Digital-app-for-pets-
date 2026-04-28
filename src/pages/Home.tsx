@@ -1,6 +1,7 @@
 import { useProfile, usePets } from "@/hooks/useProfile";
 import { ComposerButton } from "@/components/Composer";
 import { PostFeed } from "@/components/PostFeed";
+import { MissingStrip } from "@/components/MissingStrip";
 
 const Home = () => {
   const { data: profile } = useProfile();
@@ -30,6 +31,10 @@ const Home = () => {
           ))}
         </div>
       )}
+
+      <div className="mt-2 mb-3">
+        <MissingStrip />
+      </div>
 
       <div className="mt-2 mb-4">
         <ComposerButton variant="inline" />
