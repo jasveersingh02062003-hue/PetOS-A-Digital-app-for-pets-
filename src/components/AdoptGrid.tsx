@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PawPrint, MapPin, Plus, BadgeCheck, Sparkles } from "lucide-react";
+import { PawPrint, MapPin, Plus, BadgeCheck, Sparkles, AlertTriangle, Heart } from "lucide-react";
 import { SmartImage } from "@/components/SmartImage";
 import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
 import { Input } from "@/components/ui/input";
+import { useProfile } from "@/hooks/useProfile";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
-type Filters = { species?: string; type?: "adoption" | "rehoming" | "breeder_sale"; city?: string; seller?: SellerType; bredOnly?: boolean };
+type Filters = {
+  species?: string;
+  type?: "adoption" | "rehoming" | "breeder_sale";
+  city?: string;
+  seller?: SellerType;
+  bredOnly?: boolean;
+  maxPrice?: number;
+};
 
 const TYPE_LABEL: Record<string, string> = {
   adoption: "Adoption",
@@ -27,7 +35,27 @@ const TYPE_TONE: Record<string, string> = {
 
 export const AdoptGrid = () => {
   const nav = useNavigate();
+  const { data: profile } = useProfile();
+  const isBuyer = (profile as any)?.account_type === "buyer";
   const [filters, setFilters] = useState<Filters>({});
+
+  // Seed filters from buyer's preferences on first load
+  useEffect(() => {
+    if (!profile) return;
+    const lf = (profile as any).looking_for as
+      | { species?: string[] | null; city?: string | null; max_price_inr?: number | null }
+      | null;
+    if (!lf) return;
+    setFilters((cur) => ({
+      species: cur.species ?? (lf.species && lf.species.length === 1 ? lf.species[0] : undefined),
+      city: cur.city ?? (lf.city || undefined),
+      maxPrice: cur.maxPrice ?? (lf.max_price_inr ?? undefined),
+      type: cur.type,
+      seller: cur.seller,
+      bredOnly: cur.bredOnly,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
 
   const { data: listings, isLoading } = useQuery({
     queryKey: ["pet-listings", filters],
@@ -44,9 +72,20 @@ export const AdoptGrid = () => {
       if (filters.species) q = q.eq("species", filters.species);
       if (filters.seller) q = q.eq("seller_type", filters.seller);
       if (filters.bredOnly) q = q.eq("bred_on_petos", true);
+      if (typeof filters.maxPrice === "number") q = q.lte("fee_inr", filters.maxPrice);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  // Repeat-seller IDs for warning chip
+  const { data: repeatSellerIds } = useQuery({
+    queryKey: ["repeat-sellers"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("repeat_sellers" as any).select("owner_id");
+      return new Set<string>((data ?? []).map((r: any) => r.owner_id));
     },
   });
 
@@ -85,11 +124,23 @@ export const AdoptGrid = () => {
           onChange={(e) => setFilters({ ...filters, city: e.target.value || undefined })}
           className="h-8 rounded-full text-xs flex-1 max-w-[160px]"
         />
+        <Input
+          type="number"
+          inputMode="numeric"
+          placeholder="Max ₹"
+          value={filters.maxPrice ?? ""}
+          onChange={(e) =>
+            setFilters({ ...filters, maxPrice: e.target.value ? parseInt(e.target.value, 10) : undefined })
+          }
+          className="h-8 rounded-full text-xs w-[110px]"
+        />
       </div>
 
-      <Button onClick={() => nav("/mates/adopt/new")} variant="outline" className="w-full rounded-2xl h-12 gap-2 border-dashed border-hairline">
-        <Plus className="h-4 w-4" /> List a pet for adoption or rehoming
-      </Button>
+      {!isBuyer && (
+        <Button onClick={() => nav("/mates/adopt/new")} variant="outline" className="w-full rounded-2xl h-12 gap-2 border-dashed border-hairline">
+          <Plus className="h-4 w-4" /> List a pet for adoption or rehoming
+        </Button>
+      )}
 
       <Card className="rounded-2xl border-hairline bg-muted/30 shadow-none p-3 text-[11px] text-muted-foreground leading-relaxed">
         <strong className="text-foreground">Safety first:</strong> never pay before meeting the pet in person. Verify vaccination and breeder credentials. Pets under 8 weeks cannot be listed.
@@ -114,6 +165,8 @@ export const AdoptGrid = () => {
         <div className="grid grid-cols-2 gap-3">
           {listings.map((l: any) => {
             const photo = Array.isArray(l.photos) && l.photos.length ? l.photos[0] : null;
+            const isFreeShelter = l.seller_type === "shelter" || l.seller_type === "sanctuary" || l.seller_type === "rescuer" || l.listing_type === "adoption";
+            const isRepeatSeller = repeatSellerIds?.has((l as any).owner_id) && l.seller_type === "pet_parent";
             return (
               <button
                 key={l.id}
@@ -144,10 +197,18 @@ export const AdoptGrid = () => {
                     {[l.breed ?? l.species, l.age_weeks ? `${Math.floor(l.age_weeks / 4)} mo` : null].filter(Boolean).join(" · ")}
                   </div>
                   <div className="mt-1.5"><SellerBadge type={l.seller_type ?? "pet_parent"} /></div>
+                  {isRepeatSeller && (
+                    <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-semibold border border-amber-500/30">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Repeat seller
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-2 text-xs">
                     {l.city ? <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{l.city}</span> : <span />}
-                    {l.listing_type === "adoption" || !l.fee_inr ? (
-                      <span className="text-leaf font-semibold">Free</span>
+                    {isFreeShelter || !l.fee_inr ? (
+                      <span className="text-leaf font-semibold inline-flex items-center gap-1">
+                        {(l.seller_type === "shelter" || l.seller_type === "sanctuary") && <Heart className="h-3 w-3" fill="currentColor" />}
+                        Free · adopt
+                      </span>
                     ) : (
                       <span className="font-medium text-primary">₹{l.fee_inr.toLocaleString("en-IN")}</span>
                     )}
