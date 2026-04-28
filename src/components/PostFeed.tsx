@@ -14,6 +14,7 @@ import { CollabBadge } from "./social/CollabBadge";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
+import { useBlockedIds } from "@/hooks/useBlockedIds";
 
 export type FeedPost = {
   id: string;
@@ -33,9 +34,10 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const { data: blocked } = useBlockedIds();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["feed", scope, user?.id ?? null],
+    queryKey: ["feed", scope, user?.id ?? null, blocked?.size ?? 0],
     queryFn: async () => {
       let followingIds: string[] | null = null;
       if (scope === "following") {
@@ -49,8 +51,9 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
         : q.order("created_at", { ascending: false }).limit(50);
-      const { data: posts, error } = await q;
+      const { data: postsRaw, error } = await q;
       if (error) throw error;
+      const posts = (postsRaw ?? []).filter((p) => !blocked || !blocked.has(p.author_id));
       if (!posts?.length) return [];
 
       const authorIds = [...new Set(posts.map((p) => p.author_id))];

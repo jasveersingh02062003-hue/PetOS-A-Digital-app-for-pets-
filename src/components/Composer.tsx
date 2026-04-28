@@ -111,6 +111,21 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
     if (!caption.trim() && !file) return toast.error("Add a caption or photo");
     setUploading(true);
     try {
+      // Auto-moderation (best-effort; never blocks on backend errors)
+      if (caption.trim().length > 0) {
+        try {
+          const { data: mod } = await supabase.functions.invoke("moderate-content", {
+            body: { text: caption.trim(), content_type: "post" },
+          });
+          if (mod?.verdict === "block") {
+            setUploading(false);
+            return toast.error("Your post can't be shared.", {
+              description: "It looks like it breaks our community rules. Please edit and try again.",
+            });
+          }
+        } catch { /* fail-open */ }
+      }
+
       let image_url: string | null = null;
       if (file) {
         const ext = file.name.split(".").pop() || "jpg";
