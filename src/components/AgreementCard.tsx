@@ -55,7 +55,7 @@ export const AgreementCard = ({
     else finishSign();
   };
 
-  const finishSign = async () => {
+  const finishSign = async (): Promise<void> => {
     setSigning(true);
     const sigField = isFromOwner ? "from_signature" : "to_signature";
     const tsField = isFromOwner ? "from_signed_at" : "to_signed_at";
@@ -69,13 +69,13 @@ export const AgreementCard = ({
       };
       const { data, error } = await supabase.from("mating_agreements").insert(insertPayload).select().single();
       setSigning(false);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setAgreement(data);
     } else {
       const updatePayload: any = { [sigField]: name.trim(), [tsField]: nowIso };
       const { data, error } = await supabase.from("mating_agreements").update(updatePayload).eq("id", agreement.id).select().single();
       setSigning(false);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setAgreement(data);
     }
     toast.success("Signed");
