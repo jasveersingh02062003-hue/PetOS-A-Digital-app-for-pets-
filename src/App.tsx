@@ -245,6 +245,7 @@ const App = () => (
             </Suspense>
             </RouteErrorBoundary>
           </CartProvider>
+          </PresenceProvider>
         </AuthProvider>
         </Splash>
       </BrowserRouter>
