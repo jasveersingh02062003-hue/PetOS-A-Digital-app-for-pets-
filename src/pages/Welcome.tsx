@@ -7,6 +7,7 @@ import { FeatureSlide } from "@/components/welcome/FeatureSlide";
 import { PetosLogo } from "@/components/PetosLogo";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
+import { supabase } from "@/integrations/supabase/client";
 
 const SLIDES = [
   {
