@@ -62,6 +62,10 @@ const ServiceNew = () => {
       </header>
       <div className="space-y-4">
         <div className="space-y-1.5">
+          <Label>Cover image</Label>
+          <ImageUpload value={coverUrl} onChange={setCoverUrl} aspect="video" label="Add cover photo" />
+        </div>
+        <div className="space-y-1.5">
           <Label>Business name</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
