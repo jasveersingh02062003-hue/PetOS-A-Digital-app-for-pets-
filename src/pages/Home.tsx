@@ -117,8 +117,6 @@ const Home = () => {
         </Tabs>
       </section>
 
-      <ComposerButton variant="fab" />
-      <ComposerButton variant="global" />
     </div>
   );
 };
