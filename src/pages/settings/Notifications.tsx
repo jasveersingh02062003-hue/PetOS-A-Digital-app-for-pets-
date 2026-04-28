@@ -40,6 +40,12 @@ const NotificationsPrefs = () => {
       <Row label="Push notifications" desc="Bookings, orders, vet replies, social" v={push} on={setPush} />
       <Row label="Email" desc="Weekly summary and important alerts" v={email} on={setEmail} />
       <Row label="SMS" desc="Critical alerts only" v={sms} on={setSms} />
+      <a href="/install" className="block bg-card border border-hairline rounded-2xl p-4 mt-2">
+        <div className="font-medium text-sm">Enable device notifications</div>
+        <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+          Install Petos to your home screen and turn on system push notifications.
+        </div>
+      </a>
     </SettingsLayout>
   );
 };
