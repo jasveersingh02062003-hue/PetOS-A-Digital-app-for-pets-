@@ -22,6 +22,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
+import Explore from "./pages/Explore";
 
 // Lazy — every other route, code-split into separate chunks
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -120,6 +121,7 @@ const App = () => (
             <Routes>
               <Route path="/welcome" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal/terms" element={<Terms />} />
