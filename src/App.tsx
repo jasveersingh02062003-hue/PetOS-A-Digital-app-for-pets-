@@ -43,6 +43,11 @@ import PlusSuccess from "./pages/PlusSuccess";
 import MissingFeed from "./pages/MissingFeed";
 import MissingDetail from "./pages/MissingDetail";
 import MissingNew from "./pages/MissingNew";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
+import Refunds from "./pages/legal/Refunds";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -59,6 +64,11 @@ const App = () => (
           <CartProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/legal/terms" element={<Terms />} />
+              <Route path="/legal/privacy" element={<Privacy />} />
+              <Route path="/legal/refunds" element={<Refunds />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/vet" element={<Vet />} />
