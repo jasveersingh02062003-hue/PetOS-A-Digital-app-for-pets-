@@ -6,15 +6,19 @@ import { MissingStrip } from "@/components/MissingStrip";
 import { DailyTipCard } from "@/components/DailyTipCard";
 import { EmptyState } from "@/components/EmptyState";
 import { StoryRail } from "@/components/social/StoryRail";
+import { MeetupCard } from "@/components/social/MeetupCard";
+import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Heart, Users } from "lucide-react";
+import { Heart, Users, CalendarDays } from "lucide-react";
 
 const Home = () => {
   const nav = useNavigate();
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
+  const { data: nextMeetups } = useUpcomingMeetups(profile?.city);
   const firstName = profile?.full_name?.split(" ")[0];
   const hasPets = !!pets && pets.length > 0;
+  const upcoming = (nextMeetups ?? []).slice(0, 1);
 
   return (
     <div className="container-app pad-top-safe">
@@ -35,6 +39,18 @@ const Home = () => {
       <div className="mt-2 mb-4">
         <DailyTipCard />
       </div>
+
+      {upcoming.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-base flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-primary" /> Upcoming meetup
+            </h2>
+            <button onClick={() => nav("/meetups")} className="text-xs text-muted-foreground">See all</button>
+          </div>
+          <MeetupCard meetup={upcoming[0]} />
+        </div>
+      )}
 
       <div className="mt-3 mb-4">
         <ComposerButton variant="inline" />

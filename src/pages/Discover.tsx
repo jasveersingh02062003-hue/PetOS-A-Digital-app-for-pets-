@@ -4,7 +4,8 @@ import { PostFeed } from "@/components/PostFeed";
 import { MatesGrid } from "@/components/MatesGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
-import { Compass, Flame } from "lucide-react";
+import { LocalPackRail } from "@/components/social/LocalPackRail";
+import { Compass, Flame, Users, CalendarDays } from "lucide-react";
 
 const Discover = () => {
   const nav = useNavigate();
@@ -16,6 +17,21 @@ const Discover = () => {
       </header>
       <div className="mb-5">
         <SearchBar />
+      </div>
+
+      <LocalPackRail />
+
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <button onClick={() => nav("/groups")} className="rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40 transition-colors">
+          <Users className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-base">Groups</div>
+          <div className="text-xs text-muted-foreground">Breed · city · interest</div>
+        </button>
+        <button onClick={() => nav("/meetups")} className="rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40 transition-colors">
+          <CalendarDays className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-base">Meetups</div>
+          <div className="text-xs text-muted-foreground">Playdates near you</div>
+        </button>
       </div>
 
       <Tabs defaultValue="trending" className="w-full">

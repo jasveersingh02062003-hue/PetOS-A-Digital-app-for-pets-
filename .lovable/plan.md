@@ -1,160 +1,166 @@
-## Goal
+# PetOS Social Roadmap — Phases 2, 3, 4
 
-Ship a coherent Phase 1 social layer for PetOS combining Instagram-style aesthetic (clean profiles, grids, stories) with Strava-style substance (care streaks, milestones, health badges visible on profiles). Owners are the followable identity; pets are listed on their owner's profile.
-
----
-
-## What Users Will Get
-
-### 1. Owner Profile pages — `/u/:userId`
-- Header: avatar, full name, city, bio, follower/following counts, **Follow / Unfollow** button
-- "Pets" rail — horizontal scroll of all pets owned (tap → pet profile)
-- **Strava-style stat strip**: care streak (days), total walks logged, milestones earned
-- Tabs:
-  - **Posts** — 3-column IG-style grid of all posts (any pet)
-  - **Pets** — full list with breed, age, verified badge
-  - **Achievements** — badges (vaccination ✓, 30-day streak, first mate, etc.)
-
-### 2. Pet Profile pages — `/pet/:public_id`
-- Hero: big avatar, name, breed, age, gender, verified badge, "Owned by [owner]" link
-- Health-aesthetic strip: vaccination status, care streak for this pet, weight trend sparkline
-- 3-column post grid (filtered to posts tagged with this pet)
-- "Available for mating" CTA if discoverable
-- Share button → copies `petos.app/pet/PET-XXXXX` deep link
-
-### 3. Follow system (owner-to-owner)
-- New `follows` table: `follower_id`, `following_id`
-- Follow/Unfollow button on owner profile + post cards (tap avatar → profile)
-- New **"Following" tab** on Home feed (alongside For You)
-- Notification on new follower
-
-### 4. Stories (24h ephemeral)
-- New `stories` table with `expires_at = created_at + 24h`
-- Top of Home: existing stories rail becomes real (currently links to health timelines)
-- Tap your avatar with `+` → camera/upload → 24h story
-- Tap any story → fullscreen viewer with progress bars, tap to advance
-- Auto-cleanup via existing cron infra (or filter by `expires_at > now()`)
-
-### 5. Strava-substance touches
-- **Care streak badge** visible on every owner profile + every post card avatar
-- **Milestones** auto-awarded: "First post", "7-day streak", "First vaccination logged", "First playdate" — shown as small chips on profile
-- Replaces vanity metrics with care metrics where it matters
+Building on the Phase 1 social foundation (follows, stories, achievements, user/pet profiles), this plan layers Community → Authority → Virality. Each phase ships independently and reuses existing infrastructure (`profiles.interests`, `service_bookings`, `appointments`, `posts`, `stories` bucket).
 
 ---
 
-## Technical Plan
+## Phase 2 — Community
 
-### Database migrations
+### 2.1 Groups (breed + city + interest)
+Self-organising communities so owners with the same breed, city, or interest find each other.
 
-```sql
--- 1. Owner-to-owner follows
-create table public.follows (
-  follower_id uuid not null references auth.users(id) on delete cascade,
-  following_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  primary key (follower_id, following_id),
-  check (follower_id <> following_id)
-);
-alter table public.follows enable row level security;
--- policies: select all authed; insert/delete own (where follower_id = auth.uid())
+**New tables**
+- `groups` — id, slug, name, kind (`breed` | `city` | `interest`), key (e.g. "golden_retriever", "bengaluru", "raw_feeding"), description, cover_url, member_count, created_by, created_at
+- `group_members` — group_id, user_id, role (`member` | `mod` | `owner`), joined_at
+- `group_posts` — group_id, post_id (links existing `posts` row to a group; a post can live in a group AND the global feed)
 
--- 2. Stories
-create table public.stories (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid not null,
-  pet_id uuid,
-  image_url text not null,
-  caption text,
-  created_at timestamptz not null default now(),
-  expires_at timestamptz not null default (now() + interval '24 hours'),
-  view_count int not null default 0
-);
-alter table public.stories enable row level security;
--- policies: select where expires_at > now(); insert/delete own
+**Auto-suggestion**
+- On profile load, suggest groups matching `pets.breed`, `profiles.city`, `profiles.interests`. One-tap join.
+- Seed ~30 starter groups across top breeds + top Indian cities so groups are never empty on day 1.
 
-create table public.story_views (
-  story_id uuid not null,
-  viewer_id uuid not null,
-  viewed_at timestamptz not null default now(),
-  primary key (story_id, viewer_id)
-);
+**UI**
+- New page `/groups` — "Your Groups", "Suggested for you", search.
+- New page `/g/:slug` — cover, member count, join button, group-scoped feed, members tab.
+- Composer gets an optional "Post to group" picker.
+- Home feed adds a "Groups" tab next to For You / Following.
 
--- 3. Achievements (lightweight, derived where possible)
-create table public.achievements (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  pet_id uuid,
-  kind text not null,  -- 'first_post','streak_7','streak_30','vaccinated','first_mate', etc.
-  earned_at timestamptz not null default now(),
-  unique (user_id, pet_id, kind)
-);
-alter table public.achievements enable row level security;
--- policies: select all authed; insert via SECURITY DEFINER trigger only
+### 2.2 Local Pack — pets near you
+A discovery rail surfacing nearby pets and owners.
 
--- 4. Realtime
-alter publication supabase_realtime add table public.follows;
-alter publication supabase_realtime add table public.stories;
+**Reuses** `profiles.city` + `pets.city` (already populated). No GPS needed for v1.
 
--- 5. Notification trigger on new follow
--- on insert into follows -> notify_user(following_id, 'new_follower', ...)
+**UI**
+- Discover page gets a "Local Pack — Pets in {city}" horizontal rail at the top: avatar, name, breed, distance hint, follow button.
+- "See all" → `/discover/local` grid with filters (species, breed, age range).
 
--- 6. Achievement triggers
--- on first post -> insert achievement 'first_post'
--- on activity_log streak -> handled by daily edge function or computed view
+**Future**: optional precise location opt-in for true radius queries (defer).
 
--- 7. Storage bucket
--- create 'stories' public bucket (mirrors 'posts')
-```
+### 2.3 Playdates & Meetups
+Owner-organised events; reuses booking/notification patterns.
 
-### New components
+**New tables**
+- `meetups` — id, host_id, group_id (nullable), title, description, city, venue, lat/lng (optional), starts_at, capacity, cover_url, status (`upcoming` | `cancelled` | `done`), created_at
+- `meetup_rsvps` — meetup_id, user_id, pet_id, status (`going` | `maybe` | `declined`), created_at; trigger bumps `meetup.attending_count`
+- Notification trigger: notify host on RSVP, notify attendees 24h before via existing `notification_jobs` cron pattern
 
-- `src/pages/UserProfile.tsx` — `/u/:userId`
-- `src/pages/PetProfile.tsx` — `/pet/:publicId`
-- `src/components/social/FollowButton.tsx` — handles follow/unfollow + optimistic UI
-- `src/components/social/StoryRail.tsx` — replaces current static stories on Home
-- `src/components/social/StoryViewer.tsx` — fullscreen modal with progress bars + tap-to-advance
-- `src/components/social/StoryComposer.tsx` — image picker, caption, upload to `stories` bucket
-- `src/components/social/PostGrid.tsx` — 3-col square grid for profiles
-- `src/components/social/AchievementChips.tsx` — horizontal scrolling badges
-- `src/components/social/CareStreakBadge.tsx` — small streak pill (reusable on avatars)
-- `src/components/social/StatStrip.tsx` — followers / following / streak / posts row
-
-### Updated files
-
-- `src/App.tsx` — add `/u/:userId` and `/pet/:publicId` routes
-- `src/components/PostFeed.tsx` — add `scope: "following"` filter; make avatars link to `/u/:userId`; tagged pet name links to `/pet/:publicId`
-- `src/pages/Home.tsx` — add Following / For You tabs; replace stub stories with real `<StoryRail />`; add `<StoryComposer />` trigger on own avatar
-- `src/pages/Discover.tsx` — add "People to follow" rail (suggested owners by city/breed overlap)
-- `src/pages/Profile.tsx` — turn into a redirect to `/u/:currentUserId` so own profile uses the same component
-- `src/hooks/useFollows.tsx` (new) — `useIsFollowing(userId)`, `useFollow()`, `useUnfollow()`, `useFollowerCount(userId)`
-- `src/hooks/useStories.tsx` (new) — fetch active stories grouped by author
-- `src/hooks/useAchievements.tsx` (new)
-
-### Hook into existing systems
-
-- Notifications: extend `notify_user` calls — `'new_follower'`, `'achievement_earned'`
-- Reuse existing `posts` storage bucket pattern for `stories` bucket
-- Reuse existing `ReportButton` on stories and profiles
+**UI**
+- New page `/meetups` — upcoming list filtered by city + group.
+- `/meetups/new` composer.
+- `/meetups/:id` detail with RSVP, attendee pet grid, host contact.
+- Surface upcoming meetups card on Home.
 
 ---
 
-## Out of Scope (Saved for Phase 2+)
+## Phase 3 — Authority + Trust
 
-- Groups (breed/city/interest)
-- Short-form video / Reels
-- Collab posts (tag a playdate buddy on one post)
-- Daily Pet Moment prompt (BeReal-style)
-- Verified Vet Q&A feed
-- Algorithmic For You ranking (Phase 1 stays chronological + simple "Following")
+### 3.1 Verified Vet Q&A (AskVet feed)
+Public Q&A where verified vets build a following and convert to paid consults.
+
+**New tables**
+- `vet_questions` — id, asker_id, pet_id (optional), title, body, species, category (`behavior` | `nutrition` | `medical` | `training` | `other`), photo_urls[], status (`open` | `answered` | `closed`), best_answer_id, view_count, created_at
+- `vet_answers` — id, question_id, vet_id, body, helpful_count, created_at; only `has_role(uid, 'vet')` can insert (RLS)
+- `vet_answer_helpful` — answer_id, user_id (unique), trigger bumps helpful_count
+
+**Trust + revenue loop**
+- Every answer card shows the vet's name, verified badge, helpful count, and a **"Book consult with Dr. X"** CTA → existing `/book-vet?vetId=...` flow.
+- Vets accumulate "helpful" reputation displayed on their profile, driving organic discovery.
+
+**UI**
+- New page `/askvet` — feed of questions, filter by category/species, "Ask a vet" composer.
+- `/askvet/:id` — question detail, answers ranked by helpful_count + verified-vet first.
+- Vet dashboard gets an "Open questions" inbox.
+
+### 3.2 Pet Achievements / Badges (expansion)
+Build on existing `achievements` table.
+
+**New badge kinds** (auto-awarded via triggers):
+- `vaccinated` — when `pets.vaccination_verified` flips true
+- `dewormed_3m` — parasite preventative within last 90 days
+- `care_streak_30` — 30 consecutive days with any `activity_logs` row
+- `social_butterfly` — attended 3+ meetups
+- `helpful_neighbour` — reported a missing-pet sighting that led to resolution
+- `verified_vet` — auto-granted when vet role approved
+
+**UI**
+- Badge cabinet on `/u/:userId` and `/pet/:publicId` already renders `AchievementChips`; extend with a "View all" sheet showing locked + unlocked with progress hints (e.g. "12/30 days").
+- Toast + confetti on first unlock; share-to-story CTA.
 
 ---
 
-## Risks / Decisions Made
+## Phase 4 — Virality
 
-- **Pets are not directly followable** — keeps follow graph simple; users follow owners and see all their pets
-- **Stories use storage + DB row, no separate signed URLs** — public bucket, same as posts
-- **Achievements are stored, not computed** — faster reads, awarded by triggers/edge functions
-- **No public like counts on health-related posts** — already aligned with earlier ethics note (Strava model, not TikTok)
-- **First-load cost**: ~6 new pages/components, 1 migration with 4 tables. Estimated 1 build cycle.
+### 4.1 Short video posts (Reels-style)
+**Schema additions** to existing `posts`:
+- `media_type` (`image` | `video`), `video_url`, `thumbnail_url`, `duration_sec`, `aspect_ratio`
 
-After approval I will run the migration, create the components, wire up routes, and ensure realtime + notifications work end-to-end.
+**Storage**: reuse `posts` bucket; client-side trim to ≤60s using browser MediaRecorder + canvas thumbnail. No server transcoding for v1.
+
+**UI**
+- New `/reels` route — full-screen vertical swipe feed, autoplay muted, tap to unmute, double-tap to like.
+- Composer gains "Record video" tab with live trim.
+- Home feed video posts render inline with the same player component.
+
+### 4.2 Daily Pet Moment (BeReal-style)
+Drives daily engagement with a randomised prompt window.
+
+**New tables**
+- `daily_prompts` — date (PK), prompt_text, prompt_emoji
+- `daily_moments` — id, user_id, pet_id, post_id, prompt_date, captured_at, on_time (boolean — within 2h of notification)
+
+**Mechanics**
+- Edge function (cron, daily at random time 10:00–20:00 IST) picks the day's prompt and fans out push notifications via `notification_jobs`.
+- Users have 2 hours to post a "Moment" tagged with that day's prompt for the on_time badge.
+- Late posts still count for the streak but no on_time flag.
+- Streaks displayed on profile ("🔥 14-day moment streak").
+
+**UI**
+- Home gets a "Today's Moment" card at the top until the user posts.
+- New `/moments` archive: calendar grid of past prompts + your captures.
+
+### 4.3 Collab posts (tag playdate friends)
+Multi-author posts that appear on every collaborator's profile grid.
+
+**New tables**
+- `post_collaborators` — post_id, user_id, pet_id (nullable), accepted (boolean default false), invited_at, accepted_at
+- View `posts_with_collaborators` joins for feed queries.
+
+**UI**
+- Composer gets "Tag friends" picker (autocomplete from your follows).
+- Tagged users get a notification → accept/decline in-feed; accepted collabs show on their grid.
+- Post header shows "Aria + Bruno + Charlie" with stacked avatars.
+
+---
+
+## Technical details
+
+### Data & RLS
+- All new tables enable RLS with the same patterns as Phase 1: public read where appropriate (`groups`, `meetups`, `vet_questions`, `vet_answers`, `daily_prompts`), owner-only insert/update, role-gated insert for vet answers via `has_role(auth.uid(), 'vet')`.
+- Triggers reuse `notify_user(...)` for follower/answer/RSVP notifications.
+- Meetup reminders + daily-prompt fanout use the existing `notification_jobs` queue + cron pattern.
+
+### Files to create
+- Pages: `Groups.tsx`, `GroupDetail.tsx`, `Meetups.tsx`, `MeetupDetail.tsx`, `MeetupNew.tsx`, `AskVet.tsx`, `AskVetDetail.tsx`, `AskVetNew.tsx`, `Reels.tsx`, `Moments.tsx`
+- Components: `social/GroupCard.tsx`, `social/LocalPackRail.tsx`, `social/MeetupCard.tsx`, `social/RsvpButton.tsx`, `social/VetAnswerCard.tsx`, `social/BookVetCta.tsx`, `social/BadgeCabinetSheet.tsx`, `social/VideoPlayer.tsx`, `social/VideoComposer.tsx`, `social/MomentCard.tsx`, `social/CollabPicker.tsx`, `social/CollabAvatars.tsx`
+- Hooks: `useGroups.tsx`, `useMeetups.tsx`, `useAskVet.tsx`, `useReels.tsx`, `useDailyMoment.tsx`
+- Edge function: `supabase/functions/daily-moment-fanout/index.ts` + cron schedule
+
+### Files to edit
+- `src/App.tsx` — add 10 new routes
+- `src/pages/Home.tsx` — add Groups tab, Today's Moment card, Upcoming Meetups card
+- `src/pages/Discover.tsx` — add Local Pack rail
+- `src/components/Composer.tsx` — group picker, video tab, collab picker
+- `src/components/PostFeed.tsx` — render video posts, collab avatars
+- `src/components/BottomNav.tsx` — add Reels icon
+- `src/pages/UserProfile.tsx` & `src/pages/PetProfile.tsx` — extended badge cabinet, on_time streak
+
+---
+
+## Suggested ship order
+
+Each phase ships in one go (similar scope to Phase 1, ~3-4 hours each):
+
+1. **Phase 2 first** — biggest retention lift, lowest risk, all SQL + UI, no new infra.
+2. **Phase 3 next** — direct revenue driver (AskVet → consults).
+3. **Phase 4 last** — video + cron complexity; do once Community proves engagement.
+
+Confirm to start with **Phase 2 (Community)**, or pick a different starting phase.
