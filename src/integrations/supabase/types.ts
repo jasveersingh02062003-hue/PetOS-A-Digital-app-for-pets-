@@ -1232,6 +1232,8 @@ export type Database = {
           id: string
           insurance_policy: string | null
           insurance_provider: string | null
+          lat: number | null
+          lng: number | null
           microchip_id: string | null
           name: string
           neutered: boolean | null
@@ -1263,6 +1265,8 @@ export type Database = {
           id?: string
           insurance_policy?: string | null
           insurance_provider?: string | null
+          lat?: number | null
+          lng?: number | null
           microchip_id?: string | null
           name: string
           neutered?: boolean | null
@@ -1294,6 +1298,8 @@ export type Database = {
           id?: string
           insurance_policy?: string | null
           insurance_provider?: string | null
+          lat?: number | null
+          lng?: number | null
           microchip_id?: string | null
           name?: string
           neutered?: boolean | null
@@ -1595,6 +1601,8 @@ export type Database = {
           id: string
           interests: string[] | null
           language: string | null
+          lat: number | null
+          lng: number | null
           notif_prefs: Json
           notify_plus_launch: boolean
           onboarded: boolean
@@ -1613,6 +1621,8 @@ export type Database = {
           id: string
           interests?: string[] | null
           language?: string | null
+          lat?: number | null
+          lng?: number | null
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
@@ -1631,6 +1641,8 @@ export type Database = {
           id?: string
           interests?: string[] | null
           language?: string | null
+          lat?: number | null
+          lng?: number | null
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
@@ -1825,6 +1837,8 @@ export type Database = {
           created_at: string
           hourly_rate_inr: number | null
           id: string
+          lat: number | null
+          lng: number | null
           name: string
           owner_id: string
           updated_at: string
@@ -1840,6 +1854,8 @@ export type Database = {
           created_at?: string
           hourly_rate_inr?: number | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           name: string
           owner_id: string
           updated_at?: string
@@ -1855,6 +1871,8 @@ export type Database = {
           created_at?: string
           hourly_rate_inr?: number | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           name?: string
           owner_id?: string
           updated_at?: string
@@ -2938,6 +2956,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["sub_tier"]
       }
+      earth: { Args: never; Returns: number }
       generate_pet_public_id: { Args: never; Returns: string }
       get_pets_public: {
         Args: never
@@ -2975,6 +2994,67 @@ export type Database = {
       increment_usage: {
         Args: { _kind: string; _limit: number; _window_days: number }
         Returns: Json
+      }
+      nearby_meetups: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          attending_count: number
+          city: string
+          distance_km: number
+          id: string
+          lat: number
+          lng: number
+          starts_at: string
+          title: string
+        }[]
+      }
+      nearby_missing: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          city: string
+          distance_km: number
+          id: string
+          last_seen_at: string
+          lat: number
+          lng: number
+          pet_id: string
+          photo_url: string
+        }[]
+      }
+      nearby_providers: {
+        Args: {
+          _category?: string
+          _lat: number
+          _lng: number
+          _radius_km?: number
+        }
+        Returns: {
+          category: string
+          city: string
+          cover_url: string
+          distance_km: number
+          hourly_rate_inr: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          verified: boolean
+        }[]
+      }
+      nearby_vets: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          city: string
+          clinic_name: string
+          display_name: string
+          distance_km: number
+          lat: number
+          lng: number
+          photo_url: string
+          price_video_inr: number
+          rating_avg: number
+          user_id: string
+        }[]
       }
       notify_user: {
         Args: {
