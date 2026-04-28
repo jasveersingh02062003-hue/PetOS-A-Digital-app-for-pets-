@@ -11,7 +11,7 @@ import {
   ShoppingBag,
   Users,
 } from "lucide-react";
-import { useUnreadNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const items = [
   { to: "/messages", label: "Messages", icon: MessageCircle },
@@ -28,13 +28,14 @@ const items = [
 
 export const QuickAccessRail = () => {
   const nav = useNavigate();
-  const { data: unread } = useUnreadNotifications();
+  const { data: notifs } = useNotifications();
+  const unread = (notifs ?? []).filter((n) => !n.read_at).length;
   return (
     <div className="-mx-4 mb-3">
       <div className="flex gap-2 overflow-x-auto px-4 no-scrollbar snap-x snap-mandatory">
         {items.map((it) => {
           const Icon = it.icon;
-          const showBadge = it.badgeKey === "alerts" && (unread ?? 0) > 0;
+          const showBadge = it.badgeKey === "alerts" && unread > 0;
           return (
             <button
               key={it.to}
@@ -46,7 +47,7 @@ export const QuickAccessRail = () => {
                 <Icon className="h-[20px] w-[20px] text-foreground/80" strokeWidth={1.6} />
                 {showBadge && (
                   <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emergency text-emergency-foreground text-[10px] font-semibold flex items-center justify-center">
-                    {(unread ?? 0) > 9 ? "9+" : unread}
+                    {unread > 9 ? "9+" : unread}
                   </span>
                 )}
               </div>
