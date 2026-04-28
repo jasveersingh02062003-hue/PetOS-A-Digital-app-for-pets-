@@ -6,6 +6,7 @@ import { usePets, useProfile } from "@/hooks/useProfile";
 import { MatesGrid } from "@/components/MatesGrid";
 import { AdoptGrid } from "@/components/AdoptGrid";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useSeo } from "@/hooks/useSeo";
 
 const Mates = () => {
