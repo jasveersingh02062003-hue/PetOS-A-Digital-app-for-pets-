@@ -57,6 +57,8 @@ import VetOnboarding from "./pages/vet/Onboarding";
 import VetDashboard from "./pages/vet/Dashboard";
 import BookAppointment from "./pages/BookAppointment";
 import AccessRequests from "./pages/AccessRequests";
+import AppointmentRoom from "./pages/AppointmentRoom";
+import MyAppointments from "./pages/MyAppointments";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
@@ -108,6 +110,8 @@ const App = () => (
               <Route path="/vet/consult/:id" element={<VetConsult />} />
               <Route path="/book-vet" element={<BookAppointment />} />
               <Route path="/access-requests" element={<AccessRequests />} />
+              <Route path="/appointments" element={<MyAppointments />} />
+              <Route path="/appointment/:id" element={<AppointmentRoom />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/settings" element={<Settings />} />
