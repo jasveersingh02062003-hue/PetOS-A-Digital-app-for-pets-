@@ -8,6 +8,7 @@ import { NotificationBell } from "./NotificationBell";
 import { ComposerButton } from "./Composer";
 import { ContextualFab } from "./ContextualFab";
 import { OfflineBanner } from "./OfflineBanner";
+import { SkipToContent } from "./SkipToContent";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -32,13 +33,14 @@ export const AppShell = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SkipToContent />
       <OfflineBanner />
       {user && (
         <div className="fixed top-3 right-3 z-40 pad-top-safe">
           <NotificationBell />
         </div>
       )}
-      <main className="pad-bottom-nav animate-fade-in">
+      <main id="main-content" tabIndex={-1} className="pad-bottom-nav animate-fade-in focus:outline-none">
         <Outlet />
       </main>
       <BottomNav onEmergency={() => setEmergencyOpen(true)} />
