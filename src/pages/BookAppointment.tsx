@@ -77,11 +77,11 @@ const BookAppointment = () => {
         triage_session_id: triageSessionId ?? null,
       })
       .select("id")
-      .single();
+      .single() as { data: { id: string } | null; error: any };
     if (error) return toast.error(error.message);
     if (triageSessionId) {
       await supabase
-        .from("vet_triage_sessions")
+        .from("vet_triage_sessions" as any)
         .update({ escalated_to_appointment_id: data.id, closed_at: new Date().toISOString() })
         .eq("id", triageSessionId);
     }
