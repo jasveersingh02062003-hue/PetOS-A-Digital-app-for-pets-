@@ -3,6 +3,7 @@ import { Home, Compass, Heart, User, Siren, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { haptic } from "@/lib/haptics";
+import { prefetchRoute } from "@/lib/prefetchRoute";
 
 /**
  * Flat 5-tab bottom nav (Instagram-style information architecture):
@@ -58,6 +59,8 @@ export const BottomNav = ({ onEmergency }: { onEmergency: () => void }) => {
                 to={t.to}
                 end={t.to === "/"}
                 onClick={() => haptic(8)}
+                onPointerEnter={() => prefetchRoute(t.to)}
+                onTouchStart={() => prefetchRoute(t.to)}
                 className={({ isActive }) =>
                   cn(
                     "flex flex-col items-center justify-end gap-1 text-[10px] tracking-wide uppercase transition-colors h-full",
