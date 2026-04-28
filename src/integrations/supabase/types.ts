@@ -58,6 +58,154 @@ export type Database = {
           },
         ]
       }
+      mating_agreements: {
+        Row: {
+          created_at: string
+          from_signature: string | null
+          from_signed_at: string | null
+          id: string
+          request_id: string
+          terms_text: string
+          to_signature: string | null
+          to_signed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_signature?: string | null
+          from_signed_at?: string | null
+          id?: string
+          request_id: string
+          terms_text: string
+          to_signature?: string | null
+          to_signed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_signature?: string | null
+          from_signed_at?: string | null
+          id?: string
+          request_id?: string
+          terms_text?: string
+          to_signature?: string | null
+          to_signed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mating_agreements_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "mating_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mating_listings: {
+        Row: {
+          active: boolean
+          city: string | null
+          created_at: string
+          description: string | null
+          fee_inr: number | null
+          id: string
+          intent: Database["public"]["Enums"]["mating_intent"]
+          owner_id: string
+          pet_id: string
+          requirements: string | null
+          travel_km: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          fee_inr?: number | null
+          id?: string
+          intent?: Database["public"]["Enums"]["mating_intent"]
+          owner_id: string
+          pet_id: string
+          requirements?: string | null
+          travel_km?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          fee_inr?: number | null
+          id?: string
+          intent?: Database["public"]["Enums"]["mating_intent"]
+          owner_id?: string
+          pet_id?: string
+          requirements?: string | null
+          travel_km?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mating_listings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mating_requests: {
+        Row: {
+          created_at: string
+          from_owner_id: string
+          from_pet_id: string
+          id: string
+          message: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          to_owner_id: string
+          to_pet_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_owner_id: string
+          from_pet_id: string
+          id?: string
+          message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_owner_id: string
+          to_pet_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_owner_id?: string
+          from_pet_id?: string
+          id?: string
+          message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_owner_id?: string
+          to_pet_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mating_requests_from_pet_id_fkey"
+            columns: ["from_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mating_requests_to_pet_id_fkey"
+            columns: ["to_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nutrition_logs: {
         Row: {
           created_at: string
@@ -581,8 +729,15 @@ export type Database = {
         | "surgery"
         | "allergy"
         | "other"
+      mating_intent: "stud" | "dam" | "either"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
+      request_status:
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "withdrawn"
+        | "agreed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -736,8 +891,16 @@ export const Constants = {
         "allergy",
         "other",
       ],
+      mating_intent: ["stud", "dam", "either"],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
+      request_status: [
+        "pending",
+        "accepted",
+        "declined",
+        "withdrawn",
+        "agreed",
+      ],
     },
   },
 } as const
