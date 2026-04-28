@@ -232,6 +232,9 @@ const AiChat = () => {
                 </div>
               </div>
             )}
+            {!streaming && messages.length >= 2 && messages[messages.length - 1]?.role === "assistant" && (
+              <ConnectToVetCTA messages={messages} petId={activePetId} petName={activePet?.name} />
+            )}
           </div>
         )}
       </div>
