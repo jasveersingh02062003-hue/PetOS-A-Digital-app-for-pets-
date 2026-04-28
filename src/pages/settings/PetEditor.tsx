@@ -35,6 +35,7 @@ const PetEditor = () => {
 
   const save = async () => {
     setSaving(true);
+    const willBeNeutered = !!pet.neutered;
     const { error } = await supabase.from("pets").update({
       name: pet.name, breed: pet.breed, date_of_birth: pet.date_of_birth || null,
       gender: pet.gender, weight_kg: pet.weight_kg ? Number(pet.weight_kg) : null,
@@ -44,11 +45,21 @@ const PetEditor = () => {
       allergies: pet.allergies ?? [], conditions: pet.conditions ?? [],
       temperament: pet.temperament ?? [],
       bio: pet.bio,
+      ...(willBeNeutered ? { discoverable_for_mating: false } : {}),
     }).eq("id", pet.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["pets"] });
     toast.success("Saved");
+  };
+
+  const onNeuteredChange = (v: boolean) => {
+    if (v && pet.discoverable_for_mating) {
+      update({ neutered: true, discoverable_for_mating: false });
+      toast.message(`Mating discovery turned off because ${pet.name} is neutered.`);
+    } else {
+      update({ neutered: v });
+    }
   };
 
   const remove = async () => {
@@ -92,7 +103,7 @@ const PetEditor = () => {
         <Field label="Weight (kg)" type="number" value={pet.weight_kg?.toString() ?? ""} onChange={(v) => update({ weight_kg: v })} />
         <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px] mt-[22px]">
           <div className="text-sm font-medium">Neutered</div>
-          <Switch checked={!!pet.neutered} onCheckedChange={(v) => update({ neutered: v })} />
+          <Switch checked={!!pet.neutered} onCheckedChange={onNeuteredChange} />
         </label>
       </div>
 

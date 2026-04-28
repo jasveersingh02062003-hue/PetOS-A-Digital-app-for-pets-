@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.enforce_neutered_not_discoverable() FROM PUBLIC, anon, authenticated;
