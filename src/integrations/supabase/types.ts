@@ -1358,6 +1358,30 @@ export type Database = {
           },
         ]
       }
+      post_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string
@@ -1368,6 +1392,7 @@ export type Database = {
           image_url: string | null
           like_count: number
           pet_id: string | null
+          reaction_counts: Json
           updated_at: string
         }
         Insert: {
@@ -1379,6 +1404,7 @@ export type Database = {
           image_url?: string | null
           like_count?: number
           pet_id?: string | null
+          reaction_counts?: Json
           updated_at?: string
         }
         Update: {
@@ -1390,6 +1416,7 @@ export type Database = {
           image_url?: string | null
           like_count?: number
           pet_id?: string | null
+          reaction_counts?: Json
           updated_at?: string
         }
         Relationships: [
