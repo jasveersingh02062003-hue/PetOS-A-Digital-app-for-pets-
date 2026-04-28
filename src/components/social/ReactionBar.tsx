@@ -92,19 +92,42 @@ export const ReactionBar = ({
             e.currentTarget.addEventListener("touchend", cancel, { once: true });
             e.currentTarget.addEventListener("touchmove", cancel, { once: true });
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-95"
           aria-label="React"
         >
           {top.length > 0 ? (
             <span className="flex -space-x-1">
-              {top.map((r) => <span key={r.kind} className="text-base leading-none">{r.emoji}</span>)}
+              {top.map((r) => (
+                <motion.span
+                  key={r.kind}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                  className="text-base leading-none"
+                >
+                  {r.emoji}
+                </motion.span>
+              ))}
             </span>
           ) : (
             <span className={`text-base leading-none ${myFirst ? "" : "grayscale opacity-60"}`}>
               {myFirst?.emoji ?? "❤️"}
             </span>
           )}
-          <span className="text-sm tabular-nums">{total}</span>
+          <span className="text-sm tabular-nums relative inline-block min-w-[1ch] text-center overflow-hidden h-[1.25em] leading-[1.25em]">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span
+                key={total}
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -8, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="inline-block"
+              >
+                {total}
+              </motion.span>
+            </AnimatePresence>
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent side="top" align="start" className="p-1.5 rounded-full w-auto border-hairline">
@@ -116,7 +139,7 @@ export const ReactionBar = ({
                 key={r.kind}
                 onClick={() => toggle(r.kind)}
                 title={r.label}
-                className={`h-9 w-9 flex items-center justify-center rounded-full text-xl transition-transform hover:scale-125 ${active ? "bg-primary-soft" : ""}`}
+                className={`h-9 w-9 flex items-center justify-center rounded-full text-xl transition-transform hover:scale-125 active:scale-110 ${active ? "bg-primary-soft animate-pop" : ""}`}
               >
                 {r.emoji}
               </button>
@@ -127,3 +150,4 @@ export const ReactionBar = ({
     </Popover>
   );
 };
+
