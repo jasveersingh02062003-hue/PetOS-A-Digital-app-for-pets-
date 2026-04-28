@@ -175,9 +175,11 @@ export type Database = {
       }
       appointments: {
         Row: {
+          actual_duration_min: number | null
           cancellation_reason: string | null
           created_at: string
           duration_min: number
+          ended_at: string | null
           id: string
           mode: Database["public"]["Enums"]["appointment_mode"]
           notes: string | null
@@ -185,10 +187,12 @@ export type Database = {
           pet_id: string
           prescription: string | null
           scheduled_at: string
+          started_at: string | null
           status: Database["public"]["Enums"]["appointment_status"]
           triage_session_id: string | null
           updated_at: string
           vet_id: string
+          vet_visit_notes: string | null
           video_provider: string | null
           video_room_name: string | null
           video_room_token_owner: string | null
@@ -196,9 +200,11 @@ export type Database = {
           video_room_url: string | null
         }
         Insert: {
+          actual_duration_min?: number | null
           cancellation_reason?: string | null
           created_at?: string
           duration_min?: number
+          ended_at?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["appointment_mode"]
           notes?: string | null
@@ -206,10 +212,12 @@ export type Database = {
           pet_id: string
           prescription?: string | null
           scheduled_at: string
+          started_at?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           triage_session_id?: string | null
           updated_at?: string
           vet_id: string
+          vet_visit_notes?: string | null
           video_provider?: string | null
           video_room_name?: string | null
           video_room_token_owner?: string | null
@@ -217,9 +225,11 @@ export type Database = {
           video_room_url?: string | null
         }
         Update: {
+          actual_duration_min?: number | null
           cancellation_reason?: string | null
           created_at?: string
           duration_min?: number
+          ended_at?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["appointment_mode"]
           notes?: string | null
@@ -227,10 +237,12 @@ export type Database = {
           pet_id?: string
           prescription?: string | null
           scheduled_at?: string
+          started_at?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           triage_session_id?: string | null
           updated_at?: string
           vet_id?: string
+          vet_visit_notes?: string | null
           video_provider?: string | null
           video_room_name?: string | null
           video_room_token_owner?: string | null
