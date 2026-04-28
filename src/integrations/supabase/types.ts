@@ -191,6 +191,102 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_moments: {
+        Row: {
+          id: string
+          late_minutes: number
+          on_time: boolean
+          post_id: string
+          posted_at: string
+          prompt_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          late_minutes?: number
+          on_time?: boolean
+          post_id: string
+          posted_at?: string
+          prompt_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          late_minutes?: number
+          on_time?: boolean
+          post_id?: string
+          posted_at?: string
+          prompt_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_moments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_moments_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "daily_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_prompts: {
+        Row: {
+          created_at: string
+          dropped_at: string
+          id: string
+          prompt_date: string
+          prompt_text: string
+          window_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          dropped_at?: string
+          id?: string
+          prompt_date: string
+          prompt_text: string
+          window_minutes?: number
+        }
+        Update: {
+          created_at?: string
+          dropped_at?: string
+          id?: string
+          prompt_date?: string
+          prompt_text?: string
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      daily_streaks: {
+        Row: {
+          current_streak: number
+          last_posted_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          last_posted_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          last_posted_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deletion_log: {
         Row: {
           deleted_at: string
@@ -1168,6 +1264,41 @@ export type Database = {
           weight_kg?: number | null
         }
         Relationships: []
+      }
+      post_collaborators: {
+        Row: {
+          invited_at: string
+          pet_id: string | null
+          post_id: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["collab_status"]
+          user_id: string
+        }
+        Insert: {
+          invited_at?: string
+          pet_id?: string | null
+          post_id: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["collab_status"]
+          user_id: string
+        }
+        Update: {
+          invited_at?: string
+          pet_id?: string | null
+          post_id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["collab_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_collaborators_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_comments: {
         Row: {
@@ -2603,6 +2734,7 @@ export type Database = {
         | "declined"
         | "completed"
         | "cancelled"
+      collab_status: "pending" | "accepted" | "declined"
       consult_severity: "mild" | "moderate" | "severe"
       consult_status:
         | "awaiting_vet"
@@ -2841,6 +2973,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      collab_status: ["pending", "accepted", "declined"],
       consult_severity: ["mild", "moderate", "severe"],
       consult_status: [
         "awaiting_vet",

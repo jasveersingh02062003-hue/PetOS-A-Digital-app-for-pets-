@@ -1,166 +1,93 @@
-# PetOS Social Roadmap — Phases 2, 3, 4
+# Phase 4 — Virality (Daily Moment + Collab Posts)
 
-Building on the Phase 1 social foundation (follows, stories, achievements, user/pet profiles), this plan layers Community → Authority → Virality. Each phase ships independently and reuses existing infrastructure (`profiles.interests`, `service_bookings`, `appointments`, `posts`, `stories` bucket).
-
----
-
-## Phase 2 — Community
-
-### 2.1 Groups (breed + city + interest)
-Self-organising communities so owners with the same breed, city, or interest find each other.
-
-**New tables**
-- `groups` — id, slug, name, kind (`breed` | `city` | `interest`), key (e.g. "golden_retriever", "bengaluru", "raw_feeding"), description, cover_url, member_count, created_by, created_at
-- `group_members` — group_id, user_id, role (`member` | `mod` | `owner`), joined_at
-- `group_posts` — group_id, post_id (links existing `posts` row to a group; a post can live in a group AND the global feed)
-
-**Auto-suggestion**
-- On profile load, suggest groups matching `pets.breed`, `profiles.city`, `profiles.interests`. One-tap join.
-- Seed ~30 starter groups across top breeds + top Indian cities so groups are never empty on day 1.
-
-**UI**
-- New page `/groups` — "Your Groups", "Suggested for you", search.
-- New page `/g/:slug` — cover, member count, join button, group-scoped feed, members tab.
-- Composer gets an optional "Post to group" picker.
-- Home feed adds a "Groups" tab next to For You / Following.
-
-### 2.2 Local Pack — pets near you
-A discovery rail surfacing nearby pets and owners.
-
-**Reuses** `profiles.city` + `pets.city` (already populated). No GPS needed for v1.
-
-**UI**
-- Discover page gets a "Local Pack — Pets in {city}" horizontal rail at the top: avatar, name, breed, distance hint, follow button.
-- "See all" → `/discover/local` grid with filters (species, breed, age range).
-
-**Future**: optional precise location opt-in for true radius queries (defer).
-
-### 2.3 Playdates & Meetups
-Owner-organised events; reuses booking/notification patterns.
-
-**New tables**
-- `meetups` — id, host_id, group_id (nullable), title, description, city, venue, lat/lng (optional), starts_at, capacity, cover_url, status (`upcoming` | `cancelled` | `done`), created_at
-- `meetup_rsvps` — meetup_id, user_id, pet_id, status (`going` | `maybe` | `declined`), created_at; trigger bumps `meetup.attending_count`
-- Notification trigger: notify host on RSVP, notify attendees 24h before via existing `notification_jobs` cron pattern
-
-**UI**
-- New page `/meetups` — upcoming list filtered by city + group.
-- `/meetups/new` composer.
-- `/meetups/:id` detail with RSVP, attendee pet grid, host contact.
-- Surface upcoming meetups card on Home.
+Skipping short video for now (storage/bandwidth concerns — revisit later). Implementing the two engagement-driving virality features.
 
 ---
 
-## Phase 3 — Authority + Trust
+## 1. Daily Pet Moment (BeReal-style)
 
-### 3.1 Verified Vet Q&A (AskVet feed)
-Public Q&A where verified vets build a following and convert to paid consults.
+A randomized daily prompt that pushes everyone to post a candid pet photo within a 2-hour window. Builds streaks and a "today's moments" feed.
 
-**New tables**
-- `vet_questions` — id, asker_id, pet_id (optional), title, body, species, category (`behavior` | `nutrition` | `medical` | `training` | `other`), photo_urls[], status (`open` | `answered` | `closed`), best_answer_id, view_count, created_at
-- `vet_answers` — id, question_id, vet_id, body, helpful_count, created_at; only `has_role(uid, 'vet')` can insert (RLS)
-- `vet_answer_helpful` — answer_id, user_id (unique), trigger bumps helpful_count
+### Database
+- `daily_prompts` table — one row per day with prompt text + `dropped_at` timestamp
+  - `id`, `prompt_date` (unique), `prompt_text`, `dropped_at`, `window_minutes` (default 120)
+- `daily_moments` table — links a post to a prompt + tracks on-time status
+  - `id`, `prompt_id`, `post_id`, `user_id`, `posted_at`, `on_time` (bool), `late_minutes`
+- `daily_streaks` table — per-user streak counter
+  - `user_id` (PK), `current_streak`, `longest_streak`, `last_posted_date`
+- New achievement kinds: `daily_moment_first`, `daily_streak_7`, `daily_streak_30`
+- Triggers:
+  - On `daily_moments` insert: compute `on_time` (within window), update `daily_streaks` (increment if yesterday or today, reset otherwise), award streak badges
+- RLS: all readable by authenticated; user can only insert moments tied to their own posts
 
-**Trust + revenue loop**
-- Every answer card shows the vet's name, verified badge, helpful count, and a **"Book consult with Dr. X"** CTA → existing `/book-vet?vetId=...` flow.
-- Vets accumulate "helpful" reputation displayed on their profile, driving organic discovery.
+### Edge functions + cron
+- `drop-daily-prompt` — runs once daily at a randomized time (cron triggers every hour, function self-checks if today's prompt already exists; if not, rolls a probability so the actual drop time varies). Picks a prompt from a curated list (sleepy, treat time, zoomies, derp face, walk view, etc.), inserts row, calls `notify_user` for all opted-in users with link `/daily`.
+- Cron via `pg_cron` + `pg_net` (added to a non-migration insert because URL/key are project-specific).
 
-**UI**
-- New page `/askvet` — feed of questions, filter by category/species, "Ask a vet" composer.
-- `/askvet/:id` — question detail, answers ranked by helpful_count + verified-vet first.
-- Vet dashboard gets an "Open questions" inbox.
-
-### 3.2 Pet Achievements / Badges (expansion)
-Build on existing `achievements` table.
-
-**New badge kinds** (auto-awarded via triggers):
-- `vaccinated` — when `pets.vaccination_verified` flips true
-- `dewormed_3m` — parasite preventative within last 90 days
-- `care_streak_30` — 30 consecutive days with any `activity_logs` row
-- `social_butterfly` — attended 3+ meetups
-- `helpful_neighbour` — reported a missing-pet sighting that led to resolution
-- `verified_vet` — auto-granted when vet role approved
-
-**UI**
-- Badge cabinet on `/u/:userId` and `/pet/:publicId` already renders `AchievementChips`; extend with a "View all" sheet showing locked + unlocked with progress hints (e.g. "12/30 days").
-- Toast + confetti on first unlock; share-to-story CTA.
+### UI
+- `/daily` page — `Daily.tsx`
+  - Hero: today's prompt + countdown timer (window remaining)
+  - "Post your moment" CTA → opens composer pre-tagged to today's prompt
+  - Grid of today's moments (only visible to users who posted today, BeReal-style — "post to see")
+  - Streak chip + leaderboard tab (top streaks this week)
+- `DailyPromptBanner.tsx` — sticky banner on `Home.tsx` when prompt is live and user hasn't posted
+- `useDailyPrompt.tsx` hook — fetches today's prompt, user's moment status, streak
+- Composer reuses existing `PostComposer` with a `promptId` prop that creates the linked `daily_moments` row after the post insert
 
 ---
 
-## Phase 4 — Virality
+## 2. Collab Posts (multi-author)
 
-### 4.1 Short video posts (Reels-style)
-**Schema additions** to existing `posts`:
-- `media_type` (`image` | `video`), `video_url`, `thumbnail_url`, `duration_sec`, `aspect_ratio`
+Tag friends/playdate buddies on a post — it appears on every collaborator's profile grid, and they all get credit/notifications.
 
-**Storage**: reuse `posts` bucket; client-side trim to ≤60s using browser MediaRecorder + canvas thumbnail. No server transcoding for v1.
+### Database
+- `post_collaborators` table
+  - `post_id`, `user_id`, `pet_id` (optional), `status` (`pending` | `accepted` | `declined`), `invited_at`, `responded_at`
+  - PK: (post_id, user_id)
+- Trigger: on insert → notify invited user (`collab_invite`); on accept → notify post author (`collab_accepted`)
+- RLS:
+  - Select: anyone authenticated (collabs are public once accepted; pending visible only to author + invitee)
+  - Insert: only post author can invite
+  - Update: only invitee can change their own status
 
-**UI**
-- New `/reels` route — full-screen vertical swipe feed, autoplay muted, tap to unmute, double-tap to like.
-- Composer gains "Record video" tab with live trim.
-- Home feed video posts render inline with the same player component.
-
-### 4.2 Daily Pet Moment (BeReal-style)
-Drives daily engagement with a randomised prompt window.
-
-**New tables**
-- `daily_prompts` — date (PK), prompt_text, prompt_emoji
-- `daily_moments` — id, user_id, pet_id, post_id, prompt_date, captured_at, on_time (boolean — within 2h of notification)
-
-**Mechanics**
-- Edge function (cron, daily at random time 10:00–20:00 IST) picks the day's prompt and fans out push notifications via `notification_jobs`.
-- Users have 2 hours to post a "Moment" tagged with that day's prompt for the on_time badge.
-- Late posts still count for the streak but no on_time flag.
-- Streaks displayed on profile ("🔥 14-day moment streak").
-
-**UI**
-- Home gets a "Today's Moment" card at the top until the user posts.
-- New `/moments` archive: calendar grid of past prompts + your captures.
-
-### 4.3 Collab posts (tag playdate friends)
-Multi-author posts that appear on every collaborator's profile grid.
-
-**New tables**
-- `post_collaborators` — post_id, user_id, pet_id (nullable), accepted (boolean default false), invited_at, accepted_at
-- View `posts_with_collaborators` joins for feed queries.
-
-**UI**
-- Composer gets "Tag friends" picker (autocomplete from your follows).
-- Tagged users get a notification → accept/decline in-feed; accepted collabs show on their grid.
-- Post header shows "Aria + Bruno + Charlie" with stacked avatars.
+### UI
+- `CollabPicker.tsx` — searchable user picker in `PostComposer` (searches `get_profiles_public`); chips show selected collaborators
+- `CollabBadge.tsx` — "with @alice & @bob" line under post header in `PostFeed`
+- `useCollabs.tsx` hook — invites, accept/decline, list pending invites
+- `PostGrid.tsx` update — include posts where user is an accepted collaborator (union with own authored posts)
+- `UserProfile.tsx` — small "Collabs" tab showing posts they're tagged in
+- Pending invites surface in `Notifications` with inline accept/decline buttons (or a `/collabs/invites` mini-page)
 
 ---
 
-## Technical details
+## 3. Files to be created / edited
 
-### Data & RLS
-- All new tables enable RLS with the same patterns as Phase 1: public read where appropriate (`groups`, `meetups`, `vet_questions`, `vet_answers`, `daily_prompts`), owner-only insert/update, role-gated insert for vet answers via `has_role(auth.uid(), 'vet')`.
-- Triggers reuse `notify_user(...)` for follower/answer/RSVP notifications.
-- Meetup reminders + daily-prompt fanout use the existing `notification_jobs` queue + cron pattern.
+**Created**
+- `supabase/migrations/...phase4_virality.sql` — tables, triggers, RLS, new achievement kinds
+- `supabase/functions/drop-daily-prompt/index.ts` — daily prompt drop function
+- `src/hooks/useDailyPrompt.tsx`
+- `src/hooks/useCollabs.tsx`
+- `src/pages/Daily.tsx`
+- `src/components/social/DailyPromptBanner.tsx`
+- `src/components/social/DailyMomentGrid.tsx`
+- `src/components/social/StreakChip.tsx`
+- `src/components/social/CollabPicker.tsx`
+- `src/components/social/CollabBadge.tsx`
 
-### Files to create
-- Pages: `Groups.tsx`, `GroupDetail.tsx`, `Meetups.tsx`, `MeetupDetail.tsx`, `MeetupNew.tsx`, `AskVet.tsx`, `AskVetDetail.tsx`, `AskVetNew.tsx`, `Reels.tsx`, `Moments.tsx`
-- Components: `social/GroupCard.tsx`, `social/LocalPackRail.tsx`, `social/MeetupCard.tsx`, `social/RsvpButton.tsx`, `social/VetAnswerCard.tsx`, `social/BookVetCta.tsx`, `social/BadgeCabinetSheet.tsx`, `social/VideoPlayer.tsx`, `social/VideoComposer.tsx`, `social/MomentCard.tsx`, `social/CollabPicker.tsx`, `social/CollabAvatars.tsx`
-- Hooks: `useGroups.tsx`, `useMeetups.tsx`, `useAskVet.tsx`, `useReels.tsx`, `useDailyMoment.tsx`
-- Edge function: `supabase/functions/daily-moment-fanout/index.ts` + cron schedule
-
-### Files to edit
-- `src/App.tsx` — add 10 new routes
-- `src/pages/Home.tsx` — add Groups tab, Today's Moment card, Upcoming Meetups card
-- `src/pages/Discover.tsx` — add Local Pack rail
-- `src/components/Composer.tsx` — group picker, video tab, collab picker
-- `src/components/PostFeed.tsx` — render video posts, collab avatars
-- `src/components/BottomNav.tsx` — add Reels icon
-- `src/pages/UserProfile.tsx` & `src/pages/PetProfile.tsx` — extended badge cabinet, on_time streak
+**Edited**
+- `src/App.tsx` — add `/daily` route
+- `src/pages/Home.tsx` — inject `DailyPromptBanner`
+- `src/components/PostComposer.tsx` (or wherever post creation lives) — accept `promptId`, integrate `CollabPicker`
+- `src/components/PostFeed.tsx` — render `CollabBadge`
+- `src/components/social/PostGrid.tsx` — include collab posts
+- `src/components/social/AchievementChips.tsx` — add streak badges
+- `src/pages/UserProfile.tsx` — add collabs tab
+- `src/pages/Notifications.tsx` (if exists) — render collab invite actions
+- Non-migration SQL insert: schedule `pg_cron` job for `drop-daily-prompt`
 
 ---
 
-## Suggested ship order
+## Skipped (revisit later)
+- **Short video / Reels** — needs bucket policies, transcoding, autoplay infra, mobile data concerns. Will tackle as Phase 5 once storage strategy is decided.
 
-Each phase ships in one go (similar scope to Phase 1, ~3-4 hours each):
-
-1. **Phase 2 first** — biggest retention lift, lowest risk, all SQL + UI, no new infra.
-2. **Phase 3 next** — direct revenue driver (AskVet → consults).
-3. **Phase 4 last** — video + cron complexity; do once Community proves engagement.
-
-Confirm to start with **Phase 2 (Community)**, or pick a different starting phase.
+Approve to implement.

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
+import { CollabBadge } from "./social/CollabBadge";
 
 export type FeedPost = {
   id: string;
@@ -158,6 +159,7 @@ const PostCard = ({ post, liked, onLike, onComment }: {
           <div className="text-[11px] text-muted-foreground">
             {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
           </div>
+          <CollabBadge postId={post.id} />
         </div>
         <FollowButton targetId={post.author_id} />
       </div>

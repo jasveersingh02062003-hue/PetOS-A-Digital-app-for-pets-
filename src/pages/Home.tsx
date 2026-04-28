@@ -6,6 +6,7 @@ import { MissingStrip } from "@/components/MissingStrip";
 import { DailyTipCard } from "@/components/DailyTipCard";
 import { EmptyState } from "@/components/EmptyState";
 import { StoryRail } from "@/components/social/StoryRail";
+import { DailyPromptBanner } from "@/components/social/DailyPromptBanner";
 import { MeetupCard } from "@/components/social/MeetupCard";
 import { useUpcomingMeetups } from "@/hooks/useMeetups";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -31,6 +32,8 @@ const Home = () => {
       </header>
 
       <StoryRail />
+
+      <div className="-mx-4 mt-2"><DailyPromptBanner /></div>
 
       <div className="mt-2 mb-3">
         <MissingStrip />

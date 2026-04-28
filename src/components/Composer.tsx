@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, ImagePlus, X, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
+import { useInviteCollaborators } from "@/hooks/useCollabs";
 
 export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" }) => {
   const [open, setOpen] = useState(false);
@@ -41,10 +43,12 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
   const { data: pets } = usePets();
   const qc = useQueryClient();
+  const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
   const [petId, setPetId] = useState<string>("none");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -70,16 +74,19 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         const { data: { publicUrl } } = supabase.storage.from("posts").getPublicUrl(path);
         image_url = publicUrl;
       }
-      const { error } = await supabase.from("posts").insert({
+      const { data: post, error } = await supabase.from("posts").insert({
         author_id: user.id,
         pet_id: petId === "none" ? null : petId,
         caption: caption.trim() || null,
         image_url,
-      });
+      }).select().single();
       if (error) throw error;
+      if (collabs.length && post) {
+        await invite.mutateAsync({ postId: post.id, userIds: collabs.map((c) => c.id) });
+      }
       toast.success("Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none");
+      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]);
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
@@ -126,6 +133,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
           </Select>
         )}
       </div>
+
+      <CollabPicker selected={collabs} onChange={setCollabs} />
+
 
       <Button type="submit" disabled={uploading} size="lg" className="w-full rounded-xl">
         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share"}
