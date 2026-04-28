@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, Heart, AlertTriangle } from "lucide-react";
 import { ReportButton } from "@/components/ReportButton";
 import { useSeo } from "@/hooks/useSeo";
+import { SellerBadge } from "@/components/SellerBadge";
+import { BredOnPetosRibbon } from "@/components/BredOnPetosRibbon";
+import { Link } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -33,6 +36,22 @@ const AdoptListingDetail = () => {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: sellerInfo } = useQuery({
+    queryKey: ["pet-listing-seller", listing?.owner_id],
+    enabled: !!listing?.owner_id,
+    queryFn: async () => {
+      const ownerId = listing!.owner_id;
+      const [{ data: profile }, { data: org }, { count }] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, account_type, breeder_verified").eq("id", ownerId).maybeSingle(),
+        supabase.from("org_profiles").select("user_id, org_name, status").eq("user_id", ownerId).eq("status", "approved").maybeSingle(),
+        supabase.from("pet_listings").select("id", { count: "exact", head: true })
+          .eq("owner_id", ownerId).eq("active", true).eq("status", "active")
+          .in("listing_type", ["rehoming", "breeder_sale"]),
+      ]);
+      return { profile, org, activeSaleCount: count ?? 0 };
+    },
   });
 
   useSeo({
@@ -91,6 +110,34 @@ const AdoptListingDetail = () => {
           {TYPE_LABEL[listing.listing_type]}
         </Badge>
       </div>
+
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <SellerBadge
+          type={(listing.seller_type as any) ?? sellerInfo?.profile?.account_type ?? "pet_parent"}
+          verified={!!sellerInfo?.profile?.breeder_verified}
+        />
+        {sellerInfo?.org && (
+          <Link to={`/org/${sellerInfo.org.user_id}`} className="text-xs underline text-muted-foreground">
+            {sellerInfo.org.org_name}
+          </Link>
+        )}
+        {!sellerInfo?.org && sellerInfo?.profile?.full_name && (
+          <Link to={`/u/${sellerInfo.profile.id}`} className="text-xs underline text-muted-foreground">
+            {sellerInfo.profile.full_name}
+          </Link>
+        )}
+      </div>
+
+      {listing.bred_on_petos && (
+        <div className="mb-3"><BredOnPetosRibbon litterId={listing.litter_id} /></div>
+      )}
+
+      {sellerInfo?.profile?.account_type === "pet_parent" && (sellerInfo?.activeSaleCount ?? 0) > 2 && (
+        <Card className="rounded-2xl bg-amber-500/10 border-amber-500/30 p-3 mb-3 flex gap-2 text-[12px]">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <span>Repeat seller: this pet parent has {sellerInfo.activeSaleCount} active sale listings. Verified breeders are recommended for purchases.</span>
+        </Card>
+      )}
 
       <div className="text-sm text-muted-foreground mb-3">
         {[listing.breed ?? listing.species, listing.gender, listing.age_weeks ? `${Math.floor(listing.age_weeks / 4)} months` : null].filter(Boolean).join(" · ")}
