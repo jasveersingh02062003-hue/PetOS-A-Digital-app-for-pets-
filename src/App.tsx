@@ -39,6 +39,7 @@ const MatesManage = lazy(() => import("./pages/MatesManage"));
 const AdoptListingNew = lazy(() => import("./pages/AdoptListingNew"));
 const AdoptionInbox = lazy(() => import("./pages/AdoptionInbox"));
 const AdoptListingDetail = lazy(() => import("./pages/AdoptListingDetail"));
+const Shelters = lazy(() => import("./pages/Shelters"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
@@ -204,6 +205,7 @@ const App = () => (
               <Route path="/mates/adopt/new" element={<AdoptListingNew />} />
               <Route path="/adoption-inbox" element={<AdoptionInbox />} />
               <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
+              <Route path="/shelters" element={<Shelters />} />
               <Route path="/services/new" element={<ServiceNew />} />
               <Route path="/services/manage" element={<ServicesManage />} />
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
