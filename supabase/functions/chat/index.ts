@@ -96,7 +96,7 @@ serve(async (req) => {
         .eq("id", petId)
         .maybeSingle();
       if (pet) {
-        const [{ data: vax }, { data: symp }, { data: rec }, { data: meds }, { data: weights }] = await Promise.all([
+        const [{ data: vax }, { data: symp }, { data: rec }, { data: meds }] = await Promise.all([
           supabase.from("vaccinations").select("vaccine_name, administered_on, next_due_on")
             .eq("pet_id", petId).order("administered_on", { ascending: false }).limit(8),
           supabase.from("symptom_logs").select("symptom, severity, notes, logged_at")
@@ -105,13 +105,11 @@ serve(async (req) => {
             .eq("pet_id", petId).order("occurred_on", { ascending: false }).limit(8),
           supabase.from("medication_logs").select("name, dose, frequency, start_on, end_on, active")
             .eq("pet_id", petId).eq("active", true).order("start_on", { ascending: false }).limit(8),
-          supabase.from("weight_logs").select("weight_kg, recorded_on")
-            .eq("pet_id", petId).order("recorded_on", { ascending: false }).limit(5),
         ]);
         const ageY = pet.date_of_birth
           ? ((Date.now() - new Date(pet.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)).toFixed(1)
           : "unknown";
-        const latestWeight = weights?.[0]?.weight_kg ?? pet.weight_kg;
+        const latestWeight = pet.weight_kg;
         petContext = [
           `Pet: ${pet.name} (${pet.species}${pet.breed ? `, ${pet.breed}` : ""})`,
           `Age: ${ageY} yrs · Gender: ${pet.gender ?? "?"} · Weight: ${latestWeight ?? "?"} kg · Neutered: ${pet.neutered ? "yes" : "no"}`,
