@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import {
-  Heart,
   Stethoscope,
   Footprints,
   CalendarDays,
