@@ -1332,6 +1332,24 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          created_at: string
+          post_id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          tag?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -2669,6 +2687,14 @@ export type Database = {
           review_count: number | null
           subject_id: string | null
           subject_type: Database["public"]["Enums"]["review_subject"] | null
+        }
+        Relationships: []
+      }
+      trending_hashtags: {
+        Row: {
+          last_used: string | null
+          post_count: number | null
+          tag: string | null
         }
         Relationships: []
       }
