@@ -581,4 +581,57 @@ const DeleteBtn = ({ table, id, invalidate }: { table: "vaccinations" | "health_
   );
 };
 
+/* ============== CONSULTS ============== */
+const STATUS_LABEL: Record<string, string> = {
+  awaiting_vet: "Awaiting vet",
+  assigned: "Assigned",
+  in_progress: "In progress",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+const ConsultsList = ({ petId }: { petId: string }) => {
+  const nav = useNavigate();
+  const { data, isLoading } = useQuery({
+    queryKey: ["consults", petId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vet_consults")
+        .select("id, severity, status, ai_summary, created_at")
+        .eq("pet_id", petId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+  if (isLoading) return null;
+  if (!data?.length) return null;
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-lg">Recent vet consults</h2>
+      </div>
+      <div className="space-y-2">
+        {data.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => nav(`/vet/consult/${c.id}`)}
+            className="w-full text-left rounded-2xl border border-hairline bg-card p-4 hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-[10px] capitalize">{c.severity}</Badge>
+                  <span className="text-xs text-muted-foreground">{format(new Date(c.created_at), "d MMM, h:mm a")}</span>
+                </div>
+                {c.ai_summary && <p className="text-sm mt-1.5 line-clamp-2 text-ink-soft">{c.ai_summary}</p>}
+              </div>
+              <Badge variant="outline" className="shrink-0 text-[10px] border-hairline">{STATUS_LABEL[c.status] ?? c.status}</Badge>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default Health;
