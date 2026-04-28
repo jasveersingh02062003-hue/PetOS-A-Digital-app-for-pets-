@@ -4199,6 +4199,50 @@ export type Database = {
         }
         Relationships: []
       }
+      walk_summaries: {
+        Row: {
+          avg_pace_min_per_km: number | null
+          booking_id: string
+          created_at: string
+          distance_km: number
+          duration_minutes: number
+          ended_at: string
+          id: string
+          point_count: number
+          started_at: string
+        }
+        Insert: {
+          avg_pace_min_per_km?: number | null
+          booking_id: string
+          created_at?: string
+          distance_km?: number
+          duration_minutes?: number
+          ended_at: string
+          id?: string
+          point_count?: number
+          started_at: string
+        }
+        Update: {
+          avg_pace_min_per_km?: number | null
+          booking_id?: string
+          created_at?: string
+          distance_km?: number
+          duration_minutes?: number
+          ended_at?: string
+          id?: string
+          point_count?: number
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_summaries_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "service_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       walk_tracks: {
         Row: {
           booking_id: string
