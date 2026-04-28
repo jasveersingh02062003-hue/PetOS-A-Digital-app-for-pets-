@@ -128,7 +128,10 @@ export type Database = {
           status: Database["public"]["Enums"]["appointment_status"]
           updated_at: string
           vet_id: string
+          video_provider: string | null
           video_room_name: string | null
+          video_room_token_owner: string | null
+          video_room_token_vet: string | null
           video_room_url: string | null
         }
         Insert: {
@@ -145,7 +148,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string
           vet_id: string
+          video_provider?: string | null
           video_room_name?: string | null
+          video_room_token_owner?: string | null
+          video_room_token_vet?: string | null
           video_room_url?: string | null
         }
         Update: {
@@ -162,7 +168,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string
           vet_id?: string
+          video_provider?: string | null
           video_room_name?: string | null
+          video_room_token_owner?: string | null
+          video_room_token_vet?: string | null
           video_room_url?: string | null
         }
         Relationships: []
@@ -200,6 +209,57 @@ export type Database = {
           target_city?: string | null
           target_role?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string
+          last_read_at: string
+          muted: boolean
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          last_read_at?: string
+          muted?: boolean
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          last_read_at?: string
+          muted?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_group: boolean
+          last_message_at: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_group?: boolean
+          last_message_at?: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_group?: boolean
+          last_message_at?: string
+          title?: string | null
         }
         Relationships: []
       }
@@ -933,6 +993,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messages: {
+        Row: {
+          attachment_kind: string | null
+          attachment_url: string | null
+          body: string | null
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          attachment_kind?: string | null
+          attachment_url?: string | null
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          attachment_kind?: string | null
+          attachment_url?: string | null
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_id?: string
+        }
+        Relationships: []
       }
       missing_pet_sightings: {
         Row: {
@@ -2199,6 +2295,24 @@ export type Database = {
           },
         ]
       }
+      typing_indicators: {
+        Row: {
+          conversation_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       usage_counters: {
         Row: {
           count: number
@@ -3022,6 +3136,7 @@ export type Database = {
       }
       earth: { Args: never; Returns: number }
       generate_pet_public_id: { Args: never; Returns: string }
+      get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_pets_public: {
         Args: never
         Returns: {
@@ -3070,6 +3185,11 @@ export type Database = {
         Args: { _kind: string; _limit: number; _window_days: number }
         Returns: Json
       }
+      is_conversation_member: {
+        Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
+      mark_conversation_read: { Args: { _conv: string }; Returns: undefined }
       nearby_meetups: {
         Args: { _lat: number; _lng: number; _radius_km?: number }
         Returns: {
