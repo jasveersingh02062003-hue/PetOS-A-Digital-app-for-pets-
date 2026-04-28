@@ -60,6 +60,7 @@ const PetEditor = lazy(() => import("./pages/settings/PetEditor"));
 const Billing = lazy(() => import("./pages/settings/Billing"));
 const Plus = lazy(() => import("./pages/Plus"));
 const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
+const Rewards = lazy(() => import("./pages/Rewards"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
 const MissingDetail = lazy(() => import("./pages/MissingDetail"));
 const MissingNew = lazy(() => import("./pages/MissingNew"));
@@ -188,6 +189,7 @@ const App = () => (
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
+              <Route path="/rewards" element={<Rewards />} />
               <Route path="/missing" element={<MissingFeed />} />
               <Route path="/missing/new" element={<MissingNew />} />
               <Route path="/missing/:id" element={<MissingDetail />} />
