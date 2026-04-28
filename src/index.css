@@ -105,6 +105,15 @@
     --ring: 174 36% 58%;
     --hairline: 200 12% 18%;
     --ink-soft: 200 8% 70%;
+
+    --coral: 8 78% 64%; --coral-foreground: 0 0% 100%; --coral-soft: 8 24% 18%;
+    --amber: 36 92% 60%; --amber-foreground: 36 60% 14%; --amber-soft: 36 30% 16%;
+    --sky: 208 70% 65%; --sky-foreground: 0 0% 100%; --sky-soft: 208 30% 18%;
+    --lilac: 276 52% 75%; --lilac-foreground: 0 0% 100%; --lilac-soft: 276 24% 20%;
+    --leaf: 142 44% 55%; --leaf-foreground: 0 0% 100%; --leaf-soft: 142 24% 16%;
+
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.30), 0 8px 24px -12px hsl(0 0% 0% / 0.50);
+    --shadow-pop: 0 2px 4px hsl(0 0% 0% / 0.40), 0 18px 40px -16px hsl(0 0% 0% / 0.60);
   }
 }
 
@@ -116,10 +125,17 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
   }
-  h1, h2, h3, h4, .font-display {
+  /* Display font is OPT-IN via .font-display. Headings default to Inter
+     so the app reads as a modern social app, not a magazine. */
+  h1, h2, h3, h4 {
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.015em;
+    font-weight: 700;
+  }
+  .font-display {
     font-family: 'Fraunces', Georgia, serif;
     font-optical-sizing: auto;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -128,9 +144,12 @@
   .container-app { @apply mx-auto w-full max-w-[480px] px-5; }
   .pad-bottom-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .pad-top-safe { padding-top: env(safe-area-inset-top); }
+  .card-elev { box-shadow: var(--shadow-card); }
+  .card-pop { box-shadow: var(--shadow-pop); }
 }
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .text-balance { text-wrap: balance; }
 }
