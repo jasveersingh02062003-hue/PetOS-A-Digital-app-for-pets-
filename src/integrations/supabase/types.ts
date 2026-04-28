@@ -197,6 +197,48 @@ export type Database = {
         }
         Relationships: []
       }
+      boarding_services: {
+        Row: {
+          active: boolean
+          city: string | null
+          created_at: string
+          description: string | null
+          id: string
+          owner_id: string
+          photos: string[]
+          price_inr_per_day: number | null
+          service_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id: string
+          photos?: string[]
+          price_inr_per_day?: number | null
+          service_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id?: string
+          photos?: string[]
+          price_inr_per_day?: number | null
+          service_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       broadcasts: {
         Row: {
           body: string | null

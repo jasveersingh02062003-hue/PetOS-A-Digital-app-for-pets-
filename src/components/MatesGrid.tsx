@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck, MapPin, Plus } from "lucide-react";
+import { Heart, ShieldCheck, MapPin, Plus, Send } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
 import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 
@@ -13,6 +15,7 @@ type Filters = { species?: string; intent?: string; city?: string };
 
 export const MatesGrid = () => {
   const nav = useNavigate();
+  const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
 
   const { data: listings, isLoading } = useQuery({
@@ -20,7 +23,7 @@ export const MatesGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("mating_listings")
-        .select("id, intent, fee_inr, city, description, pets:pet_id(id, name, breed, species, gender, avatar_url, vaccination_verified)")
+        .select("id, intent, fee_inr, city, description, owner_id, pet_id, pets:pet_id(id, name, breed, species, gender, avatar_url, vaccination_verified)")
         .eq("active", true)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -31,6 +34,41 @@ export const MatesGrid = () => {
       return (data ?? []).filter((l: any) => !filters.species || l.pets?.species === filters.species);
     },
   });
+
+  const sendRequest = async (e: React.MouseEvent, l: any) => {
+    e.stopPropagation();
+    if (!user) {
+      toast.error("Sign in to send a request");
+      return;
+    }
+    if (l.owner_id === user.id) {
+      toast.info("This is your own listing");
+      return;
+    }
+    // Find requester's first pet to attach
+    const { data: myPets } = await supabase
+      .from("pets")
+      .select("id")
+      .eq("owner_id", user.id)
+      .limit(1);
+    if (!myPets?.length) {
+      toast.error("Add a pet first");
+      nav("/onboarding");
+      return;
+    }
+    const { error } = await supabase.from("mating_requests").insert({
+      from_owner_id: user.id,
+      from_pet_id: myPets[0].id,
+      to_owner_id: l.owner_id,
+      to_pet_id: l.pet_id,
+      message: "Hi, I'm interested in your listing.",
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Request sent");
+  };
 
   const cities = useMemo(() => Array.from(new Set((listings ?? []).map((l: any) => l.city).filter(Boolean))), [listings]);
 
@@ -66,12 +104,11 @@ export const MatesGrid = () => {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {listings.map((l: any) => (
-            <button
+            <div
               key={l.id}
-              onClick={() => nav(`/mates/listing/${l.id}`)}
-              className="text-left rounded-2xl border border-hairline bg-card overflow-hidden hover:shadow-sm transition-shadow"
+              className="text-left rounded-2xl border border-hairline bg-card overflow-hidden hover:shadow-sm transition-shadow flex flex-col"
             >
-              <div className="aspect-square bg-muted relative">
+              <button onClick={() => nav(`/mates/listing/${l.id}`)} className="aspect-square bg-muted relative block w-full">
                 {l.pets?.avatar_url ? (
                   <SmartImage src={l.pets.avatar_url} alt={l.pets.name} aspect="1/1" className="w-full h-full" />
                 ) : (
@@ -83,16 +120,24 @@ export const MatesGrid = () => {
                   </Badge>
                 )}
                 <Badge className="absolute top-2 right-2 bg-background/90 text-foreground border-0 capitalize text-[10px]">{l.intent}</Badge>
-              </div>
-              <div className="p-3">
+              </button>
+              <button onClick={() => nav(`/mates/listing/${l.id}`)} className="p-3 text-left">
                 <div className="font-medium truncate">{l.pets?.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{l.pets?.breed ?? l.pets?.species}</div>
                 <div className="flex items-center justify-between mt-2 text-xs">
                   {l.city ? <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{l.city}</span> : <span />}
                   {l.fee_inr ? <span className="font-medium text-primary">₹{l.fee_inr.toLocaleString("en-IN")}</span> : <span className="text-muted-foreground">Free</span>}
                 </div>
-              </div>
-            </button>
+              </button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => sendRequest(e, l)}
+                className="mx-3 mb-3 mt-0 rounded-xl h-8 gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/5"
+              >
+                <Send className="h-3 w-3" /> Send request
+              </Button>
+            </div>
           ))}
         </div>
       )}

@@ -15,10 +15,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Settings, Building2, ShieldCheck, ArrowRight, Share2,
-  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search,
+  Grid3x3, Tag as TagIcon, PawPrint, Heart, Award, Search, GitBranch, Hotel,
 } from "lucide-react";
 import { differenceInYears, differenceInMonths } from "date-fns";
 import { toast } from "sonner";
+import { LittersList } from "@/components/profile/LittersList";
+import { BoardingList } from "@/components/profile/BoardingList";
 
 const UserProfile = () => {
   const { userId: param } = useParams<{ userId: string }>();
@@ -252,8 +254,11 @@ const UserProfile = () => {
       )}
 
       {/* TABS */}
+      {(() => null)()}
       <Tabs defaultValue="posts" className="mt-2">
-        <TabsList className="grid w-full grid-cols-4 rounded-xl h-11 p-1 bg-muted/50">
+        <TabsList
+          className={`grid w-full ${org && (org.org_type === "breeder" || org.org_type === "kennel") ? "grid-cols-6" : "grid-cols-4"} rounded-xl h-11 p-1 bg-muted/50`}
+        >
           <TabsTrigger value="posts" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Grid3x3 className="h-4 w-4" />
           </TabsTrigger>
@@ -263,6 +268,16 @@ const UserProfile = () => {
           <TabsTrigger value="pets" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <PawPrint className="h-4 w-4" />
           </TabsTrigger>
+          {org && (org.org_type === "breeder" || org.org_type === "kennel") && (
+            <TabsTrigger value="litters" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <GitBranch className="h-4 w-4" />
+            </TabsTrigger>
+          )}
+          {org && (org.org_type === "breeder" || org.org_type === "kennel") && (
+            <TabsTrigger value="boarding" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <Hotel className="h-4 w-4" />
+            </TabsTrigger>
+          )}
           <TabsTrigger value="badges" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Award className="h-4 w-4" />
           </TabsTrigger>
@@ -294,6 +309,12 @@ const UserProfile = () => {
         </TabsContent>
         <TabsContent value="badges" className="mt-3">
           {userId && <AchievementChips userId={userId} />}
+        </TabsContent>
+        <TabsContent value="litters" className="mt-3">
+          {userId && <LittersList userId={userId} />}
+        </TabsContent>
+        <TabsContent value="boarding" className="mt-3">
+          {userId && <BoardingList userId={userId} isOwner={isMe} />}
         </TabsContent>
       </Tabs>
     </div>
