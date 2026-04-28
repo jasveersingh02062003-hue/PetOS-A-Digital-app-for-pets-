@@ -46,7 +46,7 @@ import MissingNew from "./pages/MissingNew";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/legal/Terms";
-import Privacy from "./pages/legal/Privacy";
+import LegalPrivacy from "./pages/legal/Privacy";
 import Refunds from "./pages/legal/Refunds";
 import NotFound from "./pages/NotFound";
 
