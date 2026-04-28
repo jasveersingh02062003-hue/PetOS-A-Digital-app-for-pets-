@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AnimatePresence, motion } from "framer-motion";
+import { haptic } from "@/lib/haptics";
 
 export type ReactionKind = "love" | "paw" | "laugh" | "wow" | "sad";
 
@@ -65,6 +67,7 @@ export const ReactionBar = ({
   const toggle = async (kind: ReactionKind) => {
     if (!user) return toast.error("Please sign in");
     setOpen(false);
+    haptic(10);
     const has = mine?.has(kind);
     if (has) {
       await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id).eq("kind", kind);
