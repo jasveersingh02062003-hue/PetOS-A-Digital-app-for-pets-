@@ -125,6 +125,29 @@ const AiChat = () => {
     } finally {
       setStreaming(false);
     }
+
+    // Soft-gate: free users see Plus prompt once after their 3rd chat in 30d.
+    if (tier?.tier === "free" && user?.id) {
+      try {
+        const seenKey = `petos_plus_softgate_${user.id}`;
+        const lastShown = localStorage.getItem(seenKey);
+        const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (!lastShown || Number(lastShown) < monthAgo) {
+          const since = new Date(monthAgo).toISOString().slice(0, 10);
+          const { data: rows } = await supabase
+            .from("usage_counters")
+            .select("count")
+            .eq("user_id", user.id)
+            .eq("kind", "ai_chat")
+            .gte("period", since);
+          const total = (rows ?? []).reduce((s, r: any) => s + (r.count ?? 0), 0);
+          if (total >= 3) {
+            setSoftGate(true);
+            localStorage.setItem(seenKey, String(Date.now()));
+          }
+        }
+      } catch { /* ignore */ }
+    }
   };
 
   return (
@@ -229,6 +252,13 @@ const AiChat = () => {
           </Button>
         </form>
       </div>
+
+      <TierGate
+        open={softGate}
+        onOpenChange={setSoftGate}
+        feature="Loving DogtorAI?"
+        reason="Plus gives unlimited chats, vet consults, and more — at one price."
+      />
     </div>
   );
 };
