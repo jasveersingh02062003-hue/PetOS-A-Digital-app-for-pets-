@@ -66,7 +66,6 @@ serve(async (req) => {
               .update({
                 status: "paid",
                 provider_session_id: session.id,
-                paid_at: new Date().toISOString(),
               })
               .eq("id", intentId);
           }
