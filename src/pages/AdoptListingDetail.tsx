@@ -119,7 +119,9 @@ const AdoptListingDetail = () => {
           </a>
         )}
         {listing.microchip_id && <div className="text-sm text-muted-foreground">Microchip: <span className="font-mono">{listing.microchip_id}</span></div>}
-        {listing.parents_info?.notes && <div className="text-sm text-muted-foreground">Parents: {listing.parents_info.notes}</div>}
+        {(listing.parents_info as any)?.notes && (
+          <div className="text-sm text-muted-foreground">Parents: {(listing.parents_info as any).notes}</div>
+        )}
       </Card>
 
       <Card className="rounded-2xl bg-amber-500/10 border-amber-500/30 p-3 mb-4 flex gap-2 text-[12px] leading-relaxed">
@@ -129,7 +131,7 @@ const AdoptListingDetail = () => {
 
       <div className="flex gap-2">
         <Button onClick={() => setConfirmOpen(true)} className="flex-1 rounded-xl h-12">Contact owner</Button>
-        <ReportButton contentType="pet_listing" contentId={listing.id} />
+        <ReportButton subjectType="listing" subjectId={listing.id} />
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
