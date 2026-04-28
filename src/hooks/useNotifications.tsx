@@ -34,23 +34,25 @@ export const useNotifications = () => {
   });
 
   useEffect(() => {
-    if (!user) return;
-    const channel = supabase.channel(`notif-${user.id}`);
-    channel.on(
-      "postgres_changes" as any,
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "notifications",
-        filter: `user_id=eq.${user.id}`,
-      },
-      (payload: any) => {
-        const n = payload.new as Notification;
-        toast(n.title, { description: n.body || undefined });
-        qc.invalidateQueries({ queryKey: ["notifications", user.id] });
-      },
-    );
-    channel.subscribe();
+    if (!user?.id) return;
+    // Unique channel name per mount avoids "subscribe() already called" in StrictMode
+    const channel = supabase
+      .channel(`notif-${user.id}-${Math.random().toString(36).slice(2, 8)}`)
+      .on(
+        "postgres_changes" as any,
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const n = payload.new as Notification;
+          toast(n.title, { description: n.body || undefined });
+          qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+        },
+      )
+      .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
