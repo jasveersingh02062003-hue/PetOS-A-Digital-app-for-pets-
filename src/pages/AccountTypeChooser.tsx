@@ -3,14 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert } from "lucide-react";
+import { ArrowLeft, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { WizardSteps } from "@/components/onboarding/WizardSteps";
 
-type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer";
+type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer";
 
-const OPTIONS: { value: AccountType; title: string; sub: string; Icon: any; needsOrg: boolean }[] = [
+const OPTIONS: { value: AccountType; title: string; sub: string; Icon: any; needsOrg: boolean; buyerOnly?: boolean }[] = [
+  { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders, no pet required", Icon: Search, needsOrg: false, buyerOnly: true },
   { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint, needsOrg: false },
   { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, needsOrg: true },
   { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, needsOrg: true },
@@ -49,6 +50,9 @@ const AccountTypeChooser = () => {
       if (opt.needsOrg) {
         toast.success("Saved. Continue with verification");
         nav("/onboarding/org");
+      } else if (opt.buyerOnly) {
+        toast.success("Welcome! Let's tune your search");
+        nav("/onboarding/buyer-prefs");
       } else {
         toast.success("Account type saved");
         nav("/onboarding/add-pet");
