@@ -181,7 +181,7 @@ export default function AppointmentRoom() {
         <PrescriptionBuilder appointmentId={appt.id} petId={appt.pet_id} ownerId={appt.owner_id} />
       )}
 
-
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages?.length === 0 && (
           <div className="text-center text-xs text-muted-foreground py-8">No messages yet</div>
         )}
