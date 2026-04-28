@@ -185,7 +185,7 @@ const Onboarding = () => {
         allergies,
         conditions,
         temperament,
-        discoverable_for_mating: discoverable,
+        discoverable_for_mating: neutered ? false : discoverable,
         vaccination_verified: !!vaccinePath,
       }).select("id").single();
       if (petErr) throw petErr;
@@ -478,10 +478,15 @@ const Onboarding = () => {
 
         <ToggleRow
           label="Discoverable for mating"
-          desc="Other verified owners in your city can request a match. Off by default."
-          checked={discoverable}
-          onChange={setDiscoverable}
+          desc={
+            neutered
+              ? `Since ${petName || "your pet"} is neutered, mating discovery stays off. Every other feature still works.`
+              : "Other verified owners in your city can request a match. Off by default."
+          }
+          checked={neutered ? false : discoverable}
+          onChange={(v) => !neutered && setDiscoverable(v)}
           card
+          disabled={neutered}
         />
       </div>
     </StepShell>
