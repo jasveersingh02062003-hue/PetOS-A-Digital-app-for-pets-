@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { EmergencySheet } from "./EmergencySheet";
 import { NotificationBell } from "./NotificationBell";
+import { ComposerButton } from "./Composer";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -39,6 +40,7 @@ export const AppShell = () => {
       </main>
       <BottomNav onEmergency={() => setEmergencyOpen(true)} />
       <EmergencySheet open={emergencyOpen} onOpenChange={setEmergencyOpen} />
+      {user && <ComposerButton variant="global" />}
     </div>
   );
 };
