@@ -2483,6 +2483,144 @@ export type Database = {
           },
         ]
       }
+      pregnancies: {
+        Row: {
+          actual_whelp_date: string | null
+          created_at: string
+          dam_pet_id: string
+          expected_whelp_date: string | null
+          id: string
+          litter_id: string | null
+          mating_date: string | null
+          mating_request_id: string | null
+          notes: string | null
+          owner_id: string
+          sire_pet_id: string | null
+          status: Database["public"]["Enums"]["pregnancy_status"]
+          updated_at: string
+        }
+        Insert: {
+          actual_whelp_date?: string | null
+          created_at?: string
+          dam_pet_id: string
+          expected_whelp_date?: string | null
+          id?: string
+          litter_id?: string | null
+          mating_date?: string | null
+          mating_request_id?: string | null
+          notes?: string | null
+          owner_id: string
+          sire_pet_id?: string | null
+          status?: Database["public"]["Enums"]["pregnancy_status"]
+          updated_at?: string
+        }
+        Update: {
+          actual_whelp_date?: string | null
+          created_at?: string
+          dam_pet_id?: string
+          expected_whelp_date?: string | null
+          id?: string
+          litter_id?: string | null
+          mating_date?: string | null
+          mating_request_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          sire_pet_id?: string | null
+          status?: Database["public"]["Enums"]["pregnancy_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pregnancies_dam_pet_id_fkey"
+            columns: ["dam_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pregnancies_dam_pet_id_fkey"
+            columns: ["dam_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pregnancies_litter_id_fkey"
+            columns: ["litter_id"]
+            isOneToOne: false
+            referencedRelation: "litter_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pregnancies_mating_request_id_fkey"
+            columns: ["mating_request_id"]
+            isOneToOne: false
+            referencedRelation: "mating_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pregnancies_sire_pet_id_fkey"
+            columns: ["sire_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pregnancies_sire_pet_id_fkey"
+            columns: ["sire_pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pregnancy_milestones: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          kind: Database["public"]["Enums"]["pregnancy_milestone_kind"]
+          notes: string | null
+          occurred_on: string
+          pregnancy_id: string
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: Database["public"]["Enums"]["pregnancy_milestone_kind"]
+          notes?: string | null
+          occurred_on?: string
+          pregnancy_id: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["pregnancy_milestone_kind"]
+          notes?: string | null
+          occurred_on?: string
+          pregnancy_id?: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pregnancy_milestones_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proactive_alerts: {
         Row: {
           body: string
@@ -4539,6 +4677,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      notify_upcoming_whelpings: { Args: never; Returns: number }
       notify_user: {
         Args: {
           _body: string
@@ -4699,6 +4838,17 @@ export type Database = {
         | "sold"
       pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
+      pregnancy_milestone_kind:
+        | "mating_confirmed"
+        | "vet_check"
+        | "ultrasound"
+        | "weight"
+        | "feeding_change"
+        | "symptom"
+        | "whelping_prep"
+        | "whelped"
+        | "note"
+      pregnancy_status: "active" | "whelped" | "lost" | "cancelled"
       product_category:
         | "food"
         | "toys"
@@ -4993,6 +5143,18 @@ export const Constants = {
       ],
       pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
+      pregnancy_milestone_kind: [
+        "mating_confirmed",
+        "vet_check",
+        "ultrasound",
+        "weight",
+        "feeding_change",
+        "symptom",
+        "whelping_prep",
+        "whelped",
+        "note",
+      ],
+      pregnancy_status: ["active", "whelped", "lost", "cancelled"],
       product_category: [
         "food",
         "toys",
