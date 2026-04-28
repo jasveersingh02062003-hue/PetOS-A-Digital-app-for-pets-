@@ -156,6 +156,7 @@ const App = () => (
               <Route path="/askvet" element={<AskVet />} />
               <Route path="/askvet/new" element={<AskVetNew />} />
               <Route path="/askvet/:id" element={<AskVetDetail />} />
+              <Route path="/daily" element={<Daily />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
