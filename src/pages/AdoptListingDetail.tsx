@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, Heart, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft } from "lucide-react";
 import { ReportButton } from "@/components/ReportButton";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
 import { BredOnPetosRibbon } from "@/components/BredOnPetosRibbon";
-import { Link } from "react-router-dom";
+import { PhotoGallery } from "@/components/PhotoGallery";
+import { LineageTree } from "@/components/LineageTree";
+import { StartTransferSheet, TransferStatusCard } from "@/components/TransferSheet";
+import { useAuth } from "@/hooks/useAuth";
+import { SmartImage } from "@/components/SmartImage";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -26,7 +30,9 @@ const TYPE_TONE: Record<string, string> = {
 const AdoptListingDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["pet-listing", id],
@@ -54,6 +60,22 @@ const AdoptListingDetail = () => {
     },
   });
 
+  const { data: moreFromSeller } = useQuery({
+    queryKey: ["more-from-seller", listing?.owner_id, listing?.id],
+    enabled: !!listing?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pet_listings")
+        .select("id, title, photos, fee_inr, listing_type")
+        .eq("owner_id", listing!.owner_id)
+        .eq("active", true)
+        .eq("status", "active")
+        .neq("id", listing!.id)
+        .limit(8);
+      return data ?? [];
+    },
+  });
+
   useSeo({
     title: listing?.title ?? "Pet listing",
     description: listing?.description?.slice(0, 150) ?? "Adopt or rehome a pet.",
@@ -62,8 +84,10 @@ const AdoptListingDetail = () => {
   if (isLoading) return <div className="container-app pt-10 text-center text-muted-foreground">Loading…</div>;
   if (!listing) return <div className="container-app pt-10 text-center text-muted-foreground">Listing not found</div>;
 
-  const photo = Array.isArray(listing.photos) && listing.photos.length ? listing.photos[0] : null;
+  const photos: string[] = Array.isArray(listing.photos) ? (listing.photos as string[]) : [];
   const isFree = listing.listing_type === "adoption" || !listing.fee_inr;
+  const isOwner = !!user && user.id === listing.owner_id;
+  const isSold = listing.status === "sold";
 
   const contact = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -99,9 +123,7 @@ const AdoptListingDetail = () => {
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      <div className="aspect-[4/3] rounded-2xl bg-muted overflow-hidden mb-4">
-        {photo ? <img src={photo} alt={listing.title} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-muted-foreground"><Heart className="h-10 w-10" /></div>}
-      </div>
+      <PhotoGallery photos={photos} alt={listing.title} />
 
       <div className="flex items-start justify-between gap-2 mb-2">
         <h1 className="font-display text-2xl leading-tight">{listing.title}</h1>
@@ -131,6 +153,10 @@ const AdoptListingDetail = () => {
       {listing.bred_on_petos && (
         <div className="mb-3"><BredOnPetosRibbon litterId={listing.litter_id} /></div>
       )}
+
+      {listing.pet_id && <LineageTree petId={listing.pet_id} />}
+
+      <TransferStatusCard listingId={listing.id} />
 
       {sellerInfo?.profile?.account_type === "pet_parent" && (sellerInfo?.activeSaleCount ?? 0) > 2 && (
         <Card className="rounded-2xl bg-amber-500/10 border-amber-500/30 p-3 mb-3 flex gap-2 text-[12px]">
@@ -176,10 +202,60 @@ const AdoptListingDetail = () => {
         <span>Always meet the pet in person before paying. Never wire money. Verify documents on site.</span>
       </Card>
 
-      <div className="flex gap-2">
-        <Button onClick={() => setConfirmOpen(true)} className="flex-1 rounded-xl h-12">Contact owner</Button>
-        <ReportButton subjectType="listing" subjectId={listing.id} />
-      </div>
+      {isOwner ? (
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setTransferOpen(true)}
+            disabled={isSold || !listing.pet_id}
+            className="flex-1 rounded-xl h-12 gap-2"
+          >
+            <ArrowRightLeft className="h-4 w-4" /> {isSold ? "Sold" : "Transfer to buyer"}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button onClick={() => setConfirmOpen(true)} disabled={isSold} className="flex-1 rounded-xl h-12">
+            {isSold ? "No longer available" : "Contact owner"}
+          </Button>
+          <ReportButton subjectType="listing" subjectId={listing.id} />
+        </div>
+      )}
+
+      {!!moreFromSeller?.length && (
+        <div className="mt-8">
+          <h2 className="font-display text-lg mb-3">More from this seller</h2>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-2">
+            {moreFromSeller.map((m: any) => {
+              const p = Array.isArray(m.photos) && m.photos.length ? m.photos[0] : null;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => nav(`/mates/adopt/${m.id}`)}
+                  className="shrink-0 w-32 text-left rounded-2xl border border-hairline bg-card overflow-hidden"
+                >
+                  <div className="aspect-square bg-muted">
+                    {p ? <SmartImage src={p} alt={m.title} aspect="1/1" className="w-full h-full" /> : null}
+                  </div>
+                  <div className="p-2">
+                    <div className="text-xs font-medium truncate">{m.title}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {m.listing_type === "adoption" || !m.fee_inr ? "Free" : `₹${m.fee_inr.toLocaleString("en-IN")}`}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {isOwner && (
+        <StartTransferSheet
+          listing={{ id: listing.id, owner_id: listing.owner_id, pet_id: listing.pet_id, fee_inr: listing.fee_inr, title: listing.title }}
+          open={transferOpen}
+          onOpenChange={setTransferOpen}
+        />
+      )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
