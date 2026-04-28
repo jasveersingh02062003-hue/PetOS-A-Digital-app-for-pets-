@@ -133,19 +133,18 @@ const MatingPane = ({ myPet, nav, isBuyer }: { myPet: any; nav: any; isBuyer: bo
         <FeatureChip tone="lilac" icon={Sparkles} title="Compatible" />
       </div>
 
-      {!myPet && (
-      !isBuyer ? (
+      {!myPet && !isBuyer && (
         <Button
           onClick={() => nav("/onboarding")}
           className="w-full rounded-2xl h-12 mb-4 bg-coral text-coral-foreground hover:bg-coral/90 gap-2"
         >
           <Plus className="h-4 w-4" /> Add your pet to start
         </Button>
-      ) : (
+      )}
+      {!myPet && isBuyer && (
         <Card className="rounded-2xl border-hairline bg-muted/30 shadow-none p-3 mb-4 text-xs text-muted-foreground">
           Browsing studs and dams. Once you have a pet, you can list it here too.
         </Card>
-      )
       )}
 
       <h2 className="font-display text-lg mb-3 mt-2">Browse listings</h2>
