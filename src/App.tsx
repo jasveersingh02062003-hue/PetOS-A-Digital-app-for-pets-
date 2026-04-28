@@ -84,6 +84,8 @@ import MessageThread from "./pages/MessageThread";
 import PhotoVet from "./pages/PhotoVet";
 import Install from "./pages/Install";
 import Search from "./pages/Search";
+import BlockedAccounts from "./pages/settings/BlockedAccounts";
+import ModerationQueue from "./pages/admin/Moderation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -142,6 +144,8 @@ const App = () => (
               <Route path="/settings/goals" element={<GoalsPage />} />
               <Route path="/settings/pet/:id" element={<PetEditor />} />
               <Route path="/settings/billing" element={<Billing />} />
+              <Route path="/settings/blocked" element={<BlockedAccounts />} />
+              <Route path="/admin/moderation" element={<ModerationQueue />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
               <Route path="/missing" element={<MissingFeed />} />
