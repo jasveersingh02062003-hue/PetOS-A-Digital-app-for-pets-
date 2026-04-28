@@ -11,6 +11,7 @@ import {
   Plus,
   ClipboardList,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty/EmptyState";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -102,9 +103,11 @@ const Services = () => {
           <p className="text-sm text-muted-foreground">Loading providers…</p>
         )}
         {!isLoading && (providers?.length ?? 0) === 0 && (
-          <Card className="rounded-2xl border-hairline p-6 text-center text-sm text-muted-foreground">
-            No providers yet in this category.
-          </Card>
+          <EmptyState
+            icon={Footprints}
+            title="No providers yet"
+            description="Try a different category, or check back soon — new pros join Petos every week."
+          />
         )}
         {providers?.map((p) => (
           <Link key={p.id} to={`/services/${p.id}`}>

@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { EmptyState } from "@/components/empty/EmptyState";
 
 const Orders = () => {
   const nav = useNavigate();
@@ -33,9 +34,13 @@ const Orders = () => {
         <h1 className="font-display text-2xl">My orders</h1>
       </header>
       {(orders?.length ?? 0) === 0 && (
-        <Card className="rounded-2xl border-hairline p-6 text-center text-sm text-muted-foreground">
-          No orders yet.
-        </Card>
+        <EmptyState
+          icon={ShoppingBag}
+          title="No orders yet"
+          description="Things you buy from the Petos shop will appear here."
+          ctaLabel="Browse the shop"
+          onCta={() => nav("/shop")}
+        />
       )}
       <div className="space-y-3">
         {orders?.map((o: any) => (
