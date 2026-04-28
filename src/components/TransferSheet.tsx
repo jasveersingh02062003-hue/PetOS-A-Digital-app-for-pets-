@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Loader2, ArrowRightLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { LeaveReviewSheet } from "@/components/reviews/LeaveReviewSheet";
 
 type Listing = {
   id: string;
@@ -121,6 +122,7 @@ export function StartTransferSheet({
 export function TransferStatusCard({ listingId }: { listingId: string }) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const { data: transfer } = useQuery({
     queryKey: ["transfer", listingId],
@@ -159,11 +161,31 @@ export function TransferStatusCard({ listingId }: { listingId: string }) {
   };
 
   if (transfer.status === "accepted") {
+    const buyerHere = transfer.to_user_id === user.id;
     return (
-      <Card className="rounded-2xl bg-leaf/10 border-leaf/30 p-3 mb-3 flex gap-2 text-[12px]">
-        <CheckCircle2 className="h-4 w-4 text-leaf shrink-0 mt-0.5" />
-        <span>Ownership transferred. This pet is now with the new owner.</span>
-      </Card>
+      <>
+        <Card className="rounded-2xl bg-leaf/10 border-leaf/30 p-3 mb-3">
+          <div className="flex gap-2 text-[12px] mb-2">
+            <CheckCircle2 className="h-4 w-4 text-leaf shrink-0 mt-0.5" />
+            <span>Ownership transferred. This pet is now with the new owner.</span>
+          </div>
+          {buyerHere && (
+            <Button size="sm" onClick={() => setReviewOpen(true)} className="w-full rounded-xl">
+              Rate the seller
+            </Button>
+          )}
+        </Card>
+        {buyerHere && (
+          <LeaveReviewSheet
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            subjectType="provider"
+            subjectId={transfer.from_user_id}
+            subjectName="the seller"
+            context="Help future buyers — share how the experience went."
+          />
+        )}
+      </>
     );
   }
   if (transfer.status === "declined" || transfer.status === "cancelled") {
