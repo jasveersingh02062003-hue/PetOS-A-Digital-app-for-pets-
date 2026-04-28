@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
+import { FollowButton } from "./social/FollowButton";
 
 export type FeedPost = {
   id: string;
