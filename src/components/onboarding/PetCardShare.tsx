@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Sparkles, Check } from "lucide-react";
+import { Sparkles, Check, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const PetCardShare = ({
   petName, species, breed, city, avatar, verified, onContinue,
@@ -57,9 +58,29 @@ export const PetCardShare = ({
         </div>
       </motion.div>
 
-      <Button onClick={onContinue} size="lg" className="w-full rounded-xl h-12 mt-8">
-        Enter Petos
-      </Button>
+      <div className="space-y-2 mt-8">
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full rounded-xl h-12 border-hairline gap-2"
+          onClick={async () => {
+            const text = `Meet ${petName} on Petos 🐾 — ${breed} from ${city}.`;
+            const url = window.location.origin;
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: `${petName} on Petos`, text, url });
+              } else {
+                window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, "_blank");
+              }
+            } catch { /* user cancelled */ }
+          }}
+        >
+          <Share2 className="h-4 w-4" /> Share {petName}'s card
+        </Button>
+        <Button onClick={onContinue} size="lg" className="w-full rounded-xl h-12">
+          Enter Petos
+        </Button>
+      </div>
     </motion.div>
   </div>
 );

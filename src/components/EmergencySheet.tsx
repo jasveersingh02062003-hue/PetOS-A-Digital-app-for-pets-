@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 type Triage = {
   severity: "mild" | "moderate" | "severe";
@@ -25,6 +26,7 @@ export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenCh
   const [loading, setLoading] = useState(false);
   const [triage, setTriage] = useState<Triage | null>(null);
   const [creating, setCreating] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   useEffect(() => {
     if (!petId && pets?.[0]) setPetId(pets[0].id);
@@ -64,7 +66,12 @@ export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenCh
     }
   };
 
-  const connectVet = async () => {
+  const startConnectVet = () => {
+    if (!triage || !petId) return;
+    setPaywallOpen(true);
+  };
+
+  const finishConnectVet = async () => {
     if (!triage || !petId) return;
     setCreating(true);
     try {
@@ -175,7 +182,7 @@ export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenCh
             )}
 
             {triage.recommend_vet || triage.severity !== "mild" ? (
-              <Button onClick={connectVet} disabled={creating} size="lg" className="w-full rounded-2xl h-14 gap-3 justify-start">
+              <Button onClick={startConnectVet} disabled={creating} size="lg" className="w-full rounded-2xl h-14 gap-3 justify-start">
                 <Stethoscope className="h-5 w-5" />
                 <div className="text-left">
                   <div className="font-medium">Connect to a vet</div>
@@ -201,6 +208,12 @@ export const EmergencySheet = ({ open, onOpenChange }: { open: boolean; onOpenCh
           </div>
         )}
       </SheetContent>
+      <PaywallSheet
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        kind="vet_consult"
+        onConfirmed={finishConnectVet}
+      />
     </Sheet>
   );
 };

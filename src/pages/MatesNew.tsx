@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, ShieldAlert, Loader2, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 const MatesNew = () => {
   const nav = useNavigate();
@@ -25,20 +26,25 @@ const MatesNew = () => {
   const [requirements, setRequirements] = useState("");
   const [discoverable, setDiscoverable] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const selected = pets?.find((p) => p.id === petId);
   const isNeutered = !!selected?.neutered;
   const eligible = selected?.vaccination_verified && !isNeutered;
 
-  const submit = async (e: React.FormEvent) => {
+  const startSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selected) return toast.error("Pick a pet first");
     if (!eligible) return toast.error("Verify vaccinations before listing");
+    setPaywallOpen(true);
+  };
+
+  const finishSubmit = async (): Promise<void> => {
+    if (!selected) return;
     setSaving(true);
-    // Ensure pet flagged discoverable
     if (!selected.discoverable_for_mating || selected.discoverable_for_mating !== discoverable) {
       const { error } = await supabase.from("pets").update({ discoverable_for_mating: discoverable }).eq("id", selected.id);
-      if (error) { setSaving(false); return toast.error(error.message); }
+      if (error) { setSaving(false); toast.error(error.message); return; }
     }
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("mating_listings").insert({
@@ -53,8 +59,8 @@ const MatesNew = () => {
     });
     setSaving(false);
     if (error) {
-      if (error.message.includes("duplicate")) return toast.error("This pet already has a listing");
-      return toast.error(error.message);
+      if (error.message.includes("duplicate")) { toast.error("This pet already has a listing"); return; }
+      toast.error(error.message); return;
     }
     toast.success("Listing live");
     nav("/discover");
@@ -72,7 +78,7 @@ const MatesNew = () => {
         </div>
       </header>
 
-      <form onSubmit={submit} className="container-app py-5 space-y-4 pb-12">
+      <form onSubmit={startSubmit} className="container-app py-5 space-y-4 pb-12">
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Pet</Label>
           <Select value={petId} onValueChange={setPetId}>
@@ -163,6 +169,12 @@ const MatesNew = () => {
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4" />} Publish listing
         </Button>
       </form>
+      <PaywallSheet
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        kind="mating_listing"
+        onConfirmed={finishSubmit}
+      />
     </div>
   );
 };

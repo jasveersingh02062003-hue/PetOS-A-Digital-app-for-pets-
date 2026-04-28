@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { format } from "date-fns";
+import { PaywallSheet } from "@/components/PaywallSheet";
 
 const DEFAULT_TERMS = `Both parties confirm:
 • Their pet is healthy, fully vaccinated, and free from communicable conditions to the best of their knowledge.
@@ -29,6 +30,7 @@ export const AgreementCard = ({
   const [name, setName] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +48,14 @@ export const AgreementCard = ({
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [requestId]);
 
-  const sign = async () => {
+  const startSign = () => {
     if (!name.trim() || !agreed) return toast.error("Type your name and tick the box");
+    // Charge only on first creation; subsequent counter-signature is free.
+    if (!agreement) setPaywallOpen(true);
+    else finishSign();
+  };
+
+  const finishSign = async (): Promise<void> => {
     setSigning(true);
     const sigField = isFromOwner ? "from_signature" : "to_signature";
     const tsField = isFromOwner ? "from_signed_at" : "to_signed_at";
@@ -61,13 +69,13 @@ export const AgreementCard = ({
       };
       const { data, error } = await supabase.from("mating_agreements").insert(insertPayload).select().single();
       setSigning(false);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setAgreement(data);
     } else {
       const updatePayload: any = { [sigField]: name.trim(), [tsField]: nowIso };
       const { data, error } = await supabase.from("mating_agreements").update(updatePayload).eq("id", agreement.id).select().single();
       setSigning(false);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setAgreement(data);
     }
     toast.success("Signed");
@@ -82,6 +90,7 @@ export const AgreementCard = ({
   const fullySigned = mySig && theirSig;
 
   return (
+    <>
     <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
@@ -101,7 +110,7 @@ export const AgreementCard = ({
             <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(!!v)} className="mt-0.5" />
             <span>I have read and agree to these terms.</span>
           </label>
-          <Button onClick={sign} disabled={signing || !name.trim() || !agreed} size="lg" className="w-full rounded-xl">
+          <Button onClick={startSign} disabled={signing || !name.trim() || !agreed} size="lg" className="w-full rounded-xl">
             {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign agreement"}
           </Button>
         </div>
@@ -117,6 +126,14 @@ export const AgreementCard = ({
         </Card>
       )}
     </Card>
+    <PaywallSheet
+      open={paywallOpen}
+      onOpenChange={setPaywallOpen}
+      kind="agreement"
+      refId={requestId}
+      onConfirmed={finishSign}
+    />
+    </>
   );
 };
 
