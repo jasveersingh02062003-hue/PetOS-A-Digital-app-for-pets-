@@ -1,71 +1,116 @@
+# Mates → Two sub-tabs: Mating + Adopt / Rehome
+
 ## Goal
+Keep `/mates` as the home for "pet-to-pet life events," but cleanly separate two very different intents so users (and trust signals) don't get mixed up:
 
-Stop wasting the bottom-nav center slot on a generic "+" button. Move to a flat 5-tab layout that mirrors the user's mental model (Home · Mates · Health · Discover · Profile) and replace the global FAB with a per-tab contextual FAB that means something different on each screen.
+1. **Mating** — current flow (stud / dam, vaccination-verified, agreements). No change in behavior.
+2. **Adopt / Rehome / Breeder sale** — a new, safety-first listing flow.
 
-## New navigation
+## Why a sub-tab (not Discover, not a new top tab)
+- One mental home for "I'm looking for another pet's owner."
+- Discover stays focused on services, shop, meetups, exploration.
+- Avoids adding a 6th bottom-nav slot (5 is already optimal).
+
+## UX layout
 
 ```text
-┌──────────────────────────────────────────────────┐
-│  Home    Mates    Health    Discover    Profile  │
-│  (post)  (heart)  (cross)   (compass)   (user)   │
-└──────────────────────────────────────────────────┘
-   social   mating   health    explore    me
+/mates
+ ├── Header: "Find your pet's perfect match"
+ ├── Your-pet hero card (unchanged)
+ ├── Segmented control:  [ Mating ]  [ Adopt & Rehome ]
+ │      ↑ sticky, swipeable
+ └── Grid below changes per tab
 ```
 
-- Flat 5-tab bar — no center cutout, no global FAB.
-- Active tab = primary color; Mates active = coral (kept).
-- Emergency Siren button stays where it is (top-right of nav, already implemented).
+- Default tab = **Mating** (preserves current behavior).
+- Contextual FAB on `/mates` already navigates to `/mates/new`. We extend it: long-press or a small chevron opens a chooser — "List for mating" vs "List for adoption / rehome".
+- URL state via `?tab=mating|adopt` so back-button and deep links work.
 
-## Per-tab contextual FAB
+## Adopt / Rehome — listing types
 
-A single floating "+" button rendered by `AppShell`, but its icon + action change based on the active route:
+Three listing types, picked at creation time:
 
-| Route | FAB icon | Action |
-|---|---|---|
-| `/` (Home) | Plus | Open post composer (existing `petos:open-composer` event) |
-| `/mates` | Heart+ | Navigate to `/mates/new` (new mating listing) |
-| `/health` | Activity+ | Open quick health-log sheet (weight / vaccine / symptom) |
-| `/discover` | none | Hidden — Discover is browse-only |
-| `/profile` | none | Hidden — settings live in header |
+| Type | Who | Fee allowed | Required proofs |
+|---|---|---|---|
+| **Adoption** | Anyone rehoming a rescue / personal pet | Free only | Vax record, dewormer, age ≥ 8 weeks |
+| **Rehoming** | Owner who can no longer keep pet | Token fee (₹0–₹2,000) | Vax record, reason, ownership proof |
+| **Breeder sale** | Verified breeders only | Any fee | Breeder cert upload + KYC + parents' info + microchip |
 
-Long-press on any FAB still opens the Emergency sheet (preserves the existing gesture).
+### Mandatory guardrails for every adopt listing
+- Vaccination record upload (image)
+- Age field — block puppies/kittens under 8 weeks
+- City + approximate location (no exact address publicly)
+- Phone verified (already part of profile)
+- "No in-app payment for the pet itself." Listings show fee transparently; transfer happens in person.
+- Optional refundable visit-deposit (₹500) via existing payment_intents flow — protects sellers from no-shows, refundable if either party cancels.
 
-## Files to change
+### Breeder verification (one-time)
+- Upload breeder registration certificate (state Animal Welfare Board / Kennel Club India number).
+- Manual moderation queue → flips a `breeder_verified` flag on the user.
+- Only verified breeders see "Breeder sale" as a listing option.
 
-1. **`src/components/BottomNav.tsx`** — replace the 5-cell grid (which has a center cutout) with a flat 5-tab grid. Tabs: Home, Mates, Health, Discover, Profile. Remove the center FAB block. Keep the Siren emergency button as-is.
+### Buyer-side trust signals on each card
+- Vax-verified badge (existing pattern)
+- Listing type badge: green "Adoption" / amber "Rehoming" / blue "Breeder ✓"
+- Age, parents (if breeder), microchip indicator
+- Report button (existing `ReportButton`)
 
-2. **`src/components/AppShell.tsx`** — render a new `<ContextualFab />` component instead of the current global `<ComposerButton variant="global" />`. Keep the EmergencySheet wiring.
+### Anti-abuse
+- Same seller > 2 active "breeder sale" listings in 30 days → flag for moderation
+- Auto-takedown if reported by 3+ users until reviewed
+- Cool-off interstitial before contacting seller: "A pet is a 10–15 year commitment. Continue?"
 
-3. **`src/components/ContextualFab.tsx`** (new) — reads `useLocation()`, picks the right icon + action from a small route map, renders a floating button bottom-right above the nav (like Gmail). Long-press → emergency. Hidden on `/discover`, `/profile`, `/auth`, `/onboarding`, `/admin*`, `/ai`.
+## Data model
 
-4. **`src/components/health/QuickLogSheet.tsx`** (new, small) — bottom sheet with three buttons: "Log weight", "Log vaccine", "Log symptom" → routes to existing health flows. Triggered by the Health FAB.
+New table `pet_listings` (separate from `mating_listings` to keep mating untouched):
 
-5. **`src/components/Composer.tsx`** — keep `ComposerButton` as a component but stop rendering the global variant from `AppShell`. The composer sheet itself stays untouched (still opened by the `petos:open-composer` event from Home FAB and from EmptyState CTAs).
+```text
+pet_listings
+  id, owner_id, pet_id (nullable for rescues without a pet record)
+  listing_type   enum: 'adoption' | 'rehoming' | 'breeder_sale'
+  fee_inr        int nullable
+  city, lat, lng
+  age_weeks      int  (>= 8 enforced by trigger)
+  vaccination_doc_url  text not null
+  breeder_cert_url     text nullable
+  parents_info         jsonb nullable   (sire/dam names, breed)
+  microchip_id         text nullable
+  description          text
+  active               bool default true
+  status               enum: 'active' | 'pending_review' | 'taken_down' | 'completed'
+  created_at, updated_at
+```
 
-6. **`src/components/QuickAccessRail.tsx`** — remove the "Mates" chip (now a tab) and "Ask vet" stays. Add a "Mating" chip only if user feedback shows it's missed; otherwise leave the 6 items reduced to 5.
+Plus:
+- `profiles.breeder_verified  bool default false`
+- `profiles.breeder_cert_url  text`
+- RLS: anyone can SELECT active rows; owner can INSERT/UPDATE/DELETE own rows; only `breeder_verified=true` users can insert with `listing_type='breeder_sale'` (enforced via trigger + policy).
 
-## Behavior details
+## Routes & files
 
-- **No route changes.** `/`, `/mates`, `/health`, `/discover`, `/profile` already exist in `App.tsx` (lines 198–203). Health is currently only reachable via PetHeroCard — promoting it to a tab just exposes it.
-- **Deep links unchanged.** Nothing breaks externally.
-- **Animation.** Active tab keeps the existing spring scale + translate animation. FAB fades/slides in when route changes (framer-motion `AnimatePresence`).
-- **Safe area.** FAB positioned with `bottom: calc(5.5rem + env(safe-area-inset-bottom))` so it sits above the nav, mirroring the Siren button.
-- **Accessibility.** FAB `aria-label` updates per route ("New post", "New mating listing", "Log health entry"). Long-press hint added to `aria-description`.
+New:
+- `src/components/AdoptGrid.tsx` — grid of `pet_listings`, filters (type, species, city, age range)
+- `src/pages/AdoptListingNew.tsx` — `/mates/adopt/new` 3-step form (type → pet info → proofs)
+- `src/pages/AdoptListingDetail.tsx` — `/mates/adopt/:id`
+- `src/components/AdoptListingCard.tsx`
+- `src/components/CommitmentInterstitial.tsx` — cool-off dialog before "Contact seller"
+- `src/pages/settings/BreederVerification.tsx` — upload cert, status badge
 
-## What we are NOT doing (yet)
+Updated:
+- `src/pages/Mates.tsx` — add segmented `[Mating | Adopt & Rehome]` with `?tab=` URL sync; mount `MatesGrid` or `AdoptGrid`.
+- `src/components/ContextualFab.tsx` — on `/mates?tab=adopt`, FAB navigates to `/mates/adopt/new`.
+- `src/App.tsx` — new routes.
 
-- Not splitting Discover into Explore/Shop/Meetups sub-tabs — that's a separate redesign.
-- Not moving Mating content out of the existing `/mates` page — the page already handles listings, nearby, history.
-- Not changing Health page IA — only adding the quick-log sheet entry point.
-- Not removing the Emergency Siren button.
+## Out of scope (later)
+- In-app payment for the pet (intentionally excluded)
+- Shipping / inter-city transport
+- Breed-specific marketplaces
 
-## Acceptance check
+## Open question
+You started typing "where the different peo…" — please finish that thought before we build, in case it changes the buyer/seller flow. Best guesses:
+- "where different people can sell" → covered by listing types above
+- "where different people meet" → handled by existing Meetups in Discover
+- something else → tell me and I'll fold it in
 
-1. Bottom nav shows 5 evenly-spaced tabs, no center cutout.
-2. Tapping Health tab navigates to `/health` (no longer requires PetHeroCard).
-3. On Home, FAB "+" opens the post composer.
-4. On Mates, FAB navigates to `/mates/new`.
-5. On Health, FAB opens the quick-log sheet.
-6. On Discover and Profile, no FAB is visible.
-7. Long-press on any visible FAB opens the Emergency sheet.
-8. Siren button stays top-right of the nav on all tabs.
+---
+Approve and I'll implement: migration → RLS → pages → segmented Mates tab → FAB wiring.
