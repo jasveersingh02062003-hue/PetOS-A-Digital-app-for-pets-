@@ -24,6 +24,7 @@ export type StoryGroup = {
 export const useActiveStories = () => {
   return useQuery({
     queryKey: ["stories", "active"],
+    staleTime: 2 * 60_000,
     queryFn: async (): Promise<StoryGroup[]> => {
       const { data: stories, error } = await supabase
         .from("stories")
@@ -50,7 +51,6 @@ export const useActiveStories = () => {
       }
       return [...groups.values()];
     },
-    refetchInterval: 60_000,
   });
 };
 
