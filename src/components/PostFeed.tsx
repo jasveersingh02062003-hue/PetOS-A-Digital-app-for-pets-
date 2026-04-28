@@ -18,6 +18,7 @@ import { useBlockedIds } from "@/hooks/useBlockedIds";
 import { usePawBurst } from "./social/PawBurst";
 import { addReaction } from "@/lib/reactions";
 import { haptic } from "@/lib/haptics";
+import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { toast } from "sonner";
 
 export type FeedPost = {
