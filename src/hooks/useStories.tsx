@@ -82,5 +82,7 @@ export const useUploadStory = () => {
 };
 
 export const markStoryViewed = async (storyId: string, userId: string) => {
-  await supabase.from("story_views").insert({ story_id: storyId, viewer_id: userId }).select().single().then(() => {}).catch(() => {});
+  try {
+    await supabase.from("story_views").insert({ story_id: storyId, viewer_id: userId });
+  } catch {}
 };
