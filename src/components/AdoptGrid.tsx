@@ -9,9 +9,10 @@ import { PawPrint, MapPin, Plus, BadgeCheck, Sparkles } from "lucide-react";
 import { SmartImage } from "@/components/SmartImage";
 import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
+import { Input } from "@/components/ui/input";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
-type Filters = { species?: string; type?: "adoption" | "rehoming" | "breeder_sale"; city?: string; seller?: SellerType };
+type Filters = { species?: string; type?: "adoption" | "rehoming" | "breeder_sale"; city?: string; seller?: SellerType; bredOnly?: boolean };
 
 const TYPE_LABEL: Record<string, string> = {
   adoption: "Adoption",
@@ -39,9 +40,10 @@ export const AdoptGrid = () => {
         .order("created_at", { ascending: false })
         .limit(50);
       if (filters.type) q = q.eq("listing_type", filters.type);
-      if (filters.city) q = q.eq("city", filters.city);
+      if (filters.city) q = q.ilike("city", `%${filters.city}%`);
       if (filters.species) q = q.eq("species", filters.species);
       if (filters.seller) q = q.eq("seller_type", filters.seller);
+      if (filters.bredOnly) q = q.eq("bred_on_petos", true);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -66,6 +68,23 @@ export const AdoptGrid = () => {
         <FilterChip label="Kennels" active={filters.seller === "kennel"} onClick={() => setFilters({ ...filters, seller: filters.seller === "kennel" ? undefined : "kennel" })} />
         <FilterChip label="Pet parents" active={filters.seller === "pet_parent"} onClick={() => setFilters({ ...filters, seller: filters.seller === "pet_parent" ? undefined : "pet_parent" })} />
         <FilterChip label="Rescuers" active={filters.seller === "rescuer"} onClick={() => setFilters({ ...filters, seller: filters.seller === "rescuer" ? undefined : "rescuer" })} />
+      </div>
+
+      <div className="flex items-center gap-2 -mx-1 px-1">
+        <button
+          onClick={() => setFilters({ ...filters, bredOnly: !filters.bredOnly })}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors flex items-center gap-1 ${
+            filters.bredOnly ? "bg-coral text-coral-foreground border-coral" : "bg-card border-hairline text-foreground"
+          }`}
+        >
+          <Sparkles className="h-3 w-3" /> Bred on PetOS only
+        </button>
+        <Input
+          placeholder="City…"
+          value={filters.city ?? ""}
+          onChange={(e) => setFilters({ ...filters, city: e.target.value || undefined })}
+          className="h-8 rounded-full text-xs flex-1 max-w-[160px]"
+        />
       </div>
 
       <Button onClick={() => nav("/mates/adopt/new")} variant="outline" className="w-full rounded-2xl h-12 gap-2 border-dashed border-hairline">
