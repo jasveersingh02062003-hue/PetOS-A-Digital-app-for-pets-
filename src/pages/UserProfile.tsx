@@ -186,6 +186,16 @@ const UserProfile = () => {
           {profile?.city && <span>{profile.city}</span>}
         </div>
         {profile?.bio && <p className="text-sm leading-relaxed mb-3 whitespace-pre-line">{profile.bio}</p>}
+        {accountType === "buyer" && lookingFor && (lookingFor.species?.length || lookingFor.breed || lookingFor.city || lookingFor.max_price_inr) ? (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {lookingFor.species?.map((s) => (
+              <span key={s} className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px] capitalize">{s}</span>
+            ))}
+            {lookingFor.breed && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.breed}</span>}
+            {lookingFor.city && <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">{lookingFor.city}</span>}
+            {lookingFor.max_price_inr ? <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px]">≤ ₹{lookingFor.max_price_inr.toLocaleString()}</span> : null}
+          </div>
+        ) : null}
 
         {!isMe && userId && (
           <div className="flex items-center gap-2 mb-4">
