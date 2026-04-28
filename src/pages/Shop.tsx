@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Plus, ShoppingCart, Package } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
+import { SubjectRating } from "@/components/SubjectRating";
 import type { Database } from "@/integrations/supabase/types";
 
 type ProductCategory = Database["public"]["Enums"]["product_category"];

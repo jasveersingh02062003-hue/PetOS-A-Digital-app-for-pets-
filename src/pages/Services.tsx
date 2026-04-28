@@ -130,6 +130,9 @@ const Services = () => {
                 <div className="text-xs text-muted-foreground capitalize">
                   {p.category} · {p.city || "—"}
                 </div>
+                <div className="mt-0.5">
+                  <SubjectRating type="provider" id={p.id} size="sm" />
+                </div>
               </div>
               {p.hourly_rate_inr ? (
                 <div className="text-sm font-medium">
