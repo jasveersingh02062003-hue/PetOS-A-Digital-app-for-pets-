@@ -1,0 +1,15 @@
+{
+  "name": "Petos — A complete digital life for your pet",
+  "short_name": "Petos",
+  "description": "Social, health vault, AI vet, mating, services and shop — all in one app for pet parents.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f4ed",
+  "theme_color": "#f7f4ed",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon" },
+    { "src": "/placeholder.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -8,6 +8,7 @@ import { Heart, MessageCircle, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
+import { ReportButton } from "./ReportButton";
 
 export type FeedPost = {
   id: string;
@@ -170,6 +171,9 @@ const PostCard = ({ post, liked, onLike, onComment }: {
           <MessageCircle className="h-5 w-5" strokeWidth={1.6} />
           <span className="text-sm tabular-nums">{post.comment_count}</span>
         </button>
+        <div className="ml-auto pr-1">
+          <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+        </div>
       </div>
     </Card>
   );

@@ -475,6 +475,51 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolver_id: string | null
+          resolver_notes: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["report_subject"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolver_id?: string | null
+          resolver_notes?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["report_subject"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolver_id?: string | null
+          resolver_notes?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          subject_id?: string
+          subject_type?: Database["public"]["Enums"]["report_subject"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           body: string | null
@@ -1112,6 +1157,14 @@ export type Database = {
         | "health"
         | "grooming"
         | "other"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
+      report_subject:
+        | "post"
+        | "comment"
+        | "product"
+        | "provider"
+        | "user"
+        | "listing"
       request_status:
         | "pending"
         | "accepted"
@@ -1299,6 +1352,15 @@ export const Constants = {
         "health",
         "grooming",
         "other",
+      ],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
+      report_subject: [
+        "post",
+        "comment",
+        "product",
+        "provider",
+        "user",
+        "listing",
       ],
       request_status: [
         "pending",

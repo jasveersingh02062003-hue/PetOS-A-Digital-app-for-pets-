@@ -1,16 +1,27 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Plus, Wallet, Bookmark, Heart, Stethoscope, ShoppingBag, Package } from "lucide-react";
+import { LogOut, Settings, Plus, Wallet, Bookmark, Heart, Stethoscope, ShoppingBag, Package, ShieldCheck } from "lucide-react";
 import { PetVerifyBadge } from "@/components/PetVerifyBadge";
 
 const Profile = () => {
   const nav = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: pets } = usePets();
+  const [isStaff, setIsStaff] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_roles").select("role").eq("user_id", user.id).then(({ data }) => {
+      const roles = (data ?? []).map((r: any) => r.role);
+      setIsStaff(roles.includes("super_admin") || roles.includes("moderator"));
+    });
+  }, [user]);
 
   return (
     <div className="container-app pad-top-safe">
@@ -67,6 +78,7 @@ const Profile = () => {
         <Row icon={Package} label="My orders" onClick={() => nav("/orders")} />
         <Row icon={ShoppingBag} label="Manage services" onClick={() => nav("/services/manage")} />
         <Row icon={Stethoscope} label="Vet portal" onClick={() => nav("/vet")} />
+        {isStaff && <Row icon={ShieldCheck} label="Admin console" onClick={() => nav("/admin")} />}
         <Row icon={Bookmark} label="Saved posts" />
         <Row icon={Wallet} label="Wallet" />
       </div>
