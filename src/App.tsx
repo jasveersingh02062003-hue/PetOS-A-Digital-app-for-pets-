@@ -64,6 +64,8 @@ import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
 import { Navigate } from "react-router-dom";
 import { FirstRunGate } from "./components/FirstRunGate";
+import UserProfile from "./pages/UserProfile";
+import PetProfile from "./pages/PetProfile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +137,8 @@ const App = () => (
               <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/health/:petId/timeline" element={<Timeline />} />
               <Route path="/v/:code" element={<VaultView />} />
+              <Route path="/u/:userId" element={<UserProfile />} />
+              <Route path="/pet/:publicId" element={<PetProfile />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
