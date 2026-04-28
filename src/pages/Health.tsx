@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope, Sparkles } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
