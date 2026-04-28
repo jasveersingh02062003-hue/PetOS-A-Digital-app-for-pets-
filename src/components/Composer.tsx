@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, ImagePlus, X, Loader2, Plus } from "lucide-react";
+import { Camera, ImagePlus, X, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
@@ -52,7 +52,34 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ captions: string[]; hashtags: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const suggestCaptions = async () => {
+    setSuggesting(true);
+    setSuggestions(null);
+    try {
+      const pet = pets?.find((p) => p.id === petId);
+      const { data, error } = await supabase.functions.invoke("ai-suggest-caption", {
+        body: {
+          draft: caption,
+          pet_name: pet?.name,
+          pet_species: pet?.species,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      setSuggestions(data);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not get suggestions");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const onFile = (f: File | null) => {
     if (!f) return;
@@ -126,6 +153,49 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         className="rounded-xl border-hairline min-h-[100px] resize-none"
         maxLength={500}
       />
+
+      <div className="flex items-center justify-between gap-2 -mt-1">
+        <button
+          type="button"
+          onClick={suggestCaptions}
+          disabled={suggesting}
+          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+        >
+          {suggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          {suggesting ? "Thinking…" : "AI suggest captions"}
+        </button>
+        <span className="text-[10px] text-muted-foreground">{caption.length}/500</span>
+      </div>
+
+      {suggestions && (
+        <div className="rounded-xl border border-hairline bg-muted/30 p-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Tap to use</div>
+          {suggestions.captions.map((c, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { setCaption(c); setSuggestions(null); }}
+              className="w-full text-left text-sm px-3 py-2 rounded-lg bg-background border border-hairline hover:bg-card transition-colors"
+            >
+              {c}
+            </button>
+          ))}
+          {suggestions.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {suggestions.hashtags.map((h, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCaption((prev) => `${prev}${prev.endsWith(" ") || !prev ? "" : " "}#${h} `)}
+                  className="text-xs px-2 py-1 rounded-full bg-primary-soft text-primary"
+                >
+                  #{h}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {preview && (
         <div className="relative rounded-xl overflow-hidden bg-muted">
