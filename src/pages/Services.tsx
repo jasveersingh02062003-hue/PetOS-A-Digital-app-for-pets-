@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import { SubjectRating } from "@/components/SubjectRating";
 
 type ServiceCategory = Database["public"]["Enums"]["service_category"];
 
