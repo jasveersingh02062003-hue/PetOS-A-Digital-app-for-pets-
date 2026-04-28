@@ -1,84 +1,169 @@
-# Wave 8.5 — Polish: Maps everywhere, Live walk sharing, "Not a Google Form" UX
 
-## Audit of what's already done (no rework needed)
+# Petos — Reality Check & QA Plan
 
-Wave 8 already delivered the core. Verified in code:
+You feel the app is "basic, static, hard to navigate." That feeling is correct, and it's diagnosable. This plan tells you exactly **what is real, what is fake, what will break on publish, where users get lost**, and gives you a **copy-paste QA prompt** you can run against the live preview to confirm everything yourself.
 
-- **Leaflet wrapper** `src/components/maps/LeafletMap.tsx` — markers, popups, polyline, color pins, `followLast` auto-pan.
-- **Walk tracking** `src/pages/WalkSession.tsx` — realtime channel on `walk_tracks`, live polyline, distance (haversine), Start/End for provider, customer view, route `/walk/:id`.
-- **Geo radius search** — `nearby_vets`, `nearby_providers`, `nearby_missing`, `nearby_meetups` RPCs (using `earthdistance`/`cube`, which is functionally equivalent to PostGIS `ST_DWithin` for our needs — no need to add PostGIS too, would duplicate).
-- **NearMePanel** wired into Discover.
-- **Onboarding/AboutYou** capture lat/lng.
-- **Admin panel** at `/admin` with Reports / Vet Apps / Providers / Users tabs (role-gated via `user_roles`).
+---
 
-So this wave is **polish + the truly missing pieces** from your spec, not a rebuild.
+## 1. What's actually working (verified)
 
-## What this wave will add
+These are wired end-to-end with real DB, real RLS, real edge functions:
 
-### 1. Interactive maps in remaining detail pages
-Replace static "city text + MapPin icon" placeholders with real `LeafletMap` blocks (no iframes exist anymore — they were removed in Wave 8):
-- `MissingDetail.tsx` — already uses LeafletMap, add **marker clustering** via `leaflet.markercluster` when sightings > 10.
-- `MeetupDetail.tsx` — add map showing meetup `lat/lng` with venue popup.
-- `ServiceDetail.tsx` — add map showing provider location with name + rating popup.
-- `MissingNew.tsx` (create flow) — add a tap-to-pin map so owners set last-seen location precisely instead of relying on browser GPS.
-- All use a small dog-paw SVG `divIcon` for brand consistency.
+- **Auth** — email/password, Google OAuth, password reset
+- **Profile + Onboarding** — first-run gate redirects to `/onboarding`
+- **Pets** — create/edit, public_id sharing, vaccination verification flow
+- **Posts feed** — composer, hashtags, reactions, comments, sharing, daily moments + streaks
+- **Stories** — creation, viewing, view counters
+- **Messaging** — 1:1 + group conversations, realtime, read receipts
+- **Notifications** — DB notifications + push subscriptions table
+- **Health vault** — records, medications, vaccinations, parasite, nutrition, activity logs, vet read access via care team
+- **Tele-vet** — vet onboarding, appointments, consult rooms, ratings
+- **Mating** — listings, requests, signed agreements
+- **Services marketplace** — providers, bookings, reviews, walk tracking
+- **Shop** — products, cart, orders
+- **Missing pets** — alerts, sightings, geo-fanout via `notification_jobs`
+- **Meetups + Groups** — RSVPs, member counts
+- **AskVet** — questions, answers, helpful counts
+- **Search** — unified across pets, people, posts, hashtags, services, vets, meetups
+- **AI** — chat, photo-vet, caption suggest, content moderation (Lovable AI Gateway)
+- **Trust & safety** — block users, report content, auto-mod log, admin moderation queue
+- **Plus paywall** — UI + DB schema (in beta-free mode — see #2)
+- **PWA** — service worker, manifest, install page
+- **SEO** — meta + JSON-LD on key pages, sitemap edge function, OG image generator
+- **Pet profile by share link** — just fixed in last turn
 
-### 2. Public live walk share
-- New route `/walk-live/:bookingId` (page `src/pages/WalkLive.tsx`) — read-only map, no auth required, RLS-safe via a `public_share_token` column on `service_bookings` (link includes token).
-- Migration: add `public_share_token uuid` to `service_bookings` + a `SECURITY DEFINER` RPC `get_public_walk(_token uuid)` returning latest tracks/polyline only.
-- "Share live walk" button in `WalkSession.tsx` copies the link via `navigator.clipboard`.
+---
 
-### 3. Owner live view inside booking
-- BookingDetail page doesn't exist as its own route; the customer currently lands on `/walk/:id`. We'll add a banner "Live walk in progress" on the customer's `Orders`/services list that deep-links into `/walk/:id` when a booking is `in_progress`.
+## 2. What is fake / stubbed / will not work in production
 
-### 4. Geofenced missing-pet notifications (radius, not just city)
-- New trigger / job: when a `missing_pets` row is created with `last_seen_lat/lng`, insert into `notification_jobs` with payload including coords + 5 km radius.
-- Update existing `notify_missing_pet_alerts` (currently city-string match) to also fan out to profiles within 5 km using `earth_distance`.
+These look real but won't actually do their job when you publish:
 
-### 5. "Not a Google Form" UX polish
-Sweep for missing feedback. Concretely:
-- Add a shared `<EmptyState illustration cta />` component and replace the 6 worst "Nothing here yet" strings (Home feed empty, Discover empty, Health vault empty, Missing feed empty, Services empty, Notifications empty).
-- Add `loading` state to all primary action buttons that currently call mutations without a spinner (audit list: Composer post, Mating request send, Booking confirm, Vet apply submit, Prescription save, Missing alert create).
-- Add `navigator.vibrate(10)` helper `src/lib/haptics.ts` and call from: like, follow, RSVP, booking, send-message.
-- Skeleton loaders: add to PostFeed (already has?), HealthTimeline, ServiceList, VetList — use existing `Skeleton` shadcn component.
+| Area | Status | What happens today | What's needed to ship |
+|---|---|---|---|
+| **Stripe payments** | Stubbed (`beta_free`) | Plus & shop checkout creates a `payment_intents` row with `status='beta_free'` and instantly "succeeds" | Real Stripe keys + webhook secret; flip code path from beta to live |
+| **Push notifications** | Stubbed | `send-push` edge function logs no-op when VAPID keys missing | Generate VAPID keypair, add as secrets |
+| **Daily.co / video rooms** | Partially stubbed | Room URLs may be placeholder | Daily.co API key + room-create call |
+| **SMS / phone OTP** | Off | Auth UI shows it but provider not configured | Twilio (or similar) in Auth provider settings |
+| **Email transactional** | Default | Auth emails work via Cloud defaults; custom branded emails not set up | Custom domain + SMTP config |
+| **Maps** | Basic | "Near me" works via DB geo functions, but no real map tiles rendered in most places | Mapbox/Google Maps key + `<MapView>` integration |
+| **Image uploads** | Real but unconstrained | No size/format validation client-side, can blow storage | Add max-size + auto-resize in `ImageUpload.tsx` |
+| **Content moderation** | Real but soft | Flags content but admins must manually act | Add auto-hide on `block` verdict |
+| **Sitemap.xml route** | Edge function only | `/sitemap.xml` won't auto-resolve to the function on `.lovable.app` | Either rewrite at host or accept the function URL |
 
-### 6. Realtime sanity pass
-Verify channels & cleanup on: `posts`, `post_comments`, `post_reactions`, `stories`, `notifications`, `mating_messages`, `appointments`, `walk_tracks`. Add any missing `removeChannel` cleanup in useEffect returns. Add `ALTER PUBLICATION supabase_realtime ADD TABLE …` for any table not yet in the publication.
+---
 
-## Files
+## 3. Why the app feels "basic & static"
 
-**New**
-- `src/pages/WalkLive.tsx` — public live walk viewer
-- `src/components/empty/EmptyState.tsx` — reusable illustrated empty state
-- `src/lib/haptics.ts` — `vibrate()` helper
-- `src/components/maps/PawMarker.ts` — paw `divIcon` factory
+Diagnosing the UX feeling. This is the real reason users get lost:
 
-**Edited**
-- `src/components/maps/LeafletMap.tsx` — accept custom icon prop, optional clustering flag
-- `src/pages/WalkSession.tsx` — add Share button + paw marker
-- `src/pages/MeetupDetail.tsx`, `src/pages/ServiceDetail.tsx`, `src/pages/MissingDetail.tsx`, `src/pages/MissingNew.tsx` — embed interactive maps
-- `src/pages/Home.tsx`, `src/pages/Discover.tsx`, `src/pages/MissingFeed.tsx`, `src/pages/Notifications.tsx`, `src/pages/HealthVault.tsx`, `src/pages/Services.tsx` — EmptyState
-- `src/components/Composer.tsx`, `src/components/vet/PrescriptionBuilder.tsx`, `src/pages/MissingNew.tsx`, `src/pages/VetApply.tsx` — button loading states
-- `src/App.tsx` — add `/walk-live/:token` route
+### 3a. The 5-tab bottom nav buries everything
+Bottom nav only shows: Home · Discover · Health · Services · Profile. But the app has **40+ pages**: Messages, Notifications, Meetups, Groups, AskVet, Mates, Missing, Shop, AI Chat, Photo Vet, Walk, Search, Install, Daily, Hashtags, Settings, Admin, Vet…
 
-**Migrations**
-- Add `public_share_token uuid` to `service_bookings` + `get_public_walk(_token)` RPC
-- Replace `notify_missing_pet_alerts` with radius-aware version (5 km)
-- Add `leaflet.markercluster` already in package.json — no install needed
-- `ALTER PUBLICATION supabase_realtime ADD TABLE` for any missing tables
+A new user lands on Home and sees no entry point to most of these. They must either:
+- Know the URL,
+- Tap the search bar, or
+- Find a card buried in Discover.
 
-## Out of scope (explicit)
-- **PostGIS** — current `earthdistance` solution covers all stated needs; adding PostGIS too would be redundant and slower migrations.
-- **Web push (FCM/APNs)** — deferred to Wave 10 per your earlier roadmap.
-- **Allergy filter & affiliate codes** — Wave 12.
-- **Drag-to-refresh** — needs a touch gesture lib; defer unless you want it now.
+**Result:** the app feels like 5 disconnected pages instead of a platform.
 
-## After build — manual test checklist
-1. Walker hits Start, customer's `/walk/:id` shows polyline growing in real time without refresh.
-2. Click "Share live walk" → paste in incognito → map loads with no auth.
-3. Create missing alert with GPS → another account within 5 km gets in-app notification.
-4. Open MeetupDetail / ServiceDetail / MissingDetail → see interactive Leaflet maps with popups.
-5. Empty Home feed shows illustrated CTA, not bare text.
-6. Composer "Post" button shows spinner while saving.
+### 3b. Home is content-only, not action-oriented
+Home shows feed + missing strip + tip card. There's **no clear "what should I do next?" CTA** based on user state (no pets yet → add pet; no posts → write first; vaccination overdue → upload).
 
-Reply **"go"** to implement.
+### 3c. No global FAB / + action
+Instagram has a center "+". TikTok has a center "+". Petos has only the **Emergency siren** in the center — which is alarming, not inviting. Users don't know how to **post** without scrolling Home first.
+
+### 3d. Static-looking surfaces
+- All cards are similar weight (no hierarchy of importance)
+- Few skeleton loaders → empty grey flashes feel broken
+- Almost no motion / micro-interactions → feels like a wireframe
+- Empty states are mostly text, not illustrated CTAs
+
+### 3e. Discoverability of social features
+- **Reels/video posts:** the Composer supports image, but no dedicated video/reel tab. Other users can see posts in the feed, but there's no algorithmic "For You."
+- **Following someone's pet profile** works, but there's no "people you may know" or "popular pets in your city" surfaced prominently.
+- **Profile pages** show posts/pets/badges tabs (good), but no follower-only content gating, no "shared meetups" social proof.
+
+---
+
+## 4. What will break the moment you publish
+
+Concrete production risks, ranked:
+
+1. **Plus subscriptions silently grant access to everyone** — `payment_intents` defaults to `beta_free`. If you publish with this, every user gets Plus features for free until you wire Stripe.
+2. **Push notifications never fire** — users will enable them and never get any.
+3. **Service worker caches stale code** — `public/sw.js` does basic offline caching. After a deploy, returning users may see old UI for a session. Add a versioned cache name.
+4. **Image storage costs** — no size limits on uploads.
+5. **Notification job fanout for missing pets** — `notify_missing_pet_alerts` notifies up to 5,000 nearby users per missing pet. With 100 missing reports = 500K rows. Fine for beta, watch in scale.
+6. **`get_pets_public()` is callable by anonymous users** — security linter warning. Anyone can list every pet. Consider requiring auth.
+7. **No rate limiting on AI endpoints** — anyone signed in can hammer Lovable AI, burning your credits.
+8. **No email verification enforcement** — depending on Auth settings, fake emails can sign up.
+
+---
+
+## 5. Navigation & UX fixes (concrete, prioritized)
+
+If we do nothing else, these 6 changes will make the app feel "real":
+
+1. **Replace the emergency siren with a "+" composer button** in the center of the bottom nav. Move emergency to a long-press on the same button, or to the top bar.
+2. **Add a smart Home hero** — based on profile state, show one of: "Add your first pet" / "Write your first post" / "Vaccination due for Pablo" / "3 meetups near you this weekend." One CTA, one tap.
+3. **Add a top-level secondary nav** — a horizontal scrolling pill row under the header on Home with: Messages · Notifications · Meetups · AskVet · Missing · Mates · Walk. This surfaces the buried 35 pages.
+4. **Add skeleton loaders** to PostFeed, Discover, Health, Profile (not just spinner-on-blank).
+5. **Illustrate empty states** — "No posts yet — be the first" with a soft illustration + primary action button.
+6. **Add a "What's new" tour** for first-run after onboarding — 3 swipeable cards highlighting Compose, Discover, Health.
+
+---
+
+## 6. The reality-check QA prompt (copy this)
+
+Paste this into Lovable in **Chat mode** and let me run it against the preview. It's a 10-flow regression that mimics a real user's first 30 minutes:
+
+---
+
+> **You are a senior QA engineer for Petos. Open the preview as a brand-new user (sign up with a fresh email). Then act as a real first-time user and test these 10 flows end-to-end. After each flow, write: PASS / PARTIAL / FAIL with a one-line reason. At the end, give me a numbered list of every bug, dead-end, confusing screen, and broken interaction you found, ordered by severity (blocker → cosmetic). Do NOT fix anything yet — just report.**
+>
+> **Flow 1 — Onboarding:** Sign up with email. Complete the onboarding (name, city, add 1 pet). Land on Home. Was anything unclear or broken?
+>
+> **Flow 2 — Post a moment:** From Home, post a photo with caption "test #firstpost". Confirm it appears in feed, the hashtag is clickable, and the daily-streak counter (if any) updated.
+>
+> **Flow 3 — Discover others:** Open Discover. Search "pablo". Open the first pet result. Confirm pet profile loads with name, breed, owner, posts. Open the owner's user profile. Tap Follow.
+>
+> **Flow 4 — Messaging:** From the followed user's profile, tap Message. Send "hi". Confirm it appears in `/messages` and the thread.
+>
+> **Flow 5 — Health vault:** Open Health. Add a vaccination record for your pet. Confirm it appears in the timeline. Try to upload a document.
+>
+> **Flow 6 — Find a vet:** Tap "Ask a vet" or AskVet. Post a question. Confirm it lists in AskVet feed.
+>
+> **Flow 7 — Services & shop:** Open Services. Browse providers. Open one, attempt to book. Then open Shop, add an item to cart, attempt checkout.
+>
+> **Flow 8 — Plus paywall:** Trigger any Plus-gated feature (more than 1 missing pet, or `/plus` page). Tap upgrade. Confirm it either takes payment OR clearly says "free during beta."
+>
+> **Flow 9 — Missing pet alert:** Mark your pet as missing. Confirm the alert is created, appears on `/missing`, and you receive a notification (or job is queued).
+>
+> **Flow 10 — Settings & safety:** Block another user. Report a post. Toggle notification preferences. Sign out. Sign back in. Confirm session restores correctly.
+>
+> **Bonus: Navigation audit.** From Home, count how many taps it takes to reach: Messages, Meetups, AskVet, Missing, Walk, Photo Vet, Settings. Anything more than 2 taps = report as discoverability bug.
+
+---
+
+## 7. After the QA report — what we do next
+
+Based on what the QA finds, we sequence:
+
+1. **Wave 18 — Navigation overhaul**: composer "+", Home hero, secondary nav strip, skeleton loaders, illustrated empty states.
+2. **Wave 19 — Pre-publish hardening**: image size limits, AI rate limits, SW cache versioning, optional auth-gating of `get_pets_public`.
+3. **Wave 20 — Production switches**: real Stripe, VAPID push, Daily.co, sitemap host rewrite, branded auth emails.
+
+You approve this plan, and I'll switch to build mode to **(a) run the QA prompt against the preview as the first action**, then **(b) start Wave 18 fixes** on the highest-severity findings.
+
+---
+
+## Technical notes (for engineers / future me)
+
+- Bottom nav file: `src/components/BottomNav.tsx` (5 tabs, center slot wasted on emergency)
+- Home hero would slot into `src/pages/Home.tsx` between header and tabs
+- Secondary nav: new `<QuickAccessRail>` component, render in `Home.tsx` and optionally `Discover.tsx`
+- Beta-free Stripe path: search `payment_intents` with `status='beta_free'` to find toggle points
+- VAPID secret names to add: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+- Service worker cache fix: add `const CACHE = 'petos-v' + BUILD_ID` in `public/sw.js`
+- Rate limit AI endpoints: wrap `ai-*` edge functions with `check_daily_limit('ai_calls', user, 50)`
+- Pet listing privacy: revoke EXECUTE on `get_pets_public()` from `anon`, regrant to `authenticated`
