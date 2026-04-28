@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart, Inbox } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart, Inbox, PawPrint, Sparkles } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useSeo } from "@/hooks/useSeo";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
+import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 
 const OrgProfile = () => {
   const { userId } = useParams();
@@ -47,6 +48,8 @@ const OrgProfile = () => {
     return <div className="container-app pt-10 text-center text-muted-foreground">Organisation not found or not yet verified.</div>;
 
   const cover = (org.facility_photos ?? [])[0];
+  const isZoo = org.org_type === "zoo";
+  const hasDonation = !!(org.donation_upi || org.donation_url);
 
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
@@ -65,6 +68,7 @@ const OrgProfile = () => {
         {org.city && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{org.city}</span>}
         {org.website && <a href={org.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline"><Globe className="h-3 w-3" />Website</a>}
         {org.phone && <a href={`tel:${org.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{org.phone}</a>}
+        {userId && <RatingChip subjectType="provider" subjectId={userId} />}
       </div>
 
       {org.description && (
@@ -73,12 +77,32 @@ const OrgProfile = () => {
         </Card>
       )}
 
-      {(org.donation_upi || org.donation_url) && (
+      {isZoo && (
+        <Card className="rounded-2xl bg-sky/10 border-sky/30 p-4 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <PawPrint className="h-4 w-4 text-sky" /> <div className="font-display text-base">Symbolically adopt an animal</div>
+          </div>
+          <p className="text-[12px] text-muted-foreground mb-3">
+            Sponsor the daily care, food and medical needs of the animals at {org.org_name}. This is a donation — animals stay safe at the wildlife centre and are not transferred.
+          </p>
+          {!hasDonation && isOwner && (
+            <Button onClick={() => nav("/onboarding/org")} variant="outline" className="w-full rounded-xl">
+              <Sparkles className="h-4 w-4 mr-1" /> Add donation details to enable sponsorship
+            </Button>
+          )}
+          {!hasDonation && !isOwner && (
+            <p className="text-[12px] text-muted-foreground italic">Sponsorship details coming soon.</p>
+          )}
+        </Card>
+      )}
+
+      {hasDonation && (
         <Card className="rounded-2xl bg-coral/10 border-coral/30 p-4 mb-3">
           <div className="flex items-center gap-2 mb-2">
-            <Heart className="h-4 w-4 text-coral" /> <div className="font-display text-base">Support our work</div>
+            <Heart className="h-4 w-4 text-coral" />
+            <div className="font-display text-base">{isZoo ? "Sponsor an animal" : "Support our work"}</div>
           </div>
-          <p className="text-[11px] text-muted-foreground mb-3">100% of your donation goes directly to {org.org_name}. PetOS does not process or take a cut.</p>
+          <p className="text-[11px] text-muted-foreground mb-3">100% of your {isZoo ? "sponsorship" : "donation"} goes directly to {org.org_name}. PetOS does not process or take a cut.</p>
           {org.donation_upi && (
             <div className="space-y-2 mb-2">
               <Button
@@ -86,7 +110,7 @@ const OrgProfile = () => {
                 className="w-full rounded-xl bg-coral hover:bg-coral/90 text-white"
               >
                 <a href={`upi://pay?pa=${encodeURIComponent(org.donation_upi)}&pn=${encodeURIComponent(org.org_name)}&cu=INR`}>
-                  <Heart className="h-4 w-4 mr-1" /> Donate via UPI
+                  <Heart className="h-4 w-4 mr-1" /> {isZoo ? "Sponsor via UPI" : "Donate via UPI"}
                 </a>
               </Button>
               <button
@@ -100,7 +124,7 @@ const OrgProfile = () => {
           )}
           {org.donation_url && (
             <Button asChild variant="outline" className="w-full rounded-xl">
-              <a href={org.donation_url} target="_blank" rel="noreferrer">Donate online</a>
+              <a href={org.donation_url} target="_blank" rel="noreferrer">{isZoo ? "Sponsor online" : "Donate online"}</a>
             </Button>
           )}
         </Card>
@@ -122,7 +146,7 @@ const OrgProfile = () => {
         </div>
       ) : null}
 
-      {!!listings?.length && (
+      {!isZoo && !!listings?.length && (
         <>
           <h2 className="font-display text-lg mb-2">Available pets</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -150,6 +174,13 @@ const OrgProfile = () => {
         <div className="mt-6">
           <h2 className="font-display text-lg mb-2">Boarding & services</h2>
           <BoardingList userId={userId} isOwner={isOwner} />
+        </div>
+      )}
+
+      {userId && (
+        <div className="mt-6">
+          <h2 className="font-display text-lg mb-2">Reviews</h2>
+          <ReviewsList subjectType="provider" subjectId={userId} />
         </div>
       )}
 
