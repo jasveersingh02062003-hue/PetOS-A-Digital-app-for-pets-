@@ -369,6 +369,42 @@ export type Database = {
           },
         ]
       }
+      payment_intents: {
+        Row: {
+          amount_inr: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["payment_kind"]
+          provider_session_id: string | null
+          ref_id: string | null
+          status: Database["public"]["Enums"]["payment_intent_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_inr: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["payment_kind"]
+          provider_session_id?: string | null
+          ref_id?: string | null
+          status?: Database["public"]["Enums"]["payment_intent_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_inr?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["payment_kind"]
+          provider_session_id?: string | null
+          ref_id?: string | null
+          status?: Database["public"]["Enums"]["payment_intent_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pets: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
@@ -600,6 +636,24 @@ export type Database = {
           phone?: string | null
           units?: Json
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reminder_log: {
+        Row: {
+          kind: string
+          sent_at: string
+          vaccination_id: string
+        }
+        Insert: {
+          kind: string
+          sent_at?: string
+          vaccination_id: string
+        }
+        Update: {
+          kind?: string
+          sent_at?: string
+          vaccination_id?: string
         }
         Relationships: []
       }
@@ -1369,6 +1423,17 @@ export type Database = {
       mating_intent: "stud" | "dam" | "either"
       missing_status: "active" | "resolved" | "cancelled"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
+      payment_intent_status:
+        | "beta_free"
+        | "pending"
+        | "paid"
+        | "failed"
+        | "refunded"
+      payment_kind:
+        | "vet_consult"
+        | "mating_listing"
+        | "agreement"
+        | "missing_listing"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
       product_category:
@@ -1570,6 +1635,19 @@ export const Constants = {
       mating_intent: ["stud", "dam", "either"],
       missing_status: ["active", "resolved", "cancelled"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
+      payment_intent_status: [
+        "beta_free",
+        "pending",
+        "paid",
+        "failed",
+        "refunded",
+      ],
+      payment_kind: [
+        "vet_consult",
+        "mating_listing",
+        "agreement",
+        "missing_listing",
+      ],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
       product_category: [

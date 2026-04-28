@@ -1,93 +1,108 @@
-# Phase 4 — Build Plan (DBs already migrated)
 
-The two database migrations are done (Missing Pets + Subscriptions + tier function + free-tier limits). Now I need approval to write the code. **No live payment yet** — Stripe wires are fully built but read keys/price IDs from secrets you'll paste later. Until then, the Plus page shows a calm "Available soon — join early access" state. Zero scammy patterns.
+# Phase 5 — Close the Loop
 
----
-
-## How the payment placeholder works (what makes this clean, not scammy)
-
-- The `/plus` page shows full pricing cards, perk list, FAQ — looks complete.
-- The Upgrade button calls edge function `create-checkout`.
-- That edge function checks for `STRIPE_SECRET_KEY` + price ID secrets.
-  - **If missing** → returns `{ status: "not_configured" }` → UI shows a calm sheet: *"Petos Plus opens to members in a few days. We'll email you the moment it's live — no charge today."* with a one-tap "Notify me" that just flags `profiles.notify_plus_launch = true`. **No fake checkout. No countdown. No fee. No card collection.**
-  - **When you paste the keys** → the same button creates a real Stripe Checkout session and redirects.
-- The `stripe-webhook` is fully written, signature-verified, idempotent. The day you paste keys + set up the webhook URL in Stripe, everything works.
+Make every promise from the user-journey doc real. Payments stay dormant (you paste the Stripe IDs later); everything else ships now with calm, trustworthy UX.
 
 ---
 
-## Files to create / edit
+## 1. Petos Plus — "Notify me at launch" path
 
-### Hooks & shared components (4 new)
-- `src/hooks/useTier.tsx` — `useTier()` returns `{ tier, status, currentPeriodEnd, cancelAtPeriodEnd }`. 60s cache.
-- `src/components/PlusBadge.tsx` — subtle Sparkles + "Plus" pill (used next to names).
-- `src/components/TierGate.tsx` — bottom sheet with perks list + "See Plus" / "Not now". No urgency tactics.
-- `src/components/MissingCreateSheet.tsx` — the "Coco is missing" flow: photo, geolocation, reward, note, submit.
+When `create-checkout` returns `not_configured`, the `/plus` page should not feel broken.
 
-### Missing Pet (3 pages + 1 strip)
-- `src/pages/MissingFeed.tsx` (`/missing`) — local active reports, sorted recency.
-- `src/pages/MissingDetail.tsx` (`/missing/:id`) — photo, last-seen, sightings (realtime), "I've seen this pet" + "Mark as found" (owner only).
-- `src/pages/MissingNew.tsx` (`/missing/new`) — full-page version of the create sheet (deep link target).
-- `src/components/MissingStrip.tsx` — horizontal strip of active local cases for Home.
-- Edits:
-  - `src/pages/Profile.tsx` — red "Report missing" button under each pet card.
-  - `src/pages/Home.tsx` — show `MissingStrip` above the feed when local active reports exist.
-  - `src/App.tsx` — add 3 routes.
+- Replace the "Subscribe" CTA with a calm **"Notify me when Plus launches"** button (sets `profiles.notify_plus_launch = true`, shows a confirmation chip).
+- If already opted-in, show "We'll let you know ✓".
+- Add a one-line note: *"Plus launches soon. Early users get the first month free."* (no countdowns, no scarcity).
+- Keep the pricing UI visible so users see the value.
 
-### Petos Plus (3 pages + 1 settings panel)
-- `src/pages/Plus.tsx` (`/plus`) — pricing comparison, monthly/yearly toggle, FAQ. Two CTAs: "Upgrade to Plus" (active when keys configured) or "Notify me when Plus launches" (placeholder mode).
-- `src/pages/PlusSuccess.tsx` (`/plus/success`) — celebratory landing after Stripe redirect, polls until `tier='plus'`.
-- `src/pages/settings/Billing.tsx` (`/settings/billing`) — current plan, renewal date, cancel / manage (opens Stripe portal when configured, otherwise calm "Contact support" CTA).
-- Edits:
-  - `src/pages/Settings.tsx` — add Billing row.
-  - `src/pages/AiChat.tsx` — wrap `send` in tier check + show TierGate when 5/day exceeded (read counter from DB; the chat function will also enforce server-side).
-  - `src/components/PostFeed.tsx` — render `<PlusBadge>` next to author names whose tier is plus (via extended public profile RPC).
-  - `src/App.tsx` — add 3 routes.
-
-### Edge functions (3 new + 1 edit)
-- `supabase/functions/create-checkout/index.ts` — JWT-validated. Looks up Stripe secret + price IDs. If unconfigured → `{ status: "not_configured" }`. Else creates Checkout Session with `client_reference_id = userId`, returns `{ url }`. Uses Stripe via `npm:stripe@^14`.
-- `supabase/functions/stripe-webhook/index.ts` — `verify_jwt = false` (config.toml). Verifies Stripe signature with `STRIPE_WEBHOOK_SECRET`. Handles `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Upserts `subscriptions` via service-role client. Idempotent on `provider_subscription_id`.
-- `supabase/functions/billing-portal/index.ts` — JWT-validated. Returns Stripe Billing Portal URL for the user's customer (or `not_configured`).
-- Edit `supabase/functions/chat/index.ts` — at the top of every successful auth, increment `usage_counters` (kind=`ai_chat`, today). If `current_tier=free` AND today's count > 5 → return `402 { error: "Daily AI limit reached. Upgrade to Plus for unlimited.", code: "tier_limit" }` *before* spending Lovable AI tokens.
-- `supabase/config.toml` — add `[functions.stripe-webhook] verify_jwt = false`.
-
-### Add a `notify_plus_launch` column for the placeholder "Notify me" CTA
-Tiny migration: `ALTER TABLE profiles ADD COLUMN notify_plus_launch boolean NOT NULL DEFAULT false;` — RLS already covers it.
+Once you paste the four Stripe secrets, this auto-flips back to real checkout — no code change.
 
 ---
 
-## Secrets you'll paste later (just three)
+## 2. Paid-feature gates (dormant checkout pattern)
 
-When you're ready to go live with payments, you'll add:
-1. `STRIPE_SECRET_KEY` — `sk_live_...` (or `sk_test_...` for testing)
-2. `STRIPE_WEBHOOK_SECRET` — `whsec_...` from the Stripe webhook settings
-3. `STRIPE_PRICE_PLUS_MONTHLY` — the price ID like `price_1NX...` for ₹299/mo
-4. `STRIPE_PRICE_PLUS_YEARLY` — the price ID for ₹2,499/yr
+Apply the same `not_configured` pattern across every paid touchpoint from the journey doc. Each one shows a **"Free during Beta"** ribbon today; the moment Stripe is wired, it becomes a real one-time charge.
 
-Until those exist, the UI shows the "launching soon" state. The moment they appear, payments work — no code changes needed.
+| Feature | Price | Where | Gate component |
+|---|---|---|---|
+| Vet consult | ₹199 | `/vet/consult/new` | `PaywallSheet` (one-time) |
+| Mating listing publish | ₹299 | `/mates/new` submit | `PaywallSheet` |
+| Digital agreement | ₹99 | `AgreementCard` sign | `PaywallSheet` |
+| Missing pet listing | ₹499 | `MissingCreateSheet` submit | `PaywallSheet` |
 
-The webhook URL you'll paste into Stripe will be: `https://fappyyhsdmybkyrhyutm.supabase.co/functions/v1/stripe-webhook` — I'll show this on the Settings → Billing screen for easy copy when you're configuring.
-
----
-
-## UX principles I'm following (so it doesn't feel like a scam)
-
-- **No false urgency.** No "Limited offer ends tonight". No countdown timers. No "Only 3 spots left".
-- **No card collection before payments are live.** The "Notify me" CTA only flags a boolean — never asks for a card.
-- **Honest copy on the placeholder.** *"Petos Plus opens to members in a few days. No charge today."*
-- **Calm pricing card.** ₹299/mo and ₹2,499/yr side-by-side. The yearly card has a quiet "Save ~30%" tag — not flashing, not red.
-- **Clear receipts and renewal dates.** Settings → Billing shows exactly what's billed when, cancel-anytime in one tap.
-- **Server-truth tier.** The `Plus` badge and unlocked features come from the `subscriptions` row only — never from local storage or URL params.
-- **Free tier is generous.** Onboarding, social, mating discovery, basic AI, vault — all free forever. Plus is additive.
+- New shared component: `src/components/PaywallSheet.tsx` — bottom sheet, soft copy ("This helps us keep Petos safe and ad-free"), Beta badge.
+- New edge function: `create-one-time-checkout` (mirrors `create-checkout`, returns `not_configured` until secrets exist; Plus users skip the charge automatically).
+- Ledger table `payment_intents` (status: `beta_free` | `pending` | `paid`) so we have an audit trail today and historical continuity once payments go live.
 
 ---
 
-## Order I'll ship in (single build)
+## 3. Booster reminder (vaccination nudge)
 
-1. `useTier`, `PlusBadge`, `TierGate`.
-2. Missing Pet sheet, three pages, Home strip, Profile CTA, App routes.
-3. Plus page, Success page, Billing settings, Settings row, App routes.
-4. Tiny migration: `profiles.notify_plus_launch`.
-5. Edge functions: `create-checkout`, `stripe-webhook`, `billing-portal`. Update `chat`. Update `config.toml`.
-6. Wire `AiChat` and `PostFeed` to tier.
+Honors the journey doc's "5 days before" promise.
 
-After this, the only thing left for you to do is paste the four Stripe secrets. Everything else — UX, copy, server logic, webhook handling, badge rendering, gates, missing-pet flow — is done.
+- Daily scheduled edge function `vaccination-reminders` (cron via `pg_cron`).
+- Scans `vaccinations.next_due_on` between today+4 and today+6, calls `notify_user` with a calm message: *"Coco's booster is due in 5 days."*
+- De-duped via a small `reminder_log` table (one notif per vaccination row).
+
+---
+
+## 4. Realtime sightings on `MissingDetail`
+
+- Subscribe to `postgres_changes` on `missing_pet_sightings` for the current `missing_pet_id`.
+- New sightings slide in with a soft fade; toast "New sighting just reported".
+
+---
+
+## 5. Service provider verification (admin flow)
+
+The `verified` flag exists but no one can flip it.
+
+- Add a **"Verification queue"** card in `/admin` listing unverified `service_providers`.
+- One-tap **Verify** / **Reject** (super_admin only via `has_role`).
+- Verified badge already renders on provider cards — just light it up.
+
+---
+
+## 6. Plus soft-prompt after 3rd AI chat
+
+- After the 3rd AI message in a rolling 30-day window (read `usage_counters`), show `TierGate` once with copy: *"Loving DogtorAI? Plus gives Coco unlimited chats."*
+- Dismissible; never shown again that month.
+
+---
+
+## 7. Pet Card share-to-WhatsApp on celebration
+
+Verify `PetCardShare.tsx` is wired into the onboarding completion screen with a "Share Coco's card" button (uses `navigator.share` with WhatsApp fallback URL).
+
+---
+
+## What you do later (one step)
+
+Paste these four secrets when ready — nothing else changes:
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_PLUS_MONTHLY`
+- `STRIPE_PRICE_PLUS_YEARLY`
+
+Plus a fifth for one-time products once you create them in Stripe:
+- `STRIPE_PRICE_VET_CONSULT`, `STRIPE_PRICE_MATING_LISTING`, `STRIPE_PRICE_AGREEMENT`, `STRIPE_PRICE_MISSING_LISTING`
+
+All gates auto-activate. Beta-free continues for any product whose price ID isn't set.
+
+---
+
+## Technical details (for reference)
+
+- `payment_intents` table: `id, user_id, kind (enum), amount_inr, status, provider_session_id, created_at`. RLS: select-own.
+- `reminder_log` table: `vaccination_id, kind, sent_at` (composite PK).
+- Cron via `pg_cron` + `pg_net` to invoke the reminder function daily at 09:00 IST.
+- `PaywallSheet` uses the same calm pattern as `TierGate` — no urgency, no scarcity language.
+- Realtime: enable replica identity full + add `missing_pet_sightings` to `supabase_realtime` publication.
+- Admin queue uses existing `roles_admin_manage` RLS; no schema change.
+
+---
+
+## What this delivers
+
+A complete, trustworthy app today — Beta-free for all paid touchpoints — that converts to a real payments flow the moment you paste your Stripe IDs. No scammy copy, no fake countdowns, no broken buttons. Every promise from the journey doc is honored.
+
+Approve to build.
