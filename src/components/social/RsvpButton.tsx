@@ -3,6 +3,7 @@ import { useMyRsvp, useSetRsvp, type RsvpStatus } from "@/hooks/useMeetups";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets } from "@/hooks/useProfile";
 import { Check, X, HelpCircle } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
 export const RsvpButton = ({ meetupId }: { meetupId: string }) => {
   const { user } = useAuth();
@@ -18,7 +19,7 @@ export const RsvpButton = ({ meetupId }: { meetupId: string }) => {
     <Button
       size="sm"
       variant={status === value ? "default" : "outline"}
-      onClick={() => set.mutate({ meetupId, status: value, petId: firstPet })}
+      onClick={() => { haptic(10); set.mutate({ meetupId, status: value, petId: firstPet }); }}
       disabled={set.isPending}
       className="rounded-full flex-1"
     >
