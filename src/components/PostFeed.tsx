@@ -23,15 +23,23 @@ export type FeedPost = {
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
-export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending"; emptyState?: ReactNode }) => {
+export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following"; emptyState?: ReactNode }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["feed", scope],
+    queryKey: ["feed", scope, user?.id ?? null],
     queryFn: async () => {
+      let followingIds: string[] | null = null;
+      if (scope === "following") {
+        if (!user) return [];
+        const { data: f } = await supabase.from("follows").select("following_id").eq("follower_id", user.id);
+        followingIds = (f ?? []).map((r: any) => r.following_id);
+        if (!followingIds.length) return [];
+      }
       let q = supabase.from("posts").select("*");
+      if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
         : q.order("created_at", { ascending: false }).limit(50);
