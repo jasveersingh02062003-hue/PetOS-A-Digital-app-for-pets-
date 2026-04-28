@@ -68,7 +68,7 @@ export default function Messages() {
 
     const out: Row[] = [];
     for (const c of (convs ?? []) as any[]) {
-      const myMember = (members ?? []).find((m: any) => m.conversation_id === c.id);
+      const myMember = ((members ?? []) as any[]).find((m: any) => m.conversation_id === c.id);
       const others = ((allMembers ?? []) as any[])
         .filter(m => m.conversation_id === c.id && m.user_id !== user!.id);
       const other = others[0] ? profMap.get(others[0].user_id) : null;
