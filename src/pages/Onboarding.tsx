@@ -158,7 +158,8 @@ const Onboarding = () => {
           ? { name: emergencyName.trim(), phone: emergencyPhone.trim(), clinic: emergencyClinic.trim() }
           : null;
 
-      const { error: pErr } = await supabase.from("profiles").update({
+      const { error: pErr } = await supabase.from("profiles").upsert({
+        id: user.id,
         full_name: fullName,
         city,
         lat: coords?.lat ?? null,
@@ -169,7 +170,7 @@ const Onboarding = () => {
         emergency_vet: emergencyVet,
         notif_prefs: { push: notifPush, email: notifEmail, sms: notifSms },
         onboarded: true,
-      }).eq("id", user.id);
+      }, { onConflict: "id" });
       if (pErr) throw pErr;
 
       // Pet
