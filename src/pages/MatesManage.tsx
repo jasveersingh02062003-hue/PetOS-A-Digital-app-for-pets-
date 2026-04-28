@@ -11,6 +11,7 @@ import { ArrowLeft, Heart, Loader2, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgreementCard } from "@/components/AgreementCard";
+import { MatingPaymentsCard } from "@/components/MatingPaymentsCard";
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-muted text-foreground",
@@ -130,7 +131,10 @@ const MatesManage = () => {
                   ) : null
                 }
                 agreement={["accepted", "agreed"].includes(r.status) ? (
-                  <AgreementCard requestId={r.id} isFromOwner={false} contactInfo={{ name: r.from_profile?.full_name, phone: r.from_profile?.phone }} />
+                  <>
+                    <AgreementCard requestId={r.id} isFromOwner={false} contactInfo={{ name: r.from_profile?.full_name, phone: r.from_profile?.phone }} />
+                    <MatingPaymentsCard requestId={r.id} otherUserId={r.from_owner_id} />
+                  </>
                 ) : null}
               />
             ))}
@@ -152,7 +156,10 @@ const MatesManage = () => {
                   ) : null
                 }
                 agreement={["accepted", "agreed"].includes(r.status) ? (
-                  <AgreementCard requestId={r.id} isFromOwner={true} contactInfo={{ name: r.to_profile?.full_name, phone: r.to_profile?.phone }} />
+                  <>
+                    <AgreementCard requestId={r.id} isFromOwner={true} contactInfo={{ name: r.to_profile?.full_name, phone: r.to_profile?.phone }} />
+                    <MatingPaymentsCard requestId={r.id} otherUserId={r.to_owner_id} />
+                  </>
                 ) : null}
               />
             ))}
