@@ -133,7 +133,7 @@ const OrgProfile = () => {
         </div>
       )}
 
-      {(org.org_type === "breeder" || org.org_type === "kennel" || org.org_type === "trainer") && userId && (
+      {(org.org_type === "breeder" || org.org_type === "kennel") && userId && (
         <div className="mt-6">
           <h2 className="font-display text-lg mb-2">Boarding & services</h2>
           <BoardingList userId={userId} isOwner={isOwner} />
