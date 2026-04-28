@@ -108,7 +108,7 @@ const UserProfile = () => {
           <TabsTrigger value="badges">Badges</TabsTrigger>
         </TabsList>
         <TabsContent value="posts" className="mt-3">
-          {userId && <PostGrid authorId={userId} />}
+          {userId && <PostGrid authorId={userId} includeCollabs />}
         </TabsContent>
         <TabsContent value="pets" className="mt-3 space-y-2">
           {pets?.length ? pets.map((p: any) => (
