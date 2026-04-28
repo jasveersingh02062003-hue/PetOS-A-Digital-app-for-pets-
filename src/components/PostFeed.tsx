@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,10 @@ import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
 import { useBlockedIds } from "@/hooks/useBlockedIds";
+import { usePawBurst } from "./social/PawBurst";
+import { addReaction } from "@/lib/reactions";
+import { haptic } from "@/lib/haptics";
+import { toast } from "sonner";
 
 export type FeedPost = {
   id: string;
