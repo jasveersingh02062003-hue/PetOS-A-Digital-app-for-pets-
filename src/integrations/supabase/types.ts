@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          earned_at: string
+          id: string
+          kind: string
+          pet_id: string | null
+          user_id: string
+        }
+        Insert: {
+          earned_at?: string
+          id?: string
+          kind: string
+          pet_id?: string | null
+          user_id: string
+        }
+        Update: {
+          earned_at?: string
+          id?: string
+          kind?: string
+          pet_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           appetite: number | null
@@ -221,6 +245,24 @@ export type Database = {
           source?: string
           stack?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
         }
         Relationships: []
       }
@@ -1416,6 +1458,57 @@ export type Database = {
           stock?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          author_id: string
+          caption: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          image_url: string
+          pet_id: string | null
+          view_count: number
+        }
+        Insert: {
+          author_id: string
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url: string
+          pet_id?: string | null
+          view_count?: number
+        }
+        Update: {
+          author_id?: string
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string
+          pet_id?: string | null
+          view_count?: number
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
         }
         Relationships: []
       }
