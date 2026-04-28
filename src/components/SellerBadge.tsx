@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert } from "lucide-react";
+import { BadgeCheck, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search } from "lucide-react";
 
-type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer";
+type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer";
 
 const META: Record<AccountType, { label: string; tone: string; Icon: any }> = {
   pet_parent: { label: "Pet parent", tone: "bg-muted text-foreground border-hairline", Icon: PawPrint },
@@ -11,6 +11,7 @@ const META: Record<AccountType, { label: string; tone: string; Icon: any }> = {
   sanctuary: { label: "Sanctuary / Gaushala", tone: "bg-leaf/15 text-leaf border-leaf/30", Icon: ShieldHalf },
   zoo: { label: "Zoo / Wildlife", tone: "bg-stone-500/15 text-stone-700 border-stone-500/30", Icon: ShieldAlert },
   rescuer: { label: "Rescuer", tone: "bg-coral/15 text-coral border-coral/30", Icon: Heart },
+  buyer: { label: "Looking for a pet", tone: "bg-primary/10 text-primary border-primary/30", Icon: Search },
 };
 
 export const SellerBadge = ({
