@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { logError } from "@/lib/logError";
 
 const emailSchema = z.object({
   email: z.string().trim().email("Enter a valid email"),
@@ -19,40 +20,38 @@ const emailSchema = z.object({
 
 const Auth = () => {
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const redirect = params.get("redirect");
+  const postAuthTarget = redirect
+    ? `/post-auth?redirect=${encodeURIComponent(redirect)}`
+    : "/post-auth";
+
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
 
   const handleGoogle = async () => {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/post-auth`,
       });
       if (result.error) {
+        logError(result.error, { source: "auth:google" });
         toast.error(result.error.message || "Google sign-in failed");
         return;
       }
       if (result.redirected) return;
-      nav("/", { replace: true });
+      nav(postAuthTarget, { replace: true });
     } catch (err: any) {
+      logError(err, { source: "auth:google" });
       toast.error(err.message || "Google sign-in failed");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleResend = async () => {
-    if (!verifyEmail) return;
-    setLoading(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: verifyEmail });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Verification email re-sent");
   };
 
   const handleEmail = async (e: React.FormEvent) => {
@@ -72,55 +71,28 @@ const Auth = () => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName },
-          },
+          options: { data: { full_name: fullName } },
         });
         if (error) throw error;
-        // Email auto-confirm is on — sign the user straight in if no session was returned.
         if (!data.session) {
+          // auto-confirm is on; if no session was returned, sign in immediately
           const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
           if (signInErr) throw signInErr;
         }
         toast.success("Welcome to Petos");
-        nav("/onboarding", { replace: true });
+        nav(postAuthTarget, { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        nav("/", { replace: true });
+        nav(postAuthTarget, { replace: true });
       }
     } catch (err: any) {
+      logError(err, { source: mode === "signup" ? "auth:signup" : "auth:signin" });
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
-
-  if (verifyEmail) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="container-app flex-1 flex flex-col justify-center py-12 max-w-sm">
-          <div className="mb-10 text-center">
-            <div className="font-display text-5xl tracking-tight">Petos</div>
-            <div className="hairline mt-3 w-12 mx-auto" />
-          </div>
-          <div className="rounded-xl border border-hairline bg-card p-5 space-y-3">
-            <h2 className="font-display text-xl">Check your inbox</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We sent a verification link to <span className="font-medium text-foreground">{verifyEmail}</span>. Tap it to finish setting up your account.
-            </p>
-            <Button onClick={handleResend} disabled={loading} variant="outline" size="sm" className="w-full rounded-xl">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resend verification email"}
-            </Button>
-            <Button onClick={() => { setVerifyEmail(null); setMode("signin"); }} variant="ghost" size="sm" className="w-full">
-              Back to sign in
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
