@@ -23,6 +23,7 @@ export type FeedPost = {
   like_count: number;
   comment_count: number;
   created_at: string;
+  reaction_counts?: Record<string, number> | null;
   author?: { full_name: string | null; avatar_url: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
@@ -69,16 +70,6 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
     },
   });
 
-  const { data: myLikes } = useQuery({
-    queryKey: ["my-likes", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("post_likes").select("post_id").eq("user_id", user!.id);
-      if (error) throw error;
-      return new Set((data ?? []).map((r) => r.post_id));
-    },
-  });
-
   // Realtime
   useEffect(() => {
     const ch = supabase
@@ -86,25 +77,9 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => {
         qc.invalidateQueries({ queryKey: ["feed"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, () => {
-        qc.invalidateQueries({ queryKey: ["feed"] });
-        qc.invalidateQueries({ queryKey: ["my-likes"] });
-      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
-
-  const toggleLike = async (post: FeedPost) => {
-    if (!user) return toast.error("Please sign in");
-    const liked = myLikes?.has(post.id);
-    if (liked) {
-      const { error } = await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", user.id);
-      if (error) toast.error(error.message);
-    } else {
-      const { error } = await supabase.from("post_likes").insert({ post_id: post.id, user_id: user.id });
-      if (error) toast.error(error.message);
-    }
-  };
 
   if (isLoading) {
     return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
