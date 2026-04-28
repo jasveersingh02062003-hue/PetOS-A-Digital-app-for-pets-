@@ -11,6 +11,7 @@ import { Camera, ImagePlus, X, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
+import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
 
 export const ComposerButton = ({ variant = "icon" }: { variant?: "icon" | "fab" | "inline" }) => {
   const [open, setOpen] = useState(false);
@@ -49,6 +50,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
+  const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -79,14 +81,17 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         pet_id: petId === "none" ? null : petId,
         caption: caption.trim() || null,
         image_url,
-      }).select().single();
+        health_kind: healthTag?.kind ?? null,
+        health_pet_id: healthTag?.pet_id ?? null,
+        health_value: healthTag?.value ?? null,
+      } as any).select().single();
       if (error) throw error;
       if (collabs.length && post) {
         await invite.mutateAsync({ postId: post.id, userIds: collabs.map((c) => c.id) });
       }
-      toast.success("Posted");
+      toast.success(healthTag ? "Posted & logged to health" : "Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]);
+      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]); setHealthTag(null);
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
@@ -136,6 +141,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
 
       <CollabPicker selected={collabs} onChange={setCollabs} />
 
+      {pets && pets.length > 0 && (
+        <HealthTagPicker pets={pets} value={healthTag} onChange={setHealthTag} />
+      )}
 
       <Button type="submit" disabled={uploading} size="lg" className="w-full rounded-xl">
         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share"}
