@@ -164,7 +164,7 @@ export const MissingCreateSheet = ({ open, onOpenChange, pet }: Props) => {
           <Button
             className="w-full h-12 rounded-2xl bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             disabled={submitting}
-            onClick={submit}
+            onClick={startSubmit}
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Send alert
@@ -174,6 +174,12 @@ export const MissingCreateSheet = ({ open, onOpenChange, pet }: Props) => {
           </p>
         </div>
       </SheetContent>
+      <PaywallSheet
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        kind="missing_listing"
+        onConfirmed={finishSubmit}
+      />
     </Sheet>
   );
 };
