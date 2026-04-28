@@ -1,98 +1,96 @@
-# Plan — Delightful Interaction Animations
+# Why Petos feels slow — and what to fix
 
-Goal: make every social tap feel alive. Headline feature: **double-tap a photo → big paw 🐾 burst + auto-react with "love"**. Plus a coordinated polish pass on the existing buttons so the feed feels playful and consistent.
+## TL;DR
 
-Stack already in place: `framer-motion`, `tailwindcss-animate`, `sonner`, `navigator.vibrate` via `src/lib/haptics.ts`. No new deps needed.
+The backend is **not** the bottleneck. Your database is essentially empty (4 profiles, 9 posts, 13 pets, 2 missing pets) and all hot tables have proper indexes. The slowness you feel is **100% frontend**: the Home screen fires ~10 parallel queries and mounts ~12 heavy components on first paint, on a mobile viewport (393×667), through a dev preview iframe.
 
----
+## Where your data is stored
 
-## 1. Double-tap "Paw Burst" on post images (headline)
+Everything runs on **Lovable Cloud** (managed Postgres + Storage + Auth + Edge Functions):
 
-**New component** `src/components/social/PawBurst.tsx`
-- Imperative API: `usePawBurst()` returns `{ burst(x, y), node }`.
-- Renders a giant centered 🐾 that scales 0 → 1.3 → 1, fades out (~700ms, framer-motion `AnimatePresence`).
-- Around it: 6 smaller paws fly outward in a radial pattern with random rotation (staggered 0–120ms).
-- Pointer-events: none, absolutely positioned over image.
+| Data | Location |
+|---|---|
+| Users / sessions | `auth.users` (Lovable Cloud Auth) |
+| Profiles, pets, posts, comments, reactions, follows, meetups, missing pets, notifications, etc. | Postgres tables in `public` schema |
+| Photos (avatars, post images, stories, missing-pet photos) | Lovable Cloud Storage buckets (`stories`, post media, etc.) |
+| Push / notification jobs | `notifications` + `notification_jobs` tables |
+| AI chat, push send, vault, billing | Edge Functions (`ai-photo-analyze`, `chat`, `send-push`, `stripe-webhook`, ...) |
 
-**Wire-up in `src/components/PostFeed.tsx` `PostCard`:**
-- Wrap the image `<div>` with `onClick` detecting double-tap (track `lastTapRef`, threshold 280ms).
-- On double-tap:
-  1. Trigger paw burst at tap coordinates.
-  2. Fire `haptic(15)`.
-  3. If user has no current reaction → call same `toggle("love")` logic from `ReactionBar` (extract a tiny shared helper `addReaction(postId, "love")` in `src/lib/reactions.ts` so PostCard can call it without duplicating code).
-  4. If user already reacted → only animate (no toggle off — matches Instagram behavior).
-- Single tap: do nothing (preserves accidental taps).
+Realtime subscriptions are wired for `notifications` (per-user) and `posts` (feed).
 
-**Edge cases**
-- Guard for unauthenticated users → still play animation, but skip mutation and show subtle toast "Sign in to react".
-- Disable on long-press / drag (use a movement threshold of 8px between touchstart and touchend).
+## Evidence — what I actually measured
 
----
+**DB sizes (live):** every table is 8 KB. There is no data volume problem.
+```
+posts=9   profiles=4   pets=13   missing_pets=2
+notifications=9   post_reactions=3   meetups=5
+```
 
-## 2. Reaction button micro-animations (`ReactionBar.tsx`)
+**Indexes:** `posts(created_at DESC)`, `posts(author_id)`, `notifications(user_id, created_at DESC)`, `missing_pets(status, last_seen_city)`, geo GIST on meetups/missing — all present. Backend reads are O(milliseconds).
 
-- When user picks a reaction in the popover: emoji **pops** (scale 1 → 1.4 → 1, 250ms) and the trigger button gets a soft `primary-soft` ring pulse for 400ms.
-- Counter number animates with a subtle slide-up when it changes (framer-motion `key={total}` + `initial={{y:6, opacity:0}}`).
-- Add `haptic(10)` on selection.
+**Home screen network fan-out on first paint** (everything fires in parallel, before paint completes):
+1. `useProfile` → profiles
+2. `usePets` → pets
+3. `useUpcomingMeetups(city)` → meetups
+4. `HomeHero` → signals query
+5. `HealthStatusStrip` → vitals/vaccinations
+6. `PharmacySuggestionsBanner` → meds
+7. `StoryRail` → stories + `get_profiles_public` RPC (full table scan returned, then filtered client-side)
+8. `DailyPromptBanner` → daily_prompts
+9. `MissingStrip` → missing_pets + `get_pets_public` RPC
+10. `DailyTipCard` → tip
+11. `PostFeed` (For-you) → posts + `get_profiles_public` (again) + pets
+12. `PostFeed` (Following) — *also mounts immediately* because it's inside `<TabsContent>` and not lazy. So the feed query runs **twice**.
 
-## 3. Save (bookmark) animation (`SaveButton.tsx`)
+**Compounding factors:**
+- `PostFeed` calls `supabase.rpc("get_profiles_public")` which `SELECT id, full_name, avatar_url, city, bio FROM profiles` (no filter, no limit) and filters client-side. Same RPC is called by `StoryRail`, `MissingStrip`, etc. — **no React Query dedup** because each call runs inside a different `queryFn`.
+- `useActiveStories` has `refetchInterval: 60_000` → forces a re-query + re-render every minute.
+- Realtime channel on `posts` invalidates the **entire `["feed"]`** cache on any change, refetching both tabs.
+- All 5 tab-bar pages (`Home`, `Discover`, `Health`, `Services`, `Profile`) are **eagerly imported** in `App.tsx`, so the initial JS bundle is large even though the user only sees Home.
+- Service worker is registered in production — if you've visited before, you may be running **stale cached JS** while new modules load on top.
+- Dev preview iframe adds 200–500 ms of extra overhead vs. the published URL.
 
-- On save: bookmark icon scales 0.8 → 1.25 → 1 (300ms) and a tiny gold sparkle (✦) fades in/out above it.
-- On unsave: gentle shrink-and-fade.
-- `haptic(8)` on toggle.
+## Fix plan (ordered by impact)
 
-## 4. Follow button animation (`FollowButton.tsx`)
+### 1. Cut Home's first-paint query fan-out (biggest win)
+- Make `PostFeed` for the inactive tab **lazy** — only mount the active `<TabsContent>` (use `forceMount={false}` default and conditional render based on `activeTab` state). Eliminates the duplicate feed query.
+- Defer below-the-fold widgets to after first paint with `<Suspense>` + `lazy()`:
+  - `StoryRail`, `DailyPromptBanner`, `MeetupCard`, `DailyTipCard`, `PharmacySuggestionsBanner`, `MissingStrip`.
+- Lift `staleTime` for non-critical home widgets (tip, meetups, pharmacy, prompt) to 5 min.
+- Remove `refetchInterval: 60_000` from `useActiveStories` (rely on user pull-to-refresh / mount).
 
-- On follow success: button briefly morphs — checkmark icon slides in from left, label crossfades from "Follow" → "Following", subtle confetti dot burst (3 dots, 350ms).
-- Use framer-motion `layout` + `AnimatePresence` for the icon/label swap.
+### 2. Centralise the `get_profiles_public` RPC
+- Add a single `useProfilesPublic()` React Query hook with `queryKey: ["profiles-public"]` and `staleTime: 5 min`. Have `PostFeed`, `StoryRail`, `MissingStrip`, `Discover` consume it instead of calling the RPC inside their own `queryFn`. Cuts 3–4 round-trips on Home.
+- Same for `get_pets_public` used by `MissingStrip`.
 
-## 5. Comment button bounce (`PostFeed.tsx`)
+### 3. Code-split the tab-bar pages
+- Convert `Discover`, `Health`, `Services`, `Profile` from eager imports to `lazy(() => import(...))` in `App.tsx`. Only Home needs to be eager. Shrinks initial JS by an estimated 30–40%.
 
-- Tapping the comment icon → quick scale 1 → 1.15 → 1 (150ms) before the sheet opens. Pure CSS via `active:scale-110 transition-transform`.
+### 4. Tame realtime invalidations
+- In `PostFeed`'s posts channel, scope invalidation to the current scope key (`["feed", scope, ...]`) instead of blasting all `["feed"]` queries. Avoids refetching both tabs on every insert.
 
-## 6. Bottom nav tap feedback (`BottomNav.tsx`)
+### 5. Service-worker hygiene
+- In `public/sw.js`, ensure the install handler calls `self.skipWaiting()` and activate calls `clients.claim()` + deletes old caches by version key. If users are loading stale shells we'll see slow first paint until SW updates.
 
-- Active tab icon gets a small "lift + bounce" when first selected (framer-motion `whileTap={{scale:0.9}}` and `animate={{y: active ? -2 : 0}}`).
-- Adds `haptic(8)` on tab change.
+### 6. Image performance
+- Add `decoding="async"` and explicit `width`/`height` to `<img>` in `PostFeed`, `StoryRail`, `MissingStrip` to avoid layout thrash and let the browser parallelise decode.
+- The post image container is `aspect-square` already — good. Confirm uploads go through a resized variant (currently `image_url` is the raw upload — if originals are >1 MB on a 393px viewport, that alone explains "slow scrolling").
 
-## 7. Tailwind keyframes (one-time additions in `tailwind.config.ts`)
+### 7. Optional but recommended
+- Add a tiny `console.time` around Home's `useEffect` queries in dev so we can measure the change.
+- Run `browser--performance_profile` after the fixes to confirm Web Vitals improvement.
 
-Extend `keyframes` + `animation` with:
-- `paw-pop`: scale 0 → 1.3 → 1, opacity 0 → 1 → 0 (700ms).
-- `paw-fly`: translate + rotate radial outward, fade (600ms).
-- `pop`: scale 1 → 1.25 → 1 (220ms).
-- `sparkle`: opacity + translateY pulse (500ms).
+## What I will NOT change in this pass
+- Database schema, RLS, indexes (already healthy).
+- Edge Functions (not on the Home critical path).
+- Lovable Cloud instance size — your data is tiny; upgrading would not help.
 
-These give us reusable `animate-paw-pop`, `animate-pop`, `animate-sparkle` classes for non-framer cases.
+## Verification checklist (after implementation)
+- [ ] Home first paint mounts only: header, HomeHero, QuickAccessRail, active feed tab. Everything else lazy.
+- [ ] Network tab shows ≤ 5 Supabase requests on Home cold load (down from ~10).
+- [ ] Switching For-you ↔ Following triggers exactly **one** new feed query, not both at mount.
+- [ ] `get_profiles_public` is requested **once** per cold load (verified via Network filter).
+- [ ] Initial JS chunk for `/` route is smaller (Vite build output).
+- [ ] No console warnings about duplicate Supabase channels.
 
----
-
-## Files touched
-
-**New**
-- `src/components/social/PawBurst.tsx`
-- `src/lib/reactions.ts` (tiny `addReaction(postId, kind)` helper using supabase)
-
-**Edited**
-- `src/components/PostFeed.tsx` — double-tap handler + PawBurst overlay + comment bounce
-- `src/components/social/ReactionBar.tsx` — pop animation, counter slide, haptic
-- `src/components/social/SaveButton.tsx` — bookmark pop + sparkle, haptic
-- `src/components/social/FollowButton.tsx` — animated state swap
-- `src/components/BottomNav.tsx` — active tab bounce, haptic
-- `tailwind.config.ts` — new keyframes
-
-## Out of scope (mention only)
-
-- Story viewer animations, message "sent" animations, page transitions — happy to do in a follow-up pass if you want; this PR keeps focus on the feed where the double-tap moment lives.
-
-## Verification checklist
-
-1. Double-tap any post image on mobile viewport → big paw burst plays, "love" reaction count increments by 1, haptic fires.
-2. Double-tap again when already reacted → animation plays, count does NOT change.
-3. Single tap on image → nothing happens.
-4. Pick a reaction from the popover → emoji pops, count slides.
-5. Save a post → bookmark fills with pop + sparkle.
-6. Follow a user → label crossfades to "Following" with check icon.
-7. Switch bottom nav tabs → active icon lifts with subtle bounce.
-
-Approve and I'll ship the whole pass in one go.
+Approve and I'll execute the whole pass in one go.
