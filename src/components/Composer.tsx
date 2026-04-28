@@ -59,6 +59,23 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
     if (f.size > 8 * 1024 * 1024) return toast.error("Image must be under 8 MB");
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    // Smart auto-detect: prompt to log as health if no tag yet
+    if (!healthTag && pets && pets.length > 0) {
+      const hour = new Date().getHours();
+      const txt = caption.toLowerCase();
+      let kind: HealthTag["kind"] | null = null;
+      if (/\b(walk|walking|park|stroll)\b/.test(txt)) kind = "walk";
+      else if (/\b(meal|food|breakfast|lunch|dinner|kibble|treat)\b/.test(txt)) kind = "meal";
+      else if (/\b(weigh|weight|scale|kg)\b/.test(txt)) kind = "weight";
+      else if (/\b(itch|scratch|vomit|cough|sneeze|symptom|sick)\b/.test(txt)) kind = "symptom";
+      else if (hour < 10) kind = "meal";
+      else if (hour >= 16 && hour < 20) kind = "walk";
+      if (kind) {
+        const targetPetId = petId !== "none" ? petId : pets[0].id;
+        setHealthTag({ kind, pet_id: targetPetId, value: null });
+        toast.message(`Suggested: log as ${kind}`, { description: "Tap the health tag to confirm or change." });
+      }
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
