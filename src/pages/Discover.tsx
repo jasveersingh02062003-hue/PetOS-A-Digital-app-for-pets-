@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LocalPackRail } from "@/components/social/LocalPackRail";
 import { TrendingHashtagsRail } from "@/components/social/TrendingHashtagsRail";
+import { NearMePanel } from "@/components/maps/NearMePanel";
 import { Compass, Flame, Users, CalendarDays, Stethoscope } from "lucide-react";
 
 const Discover = () => {
@@ -43,9 +44,10 @@ const Discover = () => {
       </div>
 
       <Tabs defaultValue="trending" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full bg-muted rounded-xl mb-5">
+        <TabsList className="grid grid-cols-4 w-full bg-muted rounded-xl mb-5">
           <TabsTrigger value="trending" className="rounded-lg">Trending</TabsTrigger>
           <TabsTrigger value="latest" className="rounded-lg">Latest</TabsTrigger>
+          <TabsTrigger value="nearby" className="rounded-lg">Near me</TabsTrigger>
           <TabsTrigger value="mates" className="rounded-lg">Mates</TabsTrigger>
         </TabsList>
 
@@ -77,6 +79,10 @@ const Discover = () => {
               />
             }
           />
+        </TabsContent>
+
+        <TabsContent value="nearby" className="pb-10">
+          <NearMePanel />
         </TabsContent>
 
         <TabsContent value="mates" className="pb-10">

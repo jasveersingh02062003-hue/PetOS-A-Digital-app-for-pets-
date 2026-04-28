@@ -78,10 +78,13 @@ const Onboarding = () => {
 
   const breedOptions = useMemo(() => BREEDS[species] ?? BREEDS.other, [species]);
 
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const detectCity = async () => {
     if (!navigator.geolocation) return toast.error("Location not available");
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         try {
           const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
           const j = await r.json();
@@ -158,6 +161,8 @@ const Onboarding = () => {
       const { error: pErr } = await supabase.from("profiles").update({
         full_name: fullName,
         city,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
         language,
         units,
         goals,
@@ -179,6 +184,8 @@ const Onboarding = () => {
         neutered,
         avatar_url: avatarUrl,
         city,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
         activity_level: activity,
         diet_type: diet,
         social_level: socialLevel,

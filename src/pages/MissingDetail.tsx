@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 
 const timeAgo = (iso: string) => {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -183,8 +184,27 @@ const MissingDetail = () => {
           )}
         </Card>
 
+        {(missing.last_seen_lat && missing.last_seen_lng) && (() => {
+          const seenMarkers: MapMarker[] = [
+            { id: "last", lat: Number(missing.last_seen_lat), lng: Number(missing.last_seen_lng), color: "danger", title: "Last seen here" },
+            ...(sightings ?? []).filter((s: any) => s.lat && s.lng).map((s: any) => ({
+              id: s.id, lat: Number(s.lat), lng: Number(s.lng), color: "success" as const,
+              title: "Sighting", description: s.note ?? new Date(s.created_at).toLocaleString(),
+            })),
+          ];
+          return (
+            <LeafletMap
+              center={[Number(missing.last_seen_lat), Number(missing.last_seen_lng)]}
+              zoom={14}
+              height="280px"
+              markers={seenMarkers}
+            />
+          );
+        })()}
+
         {!isResolved && (
           <div className="space-y-2">
+
             {!isOwner && (
               <Button className="w-full h-12 rounded-2xl" onClick={() => setSightingOpen(true)}>
                 <Eye className="h-4 w-4 mr-2" /> I've seen this pet
