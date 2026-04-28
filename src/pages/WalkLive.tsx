@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LeafletMap } from "@/components/maps/LeafletMap";
 import { pawIcon } from "@/components/maps/PawMarker";
 import { Card } from "@/components/ui/card";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Timer, Activity, Gauge } from "lucide-react";
+import { totalDistanceKm, formatDuration, paceMinPerKm, formatPace, type LatLng } from "@/lib/walkStats";
 
 type Track = { lat: number; lng: number; recorded_at: string };
 type WalkData = {
@@ -21,6 +22,7 @@ const WalkLive = () => {
   const [data, setData] = useState<WalkData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [now, setNow] = useState<number>(Date.now());
 
   const fetchWalk = async () => {
     if (!token) return;
@@ -40,6 +42,11 @@ const WalkLive = () => {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   if (loading) {
     return (
@@ -63,26 +70,18 @@ const WalkLive = () => {
 
   const tracks = data.tracks ?? [];
   const last = tracks[tracks.length - 1];
-  const polyline = tracks.map((t) => [Number(t.lat), Number(t.lng)] as [number, number]);
+  const polyline: LatLng[] = tracks.map((t) => [Number(t.lat), Number(t.lng)]);
   const center: [number, number] = last
     ? [Number(last.lat), Number(last.lng)]
     : [20.5937, 78.9629];
 
-  // Distance traveled
-  const distanceKm = polyline.reduce((acc, pt, i) => {
-    if (i === 0) return 0;
-    const [la1, lo1] = polyline[i - 1];
-    const [la2, lo2] = pt;
-    const R = 6371;
-    const dLat = ((la2 - la1) * Math.PI) / 180;
-    const dLon = ((lo2 - lo1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((la1 * Math.PI) / 180) *
-        Math.cos((la2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return acc + 2 * R * Math.asin(Math.sqrt(a));
-  }, 0);
+  const distanceKm = totalDistanceKm(polyline);
+  const firstAt = tracks[0]?.recorded_at ? new Date(tracks[0].recorded_at).getTime() : null;
+  const lastAt = last?.recorded_at ? new Date(last.recorded_at).getTime() : null;
+  const durMs = firstAt && lastAt ? Math.max(0, lastAt - firstAt) : 0;
+  const pace = paceMinPerKm(distanceKm, durMs);
+  const stalenessSec = lastAt ? Math.max(0, Math.floor((now - lastAt) / 1000)) : null;
+  const isStale = stalenessSec != null && stalenessSec > 60;
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,11 +127,36 @@ const WalkLive = () => {
           )}
           {last && (
             <div className="p-3 text-xs text-muted-foreground flex items-center justify-between">
-              <span>Updated {new Date(last.recorded_at).toLocaleTimeString()}</span>
+              <span className={isStale ? "text-amber-700 dark:text-amber-300" : ""}>
+                Updated {stalenessSec != null ? (stalenessSec < 60 ? `${stalenessSec}s ago` : `${Math.floor(stalenessSec / 60)}m ago`) : "—"}
+              </span>
               <span className="font-medium text-foreground">{distanceKm.toFixed(2)} km</span>
             </div>
           )}
         </Card>
+
+        {tracks.length > 1 && (
+          <Card className="rounded-2xl border-hairline p-3">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="flex flex-col items-center gap-1">
+                <Timer className="h-4 w-4 text-muted-foreground" />
+                <div className="font-display text-lg leading-none tabular-nums">{formatDuration(durMs)}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Time</div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <div className="font-display text-lg leading-none tabular-nums">{distanceKm.toFixed(2)}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">km</div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <Gauge className="h-4 w-4 text-muted-foreground" />
+                <div className="font-display text-lg leading-none tabular-nums">{formatPace(pace).replace(" /km", "")}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">min/km</div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <p className="text-[11px] text-muted-foreground text-center pb-6">
           Live walk shared via Petos · auto-refreshes every 5s
         </p>
