@@ -189,6 +189,7 @@ const App = () => (
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
+              <Route path="/rewards" element={<Rewards />} />
               <Route path="/missing" element={<MissingFeed />} />
               <Route path="/missing/new" element={<MissingNew />} />
               <Route path="/missing/:id" element={<MissingDetail />} />
