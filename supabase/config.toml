@@ -1,1 +1,4 @@
 project_id = "fappyyhsdmybkyrhyutm"
+
+[functions.vault-view]
+verify_jwt = false
