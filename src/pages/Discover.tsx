@@ -5,7 +5,7 @@ import { MatesGrid } from "@/components/MatesGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LocalPackRail } from "@/components/social/LocalPackRail";
-import { Compass, Flame, Users, CalendarDays } from "lucide-react";
+import { Compass, Flame, Users, CalendarDays, Stethoscope } from "lucide-react";
 
 const Discover = () => {
   const nav = useNavigate();
@@ -21,16 +21,21 @@ const Discover = () => {
 
       <LocalPackRail />
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <button onClick={() => nav("/groups")} className="rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40 transition-colors">
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <button onClick={() => nav("/groups")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
           <Users className="h-5 w-5 text-primary mb-2" />
-          <div className="font-display text-base">Groups</div>
-          <div className="text-xs text-muted-foreground">Breed · city · interest</div>
+          <div className="font-display text-sm">Groups</div>
+          <div className="text-[10px] text-muted-foreground">Breed · city</div>
         </button>
-        <button onClick={() => nav("/meetups")} className="rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40 transition-colors">
+        <button onClick={() => nav("/meetups")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
           <CalendarDays className="h-5 w-5 text-primary mb-2" />
-          <div className="font-display text-base">Meetups</div>
-          <div className="text-xs text-muted-foreground">Playdates near you</div>
+          <div className="font-display text-sm">Meetups</div>
+          <div className="text-[10px] text-muted-foreground">Playdates</div>
+        </button>
+        <button onClick={() => nav("/askvet")} className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/40 transition-colors">
+          <Stethoscope className="h-5 w-5 text-primary mb-2" />
+          <div className="font-display text-sm">AskVet</div>
+          <div className="text-[10px] text-muted-foreground">Verified Q&amp;A</div>
         </button>
       </div>
 

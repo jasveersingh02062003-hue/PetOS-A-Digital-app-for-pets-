@@ -71,6 +71,9 @@ import GroupDetail from "./pages/GroupDetail";
 import Meetups from "./pages/Meetups";
 import MeetupNew from "./pages/MeetupNew";
 import MeetupDetail from "./pages/MeetupDetail";
+import AskVet from "./pages/AskVet";
+import AskVetNew from "./pages/AskVetNew";
+import AskVetDetail from "./pages/AskVetDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +152,9 @@ const App = () => (
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetups/new" element={<MeetupNew />} />
               <Route path="/meetups/:id" element={<MeetupDetail />} />
+              <Route path="/askvet" element={<AskVet />} />
+              <Route path="/askvet/new" element={<AskVetNew />} />
+              <Route path="/askvet/:id" element={<AskVetDetail />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
