@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
+import { CollabBadge } from "./social/CollabBadge";
 
 export type FeedPost = {
   id: string;
