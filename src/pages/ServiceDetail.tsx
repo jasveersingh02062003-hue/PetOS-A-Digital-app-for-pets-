@@ -11,6 +11,7 @@ import { SubjectRating } from "@/components/SubjectRating";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeafletMap } from "@/components/maps/LeafletMap";
 import { pawIcon } from "@/components/maps/PawMarker";
+import { TrustBadge } from "@/components/services/TrustBadge";
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -77,6 +78,14 @@ const ServiceDetail = () => {
             </div>
             <div className="text-sm text-muted-foreground capitalize mt-1">
               {provider.category}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TrustBadge provider={provider as any} />
+              {provider.years_experience != null && provider.years_experience > 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  · {provider.years_experience} yr{provider.years_experience > 1 ? "s" : ""} experience
+                </span>
+              )}
             </div>
             <div className="mt-1.5">
               <SubjectRating type="provider" id={provider.id} size="sm" />
