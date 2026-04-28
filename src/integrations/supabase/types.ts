@@ -1408,6 +1408,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ownership_transfers: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          from_user_id: string
+          id: string
+          listing_id: string
+          note: string | null
+          pet_id: string
+          price_inr: number | null
+          status: Database["public"]["Enums"]["transfer_status"]
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          from_user_id: string
+          id?: string
+          listing_id: string
+          note?: string | null
+          pet_id: string
+          price_inr?: number | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          from_user_id?: string
+          id?: string
+          listing_id?: string
+          note?: string | null
+          pet_id?: string
+          price_inr?: number | null
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       parasite_preventatives: {
         Row: {
           batch_number: string | null
@@ -3799,6 +3838,7 @@ export type Database = {
       social_level: "solo" | "pairs" | "crowds"
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
+      transfer_status: "pending" | "accepted" | "declined" | "cancelled"
       verification_status: "pending" | "approved" | "rejected"
       vet_q_category:
         | "behavior"
@@ -4064,6 +4104,7 @@ export const Constants = {
       social_level: ["solo", "pairs", "crowds"],
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
+      transfer_status: ["pending", "accepted", "declined", "cancelled"],
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
       vet_q_status: ["open", "answered", "closed"],
