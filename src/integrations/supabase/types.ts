@@ -442,6 +442,201 @@ export type Database = {
         }
         Relationships: []
       }
+      service_bookings: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          pet_id: string | null
+          provider_id: string
+          scheduled_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          provider_id: string
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          provider_id?: string
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_providers: {
+        Row: {
+          active: boolean
+          bio: string | null
+          category: Database["public"]["Enums"]["service_category"]
+          city: string | null
+          contact_phone: string | null
+          cover_url: string | null
+          created_at: string
+          hourly_rate_inr: number | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          active?: boolean
+          bio?: string | null
+          category: Database["public"]["Enums"]["service_category"]
+          city?: string | null
+          contact_phone?: string | null
+          cover_url?: string | null
+          created_at?: string
+          hourly_rate_inr?: number | null
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          active?: boolean
+          bio?: string | null
+          category?: Database["public"]["Enums"]["service_category"]
+          city?: string | null
+          contact_phone?: string | null
+          cover_url?: string | null
+          created_at?: string
+          hourly_rate_inr?: number | null
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      shop_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          qty: number
+          seller_id: string
+          title_snapshot: string
+          unit_price_inr: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          qty: number
+          seller_id: string
+          title_snapshot: string
+          unit_price_inr: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          qty?: number
+          seller_id?: string
+          title_snapshot?: string
+          unit_price_inr?: number
+        }
+        Relationships: []
+      }
+      shop_orders: {
+        Row: {
+          contact_phone: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          shipping_address: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total_inr: number
+          updated_at: string
+        }
+        Insert: {
+          contact_phone?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_inr?: number
+          updated_at?: string
+        }
+        Update: {
+          contact_phone?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_inr?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_products: {
+        Row: {
+          active: boolean
+          category: Database["public"]["Enums"]["product_category"]
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          price_inr: number
+          seller_id: string
+          stock: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price_inr: number
+          seller_id: string
+          stock?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price_inr?: number
+          seller_id?: string
+          stock?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       symptom_logs: {
         Row: {
           created_at: string
@@ -715,6 +910,12 @@ export type Database = {
         | "moderator"
         | "finance"
         | "super_admin"
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "declined"
+        | "completed"
+        | "cancelled"
       consult_severity: "mild" | "moderate" | "severe"
       consult_status:
         | "awaiting_vet"
@@ -730,14 +931,29 @@ export type Database = {
         | "allergy"
         | "other"
       mating_intent: "stud" | "dam" | "either"
+      order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
       pet_gender: "male" | "female"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
+      product_category:
+        | "food"
+        | "toys"
+        | "accessories"
+        | "health"
+        | "grooming"
+        | "other"
       request_status:
         | "pending"
         | "accepted"
         | "declined"
         | "withdrawn"
         | "agreed"
+      service_category:
+        | "grooming"
+        | "training"
+        | "walking"
+        | "sitting"
+        | "boarding"
+        | "vet_clinic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -875,6 +1091,13 @@ export const Constants = {
         "finance",
         "super_admin",
       ],
+      booking_status: [
+        "pending",
+        "confirmed",
+        "declined",
+        "completed",
+        "cancelled",
+      ],
       consult_severity: ["mild", "moderate", "severe"],
       consult_status: [
         "awaiting_vet",
@@ -892,14 +1115,31 @@ export const Constants = {
         "other",
       ],
       mating_intent: ["stud", "dam", "either"],
+      order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
       pet_gender: ["male", "female"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
+      product_category: [
+        "food",
+        "toys",
+        "accessories",
+        "health",
+        "grooming",
+        "other",
+      ],
       request_status: [
         "pending",
         "accepted",
         "declined",
         "withdrawn",
         "agreed",
+      ],
+      service_category: [
+        "grooming",
+        "training",
+        "walking",
+        "sitting",
+        "boarding",
+        "vet_clinic",
       ],
     },
   },
