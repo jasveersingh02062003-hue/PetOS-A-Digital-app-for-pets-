@@ -266,6 +266,113 @@ export type Database = {
         }
         Relationships: []
       }
+      group_members: {
+        Row: {
+          group_id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["group_member_role"]
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_posts: {
+        Row: {
+          added_at: string
+          added_by: string
+          group_id: string
+          post_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by: string
+          group_id: string
+          post_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string
+          group_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          key: string
+          kind: Database["public"]["Enums"]["group_kind"]
+          member_count: number
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          kind: Database["public"]["Enums"]["group_kind"]
+          member_count?: number
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          kind?: Database["public"]["Enums"]["group_kind"]
+          member_count?: number
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       health_records: {
         Row: {
           created_at: string
@@ -533,6 +640,106 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      meetup_rsvps: {
+        Row: {
+          created_at: string
+          meetup_id: string
+          pet_id: string | null
+          status: Database["public"]["Enums"]["rsvp_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          meetup_id: string
+          pet_id?: string | null
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          meetup_id?: string
+          pet_id?: string | null
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetup_rsvps_meetup_id_fkey"
+            columns: ["meetup_id"]
+            isOneToOne: false
+            referencedRelation: "meetups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetups: {
+        Row: {
+          attending_count: number
+          capacity: number | null
+          city: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          group_id: string | null
+          host_id: string
+          id: string
+          lat: number | null
+          lng: number | null
+          starts_at: string
+          status: Database["public"]["Enums"]["meetup_status"]
+          title: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          attending_count?: number
+          capacity?: number | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          group_id?: string | null
+          host_id: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["meetup_status"]
+          title: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          attending_count?: number
+          capacity?: number | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          group_id?: string | null
+          host_id?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["meetup_status"]
+          title?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       missing_pet_sightings: {
         Row: {
@@ -2289,6 +2496,8 @@ export type Database = {
         | "completed"
         | "cancelled"
       diet_type: "kibble" | "raw" | "home" | "mixed" | "prescription"
+      group_kind: "breed" | "city" | "interest"
+      group_member_role: "member" | "mod" | "owner"
       health_record_type:
         | "visit"
         | "diagnostic"
@@ -2297,6 +2506,7 @@ export type Database = {
         | "allergy"
         | "other"
       mating_intent: "stud" | "dam" | "either"
+      meetup_status: "upcoming" | "cancelled" | "done"
       missing_status: "active" | "resolved" | "cancelled"
       order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
       parasite_type:
@@ -2341,6 +2551,7 @@ export type Database = {
         | "withdrawn"
         | "agreed"
       review_subject: "provider" | "product" | "vet" | "pet_partner"
+      rsvp_status: "going" | "maybe" | "declined"
       service_category:
         | "grooming"
         | "training"
@@ -2517,6 +2728,8 @@ export const Constants = {
         "cancelled",
       ],
       diet_type: ["kibble", "raw", "home", "mixed", "prescription"],
+      group_kind: ["breed", "city", "interest"],
+      group_member_role: ["member", "mod", "owner"],
       health_record_type: [
         "visit",
         "diagnostic",
@@ -2526,6 +2739,7 @@ export const Constants = {
         "other",
       ],
       mating_intent: ["stud", "dam", "either"],
+      meetup_status: ["upcoming", "cancelled", "done"],
       missing_status: ["active", "resolved", "cancelled"],
       order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
       parasite_type: [
@@ -2576,6 +2790,7 @@ export const Constants = {
         "agreed",
       ],
       review_subject: ["provider", "product", "vet", "pet_partner"],
+      rsvp_status: ["going", "maybe", "declined"],
       service_category: [
         "grooming",
         "training",
