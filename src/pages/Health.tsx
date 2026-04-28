@@ -454,13 +454,6 @@ const VetShareButton = ({ petId, petName }: { petId: string; petName: string }) 
   );
 };
 
-const generateCode = () => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s = "";
-  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
-};
-
 const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) => {
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
