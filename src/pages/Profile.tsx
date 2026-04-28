@@ -18,6 +18,7 @@ import { SmartImage } from "@/components/SmartImage";
 import { ProfileSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
 import { PostGrid } from "@/components/social/PostGrid";
+import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { toast } from "sonner";
 import { differenceInMonths, differenceInYears } from "date-fns";
@@ -43,6 +44,7 @@ const Profile = () => {
     | undefined;
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
+  const isVerifiedOrg = useIsVerifiedOrg(user?.id);
 
   const { data: counts } = useQuery({
     queryKey: ["profile-counts", user?.id],
@@ -160,7 +162,7 @@ const Profile = () => {
             {/* Name + handle + badge */}
             <div className="mb-1 flex items-center gap-2 flex-wrap">
               <h1 className="font-display text-2xl leading-tight">{profile?.full_name || "Set your name"}</h1>
-              <SellerBadge type={accountType as any} verified />
+              <SellerBadge type={accountType as any} verified={isVerifiedOrg} />
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               {handle ? <span>@{handle}</span> : <button onClick={() => nav("/settings/about")} className="text-primary">Set @handle</button>}

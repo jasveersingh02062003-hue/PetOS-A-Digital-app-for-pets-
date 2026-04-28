@@ -8,6 +8,7 @@ import { MessageButton } from "@/components/social/MessageButton";
 import { PostGrid } from "@/components/social/PostGrid";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { SellerBadge } from "@/components/SellerBadge";
+import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { SmartImage } from "@/components/SmartImage";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
