@@ -3,6 +3,8 @@ import { useMeetup, useMeetupRsvps } from "@/hooks/useMeetups";
 import { RsvpButton } from "@/components/social/RsvpButton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react";
+import { LeafletMap } from "@/components/maps/LeafletMap";
+import { pawIcon } from "@/components/maps/PawMarker";
 
 const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, {
   weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit",
@@ -42,6 +44,24 @@ const MeetupDetail = () => {
       </div>
 
       {m.description && <p className="text-sm whitespace-pre-wrap mb-5">{m.description}</p>}
+
+      {m.lat != null && m.lng != null && (
+        <div className="mb-5">
+          <LeafletMap
+            center={[Number(m.lat), Number(m.lng)]}
+            zoom={14}
+            height="220px"
+            markers={[{
+              id: m.id,
+              lat: Number(m.lat),
+              lng: Number(m.lng),
+              icon: pawIcon("#3b82f6"),
+              title: m.title,
+              description: [m.venue, m.city].filter(Boolean).join(", "),
+            }]}
+          />
+        </div>
+      )}
 
       <div className="mb-6">
         <RsvpButton meetupId={m.id} />

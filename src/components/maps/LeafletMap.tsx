@@ -23,6 +23,7 @@ export type MapMarker = {
   title?: string;
   description?: string;
   color?: "primary" | "danger" | "success" | "muted";
+  icon?: L.Icon | L.DivIcon;
 };
 
 type Props = {
@@ -34,6 +35,7 @@ type Props = {
   className?: string;
   onMarkerClick?: (id: string) => void;
   followLast?: boolean;
+  scrollWheelZoom?: boolean;
 };
 
 const colorMap: Record<NonNullable<MapMarker["color"]>, string> = {
@@ -68,10 +70,11 @@ export const LeafletMap = ({
   className = "",
   onMarkerClick,
   followLast = false,
+  scrollWheelZoom = true,
 }: Props) => {
   return (
     <div className={`overflow-hidden rounded-lg border border-hairline ${className}`} style={{ height }}>
-      <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
+      <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={scrollWheelZoom}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -80,7 +83,7 @@ export const LeafletMap = ({
           <Marker
             key={m.id}
             position={[m.lat, m.lng]}
-            icon={m.color ? makeColorIcon(colorMap[m.color]) : undefined}
+            icon={m.icon ?? (m.color ? makeColorIcon(colorMap[m.color]) : undefined)}
             eventHandlers={onMarkerClick ? { click: () => onMarkerClick(m.id) } : undefined}
           >
             {(m.title || m.description) && (

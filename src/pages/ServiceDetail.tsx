@@ -9,6 +9,8 @@ import { BookingSheet } from "@/components/BookingSheet";
 import { ReviewList } from "@/components/ReviewList";
 import { SubjectRating } from "@/components/SubjectRating";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeafletMap } from "@/components/maps/LeafletMap";
+import { pawIcon } from "@/components/maps/PawMarker";
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -107,6 +109,24 @@ const ServiceDetail = () => {
           </p>
         )}
       </Card>
+
+      {provider.lat != null && provider.lng != null && (
+        <div className="mt-4">
+          <LeafletMap
+            center={[Number(provider.lat), Number(provider.lng)]}
+            zoom={14}
+            height="200px"
+            markers={[{
+              id: provider.id,
+              lat: Number(provider.lat),
+              lng: Number(provider.lng),
+              icon: pawIcon("#3b82f6"),
+              title: provider.name,
+              description: provider.city ?? undefined,
+            }]}
+          />
+        </div>
+      )}
 
       <div className="mt-6">
         <h3 className="font-display text-lg mb-3">Reviews</h3>

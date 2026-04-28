@@ -1798,6 +1798,7 @@ export type Database = {
           notes: string | null
           pet_id: string | null
           provider_id: string
+          public_share_token: string | null
           scheduled_at: string
           status: Database["public"]["Enums"]["booking_status"]
           updated_at: string
@@ -1809,6 +1810,7 @@ export type Database = {
           notes?: string | null
           pet_id?: string | null
           provider_id: string
+          public_share_token?: string | null
           scheduled_at: string
           status?: Database["public"]["Enums"]["booking_status"]
           updated_at?: string
@@ -1820,6 +1822,7 @@ export type Database = {
           notes?: string | null
           pet_id?: string | null
           provider_id?: string
+          public_share_token?: string | null
           scheduled_at?: string
           status?: Database["public"]["Enums"]["booking_status"]
           updated_at?: string
@@ -2982,6 +2985,17 @@ export type Database = {
           city: string
           full_name: string
           id: string
+        }[]
+      }
+      get_public_walk: {
+        Args: { _token: string }
+        Returns: {
+          booking_id: string
+          pet_name: string
+          provider_name: string
+          scheduled_at: string
+          status: string
+          tracks: Json
         }[]
       }
       has_role: {
