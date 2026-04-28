@@ -3615,6 +3615,12 @@ export type Database = {
           tracks: Json
         }[]
       }
+      get_user_id_by_email: {
+        Args: { _email: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3803,6 +3809,7 @@ export type Database = {
         | "pending_review"
         | "taken_down"
         | "completed"
+        | "sold"
       pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
       product_category:
@@ -4064,6 +4071,7 @@ export const Constants = {
         "pending_review",
         "taken_down",
         "completed",
+        "sold",
       ],
       pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
