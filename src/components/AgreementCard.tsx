@@ -51,21 +51,21 @@ export const AgreementCard = ({
     setSigning(true);
     const sigField = isFromOwner ? "from_signature" : "to_signature";
     const tsField = isFromOwner ? "from_signed_at" : "to_signed_at";
+    const nowIso = new Date().toISOString();
     if (!agreement) {
-      const { data, error } = await supabase.from("mating_agreements").insert({
+      const insertPayload: any = {
         request_id: requestId,
         terms_text: DEFAULT_TERMS,
         [sigField]: name.trim(),
-        [tsField]: new Date().toISOString(),
-      }).select().single();
+        [tsField]: nowIso,
+      };
+      const { data, error } = await supabase.from("mating_agreements").insert(insertPayload).select().single();
       setSigning(false);
       if (error) return toast.error(error.message);
       setAgreement(data);
     } else {
-      const { data, error } = await supabase.from("mating_agreements").update({
-        [sigField]: name.trim(),
-        [tsField]: new Date().toISOString(),
-      }).eq("id", agreement.id).select().single();
+      const updatePayload: any = { [sigField]: name.trim(), [tsField]: nowIso };
+      const { data, error } = await supabase.from("mating_agreements").update(updatePayload).eq("id", agreement.id).select().single();
       setSigning(false);
       if (error) return toast.error(error.message);
       setAgreement(data);
