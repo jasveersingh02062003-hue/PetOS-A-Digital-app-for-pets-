@@ -119,6 +119,12 @@ const Profile = () => {
         <LogOut className="h-4 w-4 mr-2" /> Sign out
       </Button>
 
+      <div className="mt-6 mb-10 flex justify-center gap-4 text-xs text-muted-foreground">
+        <a href="/legal/terms" className="hover:text-foreground">Terms</a>
+        <a href="/legal/privacy" className="hover:text-foreground">Privacy</a>
+        <a href="/legal/refunds" className="hover:text-foreground">Refunds</a>
+      </div>
+
       {reportingPet && (
         <MissingCreateSheet
           open={!!reportingPet}
