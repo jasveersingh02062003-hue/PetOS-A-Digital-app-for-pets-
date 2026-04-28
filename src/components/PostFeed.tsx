@@ -40,9 +40,11 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const { data: blocked } = useBlockedIds();
+  const { data: publicProfiles } = usePublicProfiles();
 
   const { data, isLoading } = useQuery({
     queryKey: ["feed", scope, user?.id ?? null, blocked?.size ?? 0],
+    enabled: publicProfiles !== undefined,
     queryFn: async () => {
       let followingIds: string[] | null = null;
       if (scope === "following") {
@@ -61,15 +63,12 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       const posts = (postsRaw ?? []).filter((p) => !blocked || !blocked.has(p.author_id));
       if (!posts?.length) return [];
 
-      const authorIds = [...new Set(posts.map((p) => p.author_id))];
       const petIds = [...new Set(posts.map((p) => p.pet_id).filter(Boolean) as string[])];
-      const [{ data: profiles }, { data: pets }] = await Promise.all([
-        supabase.rpc("get_profiles_public").then((r) => ({
-          data: (r.data ?? []).filter((p: any) => authorIds.includes(p.id)),
-        })),
-        petIds.length ? supabase.from("pets").select("id, name, avatar_url").in("id", petIds) : Promise.resolve({ data: [] as any[] }),
-      ]);
-      const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+      // Profiles come from the shared cache — no per-feed RPC.
+      const pMap = new Map((publicProfiles ?? []).map((p) => [p.id, p]));
+      const { data: pets } = petIds.length
+        ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds)
+        : { data: [] as any[] };
       const petMap = new Map((pets ?? []).map((p: any) => [p.id, p]));
       return posts.map((p) => ({
         ...p,
@@ -79,16 +78,16 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
     },
   });
 
-  // Realtime
+  // Realtime — scope to this feed key so we don't refetch both tabs on every insert.
   useEffect(() => {
     const ch = supabase
-      .channel("feed-posts")
+      .channel(`feed-posts:${scope}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => {
-        qc.invalidateQueries({ queryKey: ["feed"] });
+        qc.invalidateQueries({ queryKey: ["feed", scope] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  }, [qc, scope]);
 
   if (isLoading) {
     return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
