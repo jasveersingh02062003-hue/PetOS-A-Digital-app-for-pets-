@@ -56,6 +56,7 @@ import Timeline from "./pages/health/Timeline";
 import VetOnboarding from "./pages/vet/Onboarding";
 import VetDashboard from "./pages/vet/Dashboard";
 import BookAppointment from "./pages/BookAppointment";
+import AccessRequests from "./pages/AccessRequests";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Splash } from "./components/Splash";
 import { logError } from "./lib/logError";
