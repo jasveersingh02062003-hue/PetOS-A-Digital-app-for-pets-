@@ -35,6 +35,8 @@ const VetConsult = lazy(() => import("./pages/VetConsult"));
 const MatesNew = lazy(() => import("./pages/MatesNew"));
 const MateListing = lazy(() => import("./pages/MateListing"));
 const MatesManage = lazy(() => import("./pages/MatesManage"));
+const AdoptListingNew = lazy(() => import("./pages/AdoptListingNew"));
+const AdoptListingDetail = lazy(() => import("./pages/AdoptListingDetail"));
 const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
@@ -169,6 +171,8 @@ const App = () => (
               <Route path="/mates/new" element={<MatesNew />} />
               <Route path="/mates/listing/:id" element={<MateListing />} />
               <Route path="/mates/manage" element={<MatesManage />} />
+              <Route path="/mates/adopt/new" element={<AdoptListingNew />} />
+              <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
               <Route path="/services/new" element={<ServiceNew />} />
               <Route path="/services/manage" element={<ServicesManage />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
