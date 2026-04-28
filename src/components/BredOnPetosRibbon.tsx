@@ -8,12 +8,19 @@ export const BredOnPetosRibbon = ({ litterId }: { litterId?: string | null }) =>
     queryKey: ["litter", litterId],
     enabled: !!litterId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: lg } = await supabase
         .from("litter_groups")
-        .select("id, sire_pet_id, dam_pet_id, sire:pets!litter_groups_sire_pet_id_fkey(name, public_id), dam:pets!litter_groups_dam_pet_id_fkey(name, public_id)")
+        .select("id, sire_pet_id, dam_pet_id")
         .eq("id", litterId!)
         .maybeSingle();
-      return data as any;
+      if (!lg) return null;
+      const ids = [lg.sire_pet_id, lg.dam_pet_id].filter(Boolean) as string[];
+      const { data: pets } = ids.length
+        ? await supabase.from("pets").select("id, name, public_id").in("id", ids)
+        : { data: [] as any[] };
+      const sire = pets?.find((p) => p.id === lg.sire_pet_id);
+      const dam = pets?.find((p) => p.id === lg.dam_pet_id);
+      return { ...lg, sire, dam } as any;
     },
   });
 
