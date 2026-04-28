@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
+import { WizardSteps } from "@/components/onboarding/WizardSteps";
 
 type AccountType = "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo";
 
@@ -130,7 +131,7 @@ const OrgOnboarding = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org-self"] });
       toast.success("Submitted. Our team will review within 24-48h.");
-      nav("/");
+      nav("/onboarding/done");
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not submit"),
   });
@@ -140,6 +141,7 @@ const OrgOnboarding = () => {
       <button onClick={() => nav(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
+      <WizardSteps current={2} labels={["Account type", "Verification", "All set"]} />
       <h1 className="font-display text-2xl mb-1">Verify your organisation</h1>
       <p className="text-sm text-muted-foreground mb-2">
         We review every organisation manually to keep PetOS safe.

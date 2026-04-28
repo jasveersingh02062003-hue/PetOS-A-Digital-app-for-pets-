@@ -10,7 +10,7 @@ import { AchievementChips } from "@/components/social/AchievementChips";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Settings } from "lucide-react";
+import { ArrowLeft, MapPin, Settings, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const UserProfile = () => {
@@ -38,6 +38,22 @@ const UserProfile = () => {
   });
 
   const { data: counts } = useFollowCounts(userId);
+
+  const { data: org } = useQuery({
+    queryKey: ["org-public", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("org_profiles")
+        .select("user_id, org_name, org_type, status, city")
+        .eq("user_id", userId!)
+        .maybeSingle();
+      // Only show if approved, or to the owner themselves
+      if (!data) return null;
+      if (data.status === "approved") return data;
+      return null;
+    },
+  });
 
   const { data: postCount } = useQuery({
     queryKey: ["post-count", userId],
@@ -85,6 +101,29 @@ const UserProfile = () => {
           <FollowButton targetId={userId} size="default" />
           <MessageButton userId={userId} size="default" variant="outline" />
         </div>
+      )}
+
+      {org && userId && (
+        <Card
+          onClick={() => nav(`/org/${userId}`)}
+          className="rounded-2xl border-hairline shadow-none p-4 mb-4 cursor-pointer hover:bg-muted/40 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center text-primary">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium truncate">{org.org_name}</span>
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              </div>
+              <div className="text-xs text-muted-foreground capitalize">
+                {org.org_type} {org.city ? `· ${org.city}` : ""}
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </Card>
       )}
 
       {pets && pets.length > 0 && (
