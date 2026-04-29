@@ -1,10 +1,20 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X, HandHeart, MapPin, Phone, Home as HomeIcon } from "lucide-react";
+import { ArrowLeft, Check, X, HandHeart, MapPin, Phone, Home as HomeIcon, History, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
@@ -14,6 +24,11 @@ const AdoptionInbox = () => {
   const nav = useNavigate();
   const qc = useQueryClient();
   useSeo({ title: "Adoption inbox", noIndex: true });
+
+  const [pending, setPending] = useState<{ id: string; status: "approved" | "rejected" } | null>(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const { data: apps, isLoading } = useQuery({
     queryKey: ["adoption-inbox", user?.id],
@@ -28,13 +43,31 @@ const AdoptionInbox = () => {
     },
   });
 
-  const decide = async (id: string, status: "approved" | "rejected") => {
+  const openDecision = (id: string, status: "approved" | "rejected") => {
+    setNote("");
+    setPending({ id, status });
+  };
+
+  const confirmDecision = async () => {
+    if (!pending) return;
+    setBusy(true);
     const { error } = await supabase
       .from("adoption_applications")
-      .update({ status, decided_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success(status === "approved" ? "Approved" : "Declined");
+      .update({
+        status: pending.status,
+        decided_at: new Date().toISOString(),
+        shelter_note: note.trim() || null,
+      })
+      .eq("id", pending.id);
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(
+      pending.status === "approved" ? "Approved — applicant notified" : "Declined — applicant notified",
+    );
+    setPending(null);
     qc.invalidateQueries({ queryKey: ["adoption-inbox", user!.id] });
   };
 
@@ -99,21 +132,140 @@ const AdoptionInbox = () => {
                 {a.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{a.phone}</span>}
               </div>
 
-              {a.status === "pending" && (
+              {a.status === "pending" ? (
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => decide(a.id, "approved")} className="flex-1 rounded-xl gap-1.5">
+                  <Button size="sm" onClick={() => openDecision(a.id, "approved")} className="flex-1 rounded-xl gap-1.5">
                     <Check className="h-3.5 w-3.5" /> Approve
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => decide(a.id, "rejected")} className="flex-1 rounded-xl gap-1.5">
+                  <Button size="sm" variant="outline" onClick={() => openDecision(a.id, "rejected")} className="flex-1 rounded-xl gap-1.5">
                     <X className="h-3.5 w-3.5" /> Decline
                   </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  {a.shelter_note && (
+                    <p className="text-[11px] text-muted-foreground italic line-clamp-2 flex-1">
+                      Note: {a.shelter_note}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setHistoryId(a.id)}
+                    className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  >
+                    <History className="h-3 w-3" /> History
+                  </button>
                 </div>
               )}
             </Card>
           ))}
         </div>
       )}
+
+      {/* Decision dialog */}
+      <Dialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pending?.status === "approved" ? "Approve application" : "Decline application"}
+            </DialogTitle>
+            <DialogDescription>
+              The applicant will be notified
+              {pending?.status === "approved" ? " and can proceed with next steps." : "."}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={
+              pending?.status === "approved"
+                ? "Optional message — meet-up address, paperwork details…"
+                : "Optional reason — helps the applicant understand."
+            }
+            rows={4}
+            className="rounded-xl"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPending(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDecision} disabled={busy} className="gap-1.5">
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {pending?.status === "approved" ? "Confirm approve" : "Confirm decline"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* History dialog */}
+      <DecisionHistoryDialog
+        applicationId={historyId}
+        onClose={() => setHistoryId(null)}
+      />
     </div>
+  );
+};
+
+const DecisionHistoryDialog = ({
+  applicationId,
+  onClose,
+}: {
+  applicationId: string | null;
+  onClose: () => void;
+}) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["adoption-decisions", applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("adoption_application_decisions")
+        .select("id, status, note, created_at, decided_by")
+        .eq("application_id", applicationId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return (
+    <Dialog open={!!applicationId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Decision history</DialogTitle>
+          <DialogDescription>Audit trail for this application.</DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="py-6 grid place-items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !data?.length ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">No decisions recorded yet.</p>
+        ) : (
+          <ul className="space-y-3 max-h-80 overflow-y-auto">
+            {data.map((d: any) => (
+              <li key={d.id} className="rounded-xl border border-hairline p-3 text-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                      d.status === "approved"
+                        ? "bg-leaf/15 text-leaf"
+                        : d.status === "rejected"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {d.status}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {format(new Date(d.created_at), "MMM d, HH:mm")}
+                  </span>
+                </div>
+                {d.note && <p className="text-xs whitespace-pre-wrap">{d.note}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
