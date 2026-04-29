@@ -6228,7 +6228,9 @@ export type Database = {
         }[]
       }
       generate_pet_public_id: { Args: never; Returns: string }
+      get_my_donation_pan: { Args: { _donation_id: string }; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
+      get_org_profile_phone: { Args: { _org_user_id: string }; Returns: string }
       get_pet_public_by_ref: {
         Args: { _ref: string }
         Returns: {
@@ -6309,6 +6311,10 @@ export type Database = {
           status: string
           tracks: Json
         }[]
+      }
+      get_service_provider_phone: {
+        Args: { _provider_id: string }
+        Returns: string
       }
       get_user_id_by_email: {
         Args: { _email: string }
