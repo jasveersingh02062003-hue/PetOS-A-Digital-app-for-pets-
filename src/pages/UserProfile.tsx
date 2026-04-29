@@ -24,6 +24,7 @@ import { BoardingList } from "@/components/profile/BoardingList";
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 import { AdoptablesList } from "@/components/profile/AdoptablesList";
 import { EventsList } from "@/components/profile/EventsList";
+import { WishlistList } from "@/components/profile/WishlistList";
 import { getRoleBanner } from "@/lib/roleTheme";
 import { Heart as HeartIcon, CalendarDays as CalendarIcon } from "lucide-react";
 
@@ -124,10 +125,13 @@ const UserProfile = () => {
   const showEvents = ["zoo", "sanctuary"].includes(accountType);
   const showBreederTabs = !!org && (org.org_type === "breeder" || org.org_type === "kennel");
   const showReviews = !!org;
+  // Wishlist is private — only show on own profile, only for buyer-style accounts.
+  const showWishlist = isMe && ["pet_parent", "buyer", "adopter"].includes(accountType);
   const tabCount = 3 // posts, tagged, pets
     + (showBreederTabs ? 2 : 0)
     + (showAdoptables ? 1 : 0)
     + (showEvents ? 1 : 0)
+    + (showWishlist ? 1 : 0)
     + 1 // badges
     + (showReviews ? 1 : 0);
   const roleBanner = getRoleBanner(accountType as any);
@@ -342,6 +346,11 @@ const UserProfile = () => {
               <CalendarIcon className="h-4 w-4" />
             </TabsTrigger>
           )}
+          {showWishlist && (
+            <TabsTrigger value="wishlist" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <HeartIcon className="h-4 w-4" />
+            </TabsTrigger>
+          )}
           <TabsTrigger value="badges" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Award className="h-4 w-4" />
           </TabsTrigger>
@@ -393,6 +402,11 @@ const UserProfile = () => {
         {showEvents && (
           <TabsContent value="events" className="mt-3">
             {userId && <EventsList userId={userId} />}
+          </TabsContent>
+        )}
+        {showWishlist && (
+          <TabsContent value="wishlist" className="mt-3">
+            {userId && <WishlistList userId={userId} />}
           </TabsContent>
         )}
         {org && (
