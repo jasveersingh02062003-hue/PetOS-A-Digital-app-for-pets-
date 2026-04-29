@@ -15,7 +15,6 @@ import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplication
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 import { DonateDialog } from "@/components/donations/DonateDialog";
 import { getRoleBanner } from "@/lib/roleTheme";
-import { MatesGrid } from "@/components/profile/MatesGrid";
 
 const OrgProfile = () => {
   const { userId } = useParams();
@@ -226,13 +225,6 @@ const OrgProfile = () => {
         <div className="mt-6">
           <h2 className="font-display text-lg mb-2">Litters</h2>
           <LittersList userId={userId} />
-        </div>
-      )}
-
-      {org.org_type === "breeder" && userId && (
-        <div className="mt-6">
-          <h2 className="font-display text-lg mb-2">Available for mating</h2>
-          <MatesGrid ownerId={userId} />
         </div>
       )}
 
