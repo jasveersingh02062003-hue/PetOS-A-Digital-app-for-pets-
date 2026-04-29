@@ -3,13 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useUploadStory } from "@/hooks/useStories";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { isOrgRole, getRoleSubmit, getRoleComposerCopy } from "@/lib/roleTheme";
 
 export const StoryComposer = ({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) => {
   const { data: pets } = usePets();
+  const { data: profile } = useProfile();
+  const accountType = profile?.account_type ?? "pet_parent";
+  const orgRole = isOrgRole(accountType);
+  const showPetTag = !orgRole && (pets?.length ?? 0) > 0;
+  const submitClass = getRoleSubmit(accountType);
+  const copy = getRoleComposerCopy(accountType);
   const upload = useUploadStory();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -26,7 +33,11 @@ export const StoryComposer = ({ open, onOpenChange }: { open: boolean; onOpenCha
 
   const submit = async () => {
     if (!file) return toast.error("Pick an image");
-    await upload.mutateAsync({ file, caption: caption.trim(), petId: petId === "none" ? null : petId });
+    await upload.mutateAsync({
+      file,
+      caption: caption.trim(),
+      petId: showPetTag && petId !== "none" ? petId : null,
+    });
     setFile(null); setPreview(null); setCaption(""); setPetId("none");
     onOpenChange(false);
   };
@@ -58,12 +69,12 @@ export const StoryComposer = ({ open, onOpenChange }: { open: boolean; onOpenCha
           <Textarea
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder="Add a caption (optional)"
+            placeholder={copy.placeholder}
             className="rounded-xl border-hairline resize-none"
             maxLength={140}
           />
 
-          {pets && pets.length > 0 && (
+          {showPetTag && (
             <Select value={petId} onValueChange={setPetId}>
               <SelectTrigger className="rounded-xl border-hairline"><SelectValue placeholder="Tag a pet" /></SelectTrigger>
               <SelectContent>
@@ -73,7 +84,12 @@ export const StoryComposer = ({ open, onOpenChange }: { open: boolean; onOpenCha
             </Select>
           )}
 
-          <Button onClick={submit} disabled={!file || upload.isPending} size="lg" className="w-full rounded-xl">
+          <Button
+            onClick={submit}
+            disabled={!file || upload.isPending}
+            size="lg"
+            className={`w-full rounded-xl ${submitClass}`}
+          >
             {upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share story"}
           </Button>
         </div>

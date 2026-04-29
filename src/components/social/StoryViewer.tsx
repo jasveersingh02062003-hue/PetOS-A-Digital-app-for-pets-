@@ -6,7 +6,9 @@ import { markStoryViewed, type StoryGroup } from "@/hooks/useStories";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { SmartImage } from "@/components/SmartImage";
-import { X } from "lucide-react";
+import { X, BadgeCheck } from "lucide-react";
+import { getRoleRing } from "@/lib/roleTheme";
+import { cn } from "@/lib/utils";
 
 const STORY_DURATION_MS = 5000;
 
@@ -96,12 +98,15 @@ export const StoryViewer = ({
               onClick={() => { onClose(); nav(`/u/${group.author_id}`); }}
               className="flex items-center gap-2 min-w-0"
             >
-              <Avatar className="h-8 w-8 ring-2 ring-white/40">
+              <Avatar className={cn("h-8 w-8 ring-2 ring-offset-1 ring-offset-black", getRoleRing(group.account_type))}>
                 <AvatarImage src={group.author_avatar ?? undefined} />
                 <AvatarFallback className="text-xs bg-white/20 text-white">{group.author_name?.[0] ?? "·"}</AvatarFallback>
               </Avatar>
               <div className="text-left min-w-0">
-                <div className="text-white text-sm font-medium truncate">{group.author_name ?? "Pet parent"}</div>
+                <div className="text-white text-sm font-medium truncate flex items-center gap-1">
+                  {group.author_name ?? "Pet parent"}
+                  {group.is_org && <BadgeCheck className="h-3.5 w-3.5 text-sky-400 shrink-0" />}
+                </div>
                 <div className="text-white/60 text-[11px]">{formatDistanceToNow(new Date(story.created_at), { addSuffix: true })}</div>
               </div>
             </button>
