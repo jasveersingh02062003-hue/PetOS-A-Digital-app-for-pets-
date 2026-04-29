@@ -2645,6 +2645,7 @@ export type Database = {
           description: string | null
           fee_inr: number | null
           gender: string | null
+          health_tests: Json
           id: string
           lat: number | null
           listing_type: Database["public"]["Enums"]["pet_listing_type"]
@@ -2673,6 +2674,7 @@ export type Database = {
           description?: string | null
           fee_inr?: number | null
           gender?: string | null
+          health_tests?: Json
           id?: string
           lat?: number | null
           listing_type: Database["public"]["Enums"]["pet_listing_type"]
@@ -2701,6 +2703,7 @@ export type Database = {
           description?: string | null
           fee_inr?: number | null
           gender?: string | null
+          health_tests?: Json
           id?: string
           lat?: number | null
           listing_type?: Database["public"]["Enums"]["pet_listing_type"]
