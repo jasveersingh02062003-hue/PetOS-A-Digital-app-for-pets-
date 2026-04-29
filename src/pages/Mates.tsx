@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Plus, Sparkles, ShieldCheck, PawPrint, ArrowRight } from "lucide-react";
+import { Heart, Plus, Sparkles, ShieldCheck, PawPrint, ArrowRight, Bookmark, BookmarkCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { MatesGrid } from "@/components/MatesGrid";
@@ -8,6 +8,9 @@ import { AdoptGrid } from "@/components/AdoptGrid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSeo } from "@/hooks/useSeo";
+import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Mates = () => {
   const nav = useNavigate();
@@ -25,6 +28,51 @@ const Mates = () => {
   };
   const { data: pets } = usePets();
   const myPet = pets?.[0];
+  const { user } = useAuth();
+  const { items: saved, create: saveMut, remove: removeMut } = useSavedSearches();
+
+  // Build a stable filter snapshot for the current view
+  const filters = useMemo(
+    () => ({
+      listing_type: tab === "adopt" ? "adoption" : "mating",
+      city: profile?.city ?? null,
+    }),
+    [tab, profile?.city],
+  );
+  const matchedSaved = useMemo(
+    () =>
+      saved.find(
+        (s) =>
+          s.scope === "mates" &&
+          s.tab === tab &&
+          (s.filters?.listing_type ?? null) === filters.listing_type &&
+          (s.filters?.city ?? null) === filters.city,
+      ) ?? null,
+    [saved, tab, filters],
+  );
+  const isSaved = !!matchedSaved;
+
+  const handleToggleSave = () => {
+    if (!user) {
+      toast("Sign in to save searches");
+      return;
+    }
+    if (matchedSaved) {
+      removeMut.mutate(matchedSaved.id, { onSuccess: () => toast("Removed from saved") });
+    } else {
+      const labelParts = [
+        tab === "adopt" ? "Adopt" : "Mating",
+        profile?.city,
+      ].filter(Boolean);
+      saveMut.mutate(
+        { label: labelParts.join(" · "), scope: "mates", q: "", tab, filters },
+        {
+          onSuccess: (row) => row && toast.success("Search saved"),
+          onError: () => toast.error("Could not save"),
+        },
+      );
+    }
+  };
 
   // Auto-redirect first-time buyers to adopt tab in URL too
   useEffect(() => {
@@ -44,9 +92,29 @@ const Mates = () => {
   return (
     <div className="container-app pad-top-safe">
       <header className="pt-6 pb-4">
-        <div className="flex items-center gap-2 text-coral mb-1">
-          <Heart className="h-4 w-4" fill="currentColor" />
-          <span className="text-[11px] uppercase tracking-[0.18em] font-semibold">Mates</span>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2 text-coral">
+            <Heart className="h-4 w-4" fill="currentColor" />
+            <span className="text-[11px] uppercase tracking-[0.18em] font-semibold">Mates</span>
+          </div>
+          {isBuyer && (
+            <button
+              onClick={handleToggleSave}
+              aria-pressed={isSaved}
+              aria-label={isSaved ? "Remove saved search" : "Save this search"}
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-semibold border transition ${
+                isSaved
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-hairline hover:text-foreground"
+              }`}
+            >
+              {isSaved ? (
+                <><BookmarkCheck className="h-3.5 w-3.5" /> Saved</>
+              ) : (
+                <><Bookmark className="h-3.5 w-3.5" /> Save search</>
+              )}
+            </button>
+          )}
         </div>
         <h1 className="font-display text-[28px] leading-tight">
           {tab === "mating" ? "Find your pet's perfect match" : "Adopt or rehome a pet"}

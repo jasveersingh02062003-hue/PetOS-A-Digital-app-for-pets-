@@ -3751,6 +3751,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_searches: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          label: string
+          last_seen_at: string
+          q: string
+          scope: string
+          tab: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          label: string
+          last_seen_at?: string
+          q?: string
+          scope?: string
+          tab?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          label?: string
+          last_seen_at?: string
+          q?: string
+          scope?: string
+          tab?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_bookings: {
         Row: {
           created_at: string

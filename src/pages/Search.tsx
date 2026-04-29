@@ -11,13 +11,10 @@ import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { AuthorIdentity } from "@/components/AuthorIdentity";
 import { ORG_ROLES } from "@/lib/roleTheme";
 import {
-  listSavedSearches,
-  saveSearch,
-  unsaveSearch,
-  isSearchSaved,
   clearRecentSearches,
   type SavedSearch,
 } from "@/lib/savedSearches";
+import { useSavedSearches } from "@/hooks/useSavedSearches";
 import { toast } from "sonner";
 
 const RECENTS_KEY = "petos:recent_searches";
@@ -66,7 +63,8 @@ export default function Search() {
   const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "all");
   const [role, setRole] = useState<RoleFilter>(((params.get("role") as RoleFilter) || "all"));
   const debounced = useDebounced(q.trim(), 300);
-  const [savedTick, setSavedTick] = useState(0); // bump to refresh saved list
+  const { items: savedItems, create: saveMut, remove: removeMut } = useSavedSearches();
+  const [recentsTick, setRecentsTick] = useState(0);
 
   useEffect(() => { document.title = q ? `${q} — Search · Petos` : "Search · Petos"; }, [q]);
 
@@ -150,32 +148,38 @@ export default function Search() {
     return data.people.filter((p: any) => (p.account_type ?? "pet_parent") === role);
   }, [data, role]);
 
-  const recents = useMemo(() => readRecents(), [debounced]);
-  const saved = useMemo<SavedSearch[]>(
-    () => listSavedSearches(),
-    // re-read whenever the user saves/removes or types a new query
-    [savedTick, debounced]
-  );
-  const isSaved = useMemo(
-    () => isSearchSaved(debounced, tab),
-    [debounced, tab, savedTick]
-  );
+  const recents = useMemo(() => readRecents(), [debounced, recentsTick]);
+  const saved = savedItems;
+  const matchedSaved = useMemo(() => {
+    const t = debounced.trim().toLowerCase();
+    if (!t) return null;
+    return saved.find(
+      (s) => s.scope === "search" && s.tab === tab && (s.q ?? "").trim().toLowerCase() === t,
+    ) ?? null;
+  }, [debounced, tab, saved]);
+  const isSaved = !!matchedSaved;
 
   const toggleSave = () => {
     if (debounced.length < 2) return;
-    if (isSaved) {
-      unsaveSearch(debounced, tab);
-      toast("Removed from saved");
+    if (matchedSaved) {
+      removeMut.mutate(matchedSaved.id, {
+        onSuccess: () => toast("Removed from saved"),
+        onError: () => toast.error("Could not remove"),
+      });
     } else {
-      const entry = saveSearch(debounced, tab);
-      if (entry) toast.success("Search saved");
+      saveMut.mutate(
+        { label: debounced, scope: "search", q: debounced, tab, filters: {} },
+        {
+          onSuccess: (row) => row && toast.success("Search saved"),
+          onError: () => toast.error("Sign in to save searches"),
+        },
+      );
     }
-    setSavedTick((n) => n + 1);
   };
 
   const handleClearRecents = () => {
     clearRecentSearches();
-    setSavedTick((n) => n + 1); // also forces recents memo recompute via debounced dep
+    setRecentsTick((n) => n + 1);
     toast("Recent searches cleared");
   };
 
@@ -230,7 +234,7 @@ export default function Search() {
             recents={recents}
             saved={saved}
             onPick={(s, t) => { setQ(s); if (t) setTab(t as Tab); }}
-            onRemoveSaved={(s) => { unsaveSearch(s.q, s.tab); setSavedTick((n) => n + 1); }}
+            onRemoveSaved={(s) => removeMut.mutate(s.id)}
             onClearRecents={handleClearRecents}
             onPickRole={(r) => { setRole(r); setTab("people"); }}
           />
