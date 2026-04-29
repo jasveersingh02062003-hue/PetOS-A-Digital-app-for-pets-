@@ -1,108 +1,208 @@
-# Audit — Is your problem solved?
+# PetOS — PDF vs Reality Audit
 
-## Short answer
+This is a **verification-only** report. No code changes are proposed yet. For every claim in `Petos_Viewer_Journey.pdf`, I checked the actual source. Each item is marked:
 
-**Partially. ~70% solved.** Identity + posting + role homes + search filters + verified flow are wired to real data. **Three things are still cosmetic or missing**, and they are exactly the parts that make the app *feel* like a real app to a non-pet-parent user.
+- ✅ **Done** — implemented and wired (frontend + backend) the way the PDF describes
+- ⚠️ **Partial** — exists but missing pieces, wrong surface, or only half-wired
+- ❌ **Missing** — claimed in PDF, not in code
 
-- **What works for real (frontend ↔ backend ↔ realtime):** universal posting, role badge everywhere posts/comments/stories appear, role-tinted profile, search by entity type, verified tick auto-flip on KYC approval, role-aware FAB actions, role-aware home router.
-- **What is cosmetic (renders, but the action behind it doesn't fully work):** several quick-action buttons on dashboards link to routes that don't exist or don't persist data end-to-end.
-- **What is still missing:** a few dashboards have no real KPI source yet, and notifications/search rows have not been migrated to the unified `AuthorIdentity` component.
+After you confirm this list, I'll produce a focused implementation plan for the ❌ and ⚠️ items.
 
 ---
 
-# Checklist — every item from the 17-task plan
+## 1. Visual identity system (avatar ring · role chip · tick · banner)
 
-Legend: **DONE** = wired to DB and verified · **PARTIAL** = UI exists but a data path or a CTA is broken · **MISSING** = not built.
+| Claim in PDF | Status | Evidence |
+|---|---|---|
+| Single `AuthorIdentity` used everywhere (post, comment, search, notif, listing, thread) | ✅ | `src/components/AuthorIdentity.tsx` consumed across feed, comments, vet answers, notifications |
+| Role-coloured avatar ring (parent=blue, breeder=amber, kennel=sky, shelter=lilac, sanctuary=leaf, zoo=stone, rescuer=coral) | ✅ | `src/lib/roleTheme.ts` `RING` map matches PDF exactly |
+| Role chip with role icon and tinted background | ✅ | `src/components/SellerBadge.tsx` |
+| Green KYC tick **only** for approved orgs; never for pet_parent / buyer | ✅ | `SellerBadge` hides tick when `pet_parent`/`buyer`; `useIsVerifiedOrg` reads `org_profiles.status='approved'` |
+| Org accounts show org name with "Managed by [human]" subline | ✅ | `AuthorIdentity` `useOrg` branch |
+| Banner tint per role on profile header | ⚠️ | `getRoleBanner` exists in `roleTheme.ts`, but I need to confirm `UserProfile.tsx` actually applies it on every role profile (spot-check needed during build) |
 
-| # | Task | Status | Reality check |
+---
+
+## 2. Pet Parent
+
+| Claim | Status | Notes |
+|---|---|---|
+| Blue ring, "Pet parent" chip, no tick | ✅ | |
+| **3-day care streak chip** on post header / under like row / message-thread header | ❌ | `StreakChip` exists but is **only used on `Daily.tsx`**. Not on PostFeed headers, not in CommentSheet, not in MessageThread, not on UserProfile. PDF promises it on multiple surfaces. |
+| Pet rail on profile (Bruno + Mochi) | ✅ | `Profile.tsx` / `UserProfile.tsx` render pets |
+| **"Available for Mating" badge** on pet card with vaccination chips | ⚠️ | Mating listings exist (`MateListing`, `MatesGrid`) but I found **no badge surfaced on the pet rail / pet profile** indicating the pet is currently listed for mating |
+| **Skills tab on pet profile** + Skill Spotlight + Vouch button + 🤯 reaction + "Crowd-favourite ≥50 vouches" badge | ❌ | No `skill`, `vouch`, `spotlight`, or `crowd_fav` references found anywhere in `src/` or `supabase/migrations/`. **Entire Skill Spotlight system is undocumented in code.** PDF describes it in detail (page 12) but it does not exist. |
+| **Yellow "Repeat seller — N active listings" warning** on listing card | ✅ | `repeat_sellers` view + `AdoptGrid.tsx:209` chip + `AdoptListingDetail.tsx:173` advisory |
+
+---
+
+## 3. Buyer ("Looking for a pet")
+
+| Claim | Status | Notes |
+|---|---|---|
+| "Looking for a pet" chip with magnifying-glass icon | ✅ | `SellerBadge` `buyer` row uses `Search` icon |
+| **"What I'm looking for" card** on profile (species, breed shortlist, city, budget, open-to-adoption) | ⚠️ | `lookingFor` is read in `Profile.tsx` and `UserProfile.tsx`, but I need to verify in build mode whether the **public** `UserProfile` actually renders the full card to other viewers (claimed as the social signal) |
+| Tabs: Posts / Saved searches / Wishlist | ⚠️ | Saved searches hook exists (`useSavedSearches`), wishlist not confirmed as a tab on the public buyer profile |
+| Searching-for chip on search result | ❌ | Search results don't show buyer's target breed |
+
+---
+
+## 4. Breeder
+
+| Claim | Status | Notes |
+|---|---|---|
+| Amber ring + Breeder chip + green tick when KYC approved | ✅ | |
+| "Managed by [human]" subline | ✅ | |
+| **"Bred on PetOS" ribbon on post / listing photo** | ⚠️ | `BredOnPetosRibbon` component exists, but `rg` shows it is **not imported into `PostFeed.tsx` or `AdoptGrid.tsx` card rendering**. `AdoptGrid` does check `bred_on_petos` flag at line 190 but only renders a small chip, not the documented ribbon with lineage-tap behaviour. |
+| Tap ribbon → tiny lineage card (dam + sire) → "View pedigree" | ❌ | `BredOnPetosRibbon` shows links to parents but is not opening `PedigreeSheet` from listing/post; `PedigreeSheet` is not wired into `AdoptListingDetail.tsx` |
+| Stats strip on profile (Followers · Litters whelped · Successful placements · Avg review) | ⚠️ | Need to verify exact stats on `BreederHome` / public org profile |
+| Litters / Mating availability / Pedigree / Reviews tabs | ⚠️ | `LittersList`, `MatesGrid`, `PedigreeSheet`, `ReviewsList` exist — need to confirm all four are tabs on the public org profile, not just owner dashboard |
+| **Health-test chip** ("Hips OFA Good") on listing card | ❌ | No `health_test` / `OFA` references in listing card render |
+| `PayDepositSheet` on listing | ✅ | Component exists and used |
+
+---
+
+## 5. Kennel
+
+| Claim | Status | Notes |
+|---|---|---|
+| Sky ring + Kennel chip + tick | ✅ | |
+| Services tab + price + capacity + next-available | ⚠️ | Services exist, "next-available date" surfacing on card not confirmed |
+| **Daily report sample preview to viewers** (`DailyReportSheet`) | ⚠️ | Component exists for owner — need to verify viewers can preview a sample |
+| BookingSheet → confirm → `bookings` lifecycle visible | ✅ | |
+
+---
+
+## 6. Shelter / Rescue NGO
+
+| Claim | Status | Notes |
+|---|---|---|
+| Lilac ring + Shelter chip + tick | ✅ | |
+| **"Rescue Journey" ribbon** on post photo | ❌ | Zero references to `RescueJourney` / `rescue_journey` anywhere in code |
+| **Day 1 / Day 7 / Day 14 timeline carousel** inside post | ❌ | Not implemented |
+| Adoptables: ₹0 lock + "Adopt, don't shop" line | ⚠️ | Need to confirm exact copy + price lock UI |
+| Sponsor tiles + Donations ledger | ✅ | `SponsorSheet`, `OrgDonations` |
+| `AdoptionApplicationSheet` flow + status notification | ✅ | Component + `AdoptionInbox` exist |
+
+---
+
+## 7. Sanctuary / Gaushala
+
+| Claim | Status | Notes |
+|---|---|---|
+| Leaf ring + Sanctuary chip + tick | ✅ | |
+| Animals tab with monthly upkeep + Sponsor button | ⚠️ | Sponsor exists; per-animal "monthly upkeep cost" surfaced is unverified |
+| No marketplace / no mating tabs (enforced) | ⚠️ | Need to verify these tabs are **hidden** for sanctuary role on profile |
+
+---
+
+## 8. Zoo / Wildlife
+
+| Claim | Status | Notes |
+|---|---|---|
+| Stone ring + Zoo chip + tick | ✅ | |
+| Exhibits tab via `ExhibitSheet` | ✅ | `ZooHome.tsx` |
+| **"Educational" tag on every zoo post** | ❌ | Composer doesn't auto-tag zoo posts |
+| **Symbolic adoption flow with tax receipt** | ⚠️ | "Symbolically adopt an animal" CTA exists in `OrgProfile.tsx:87` but the actual sponsorship → tax receipt loop for zoos is not confirmed |
+| Marketplace tabs hidden for zoo | ⚠️ | Need to verify role-gating |
+
+---
+
+## 9. Independent Rescuer
+
+| Claim | Status | Notes |
+|---|---|---|
+| Coral ring + Rescuer chip + heart icon | ✅ | |
+| **"Pending verification" chip** when org KYC submitted but not approved | ❌ | `SellerBadge` only renders verified ✓ or nothing — no pending state |
+| **Cap: cannot list adoptions directly; must co-list with verified shelter** | ❌ | No code restricting `AdoptListingNew` based on rescuer-without-org |
+| **"Co-listed with [Shelter ✓]" line** on rescuer's listing card | ❌ | No `co_listed` field or UI |
+| **Soft warning before sending money to unverified rescuer** in messages | ❌ | Not implemented |
+
+---
+
+## 10. Veterinarian
+
+| Claim | Status | Notes |
+|---|---|---|
+| Vet chip + tick + clinic + city subline | ✅ | `VetAnswerCard` uses AuthorIdentity |
+| Mark-as-helpful button + count | ✅ | `VetAnswerCard` |
+| **"Helpful vet" badge surfaces next to vet's chip after first helpful answer** | ⚠️ | `helpful_vet` achievement exists in `AchievementChips` and `Profile.tsx`, but it's not auto-attached next to the vet's role chip on every surface (only on the achievements rail) |
+| Specialisations chip rail | ⚠️ | Need to verify on public vet profile |
+| `BookAppointment` with fee + in-clinic/tele toggle | ✅ | |
+| **Health-vault grant code flow** (`vet-grant-create`, 6-char code, time-limited, "Open shared vault" in appt room, prescription drop, expires after appt) | ⚠️ | Edge function `vet-grant-create` exists; `AccessRequests`, `VaultView` pages exist; `PrescriptionBuilder` exists. But I found **no "Open shared vault" button in `AppointmentRoom.tsx`** — the in-call handoff UI described in the PDF does not appear to be wired |
+
+---
+
+## 11. Service Provider
+
+| Claim | Status | Notes |
+|---|---|---|
+| Sky ring + Service provider chip + category sub-chip | ⚠️ | Category sub-chip beside the role chip not confirmed |
+| TrustBadge rail (police-verified, first-aid, insured) | ✅ | `TrustBadge` component + `ProviderTrust` page |
+| Live walk follow-along during active booking | ⚠️ | `WalkLive` / `WalkSession` exist for the walker; **viewer-side "follow your live walk" link in MessageThread/Bookings** not confirmed |
+| Post-completion `LeaveReviewSheet` prompt | ✅ | |
+
+---
+
+## 12. Notifications surface (Round 14 promise)
+
+| Claim | Status |
+|---|---|
+| Bell row uses AuthorIdentity (role tint + tick + name) for the actor | ✅ — done in Round 14 |
+| Skill-Spotlight vouch notification with skill icon overlay | ❌ — depends on the missing Skill Spotlight system |
+
+---
+
+## 13. Cross-cutting trust
+
+| Claim | Status |
+|---|---|
+| Tick rendered in identical position across every surface | ✅ |
+| `ReportDialog` with categorised reasons + moderation inbox | ✅ |
+| Block: hides posts/comments/messages, prevents new threads, keeps your previous reviews public | ⚠️ — `BlockButton` + `blocked_users` + `useBlockedIds` exist; need to spot-check that **every** feed/comment/message query filters by blocked_ids |
+
+---
+
+## Summary scoreboard
+
+| Category | ✅ Done | ⚠️ Partial | ❌ Missing |
 |---|---|---|---|
-| 1 | Open FirstRunGate for non-pet roles | DONE | `FirstRunGate.tsx` and `PostAuth.tsx` both gate on `account_type === 'pet_parent'` only. |
-| 2 | AuthorIdentity component + role rings | DONE | `src/components/AuthorIdentity.tsx` exists, `getRoleRing` in `roleTheme.ts`. |
-| 3 | Replace author rendering across app | **PARTIAL** | Used in `Search.tsx` and `StoryRail.tsx`. **`PostFeed`, `CommentSheet`, `AdoptGrid` still render `SellerBadge` ad-hoc**; `MatesGrid`, `MissingStrip`, `Notifications`, `MeetupCard`, `VetAnswerCard` render avatars without any role tag. |
-| 4 | Universal Composer (optional pet tag) | DONE | Round 6 — pet tag hidden for org/buyer roles, role-tinted submit, role copy. Posts insert into `posts` for every role. |
-| 5 | Home router by account_type | DONE | `src/pages/Home.tsx` switches on `account_type` with lazy chunks. |
-| 6 | PetParentHome | DONE | Real pet hero, stories, feed. |
-| 7 | BreederHome | **PARTIAL** | Renders KPIs from `litters` + `mating_requests`. Quick action **"Verify lineage" has no destination route**; "New litter" → `/litters/new` works. |
-| 8 | ShelterHome (+ Rescuer variant) | DONE (R10) | Real `pet_listings` + open applications. `/adoption-inbox` now writes a full audit trail to **`adoption_application_decisions`** via DB trigger, captures an optional shelter note in a confirm dialog, auto-sends a notification to the applicant, and shows decision history inline. |
-| 9 | KennelHome | DONE (R11) | New **`kennel_daily_reports`** table (one per booking-day, RLS for kennel + customer). KennelHome now shows a real **`Reports today: X/Y`** KPI and each of today's check-ins has a Report/Edit button that opens a full sheet (meals, walks, potty, mood, notes, incidents). On insert, a DB trigger auto-notifies the customer with the in-app bell. |
-| 10 | GaushalaHome | DONE (R12) | Animals + donations + new **`sponsorships`** table all wired. Sanctuary-owned animal pages get a "Sponsor monthly" button that opens a real pledge sheet (preset amounts, custom amount, optional message, anonymous toggle). The sanctuary's dashboard now shows live count + monthly recurring total in the Sponsorships KPI, plus an "Active sponsors" panel; the org receives a notification on every new pledge and on cancellations. |
-| 11 | BuyerHome | DONE (R9) | `saved_searches` table (per-user, RLS, dedup index). Buyers see their saved searches with **live new-match counts** computed against `pet_listings.created_at > last_seen_at`, and `/mates` has a "Save search" toggle that persists tab + city filter. Realtime channel refreshes the list when rows change. |
-| 12 | ZooHome | **PARTIAL** | Events from `meetups`. **"Add exhibit" / "Educational post" CTAs** route to `/meetups/new` and the universal composer respectively — fine, but there is no `exhibits` entity, so "Animals on display" KPI is hard-coded `0`. |
-| 13 | Role-aware ContextualFab | DONE | Round 4 — branches on `account_type`, every primary route exists. |
-| 14 | Search entity-type tabs | DONE | Round 2 — role chip rail on `/search` and `/discover`, filters by `account_type`. |
-| 15 | Role-aware UserProfile | DONE | Round 3 — banner tint, dynamic tabs, `AdoptablesList` and `EventsList` are real DB queries. |
-| 16 | Verified tick auto-flip + notification badges | DONE | Round 5 — DB trigger inserts notification on approval, `RealtimeBridge` invalidates the verified set, bell badge updates live. |
-| 17 | Video post type | MISSING | Skipped per your instruction. |
+| Visual identity | 5 | 1 | 0 |
+| Pet parent | 2 | 1 | 2 (streak placement, full Skill Spotlight system) |
+| Buyer | 1 | 2 | 1 |
+| Breeder | 3 | 3 | 2 |
+| Kennel | 2 | 2 | 0 |
+| Shelter | 3 | 1 | 2 (Rescue Journey ribbon + journey timeline) |
+| Sanctuary | 1 | 2 | 0 |
+| Zoo | 2 | 2 | 1 |
+| Rescuer | 1 | 0 | 4 (pending chip, listing cap, co-list, $-warning) |
+| Vet | 3 | 3 | 0 (but vault-in-call handoff is the big ⚠️) |
+| Service provider | 2 | 2 | 0 |
+| Notifications | 1 | 0 | 1 |
+| Cross-cutting trust | 2 | 1 | 0 |
 
 ---
 
-# What's actually broken vs your goal
+## The 7 most material gaps (PDF says yes, code says no)
 
-Your three concrete asks were:
+These are the items that, if a real user came in tomorrow expecting the PDF, would feel like broken promises:
 
-1. **"Everyone can post — photos, stories, later video, no matter the role."**
-   - Posts: **works** for every role.
-   - Stories: composer `StoryComposer.tsx` still expects pets — **needs the same Round-6 treatment**.
-   - Video: **not started**.
-
-2. **"People must identify what someone is, like Instagram does."**
-   - On post headers, comments, search, stories, profile: **works**.
-   - On notifications, mates grid, missing strip, meetup cards, vet-answer cards: **role tag missing** — looks identical pet-parent vs shelter.
-   - The unified `AuthorIdentity` exists but only ~30% of the surfaces use it.
-
-3. **"Each role gets a real dashboard with the activities they actually do."**
-   - The router + 7 dashboards all render with real queries — **the structure works**.
-   - But several **quick-action CTAs lead to dead ends or in-memory state** (kennel daily report, saved searches, sponsorships, lineage verification, zoo exhibits). On a real phone that means the user taps and nothing persists.
+1. **Skill Spotlight system** (ribbon, 🤯 reaction, Vouch button, Skills tab on pet, Crowd-favourite ≥50 badge) — entirely missing. Largest single gap.
+2. **Rescue Journey ribbon + Day-N timeline carousel** on shelter/rescuer posts — missing.
+3. **"Bred on PetOS" ribbon wired into actual feed posts and listing cards with lineage tap-through** — component exists but not placed in PostFeed / AdoptGrid card; lineage `PedigreeSheet` not opened from listing.
+4. **Streak chip on post headers, message threads, and comment rows** — only renders on `Daily.tsx` today.
+5. **Rescuer caps** (no direct adoption listing; co-listing requirement; pending-verification chip; pre-payment soft warning) — none enforced.
+6. **Vet ↔ Health-vault in-call handoff** ("Open shared vault" button in AppointmentRoom, prescription drop, expiry on appt end) — backend exists, the in-call UI does not.
+7. **Health-test chip** on breeder listing cards (e.g. "Hips OFA Good") — no field surfaced.
 
 ---
 
-# Plan to finish — in order, wiring-first, no UI-only changes
+## What I need from you next
 
-### Round 7 — Finish AuthorIdentity adoption (closes Task 3 properly)
-Replace ad-hoc avatar+name+badge in: `PostFeed`, `CommentSheet`, `AdoptGrid`, `MatesGrid`, `MissingStrip`, `Notifications` page, `MeetupCard`, `VetAnswerCard`. Single source of truth → role tag + verified tick everywhere a person/org appears. Pure refactor, no DB.
+Reply with one of:
 
-### Round 8 — Universal Stories
-Apply the Round-6 pattern to `StoryComposer.tsx`. Make pet tag optional, role-aware copy. Org stories store under the same `daily_moments` table with `pet_id NULL`. Verify `StoryRail` and `StoryViewer` render org author correctly.
+- **"approve audit, plan the gaps"** — I'll produce a sequenced implementation plan (frontend + backend + migrations) for the 7 material gaps above, grouped into rounds.
+- **"approve audit, only fix items X, Y, Z"** — I'll plan only those.
+- **"re-verify item N"** — I'll go deeper on a specific row (e.g. open `UserProfile.tsx` and confirm whether the buyer "What I'm looking for" card actually renders to a third-party viewer).
 
-### Round 9 — Make Buyer dashboard real
-Create `saved_searches` table (user_id, filters jsonb, last_seen_at, created_at) with RLS. Wire BuyerHome "Saved searches" + "new matches" to it. Add a "Save this search" button on `/mates` and `/search`. New matches = listings created after `last_seen_at` matching filters.
-
-### Round 10 — Make Shelter applications actionable
-Add `adoption_application_decisions` (or extend existing applications table) with `status: pending|approved|rejected`, `decided_by`, `decided_at`. Wire the "Approve / Reject" buttons in the Shelter applications view. Notification trigger to applicant on decision.
-
-### Round 11 — Make Kennel daily report real
-Create `kennel_daily_reports` table (kennel_id, pet_id, booking_id, date, meals jsonb, walks jsonb, notes, photos). Wire the dashboard quick-action to a form that inserts. Show today's reports on KennelHome.
-
-### Round 12 — Sanctuary sponsorships
-Create `sponsorships` table (sponsor_user_id, animal_pet_id, amount_inr, recurrence, started_at, active). Wire GaushalaHome sponsorship CTA → form → insert. Donor wall reads from this + `donations`.
-
-### Round 13 — Zoo exhibits + breeder lineage
-Two small but real entities:
-- `exhibits` (zoo_user_id, name, species, location_label, description, photo_url, active) — drives ZooHome "Animals on display" KPI for real.
-- `pedigree_certificates` (litter_id or pet_id, document_url, verified_by_admin, verified_at) — drives Breeder "Verify lineage" → upload form → admin queue.
-
-### Round 14 — Notifications surface
-Migrate `Notifications` page rows to `AuthorIdentity` so every "X liked your post" carries a role tag + verified tick. Backed by existing `notifications` table.
-
-### Round 15 — Optional: Video posts
-Add `video_url` columns to `posts`, storage bucket `post-videos`, composer accepts mp4 ≤ 50 MB, feed renders `<video>` with poster.
-
----
-
-# Technical notes
-
-- All "PARTIAL" items above were verified by reading the code: dashboards do call Supabase; the gaps are specific tables that don't exist or specific CTAs whose handlers are stubs (`onClick={() => toast("coming soon")}` patterns).
-- No schema needs to change for Rounds 7, 8, 14. Rounds 9–13 each add one focused table + RLS + one form + one read query.
-- Every new table will follow the project rule: own row scoped to `auth.uid()` with public-read where the dashboard requires it.
-- Realtime invalidation will reuse `RealtimeBridge` so dashboards refresh without polling.
-
----
-
-# Direct answers to your questions
-
-1. **Is the problem solved?** ~70% solved. The bones (identity, posting, role homes, search, verified flow) are real. The remaining 30% is making certain dashboard CTAs persist data instead of being placeholders, and finishing the AuthorIdentity sweep.
-2. **What's implemented?** Tasks 1, 2, 4, 5, 6, 13, 14, 15, 16 — fully wired.
-3. **What's partial?** Tasks 3, 7, 8, 9, 10, 11, 12 — UI exists, some data paths missing.
-4. **What's missing entirely?** Task 17 (video), saved-searches table, kennel daily-report table, sponsorships table, exhibits table, pedigree-certificate table, application-decision write path, story composer role-awareness.
-
-Approve this plan and I'll switch to build mode and execute Rounds 7 → 14 in that order, one round per reply, every change wired front-to-back with a real DB write or a real query — no UI-only stubs.
+I will not write any code until you confirm.
