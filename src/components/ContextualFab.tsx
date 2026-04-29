@@ -1,9 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Heart, Activity, PawPrint } from "lucide-react";
+import { Plus, Heart, Activity, PawPrint, GitBranch, HandCoins, CalendarDays, Briefcase } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import { QuickLogSheet } from "@/components/health/QuickLogSheet";
+import { useProfile } from "@/hooks/useProfile";
 
 type FabConfig = {
   icon: any;
@@ -22,6 +23,7 @@ const HIDDEN_PREFIXES = ["/auth", "/onboarding", "/ai", "/admin", "/welcome", "/
 export const ContextualFab = ({ onEmergency }: { onEmergency: () => void }) => {
   const loc = useLocation();
   const nav = useNavigate();
+  const { data: profile } = useProfile();
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
@@ -29,15 +31,63 @@ export const ContextualFab = ({ onEmergency }: { onEmergency: () => void }) => {
   if (HIDDEN_PREFIXES.some((p) => loc.pathname.startsWith(p))) return null;
 
   const path = loc.pathname;
+  const accountType = ((profile as any)?.account_type ?? "pet_parent") as string;
   let config: FabConfig | null = null;
 
   if (path === "/") {
-    config = {
-      icon: Plus,
-      label: "New post",
-      tone: "bg-primary text-primary-foreground",
-      onPress: () => window.dispatchEvent(new CustomEvent("petos:open-composer")),
-    };
+    // Role-aware primary action on the Home dashboard.
+    // Default (pet_parent / buyer / fallback) keeps the universal composer.
+    switch (accountType) {
+      case "breeder":
+      case "kennel":
+        config = {
+          icon: GitBranch,
+          label: "New litter",
+          tone: "bg-amber-500 text-white",
+          onPress: () => nav("/litters/new"),
+        };
+        break;
+      case "shelter":
+      case "rescuer":
+        config = {
+          icon: PawPrint,
+          label: "List a pet for adoption",
+          tone: "bg-lilac text-white",
+          onPress: () => nav("/mates/adopt/new"),
+        };
+        break;
+      case "sanctuary":
+        config = {
+          icon: HandCoins,
+          label: "Manage donations",
+          tone: "bg-leaf text-white",
+          onPress: () => nav("/org/donations"),
+        };
+        break;
+      case "zoo":
+        config = {
+          icon: CalendarDays,
+          label: "New event",
+          tone: "bg-stone-700 text-white",
+          onPress: () => nav("/meetups/new"),
+        };
+        break;
+      case "provider":
+        config = {
+          icon: Briefcase,
+          label: "New service",
+          tone: "bg-primary text-primary-foreground",
+          onPress: () => nav("/services/new"),
+        };
+        break;
+      default:
+        config = {
+          icon: Plus,
+          label: "New post",
+          tone: "bg-primary text-primary-foreground",
+          onPress: () => window.dispatchEvent(new CustomEvent("petos:open-composer")),
+        };
+    }
   } else if (path === "/mates" || path.startsWith("/mates/")) {
     // Hide on sub-routes that are themselves creation/detail screens
     if (path === "/mates") {
