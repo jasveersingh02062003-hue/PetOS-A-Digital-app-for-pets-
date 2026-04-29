@@ -74,6 +74,7 @@ const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const Receipt = lazy(() => import("./pages/Receipt"));
+const DonationReceipt = lazy(() => import("./pages/DonationReceipt"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Breeders = lazy(() => import("./pages/Breeders"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
@@ -242,6 +243,7 @@ const App = () => (
               <Route path="/bookings/recurring" element={<RecurringBookings />} />
               <Route path="/pregnancies" element={<Pregnancies />} />
               <Route path="/org/donations" element={<OrgDonations />} />
+              <Route path="/donations/:donationId/receipt" element={<DonationReceipt />} />
               <Route path="/shop/reminders" element={<ShopReminders />} />
               <Route path="/taxi" element={<Taxi />} />
               <Route path="/taxi/new" element={<TaxiNew />} />
