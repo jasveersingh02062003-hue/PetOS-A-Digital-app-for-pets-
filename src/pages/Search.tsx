@@ -609,3 +609,86 @@ const MissingList = ({ items }: { items: any[] }) => items.length ? (
     ))}
   </div>
 ) : <Empty q="" />;
+
+function LocationChip({
+  active, loading, radiusKm, onRequest, onClear, onCycleRadius,
+}: {
+  active: boolean;
+  loading: boolean;
+  radiusKm: number;
+  onRequest: () => void;
+  onClear: () => void;
+  onCycleRadius: () => void;
+}) {
+  if (!active) {
+    return (
+      <button
+        onClick={onRequest}
+        disabled={loading}
+        className="shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-[11px] font-medium border bg-card text-muted-foreground border-hairline hover:text-foreground"
+      >
+        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+        {loading ? "Locating…" : "Use my location"}
+      </button>
+    );
+  }
+  return (
+    <div className="shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-medium pl-2.5 pr-1 h-7">
+      <MapPin className="h-3 w-3" />
+      <button onClick={onCycleRadius} className="px-1 py-0.5 rounded hover:bg-primary/20" aria-label="Change radius">
+        Near me · {radiusKm} km
+      </button>
+      <button onClick={onClear} aria-label="Clear location" className="p-1 rounded-full hover:bg-primary/20">
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+function RankedList({ items }: { items: Array<{
+  entity_type: string; id: string; title: string; subtitle: string | null;
+  image_url: string | null; city: string | null; distance_km: number | null;
+  score: number; payload: any;
+}> }) {
+  const linkFor = (it: typeof items[number]) => {
+    if (it.entity_type === "people") return `/u/${it.payload?.handle ?? it.id}`;
+    if (it.entity_type === "pets") return `/listing/${it.id}`;
+    if (it.entity_type === "providers") return `/services/${it.id}`;
+    return "#";
+  };
+  const iconFor = (t: string) =>
+    t === "people" ? <User className="w-5 h-5" />
+    : t === "pets" ? <PawPrint className="w-5 h-5" />
+    : <Scissors className="w-5 h-5" />;
+  return (
+    <div className="space-y-1">
+      {items.map((it) => (
+        <Link
+          key={`${it.entity_type}-${it.id}`}
+          to={linkFor(it)}
+          className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted/60"
+        >
+          {it.image_url
+            ? <img src={it.image_url} alt="" className="h-10 w-10 rounded-full object-cover" loading="lazy" />
+            : <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">{iconFor(it.entity_type)}</div>}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-medium truncate">{it.title}</span>
+              <span className="text-[9px] uppercase tracking-wide px-1.5 py-0 rounded bg-muted text-muted-foreground">
+                {it.entity_type === "people" ? "person" : it.entity_type === "pets" ? "listing" : "service"}
+              </span>
+            </div>
+            {(it.subtitle || it.city) && (
+              <div className="text-xs text-muted-foreground truncate">{it.subtitle || it.city}</div>
+            )}
+          </div>
+          {typeof it.distance_km === "number" && (
+            <span className="text-[10px] text-muted-foreground shrink-0 inline-flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" />{it.distance_km < 1 ? "<1" : Math.round(it.distance_km)} km
+            </span>
+          )}
+        </Link>
+      ))}
+    </div>
+  );
+}
