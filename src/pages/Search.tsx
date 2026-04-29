@@ -335,12 +335,14 @@ function RecentsAndSuggestions({
   onPick,
   onRemoveSaved,
   onClearRecents,
+  onPickRole,
 }: {
   recents: string[];
   saved: SavedSearch[];
   onPick: (s: string, tab?: string) => void;
   onRemoveSaved: (s: SavedSearch) => void;
   onClearRecents: () => void;
+  onPickRole?: (r: RoleFilter) => void;
 }) {
   const { data: trending } = useQuery({
     queryKey: ["search-trending"],
@@ -354,6 +356,24 @@ function RecentsAndSuggestions({
 
   return (
     <div className="space-y-5">
+      {onPickRole && (
+        <Section title="Browse by role">
+          <div className="-mx-3 px-3 overflow-x-auto no-scrollbar">
+            <div className="flex gap-1.5 w-max">
+              {ROLE_FILTERS.filter((r) => r.key !== "all").map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => onPickRole(r.key)}
+                  className="shrink-0 h-8 px-3 rounded-full text-xs font-medium border bg-card text-muted-foreground border-hairline hover:text-foreground"
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
       {saved.length > 0 && (
         <Section title="Saved">
           <div className="flex flex-wrap gap-2">
