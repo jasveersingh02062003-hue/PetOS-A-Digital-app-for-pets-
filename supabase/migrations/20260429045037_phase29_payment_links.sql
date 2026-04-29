@@ -27,3 +27,8 @@ create index if not exists idx_mating_listings_payment_intent on public.mating_l
 create index if not exists idx_vet_consults_payment_intent on public.vet_consults(payment_intent_id);
 
 create index if not exists idx_payment_intents_ref on public.payment_intents(ref_id, kind);
+
+alter table public.appointments
+  add column if not exists payment_intent_id uuid references public.payment_intents(id) on delete set null,
+  add column if not exists paid_at timestamptz;
+create index if not exists idx_appointments_payment_intent on public.appointments(payment_intent_id);
