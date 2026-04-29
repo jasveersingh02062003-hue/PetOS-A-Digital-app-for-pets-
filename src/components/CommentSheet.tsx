@@ -24,15 +24,17 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
   const [asPetId, setAsPetId] = useState<string | "self">("self");
   const [sending, setSending] = useState(false);
   const { data: verifiedOrgs } = useVerifiedOrgs();
+  const { data: blocked } = useBlockedIds();
 
   const { data: comments, isLoading } = useQuery({
-    queryKey: ["comments", postId],
+    queryKey: ["comments", postId, blocked?.size ?? 0],
     enabled: !!postId,
     queryFn: async () => {
       const { data, error } = await supabase.from("post_comments").select("*").eq("post_id", postId!).order("created_at");
       if (error) throw error;
-      const ids = [...new Set((data ?? []).map((c) => c.author_id))];
-      const petIds = [...new Set((data ?? []).map((c: any) => c.pet_id).filter(Boolean))];
+      const visible = (data ?? []).filter((c: any) => !blocked || !blocked.has(c.author_id));
+      const ids = [...new Set(visible.map((c) => c.author_id))];
+      const petIds = [...new Set(visible.map((c: any) => c.pet_id).filter(Boolean))];
       const profsRes = ids.length
         ? await supabase.rpc("get_profiles_public")
         : { data: [] as any[] };
@@ -42,7 +44,7 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
         ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds as any)
         : { data: [] as any[] };
       const petMap = new Map((petsRes.data ?? []).map((p: any) => [p.id, p]));
-      return (data ?? []).map((c: any) => ({ ...c, author: m.get(c.author_id), pet: c.pet_id ? petMap.get(c.pet_id) : null }));
+      return visible.map((c: any) => ({ ...c, author: m.get(c.author_id), pet: c.pet_id ? petMap.get(c.pet_id) : null }));
     },
   });
 
