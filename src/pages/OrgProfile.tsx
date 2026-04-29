@@ -14,6 +14,8 @@ import { BoardingList } from "@/components/profile/BoardingList";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 import { DonateDialog } from "@/components/donations/DonateDialog";
+import { getRoleBanner } from "@/lib/roleTheme";
+import { MatesGrid } from "@/components/profile/MatesGrid";
 
 const OrgProfile = () => {
   const { userId } = useParams();
@@ -50,10 +52,13 @@ const OrgProfile = () => {
 
   const cover = (org.facility_photos ?? [])[0];
   const isZoo = org.org_type === "zoo";
+  const isSanctuary = org.org_type === "sanctuary";
+  const hidesMarketplace = isZoo || isSanctuary;
   const hasDonation = !!(org.donation_upi || org.donation_url);
   const canReceiveDonations = ["shelter", "sanctuary", "rescuer", "ngo"].includes(
     String(org.org_type),
   );
+  const roleBanner = getRoleBanner(org.org_type as any);
 
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
@@ -61,7 +66,13 @@ const OrgProfile = () => {
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      {cover && <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-muted mb-4"><img src={cover} alt={org.org_name} className="w-full h-full object-cover" /></div>}
+      <div className={`aspect-[16/9] rounded-2xl overflow-hidden mb-4 relative ${roleBanner}`}>
+        {cover ? (
+          <img src={cover} alt={org.org_name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full" aria-hidden />
+        )}
+      </div>
 
       <div className="flex items-start justify-between gap-2 mb-2">
         <h1 className="font-display text-2xl leading-tight">{org.org_name}</h1>
@@ -194,7 +205,7 @@ const OrgProfile = () => {
         </div>
       ) : null}
 
-      {!isZoo && !!listings?.length && (
+      {!hidesMarketplace && !!listings?.length && (
         <>
           <h2 className="font-display text-lg mb-2">Available pets</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -215,6 +226,13 @@ const OrgProfile = () => {
         <div className="mt-6">
           <h2 className="font-display text-lg mb-2">Litters</h2>
           <LittersList userId={userId} />
+        </div>
+      )}
+
+      {org.org_type === "breeder" && userId && (
+        <div className="mt-6">
+          <h2 className="font-display text-lg mb-2">Available for mating</h2>
+          <MatesGrid ownerId={userId} />
         </div>
       )}
 
