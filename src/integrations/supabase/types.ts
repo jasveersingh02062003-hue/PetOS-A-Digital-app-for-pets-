@@ -3710,6 +3710,139 @@ export type Database = {
           },
         ]
       }
+      transport_bookings: {
+        Row: {
+          created_at: string
+          customer_id: string
+          dropoff_address: string
+          dropoff_lat: number | null
+          dropoff_lng: number | null
+          fare_inr: number | null
+          id: string
+          notes: string | null
+          pet_id: string | null
+          pickup_address: string
+          pickup_lat: number | null
+          pickup_lng: number | null
+          provider_id: string | null
+          public_share_token: string
+          scheduled_at: string
+          service_booking_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          dropoff_address: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          fare_inr?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          pickup_address: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          provider_id?: string | null
+          public_share_token?: string
+          scheduled_at: string
+          service_booking_id?: string | null
+          status?: Database["public"]["Enums"]["transport_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          dropoff_address?: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          fare_inr?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          pickup_address?: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          provider_id?: string | null
+          public_share_token?: string
+          scheduled_at?: string
+          service_booking_id?: string | null
+          status?: Database["public"]["Enums"]["transport_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_service_booking_id_fkey"
+            columns: ["service_booking_id"]
+            isOneToOne: false
+            referencedRelation: "service_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_legs: {
+        Row: {
+          at: string
+          booking_id: string
+          created_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["transport_status"]
+          lat: number | null
+          lng: number | null
+          note: string | null
+        }
+        Insert: {
+          at?: string
+          booking_id: string
+          created_by?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["transport_status"]
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+        }
+        Update: {
+          at?: string
+          booking_id?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["transport_status"]
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_legs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       typing_indicators: {
         Row: {
           conversation_id: string
@@ -4721,6 +4854,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_transport_driver: { Args: { _booking: string }; Returns: boolean }
       mark_conversation_read: { Args: { _conv: string }; Returns: undefined }
       nearby_meetups: {
         Args: { _lat: number; _lng: number; _radius_km?: number }
@@ -5006,6 +5140,14 @@ export type Database = {
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
       transfer_status: "pending" | "accepted" | "declined" | "cancelled"
+      transport_status:
+        | "requested"
+        | "accepted"
+        | "en_route_pickup"
+        | "picked_up"
+        | "en_route_drop"
+        | "dropped_off"
+        | "cancelled"
       triage_severity: "mild" | "moderate" | "severe"
       verification_status: "pending" | "approved" | "rejected"
       vet_q_category:
@@ -5319,6 +5461,15 @@ export const Constants = {
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
       transfer_status: ["pending", "accepted", "declined", "cancelled"],
+      transport_status: [
+        "requested",
+        "accepted",
+        "en_route_pickup",
+        "picked_up",
+        "en_route_drop",
+        "dropped_off",
+        "cancelled",
+      ],
       triage_severity: ["mild", "moderate", "severe"],
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],

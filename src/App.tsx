@@ -50,6 +50,9 @@ const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopNew = lazy(() => import("./pages/ShopNew"));
 const ShopReminders = lazy(() => import("./pages/ShopReminders"));
+const Taxi = lazy(() => import("./pages/Taxi"));
+const TaxiNew = lazy(() => import("./pages/TaxiNew"));
+const TaxiDetail = lazy(() => import("./pages/TaxiDetail"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Vet = lazy(() => import("./pages/Vet"));
@@ -216,6 +219,9 @@ const App = () => (
               <Route path="/pregnancies" element={<Pregnancies />} />
               <Route path="/org/donations" element={<OrgDonations />} />
               <Route path="/shop/reminders" element={<ShopReminders />} />
+              <Route path="/taxi" element={<Taxi />} />
+              <Route path="/taxi/new" element={<TaxiNew />} />
+              <Route path="/taxi/:id" element={<TaxiDetail />} />
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />
