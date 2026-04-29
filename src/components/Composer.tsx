@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, forwardRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker"
 import { useInviteCollaborators } from "@/hooks/useCollabs";
 import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
+import { getRoleSubmit, getRoleComposerCopy, isOrgRole } from "@/lib/roleTheme";
 
 export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
   ({ variant = "icon" }, ref) => {
@@ -65,6 +66,13 @@ ComposerButton.displayName = "ComposerButton";
 const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
   const { data: pets } = usePets();
+  const { data: profile } = useProfile();
+  const accountType = profile?.account_type ?? "pet_parent";
+  const orgRole = isOrgRole(accountType);
+  const copy = getRoleComposerCopy(accountType);
+  const submitClass = getRoleSubmit(accountType);
+  // Pet-tag + health-log only make sense for accounts that own pets.
+  const showPetTag = !orgRole && (pets?.length ?? 0) > 0;
   const qc = useQueryClient();
   const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
@@ -228,7 +236,11 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       <Textarea
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
-        placeholder={pets?.[0] ? `What's ${pets[0].name} up to?` : "Write a caption…"}
+        placeholder={
+          showPetTag && pets?.[0]
+            ? `What's ${pets[0].name} up to?`
+            : copy.placeholder
+        }
         className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
         maxLength={500}
       />
@@ -277,7 +289,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       )}
 
       {/* Pet tag pills */}
-      {pets && pets.length > 0 && (
+      {showPetTag && (
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
           <button
             type="button"
@@ -308,7 +320,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
 
       <CollabPicker selected={collabs} onChange={setCollabs} />
 
-      {pets && pets.length > 0 && (
+      {showPetTag && (
         <HealthTagPicker pets={pets} value={healthTag} onChange={setHealthTag} />
       )}
 
@@ -316,9 +328,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         type="submit"
         disabled={uploading}
         size="lg"
-        className="w-full rounded-2xl h-12 text-base font-semibold bg-coral text-coral-foreground hover:bg-coral/90"
+        className={`w-full rounded-2xl h-12 text-base font-semibold ${submitClass}`}
       >
-        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Share"}
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : copy.cta}
       </Button>
     </form>
   );
