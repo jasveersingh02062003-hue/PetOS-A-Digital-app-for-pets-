@@ -27,6 +27,8 @@ interface Props {
   linkTo?: string | false;
   className?: string;
   subline?: React.ReactNode;
+  /** Show only the role-tinted avatar (no name/badge). */
+  avatarOnly?: boolean;
 }
 
 /**
@@ -50,6 +52,7 @@ export const AuthorIdentity = ({
   linkTo,
   className,
   subline,
+  avatarOnly = false,
 }: Props) => {
   const { data: profiles } = usePublicProfiles();
   const profile = profiles?.find((p) => p.id === userId);
@@ -78,6 +81,7 @@ export const AuthorIdentity = ({
         {avatar ? <AvatarImage src={avatar} alt={name} /> : null}
         <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
       </Avatar>
+      {!avatarOnly && (
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className={cn(s.name, "truncate")}>{name}</span>
@@ -89,6 +93,7 @@ export const AuthorIdentity = ({
         )}
         {effectiveSubline ? <div className="text-xs text-muted-foreground truncate">{effectiveSubline}</div> : null}
       </div>
+      )}
     </div>
   );
 
