@@ -18,6 +18,7 @@ import { AuthorIdentity } from "./AuthorIdentity";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
+import { UserStreakChip } from "./social/UserStreakChip";
 import { useBlockedIds } from "@/hooks/useBlockedIds";
 import { usePawBurst } from "./social/PawBurst";
 import { addReaction } from "@/lib/reactions";
@@ -219,6 +220,12 @@ const PostCard = ({ post, onComment }: {
             </Link>
             {accountType !== "pet_parent" && (
               <SellerBadge type={accountType as any} verified={authorVerified} />
+            )}
+            {accountType === "pet_parent" && (
+              <UserStreakChip
+                userId={post.author_id}
+                className="text-[10px] py-0 px-1.5 h-4"
+              />
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">

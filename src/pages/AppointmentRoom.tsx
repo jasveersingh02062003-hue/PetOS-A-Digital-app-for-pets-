@@ -6,13 +6,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, Video, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Video, MapPin, Loader2, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 import { ShieldAlert, AlertCircle, CheckCircle2 } from "lucide-react";
 import { PreCallCheck } from "@/components/vet/PreCallCheck";
 import { VisitNotesPanel } from "@/components/vet/VisitNotesPanel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AppointmentRoom() {
   const { id } = useParams();
@@ -24,6 +32,11 @@ export default function AppointmentRoom() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [joiningVideo, setJoiningVideo] = useState(false);
   const [callStartedAt, setCallStartedAt] = useState<number | null>(null);
+  const [vaultDialogOpen, setVaultDialogOpen] = useState(false);
+  const [vaultBusy, setVaultBusy] = useState(false);
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [shareExpires, setShareExpires] = useState<string | null>(null);
+  const [enteredCode, setEnteredCode] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: appt } = useQuery({
@@ -137,6 +150,53 @@ export default function AppointmentRoom() {
   };
 
   const isVet = appt && user?.id === appt.vet_id;
+  const isOwner = appt && user?.id === appt.owner_id;
+
+  const shareVault = async () => {
+    if (!appt?.pet_id) return;
+    setVaultBusy(true);
+    const { data, error } = await supabase.functions.invoke("vet-grant-create", {
+      body: { petId: appt.pet_id },
+    });
+    setVaultBusy(false);
+    if (error || (data as any)?.error) {
+      toast.error(error?.message || (data as any)?.error || "Failed");
+      return;
+    }
+    setShareCode((data as any).code);
+    setShareExpires((data as any).expires_at);
+    setVaultDialogOpen(true);
+  };
+
+  const copyCode = async () => {
+    if (!shareCode) return;
+    try {
+      await navigator.clipboard.writeText(shareCode);
+      toast.success("Code copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  const sendCodeInChat = async () => {
+    if (!shareCode || !user || !id) return;
+    await supabase.from("appointment_messages").insert({
+      appointment_id: id,
+      sender_id: user.id,
+      body: `Vault code: ${shareCode} (expires ${new Date(shareExpires!).toLocaleString()})`,
+    });
+    setVaultDialogOpen(false);
+    toast.success("Code sent in chat");
+  };
+
+  const openVaultByCode = () => {
+    const code = enteredCode.trim().toUpperCase();
+    if (code.length < 6) {
+      toast.error("Enter the code from the owner");
+      return;
+    }
+    window.open(`/v/${encodeURIComponent(code)}`, "_blank", "noopener");
+  };
 
   const updateStatus = async (status: string) => {
     if (!id) return;
@@ -247,6 +307,39 @@ export default function AppointmentRoom() {
         <PrescriptionBuilder appointmentId={appt.id} petId={appt.pet_id} ownerId={appt.owner_id} />
       )}
 
+      {(isVet || isOwner) && appt.pet_id && (
+        <div className="px-4 pt-3">
+          {isOwner ? (
+            <Button
+              onClick={shareVault}
+              variant="outline"
+              disabled={vaultBusy}
+              className="w-full rounded-xl h-11 gap-2 border-primary/40 text-primary hover:bg-primary/5"
+            >
+              {vaultBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              Share health vault with vet
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={enteredCode}
+                onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                placeholder="Vault code from owner"
+                className="rounded-xl h-11 font-mono tracking-widest"
+                maxLength={12}
+              />
+              <Button
+                onClick={openVaultByCode}
+                variant="outline"
+                className="rounded-xl h-11 gap-2 border-primary/40 text-primary hover:bg-primary/5 shrink-0"
+              >
+                <ShieldCheck className="h-4 w-4" /> Open
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {isVet && (
         <VisitNotesPanel appointmentId={appt.id} initialNotes={(appt as any).vet_visit_notes} />
       )}
@@ -288,6 +381,29 @@ export default function AppointmentRoom() {
           <Send className="h-4 w-4" />
         </Button>
       </div>
+
+      <Dialog open={vaultDialogOpen} onOpenChange={setVaultDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share with your vet</DialogTitle>
+            <DialogDescription>
+              Give this code to the vet on the call. They can open a read-only view of {appt.pet?.name || "your pet"}'s health vault.
+              {shareExpires && (
+                <> Expires {new Date(shareExpires).toLocaleString()}.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-3 p-4 rounded-xl border border-hairline bg-muted/40 text-center">
+            <div className="font-mono text-2xl tracking-widest font-semibold">{shareCode}</div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={copyCode} className="gap-2">
+              <Copy className="h-4 w-4" /> Copy
+            </Button>
+            <Button onClick={sendCodeInChat}>Send in chat</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
