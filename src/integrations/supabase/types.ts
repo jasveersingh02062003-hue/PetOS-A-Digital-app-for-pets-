@@ -1923,10 +1923,18 @@ export type Database = {
         Row: {
           amount_inr: number
           created_at: string
+          currency: string
           id: string
           kind: Database["public"]["Enums"]["payment_kind"]
+          metadata: Json
+          price_id: string | null
+          provider_payment_intent_id: string | null
           provider_session_id: string | null
+          receipt_number: string | null
           ref_id: string | null
+          refund_reason: string | null
+          refunded_amount_inr: number
+          refunded_at: string | null
           status: Database["public"]["Enums"]["payment_intent_status"]
           updated_at: string
           user_id: string
@@ -1934,10 +1942,18 @@ export type Database = {
         Insert: {
           amount_inr: number
           created_at?: string
+          currency?: string
           id?: string
           kind: Database["public"]["Enums"]["payment_kind"]
+          metadata?: Json
+          price_id?: string | null
+          provider_payment_intent_id?: string | null
           provider_session_id?: string | null
+          receipt_number?: string | null
           ref_id?: string | null
+          refund_reason?: string | null
+          refunded_amount_inr?: number
+          refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_intent_status"]
           updated_at?: string
           user_id: string
@@ -1945,10 +1961,18 @@ export type Database = {
         Update: {
           amount_inr?: number
           created_at?: string
+          currency?: string
           id?: string
           kind?: Database["public"]["Enums"]["payment_kind"]
+          metadata?: Json
+          price_id?: string | null
+          provider_payment_intent_id?: string | null
           provider_session_id?: string | null
+          receipt_number?: string | null
           ref_id?: string | null
+          refund_reason?: string | null
+          refunded_amount_inr?: number
+          refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_intent_status"]
           updated_at?: string
           user_id?: string

@@ -71,6 +71,7 @@ const Plus = lazy(() => import("./pages/Plus"));
 const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
+const Receipt = lazy(() => import("./pages/Receipt"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Breeders = lazy(() => import("./pages/Breeders"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
@@ -204,6 +205,7 @@ const App = () => (
               <Route path="/plus/success" element={<PlusSuccess />} />
               <Route path="/checkout/return" element={<CheckoutReturn />} />
               <Route path="/checkout/:priceId" element={<Checkout />} />
+              <Route path="/receipt/:intentId" element={<Receipt />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/breeders" element={<Breeders />} />
               <Route path="/missing" element={<MissingFeed />} />
