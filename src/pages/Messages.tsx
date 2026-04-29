@@ -75,6 +75,17 @@ export default function Messages() {
         .filter(m => m.conversation_id === c.id && m.user_id !== user!.id);
       const other = others[0] ? profMap.get(others[0].user_id) : null;
 
+      // Hide 1:1 conversations whose other party is blocked by the current user.
+      if (!c.is_group && others[0]) {
+        const { data: blockRow } = await supabase
+          .from("blocked_users")
+          .select("blocked_id")
+          .eq("blocker_id", user!.id)
+          .eq("blocked_id", others[0].user_id)
+          .maybeSingle();
+        if (blockRow) continue;
+      }
+
       const { data: lastMsg } = await supabase
         .from("messages" as any)
         .select("body,attachment_kind,created_at")

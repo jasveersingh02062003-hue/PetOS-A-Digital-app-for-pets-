@@ -78,7 +78,7 @@ Round 25  →  Round 26  →  Round 27
 
 ### Round 26 — Surface polish (0.5 day · no migration)
 
-Closes gap **B**. Pure component placement; no schema changes.
+✅ **DONE** — `<MateAvailableBadge>` (queries `mating_listings`) added to PetProfile header. New `useHelpfulVetIds` hook + "Helpful" pill on `AuthorIdentity` for vets with ≥1 helpful answer. Buyer's "Looking for: {breed}" chip added to Search PeopleList (bulk fetch). `Composer` auto-appends `#educational` for zoo accounts and shows an "Auto: #educational" preview chip. Blocked-id filtering added to `CommentSheet`, `useNotifications`, and the `Messages` conversation list (1:1 threads with blocked users are hidden).
 
 - `PetProfile.tsx` header: small amber pill "Available for Mating" when `mate_listings` has an active row for the pet. Tap → `/mates/:listingId`.
 - `Profile.tsx` pet rail: same pill on each pet thumbnail (tiny corner dot).
