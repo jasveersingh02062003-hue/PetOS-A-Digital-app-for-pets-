@@ -74,6 +74,7 @@ const TaxiDetail = () => {
   const isCustomer = user?.id === trip.customer_id;
   const isDriver = user?.id === trip.service_providers?.owner_id;
   const status = trip.status as Status;
+  const tripExt = trip as typeof trip & { payment_intent_id?: string | null; paid_at?: string | null };
 
   const setStatus = async (s: Status) => {
     const { error } = await supabase.from("transport_bookings").update({ status: s }).eq("id", trip.id);
@@ -161,7 +162,7 @@ const TaxiDetail = () => {
         )}
 
         {/* Payment block */}
-        {isCustomer && trip.fare_inr && !trip.payment_intent_id && status !== "cancelled" && (
+        {isCustomer && trip.fare_inr && !tripExt.payment_intent_id && status !== "cancelled" && (
           <PayButton
             priceId="vet_consult_one"
             kind="transport"
@@ -171,7 +172,7 @@ const TaxiDetail = () => {
             className="w-full rounded-xl h-11"
           />
         )}
-        {trip.payment_intent_id && (
+        {tripExt.payment_intent_id && (
           <Card className="rounded-2xl border-hairline p-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4 text-primary" />
@@ -179,10 +180,10 @@ const TaxiDetail = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button asChild size="sm" variant="outline">
-                <Link to={`/receipt/${trip.payment_intent_id}`}>View receipt</Link>
+                <Link to={`/receipt/${tripExt.payment_intent_id}`}>View receipt</Link>
               </Button>
               {isCustomer && (
-                <RefundButton intentId={trip.payment_intent_id} amountInr={trip.fare_inr ?? 0} onRefunded={refetch} />
+                <RefundButton intentId={tripExt.payment_intent_id!} amountInr={trip.fare_inr ?? 0} onRefunded={refetch} />
               )}
             </div>
           </Card>
