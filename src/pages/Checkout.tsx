@@ -22,7 +22,12 @@ export default function Checkout() {
   const { user } = useAuth();
   const [meta, setMeta] = useState<{ productName: string; amount: number | null; currency: string; interval: string | null } | null>(null);
 
-  const label = PRODUCT_LABELS[priceId] ?? { title: meta?.productName || "Checkout", tagline: "Secure payment" };
+  const isDynamic = priceId === "dynamic";
+  const dynAmount = Number(params.get("amount") ?? 0);
+  const dynName = params.get("name") ?? "Petos charge";
+  const label = isDynamic
+    ? { title: dynName, tagline: "Secure one-time payment" }
+    : PRODUCT_LABELS[priceId] ?? { title: meta?.productName || "Checkout", tagline: "Secure payment" };
 
   const returnUrl = useMemo(() => {
     const next = params.get("next");
@@ -92,7 +97,10 @@ export default function Checkout() {
         <section className="rounded-2xl border border-hairline bg-card p-2 sm:p-4 shadow-sm overflow-hidden">
           {priceId ? (
             <StripeEmbeddedCheckout
-              priceId={priceId}
+              priceId={isDynamic ? undefined : priceId}
+              amountInr={isDynamic ? dynAmount : undefined}
+              productName={isDynamic ? dynName : undefined}
+              currency={isDynamic ? "inr" : undefined}
               customerEmail={user?.email ?? undefined}
               userId={user?.id}
               returnUrl={returnUrl}
