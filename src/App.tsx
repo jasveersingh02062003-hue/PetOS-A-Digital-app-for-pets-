@@ -126,6 +126,13 @@ const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
 const ServiceCategoryPage = lazy(() => import("./pages/ServiceCategory"));
 const VetTriage = lazy(() => import("./pages/VetTriage"));
+const ProviderPicker = lazy(() => import("./pages/onboarding/provider/Picker"));
+const ProviderWizard = lazy(() => import("./pages/onboarding/provider/Wizard"));
+const ProviderDashboard = lazy(() => import("./pages/provider/Dashboard"));
+const JobsFeed = lazy(() => import("./pages/jobs/JobsFeed"));
+const JobNew = lazy(() => import("./pages/jobs/JobNew"));
+const JobDetail = lazy(() => import("./pages/jobs/JobDetail"));
+const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -195,8 +202,15 @@ const App = () => (
               <Route path="/settings/blocked" element={<BlockedAccounts />} />
               <Route path="/admin/moderation" element={<ModerationQueue />} />
               <Route path="/admin/orgs" element={<OrgReview />} />
+              <Route path="/admin/providers" element={<ProviderReview />} />
               <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
               <Route path="/onboarding/org" element={<OrgOnboarding />} />
+              <Route path="/onboarding/provider" element={<ProviderPicker />} />
+              <Route path="/onboarding/provider/:category" element={<ProviderWizard />} />
+              <Route path="/provider" element={<ProviderDashboard />} />
+              <Route path="/jobs" element={<JobsFeed />} />
+              <Route path="/jobs/new" element={<JobNew />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/onboarding/add-pet" element={<AddFirstPet />} />
               <Route path="/onboarding/done" element={<OnboardingDone />} />
               <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
