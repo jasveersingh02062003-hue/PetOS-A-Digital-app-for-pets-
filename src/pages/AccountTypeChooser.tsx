@@ -41,14 +41,20 @@ const AccountTypeChooser = () => {
     mutationFn: async (t: AccountType) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      const { error } = await supabase.from("profiles").update({ account_type: t }).eq("id", u.user.id);
-      if (error) throw error;
+      // "provider" is a wizard branch only — not stored on profiles.
+      if (t !== "provider") {
+        const { error } = await supabase.from("profiles").update({ account_type: t as any }).eq("id", u.user.id);
+        if (error) throw error;
+      }
       return t;
     },
     onSuccess: (t) => {
       qc.invalidateQueries({ queryKey: ["profile-self"] });
       const opt = OPTIONS.find((o) => o.value === t)!;
-      if (opt.needsOrg) {
+      if (opt.providerOnly) {
+        toast.success("Let's set up your services");
+        nav("/onboarding/provider");
+      } else if (opt.needsOrg) {
         toast.success("Saved. Continue with verification");
         nav("/onboarding/org");
       } else if (opt.buyerOnly) {
