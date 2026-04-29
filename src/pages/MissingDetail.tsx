@@ -359,6 +359,19 @@ const MissingDetail = () => {
                           <MapPin className="h-3 w-3" />{Number(s.lat).toFixed(4)}, {Number(s.lng).toFixed(4)}
                         </div>
                       )}
+                      {isOwner && rewardEscrowed && s.reporter_id && (
+                        <Button
+                          size="sm"
+                          className="mt-2 h-8 rounded-lg"
+                          disabled={releasingFinderId === s.reporter_id}
+                          onClick={() => releaseRewardTo(s.reporter_id)}
+                        >
+                          {releasingFinderId === s.reporter_id
+                            ? <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            : <Gift className="h-3 w-3 mr-1" />}
+                          Release ₹{missing.reward_inr} reward
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
