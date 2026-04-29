@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2, MapPin, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
