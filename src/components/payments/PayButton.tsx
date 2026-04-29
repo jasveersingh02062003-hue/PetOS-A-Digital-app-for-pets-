@@ -3,7 +3,7 @@ import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Kind = "transport" | "service" | "shop" | "mating" | "vet_consult";
+type Kind = "transport" | "service" | "appointment" | "shop" | "mating" | "vet_consult";
 
 interface Props {
   priceId?: string;            // omit for dynamic pricing
