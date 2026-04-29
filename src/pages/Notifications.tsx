@@ -191,7 +191,7 @@ const Notifications = () => {
                             size="md"
                             showBadge={false}
                             linkTo={false}
-                            className="!gap-0"
+                            avatarOnly
                           />
                           <span
                             className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full grid place-items-center ring-2 ring-background ${meta.tone}`}
