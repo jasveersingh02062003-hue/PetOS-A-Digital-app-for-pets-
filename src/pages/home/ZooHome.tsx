@@ -101,8 +101,8 @@ const ZooHome = () => {
       <div className="grid grid-cols-2 gap-3">
         <KpiCard
           label="Animals on display"
-          value={animals.data}
-          loading={animals.isLoading}
+          value={onDisplayCount}
+          loading={exhibits.isLoading}
           icon={ShieldAlert}
           tint={tint}
         />
@@ -126,8 +126,12 @@ const ZooHome = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 mt-4">
+        <Button size="sm" onClick={() => setExhibitOpen(true)} className="rounded-full">
+          <Plus className="h-3.5 w-3.5 mr-1.5" /> Add exhibit
+        </Button>
         <Button
           size="sm"
+          variant="outline"
           onClick={() => window.dispatchEvent(new CustomEvent("petos:open-composer"))}
           className="rounded-full"
         >
@@ -137,6 +141,42 @@ const ZooHome = () => {
           Events
         </Button>
       </div>
+
+      <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-semibold">Exhibits</div>
+          <button
+            onClick={() => setExhibitOpen(true)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Add
+          </button>
+        </div>
+        {exhibits.isLoading ? (
+          <div className="py-6 grid place-items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !exhibits.data?.length ? (
+          <p className="text-sm text-muted-foreground py-4">No exhibits yet. Add your first one.</p>
+        ) : (
+          <ul className="divide-y divide-hairline">
+            {exhibits.data.slice(0, 5).map((e) => (
+              <li key={e.id} className="py-2 flex items-center gap-3">
+                <Eye className={`h-4 w-4 shrink-0 ${e.on_display ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">{e.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {[e.species, e.habitat].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                </div>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground shrink-0">
+                  {e.on_display ? "On display" : "Off"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
         <div className="flex items-center justify-between mb-2">
@@ -193,6 +233,7 @@ const ZooHome = () => {
           }
         />
       </section>
+      <ExhibitSheet open={exhibitOpen} onOpenChange={setExhibitOpen} />
     </div>
   );
 };
