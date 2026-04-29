@@ -219,18 +219,41 @@ Deno.serve(async (req) => {
     }
 
     // 4. Boarding services
+    // Idempotent: only insert if owner has no existing boarding_services rows
+    async function seedBoarding(owner: string, rows: any[]) {
+      const { count } = await admin.from("boarding_services").select("*", { count: "exact", head: true }).eq("owner_id", owner);
+      if ((count ?? 0) === 0) {
+        const { error } = await admin.from("boarding_services").insert(rows);
+        if (error) log.push(`FAIL boarding_services for ${owner}: ${error.message}`);
+      }
+    }
     if (ids["devi_boarding"]) {
-      await admin.from("boarding_services").insert([
+      await seedBoarding(ids["devi_boarding"], [
         { owner_id: ids["devi_boarding"], title: "Devi 5-star Dog Boarding", service_type: "boarding", price_inr_per_day: 800, city: "Mumbai", capacity: 12, description: "AC suites, 3 walks/day, daily reports." },
         { owner_id: ids["devi_boarding"], title: "Cat-only Boarding", service_type: "boarding", price_inr_per_day: 600, city: "Mumbai", capacity: 8 },
       ]);
     }
     if (ids["kiran_walks"]) {
-      await admin.from("boarding_services").insert({ owner_id: ids["kiran_walks"], title: "Kiran Daily Walks", service_type: "walker", price_inr_per_day: 300, city: "Bengaluru" });
+      await seedBoarding(ids["kiran_walks"], [{ owner_id: ids["kiran_walks"], title: "Kiran Daily Walks", service_type: "walker", price_inr_per_day: 300, city: "Bengaluru" }]);
     }
     if (ids["lalit_taxi"]) {
-      await admin.from("boarding_services").insert({ owner_id: ids["lalit_taxi"], title: "Lalit Pet Taxi", service_type: "transport", price_inr_per_day: 500, city: "Mumbai" });
+      await seedBoarding(ids["lalit_taxi"], [{ owner_id: ids["lalit_taxi"], title: "Lalit Pet Taxi", service_type: "transport", price_inr_per_day: 500, city: "Mumbai" }]);
     }
+
+    // 4b. service_providers (canonical provider rows for kennel/walker/taxi/vet)
+    const providerIds: Record<string, string> = {};
+    async function ensureProvider(owner: string, name: string, category: string, city: string) {
+      const { data: existing } = await admin.from("service_providers").select("id").eq("owner_id", owner).limit(1).maybeSingle();
+      if (existing?.id) { providerIds[owner] = existing.id; return; }
+      const { data, error } = await admin.from("service_providers").insert({
+        owner_id: owner, name, category: category as any, city, active: true, verified: true, trust_status: "verified",
+      }).select("id").single();
+      if (error) { log.push(`FAIL service_provider ${name}: ${error.message}`); return; }
+      if (data) providerIds[owner] = data.id;
+    }
+    if (ids["devi_boarding"]) await ensureProvider(ids["devi_boarding"], "Devi Pet Boarding", "boarding", "Mumbai");
+    if (ids["kiran_walks"]) await ensureProvider(ids["kiran_walks"], "Kiran Walks", "walking", "Bengaluru");
+    if (ids["lalit_taxi"]) await ensureProvider(ids["lalit_taxi"], "Lalit Pet Taxi", "pet_taxi", "Mumbai");
 
     // 5. Posts (one per main user)
     const postSeeds = [
@@ -251,19 +274,21 @@ Deno.serve(async (req) => {
 
     // 6. Rescue journey
     if (ids["esha_rescue"] && petIds["Brownie"]) {
-      const { data: rj } = await admin.from("rescue_journeys").insert({
+      const { data: rj, error: rjErr } = await admin.from("rescue_journeys").insert({
         org_id: ids["esha_rescue"],
         pet_id: petIds["Brownie"],
         title: "Brownie's Rescue Journey",
-        status: "ready_for_adoption",
+        status: "in_care",
       }).select("id").single();
+      if (rjErr) log.push(`FAIL rescue_journey: ${rjErr.message}`);
       if (rj) {
-        await admin.from("rescue_journey_entries").insert([
+        const { error: rjeErr } = await admin.from("rescue_journey_entries").insert([
           { journey_id: rj.id, day_number: 1, caption: "Found on the street, scared and hungry." },
           { journey_id: rj.id, day_number: 7, caption: "First vet visit, vaccinations started." },
           { journey_id: rj.id, day_number: 30, caption: "Healthy, playful, ready for a home." },
           { journey_id: rj.id, day_number: 45, caption: "Listed for adoption!" },
         ]);
+        if (rjeErr) log.push(`FAIL rescue_journey_entries: ${rjeErr.message}`);
       }
     }
 
@@ -280,7 +305,7 @@ Deno.serve(async (req) => {
       });
     }
     if (ids["devi_boarding"] && ids["aarti_parent"] && petIds["Mochi"]) {
-      const { data: bk } = await admin.from("service_bookings").insert({
+      const { data: bk, error: bkErr } = await admin.from("service_bookings").insert({
         provider_id: ids["devi_boarding"],
         customer_id: ids["aarti_parent"],
         pet_id: petIds["Mochi"],
@@ -288,17 +313,19 @@ Deno.serve(async (req) => {
         status: "confirmed" as any,
         notes: "3-night stay",
       }).select("id").single();
+      if (bkErr) log.push(`FAIL service_booking: ${bkErr.message}`);
       if (bk) {
-        await admin.from("kennel_daily_reports").insert({
+        const { error: krErr } = await admin.from("kennel_daily_reports").insert({
           booking_id: bk.id,
-          provider_id: ids["devi_boarding"],
+          provider_id: providerIds[ids["devi_boarding"]],
           author_id: ids["devi_boarding"],
           meals: 2,
           walks: 3,
           potty: 4,
-          mood: "great",
+          mood: "happy",
           notes: "Mochi loved the morning walk and made a new friend!",
         });
+        if (krErr) log.push(`FAIL kennel_daily_report: ${krErr.message}`);
       }
     }
 
