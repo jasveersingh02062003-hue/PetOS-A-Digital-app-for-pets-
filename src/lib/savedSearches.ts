@@ -1,69 +1,104 @@
 /**
- * Saved searches — small localStorage-backed favourites for the Search page.
- * Each entry stores the query and the active tab so users can re-open
- * a refined view in one tap.
+ * Saved searches — DB-backed (table: saved_searches).
+ * Each row belongs to a single user (RLS enforced) and stores a query, tab,
+ * optional structured filters, and a last_seen_at timestamp used to compute
+ * "new matches since last visit".
  *
- * Kept independent of the existing recent-searches store so the two can
- * evolve separately (recents = ephemeral, saved = curated).
+ * Recent searches (ephemeral) still live in localStorage.
  */
-const KEY = "petos:saved_searches";
-const MAX = 12;
+import { supabase } from "@/integrations/supabase/client";
 
 export type SavedSearch = {
-  id: string;          // stable id (timestamp-based)
+  id: string;
+  user_id: string;
+  label: string;
+  scope: string;       // "search" | "mates" | "breeders" | "shelters"
   q: string;
-  tab: string;         // search tab key ("all", "pets", …)
-  saved_at: number;    // epoch ms
+  tab: string;
+  filters: Record<string, any>;
+  last_seen_at: string;
+  created_at: string;
+  updated_at: string;
 };
 
-function read(): SavedSearch[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
+export type SaveSearchInput = {
+  label: string;
+  scope?: string;
+  q?: string;
+  tab?: string;
+  filters?: Record<string, any>;
+};
+
+export async function listSavedSearches(): Promise<SavedSearch[]> {
+  const { data, error } = await supabase
+    .from("saved_searches")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SavedSearch[];
 }
 
-function write(list: SavedSearch[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX))); } catch {}
+export async function isSearchSaved(q: string, tab: string, scope = "search"): Promise<boolean> {
+  const trimmed = (q ?? "").trim().toLowerCase();
+  if (!trimmed) return false;
+  const { data, error } = await supabase
+    .from("saved_searches")
+    .select("id, q, tab, scope")
+    .eq("scope", scope)
+    .eq("tab", tab)
+    .ilike("q", trimmed)
+    .limit(1);
+  if (error) return false;
+  return (data ?? []).some((r: any) => (r.q ?? "").trim().toLowerCase() === trimmed);
 }
 
-function sameKey(a: { q: string; tab: string }, b: { q: string; tab: string }) {
-  return a.q.trim().toLowerCase() === b.q.trim().toLowerCase()
-    && a.tab === b.tab;
-}
-
-export function listSavedSearches(): SavedSearch[] {
-  return read().sort((a, b) => b.saved_at - a.saved_at);
-}
-
-export function isSearchSaved(q: string, tab: string): boolean {
-  if (!q.trim()) return false;
-  return read().some((s) => sameKey(s, { q, tab }));
-}
-
-export function saveSearch(q: string, tab: string): SavedSearch | null {
-  const trimmed = q.trim();
-  if (trimmed.length < 2) return null;
-  const list = read();
-  if (list.some((s) => sameKey(s, { q: trimmed, tab }))) return null;
-  const entry: SavedSearch = {
-    id: `s_${Date.now().toString(36)}`,
-    q: trimmed,
-    tab,
-    saved_at: Date.now(),
+export async function saveSearch(input: SaveSearchInput): Promise<SavedSearch | null> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return null;
+  const row = {
+    user_id: uid,
+    label: input.label,
+    scope: input.scope ?? "search",
+    q: (input.q ?? "").trim(),
+    tab: input.tab ?? "all",
+    filters: input.filters ?? {},
+    last_seen_at: new Date().toISOString(),
   };
-  write([entry, ...list]);
-  return entry;
+  const { data, error } = await supabase
+    .from("saved_searches")
+    .insert(row)
+    .select("*")
+    .single();
+  if (error) {
+    // dedupe collision — return existing
+    if ((error as any).code === "23505") return null;
+    throw error;
+  }
+  return data as SavedSearch;
 }
 
-export function unsaveSearch(q: string, tab: string) {
-  write(read().filter((s) => !sameKey(s, { q, tab })));
+export async function unsaveSearchById(id: string): Promise<void> {
+  const { error } = await supabase.from("saved_searches").delete().eq("id", id);
+  if (error) throw error;
 }
 
-export function clearSavedSearches() {
-  write([]);
+export async function unsaveSearch(q: string, tab: string, scope = "search"): Promise<void> {
+  const trimmed = (q ?? "").trim();
+  const { data } = await supabase
+    .from("saved_searches")
+    .select("id, q")
+    .eq("scope", scope)
+    .eq("tab", tab);
+  const match = (data ?? []).find((r: any) => (r.q ?? "").trim().toLowerCase() === trimmed.toLowerCase());
+  if (match) await unsaveSearchById(match.id);
+}
+
+export async function touchSavedSearch(id: string): Promise<void> {
+  await supabase
+    .from("saved_searches")
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq("id", id);
 }
 
 export function clearRecentSearches() {
