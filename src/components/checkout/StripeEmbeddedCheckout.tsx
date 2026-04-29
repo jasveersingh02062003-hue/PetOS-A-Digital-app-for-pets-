@@ -10,10 +10,12 @@ interface Props {
   customerEmail?: string;
   userId?: string;
   returnUrl: string;
+  kind?: string;
+  refId?: string;
   onMeta?: (meta: { productName: string; amount: number | null; currency: string; interval: string | null }) => void;
 }
 
-export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userId, returnUrl, onMeta }: Props) {
+export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userId, returnUrl, kind, refId, onMeta }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -21,7 +23,7 @@ export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userI
 
   const fetchClientSecret = async (): Promise<string> => {
     const { data, error } = await supabase.functions.invoke("payments-create-checkout", {
-      body: { priceId, quantity, customerEmail, userId, returnUrl, environment: getStripeEnvironment() },
+      body: { priceId, quantity, customerEmail, userId, returnUrl, kind, refId, environment: getStripeEnvironment() },
     });
     if (error || !data?.clientSecret) {
       const msg = error?.message || data?.error || "Failed to start checkout";

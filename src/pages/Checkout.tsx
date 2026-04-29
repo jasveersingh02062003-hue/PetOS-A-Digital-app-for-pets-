@@ -96,6 +96,8 @@ export default function Checkout() {
               customerEmail={user?.email ?? undefined}
               userId={user?.id}
               returnUrl={returnUrl}
+              kind={params.get("kind") ?? undefined}
+              refId={params.get("ref") ?? undefined}
               onMeta={setMeta}
             />
           ) : (
