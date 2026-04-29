@@ -85,8 +85,19 @@ const BookAppointment = () => {
         .update({ escalated_to_appointment_id: data.id, closed_at: new Date().toISOString() })
         .eq("id", triageSessionId);
     }
-    toast.success("Appointment requested");
-    nav("/profile");
+    if (fee && data?.id) {
+      const params = new URLSearchParams({
+        kind: "service",
+        ref: data.id,
+        amount: String(fee),
+        name: `Vet · ${picked.display_name} (${mode})`,
+        next: "/profile",
+      });
+      nav(`/checkout/dynamic?${params.toString()}`);
+    } else {
+      toast.success("Appointment requested");
+      nav("/profile");
+    }
   };
 
   return (
@@ -191,13 +202,13 @@ const BookAppointment = () => {
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-hairline">
-            <span className="text-sm text-muted-foreground">Fee (free during beta)</span>
-            <span className="font-display">₹{fee}</span>
+            <span className="text-sm text-muted-foreground">Fee</span>
+            <span className="font-display">{fee ? `₹${fee.toLocaleString("en-IN")}` : "Free"}</span>
           </div>
 
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 rounded-full h-12" onClick={() => setPicked(null)}>Back</Button>
-            <Button className="flex-1 rounded-full h-12" onClick={book}>Request</Button>
+            <Button className="flex-1 rounded-full h-12" onClick={book}>{fee ? `Pay ₹${fee.toLocaleString("en-IN")} & request` : "Request"}</Button>
           </div>
         </Card>
       )}
