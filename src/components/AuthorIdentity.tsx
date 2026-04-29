@@ -84,7 +84,7 @@ export const AuthorIdentity = ({
         </div>
         {showBadge && (
           <div className="mt-0.5">
-            <SellerBadge type={accountType} verified={verified} />
+            <SellerBadge type={accountType as any} verified={verified} />
           </div>
         )}
         {effectiveSubline ? <div className="text-xs text-muted-foreground truncate">{effectiveSubline}</div> : null}
