@@ -42,7 +42,7 @@ export const AdoptablesList = ({ userId }: { userId: string }) => {
       {data.map((l: any) => {
         const cover = Array.isArray(l.photos) && l.photos.length > 0 ? l.photos[0] : null;
         return (
-          <Link key={l.id} to={`/adopt/${l.id}`} className="group">
+          <Link key={l.id} to={`/mates/adopt/${l.id}`} className="group">
             <Card className="overflow-hidden rounded-2xl border-hairline shadow-none">
               <div className="aspect-square bg-muted overflow-hidden">
                 {cover ? (
