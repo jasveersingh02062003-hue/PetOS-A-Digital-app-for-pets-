@@ -65,7 +65,7 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("pet_listings")
-        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id, health_tests")
+        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id, health_tests, co_listed_with_org_id")
         .eq("active", true)
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -89,6 +89,19 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       const { data } = await supabase.from("repeat_sellers" as any).select("owner_id");
       return new Set<string>((data ?? []).map((r: any) => r.owner_id));
+    },
+  });
+
+  // Co-list shelter names for the "Co-listed with X ✓" subline.
+  const colistIds = Array.from(new Set((listings ?? []).map((l: any) => l.co_listed_with_org_id).filter(Boolean) as string[]));
+  const { data: colistShelters } = useQuery({
+    queryKey: ["colist-shelters", colistIds.sort().join(",")],
+    enabled: colistIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("org_profiles").select("user_id, org_name").in("user_id", colistIds);
+      const map = new Map<string, string>();
+      (data ?? []).forEach((r: any) => map.set(r.user_id, r.org_name));
+      return map;
     },
   });
 
@@ -208,6 +221,12 @@ export const AdoptGrid = () => {
                   {isRepeatSeller && (
                     <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-semibold border border-amber-500/30">
                       <AlertTriangle className="h-2.5 w-2.5" /> Repeat seller
+                    </div>
+                  )}
+                  {l.co_listed_with_org_id && colistShelters?.get(l.co_listed_with_org_id) && (
+                    <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                      Co-listed with <span className="font-medium text-foreground truncate max-w-[110px]">{colistShelters.get(l.co_listed_with_org_id)}</span>
+                      <BadgeCheck className="h-2.5 w-2.5 text-leaf shrink-0" />
                     </div>
                   )}
                   {Array.isArray(l.health_tests) && l.health_tests.length > 0 && (
