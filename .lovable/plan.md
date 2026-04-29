@@ -1,88 +1,78 @@
-# Resume Plan — Phase 24: Shop Reorder Reminders
+# Phase 29 Status & Completion Plan
 
-Per `PROGRESS_REPORT.md`, the next deliverable is **Phase 24 (Shop reminders)** — P0, no Stripe Connect needed, direct revenue lift. Single phase, fully wired end-to-end, no overlap with shipped work.
+## What's already done
 
-## Status recap (already done — do not redo)
-Shipped: Phases 16, 17, 18, 19, 20, 21, 22, 23, 25, 27.
-Pending after this: 26 (Pet taxi), 28 (Stripe Connect → unblocks 29–32), 33–37.
+### Database (live)
+- `payment_intents` table — full schema with `receipt_number`, `refunded_amount_inr`, `refund_reason`, `metadata`, `provider_payment_intent_id`, `price_id`, `currency`. Trigger auto-assigns `PETOS-YYYY-NNNNNN` receipt numbers.
+- Status enum: `beta_free | pending | paid | failed | refunded`.
+- `subscriptions`, `service_bookings`, `transport_bookings`, `shop_orders`, `mating_payments`, `donations` tables exist.
+- Stripe products created in sandbox: Petos Plus (₹199/mo, ₹1,999/yr), AI Vet Consult (₹99), Missing Pet Boost (₹149), Mating Listing (₹499), NGO Donation.
 
-## What ships in this phase
+### Edge functions
+- `payments-create-checkout` — embedded Stripe session, recurring + one-time, sandbox/live aware ✅
+- `payments-mark-paid` — verifies session, writes `payment_intents` row ✅
+- `payments-refund` — server-side refund w/ role check ✅
+- `create-one-time-checkout`, `create-donation-checkout`, `create-checkout`, `stripe-webhook` — older checkout/webhook functions still present (legacy)
 
-A user can tap **"Remind me to reorder"** on any shop product, choose a cadence (e.g. every 30 days for food, 60 for litter), and receive a push + in-app `proactive_alert` 3 days before depletion with a one-tap "Reorder now" deep link to `/shop?q=<product>`.
+### Frontend
+- `/checkout/:priceId` (branded) + `/checkout/return` (animated success + receipt #)
+- `StripeEmbeddedCheckout` component with `PaymentTestModeBanner`
+- `RefundButton` component (built, not placed anywhere yet)
+- `Receipt.tsx` page (printable)
+- **Wired to checkout:** `Plus.tsx`, `MissingDetail.tsx` (boost), `DonateDialog.tsx`, `PaywallSheet.tsx`
 
-## Scope (no overlap)
+## What's missing / not wired
 
-```text
-DB (new):
-  shop_reminders(
-    id uuid pk,
-    user_id uuid not null,
-    product_id uuid references shop_products,
-    pet_id uuid null references pets,
-    cadence_days int not null check (cadence_days between 7 and 180),
-    next_run_on date not null,
-    last_notified_on date null,
-    active boolean default true,
-    created_at timestamptz default now()
-  )
+| Area | Gap |
+|---|---|
+| Mating listings | No payment gate; `mating_payments` table exists but unused |
+| Service bookings | `service_bookings` has no `payment_intent_id`; no checkout flow |
+| Transport / Pet taxi | `transport_bookings` has no `payment_intent_id`; `RefundButton` not on `TaxiDetail` |
+| Shop orders | `shop_orders` has no Stripe checkout; `Cart` → "place order" but no payment |
+| AI Vet Consult | Price exists, no entry point in `AskVet`/`VetConsult` |
+| Receipts | `payment_intents` row created, but no link from any booking detail page to `/receipt/:id` |
+| Email receipts | Not sent (no transactional email function) |
+| PDF invoice | Not generated (Receipt page is browser-print only) |
+| Webhook | `payments-webhook` per knowledge file not yet created (only legacy `stripe-webhook`); subscription lifecycle not synced into `subscriptions` table from new flow |
+| Refund button | Built but not mounted anywhere |
+| Admin view | No admin page to see all payments / issue refunds |
 
-RLS:
-  - owner-only SELECT/INSERT/UPDATE/DELETE on user_id = auth.uid()
+## Implementation Plan (4 batches, each shippable)
 
-Trigger:
-  - tg_shop_reminder_set_next_run: on INSERT, if next_run_on null
-    → set to current_date + cadence_days - 3 (lead-time)
-  - on UPDATE of cadence_days → recompute next_run_on from last_notified_on
+### Batch A — Wire all paid flows to checkout (DB + UI)
+1. Migration: add `payment_intent_id uuid references payment_intents(id)` to `service_bookings`, `transport_bookings`, `shop_orders`, `mating_listings`. Add `paid_at timestamptz`.
+2. Update `payments-mark-paid` to accept `kind` + `ref_id` and stamp the parent row's `payment_intent_id` + `paid_at` after success.
+3. Add "Pay & confirm" button →`/checkout/:priceId?ref=<bookingId>&kind=<kind>` on:
+   - `TaxiNew` / `TaxiDetail` (transport)
+   - `BookAppointment` / `ServiceDetail` (service)
+   - `MatesNew` / `MateListing` (mating ₹499)
+   - `Cart` (shop — dynamic price via `create-one-time-checkout` price_data)
+   - `AskVetNew` / `VetConsult` (AI vet ₹99)
+4. `Checkout.tsx` reads `?ref=&kind=` and passes through metadata so webhook/`mark-paid` updates the right row.
 
-Edge function:
-  - shop-reorder-scan (no JWT, cron-only):
-    SELECT due reminders where next_run_on <= current_date AND active
-    For each → insert into proactive_alerts (kind='shop_reorder',
-       deep_link='/shop?q=<product_name>', severity='info')
-       → call send-push
-       → set last_notified_on = current_date,
-         next_run_on = current_date + cadence_days
+### Batch B — Refunds, receipts visible everywhere
+1. Mount `RefundButton` on: `TaxiDetail`, `MyAppointments` row, `Orders` row, `MateListing` (owner view), `Plus` (cancel sub).
+2. Add "View receipt" link on every paid booking → `/receipt/:intentId`.
+3. Add `Admin → Payments` page: table of `payment_intents` (filters by status/kind/date) with refund + view receipt actions. Admin gated via `has_role('admin')`.
 
-Cron:
-  - shop-reorder-scan-daily @ 07:00 IST
+### Batch C — Email + PDF receipts
+1. Set up branded transactional email (resend or Lovable email infra) — domain config.
+2. Edge function `send-receipt-email`: takes `intentId`, renders branded HTML + attaches PDF (rendered server-side via `health-export-pdf` style).
+3. Trigger from `payments-mark-paid` after status flips to `paid`.
+4. Re-send button on `Receipt.tsx`.
 
-UI:
-  - src/components/shop/ReorderReminderButton.tsx
-      → opens dialog: cadence preset (15/30/45/60/90 days) + custom + optional pet link
-  - Mounted on Shop product card and Shop detail (Shop.tsx)
-  - New page: src/pages/ShopReminders.tsx at /shop/reminders
-      → list user reminders, edit cadence, pause/resume, delete
-  - Settings → "Shop reminders" link entry
-  - Reuses existing ProactiveAlertsCard on Home (no new surface needed)
-```
+### Batch D — Subscription webhook + cleanup
+1. Create `payments-webhook` per knowledge spec (sandbox + live), handle `customer.subscription.{created,updated,deleted}` → upsert into `subscriptions`.
+2. Add `has_active_subscription(user_id, env)` SQL function; replace any client-side Plus checks.
+3. Decommission legacy `create-checkout`, `create-one-time-checkout`, `create-donation-checkout`, `stripe-webhook` once new flow covers them (or leave as thin shims).
+4. RLS audit on `payment_intents` (owner-select, service-role-write only).
 
-## Files to create
-- `supabase/migrations/<ts>_phase24_shop_reminders.sql`
-- `supabase/functions/shop-reorder-scan/index.ts`
-- `src/components/shop/ReorderReminderButton.tsx`
-- `src/pages/ShopReminders.tsx`
+## Suggested order
+Batch A → B → C → D. Each batch is independently testable in sandbox using `4242 4242 4242 4242`.
 
-## Files to edit
-- `src/pages/Shop.tsx` — mount `ReorderReminderButton` on product rows
-- `src/App.tsx` — register `/shop/reminders` route
-- `src/pages/Settings.tsx` — add "Shop reminders" entry with Bell icon
+## Open decisions (will ask before Batch C)
+- Email provider (Resend default, or use existing setup)
+- Sender domain for receipts (e.g. `receipts@petos.app`)
+- GST number on invoice — needed?
 
-## Acceptance criteria
-1. User can create a reminder from any shop product → row appears in `shop_reminders`.
-2. Cron job `shop-reorder-scan-daily` is registered and visible in `cron.job`.
-3. Manually invoking `shop-reorder-scan` for a due reminder inserts a `proactive_alerts` row + sends push.
-4. `/shop/reminders` lists, edits, pauses, deletes reminders.
-5. Deep link from alert opens `/shop?q=<product>` (already supported).
-6. RLS verified: a second user cannot read/modify another user's reminders.
-
-## Out of scope (explicitly)
-- Auto-creating Stripe subscriptions for recurring orders (that's Phase 32, gated by Phase 28).
-- Auto-detecting depletion from `nutrition_logs` weight math (deferred — keep this phase small; current cadence is user-set).
-- Pet taxi (Phase 26) and Stripe Connect (Phase 28) come **after** this in the queue.
-
-## After this phase
-Per the report's priority order, the next two are:
-1. **Phase 26 — Pet taxi** (P1)
-2. **Phase 28 — Stripe Connect onboarding** (P0, unblocks 29–32)
-
-Approve to ship Phase 24 now.
+Reply **`go A`** (or B/C/D) to start the batch, or tell me to adjust scope.

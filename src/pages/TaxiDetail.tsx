@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { PayButton } from "@/components/payments/PayButton";
+import { RefundButton } from "@/components/payments/RefundButton";
+import { Link } from "react-router-dom";
+import { FileText } from "lucide-react";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
@@ -70,6 +74,7 @@ const TaxiDetail = () => {
   const isCustomer = user?.id === trip.customer_id;
   const isDriver = user?.id === trip.service_providers?.owner_id;
   const status = trip.status as Status;
+  const tripExt = trip as typeof trip & { payment_intent_id?: string | null; paid_at?: string | null };
 
   const setStatus = async (s: Status) => {
     const { error } = await supabase.from("transport_bookings").update({ status: s }).eq("id", trip.id);
@@ -154,6 +159,34 @@ const TaxiDetail = () => {
           <Button variant="outline" className="w-full rounded-xl h-10 text-destructive" onClick={cancel}>
             <X className="h-4 w-4 mr-1" /> Cancel trip
           </Button>
+        )}
+
+        {/* Payment block */}
+        {isCustomer && trip.fare_inr && !tripExt.payment_intent_id && status !== "cancelled" && (
+          <PayButton
+            kind="transport"
+            refId={trip.id}
+            productName={`Pet taxi · ${trip.pickup_address?.slice(0,30) ?? "trip"}`}
+            amountInr={trip.fare_inr}
+            next={`/taxi/${trip.id}`}
+            className="w-full rounded-xl h-11"
+          />
+        )}
+        {tripExt.payment_intent_id && (
+          <Card className="rounded-2xl border-hairline p-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4 text-primary" />
+              <span>Paid · receipt available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/receipt/${tripExt.payment_intent_id}`}>View receipt</Link>
+              </Button>
+              {isCustomer && (
+                <RefundButton intentId={tripExt.payment_intent_id!} amountInr={trip.fare_inr ?? 0} onRefunded={refetch} />
+              )}
+            </div>
+          </Card>
         )}
 
         {/* Timeline */}

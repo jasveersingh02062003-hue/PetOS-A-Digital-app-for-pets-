@@ -45,7 +45,7 @@ const Plus = () => {
   const upgrade = async () => {
     if (!user) return nav("/auth");
     const priceId = billing === "yearly" ? "petos_plus_yearly" : "petos_plus_monthly";
-    nav(`/checkout/${priceId}?next=/plus/success`);
+    nav(`/checkout/${priceId}?kind=subscription&next=/plus/success`);
   };
 
   const isPlus = tier?.tier === "plus";

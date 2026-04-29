@@ -57,9 +57,16 @@ const Cart = () => {
     setPlacing(false);
     if (itemsErr) return toast.error(itemsErr.message);
 
-    toast.success("Order placed! Sellers will be notified.");
+    toast.success("Order created — completing payment…");
     clear();
-    nav("/orders");
+    const params = new URLSearchParams({
+      kind: "shop",
+      ref: order.id,
+      amount: String(total),
+      name: `Petos Shop · ${items.length} item${items.length > 1 ? "s" : ""}`,
+      next: "/orders",
+    });
+    nav(`/checkout/dynamic?${params.toString()}`);
   };
 
   return (
@@ -130,10 +137,10 @@ const Cart = () => {
               <span className="font-display text-2xl">₹{total}</span>
             </div>
             <Button onClick={checkout} disabled={placing} className="w-full rounded-full h-12">
-              {placing ? "Placing…" : "Place order"}
+              {placing ? "Placing…" : `Pay ₹${total.toLocaleString("en-IN")} & place order`}
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Payment & SMS confirmation will be wired in later.
+              Secure checkout · Powered by Stripe · You'll see card form next.
             </p>
           </Card>
         </>
