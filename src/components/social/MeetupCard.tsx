@@ -38,7 +38,7 @@ export const MeetupCard = ({ meetup }: { meetup: Meetup }) => {
       )}
       {meetup.host_id && (
         <div className="mt-3 pt-3 border-t border-hairline">
-          <AuthorIdentity userId={meetup.host_id} size="sm" linkTo={`/u/${meetup.host_id}`} />
+          <AuthorIdentity userId={meetup.host_id} size="sm" linkTo={false} />
         </div>
       )}
     </Link>
