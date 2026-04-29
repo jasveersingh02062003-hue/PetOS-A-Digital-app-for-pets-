@@ -17,6 +17,8 @@ const PRESETS: Record<PaywallKind, {
   blurb: string;
   perks: string[];
   freeForPlus?: boolean;
+  paymentKind?: "vet_consult" | "mating" | "missing_boost" | "agreement";
+  productName?: string;
 }> = {
   vet_consult: {
     title: "Connect with a vet",
@@ -24,18 +26,24 @@ const PRESETS: Record<PaywallKind, {
     blurb: "A licensed vet replies in your chat — usually within 10 minutes. Notes go straight into your pet's vault.",
     perks: ["Real, verified vet", "Chat replies in minutes", "Prescription saved to vault"],
     freeForPlus: true,
+    paymentKind: "vet_consult",
+    productName: "AI Vet Consult",
   },
   mating_listing: {
     title: "Publish your mating listing",
-    amount: 299,
+    amount: 499,
     blurb: "A small one-time fee keeps the mating space serious — only verified, intentional listings get through.",
     perks: ["Verified-pets-only space", "Notify your local circle", "Edit anytime, no recurring fees"],
+    paymentKind: "mating",
+    productName: "Mating listing (30 days)",
   },
   agreement: {
     title: "Generate digital agreement",
     amount: 99,
     blurb: "A simple, signed record of your mating intent — protects both parties before any meeting.",
     perks: ["Both parties sign in-app", "Stored privately to both vaults", "Plain-language, no legalese"],
+    paymentKind: "agreement",
+    productName: "Digital mating agreement",
   },
   missing_listing: {
     title: "Send a city-wide alert",
@@ -43,6 +51,8 @@ const PRESETS: Record<PaywallKind, {
     blurb: "We'll push your listing to every nearby pet parent and keep it pinned until found.",
     perks: ["Pushed to your whole city", "Sightings stream live", "Free to mark found anytime"],
     freeForPlus: true,
+    paymentKind: "missing_boost",
+    productName: "Missing pet city-wide boost",
   },
 };
 
@@ -83,9 +93,7 @@ export const PaywallSheet = ({ open, onOpenChange, kind, onConfirmed, refId }: P
       const { data, error } = await supabase.functions.invoke("create-one-time-checkout", {
         body: { kind, ref_id: refId ?? null },
       });
-      if (error) throw error;
-
-      if (data?.status === "free_for_plus" || data?.status === "beta_free") {
+      if (!error && (data?.status === "free_for_plus" || data?.status === "beta_free")) {
         toast.success(
           data.status === "free_for_plus"
             ? "Included with your Plus plan ✓"
@@ -97,11 +105,16 @@ export const PaywallSheet = ({ open, onOpenChange, kind, onConfirmed, refId }: P
         return;
       }
 
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-      throw new Error("Couldn't start checkout");
+      // Paid path: route through branded embedded checkout (/checkout/dynamic)
+      const params = new URLSearchParams({
+        kind: preset.paymentKind ?? "vet_consult",
+        amount: String(preset.amount),
+        name: preset.productName ?? preset.title,
+      });
+      if (refId) params.set("ref", refId);
+      onOpenChange(false);
+      nav(`/checkout/dynamic?${params.toString()}`);
+      return;
     } catch (e: any) {
       toast.error(e?.message ?? "Something went wrong");
       setWorking(false);
