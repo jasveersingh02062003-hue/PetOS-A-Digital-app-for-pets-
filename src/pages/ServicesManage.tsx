@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/tabs";
 import type { Database } from "@/integrations/supabase/types";
 import { TrustBadge } from "@/components/services/TrustBadge";
+import { EarningsCard } from "@/components/payments/EarningsCard";
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
 
@@ -95,10 +96,11 @@ const ServicesManage = () => {
       </header>
 
       <Tabs defaultValue="incoming">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="incoming">Incoming</TabsTrigger>
           <TabsTrigger value="outgoing">My bookings</TabsTrigger>
           <TabsTrigger value="listings">Listings</TabsTrigger>
+          <TabsTrigger value="earnings">Earnings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="incoming" className="space-y-3 pt-4">
