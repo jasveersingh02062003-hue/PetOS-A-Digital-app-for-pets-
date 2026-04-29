@@ -4233,6 +4233,62 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsorships: {
+        Row: {
+          amount_inr: number
+          anonymous: boolean
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          message: string | null
+          next_charge_at: string
+          org_user_id: string
+          sponsor_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["sponsorship_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_inr: number
+          anonymous?: boolean
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          message?: string | null
+          next_charge_at?: string
+          org_user_id: string
+          sponsor_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sponsorship_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_inr?: number
+          anonymous?: boolean
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          message?: string | null
+          next_charge_at?: string
+          org_user_id?: string
+          sponsor_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sponsorship_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsorships_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "pet_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           author_id: string
@@ -5882,6 +5938,7 @@ export type Database = {
         | "daycare"
         | "pet_taxi"
       social_level: "solo" | "pairs" | "crowds"
+      sponsorship_status: "pledged" | "active" | "cancelled"
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
       transfer_status: "pending" | "accepted" | "declined" | "cancelled"
@@ -6205,6 +6262,7 @@ export const Constants = {
         "pet_taxi",
       ],
       social_level: ["solo", "pairs", "crowds"],
+      sponsorship_status: ["pledged", "active", "cancelled"],
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
       transfer_status: ["pending", "accepted", "declined", "cancelled"],
