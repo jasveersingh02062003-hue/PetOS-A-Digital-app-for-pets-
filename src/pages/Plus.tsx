@@ -44,28 +44,8 @@ const Plus = () => {
 
   const upgrade = async () => {
     if (!user) return nav("/auth");
-    setWorking(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { plan: billing === "yearly" ? "plus_yearly" : "plus_monthly" },
-      });
-      if (error) throw error;
-      if (data?.status === "not_configured") {
-        // Calm placeholder — flip notify flag instead of fake checkout
-        await supabase.from("profiles").update({ notify_plus_launch: true }).eq("id", user.id);
-        toast.success("We'll email you the moment Plus opens. No charge today.");
-        setWorking(false);
-        return;
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-      throw new Error("Couldn't start checkout");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Something went wrong");
-      setWorking(false);
-    }
+    const priceId = billing === "yearly" ? "petos_plus_yearly" : "petos_plus_monthly";
+    nav(`/checkout/${priceId}?next=/plus/success`);
   };
 
   const isPlus = tier?.tier === "plus";
