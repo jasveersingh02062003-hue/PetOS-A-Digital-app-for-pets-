@@ -22,6 +22,8 @@ Deno.serve(async (req) => {
 
     const userId = (session.metadata as Record<string, string> | null)?.userId ?? null;
     const priceLookupKey = (session.metadata as Record<string, string> | null)?.priceId ?? null;
+    const kindMeta = (session.metadata as Record<string, string> | null)?.kind ?? null;
+    const refIdMeta = (session.metadata as Record<string, string> | null)?.refId ?? null;
     const paid = session.payment_status === "paid" || session.status === "complete";
     const amountTotal = session.amount_total ?? 0;
     const currency = session.currency ?? "inr";
@@ -49,7 +51,8 @@ Deno.serve(async (req) => {
         .from("payment_intents")
         .insert({
           user_id: userId,
-          kind: kindFromPriceId(priceLookupKey),
+          kind: kindMeta || kindFromPriceId(priceLookupKey),
+          ref_id: refIdMeta,
           amount_inr: Math.round(amountTotal / (currency === "inr" ? 100 : 100)),
           currency,
           price_id: priceLookupKey,
@@ -70,6 +73,24 @@ Deno.serve(async (req) => {
         .select("receipt_number")
         .single();
       receiptNumber = upd?.receipt_number ?? receiptNumber;
+    }
+
+    // Stamp parent row when we have a ref linkage
+    if (paid && intentId && kindMeta && refIdMeta) {
+      const tableMap: Record<string, string> = {
+        transport: "transport_bookings",
+        service: "service_bookings",
+        shop: "shop_orders",
+        mating: "mating_listings",
+        vet_consult: "vet_consults",
+      };
+      const table = tableMap[kindMeta];
+      if (table) {
+        await supabase
+          .from(table)
+          .update({ payment_intent_id: intentId, paid_at: new Date().toISOString() })
+          .eq("id", refIdMeta);
+      }
     }
 
     return json({
