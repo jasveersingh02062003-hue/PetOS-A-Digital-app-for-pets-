@@ -274,6 +274,31 @@ const MissingDetail = () => {
                 Mark as found
               </Button>
             )}
+
+            {canFundEscrow && (
+              <PayButton
+                kind="reward_escrow"
+                refId={missing.id}
+                productName={`Reward escrow · ${missing.pet?.name ?? "missing pet"}`}
+                amountInr={missing.reward_inr}
+                next={`/missing/${missing.id}`}
+                label={`Fund ₹${missing.reward_inr} reward (escrow)`}
+                className="w-full h-12 rounded-2xl"
+              />
+            )}
+            {isOwner && rewardEscrowed && (
+              <div className="rounded-2xl border-hairline border bg-primary/5 px-4 py-3 text-sm flex items-center gap-2">
+                <Gift className="h-4 w-4 text-primary" />
+                <span>₹{missing.reward_inr} held in escrow — release from a sighting card below.</span>
+              </div>
+            )}
+            {isOwner && rewardReleased && (
+              <div className="rounded-2xl border-hairline border bg-primary/5 px-4 py-3 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                <span>Reward released to finder.</span>
+              </div>
+            )}
+
             {isOwner && (() => {
               const boostedUntil = (missing as any).boosted_until
                 ? new Date((missing as any).boosted_until)
