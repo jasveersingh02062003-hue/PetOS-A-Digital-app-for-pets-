@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2, Bug, Shield } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Stethoscope, Flag, Users, BadgeCheck, BarChart3, Megaphone, ToggleRight, Coins, FileCheck2, Bug, Shield, IndianRupee } from "lucide-react";
 import { formatRelative } from "@/lib/format";
 import { toast } from "sonner";
 import { InsuranceTab } from "@/components/admin/InsuranceTab";
+import { PaymentsTab } from "@/components/admin/PaymentsTab";
 
 type Role = "user" | "moderator" | "super_admin" | "vet";
 
@@ -64,8 +65,9 @@ const Admin = () => {
 
       <main className="container-app py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-11 w-full bg-muted rounded-xl">
+          <TabsList className="grid grid-cols-12 w-full bg-muted rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg gap-1.5"><BarChart3 className="h-3.5 w-3.5" /></TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-lg gap-1.5"><IndianRupee className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="reports" className="rounded-lg gap-1.5"><Flag className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="vets" className="rounded-lg gap-1.5"><Stethoscope className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="providers" className="rounded-lg gap-1.5"><BadgeCheck className="h-3.5 w-3.5" /></TabsTrigger>
@@ -79,6 +81,7 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
+          <TabsContent value="payments" className="mt-4"><PaymentsTab /></TabsContent>
           <TabsContent value="reports" className="mt-4"><ReportsTab /></TabsContent>
           <TabsContent value="vets" className="mt-4"><VetAppsTab /></TabsContent>
           <TabsContent value="providers" className="mt-4"><ProvidersTab /></TabsContent>
