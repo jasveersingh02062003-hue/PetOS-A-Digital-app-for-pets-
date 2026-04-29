@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { HealthTestRail } from "@/components/marketplace/HealthTestChip";
+import { WishlistButton } from "@/components/marketplace/WishlistButton";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
 type Filters = {
@@ -65,7 +66,7 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("pet_listings")
-        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id, health_tests, co_listed_with_org_id")
+        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id, health_tests, co_listed_with_org_id, monthly_upkeep_inr")
         .eq("active", true)
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -206,6 +207,9 @@ export const AdoptGrid = () => {
                       <Sparkles className="h-3 w-3 text-coral" /> Bred on PetOS
                     </Badge>
                   )}
+                  <div className="absolute bottom-2 right-2">
+                    <WishlistButton listingId={l.id} />
+                  </div>
                 </div>
                 <div className="p-3">
                   <div className="font-medium truncate">{l.title}</div>
@@ -229,6 +233,11 @@ export const AdoptGrid = () => {
                       <BadgeCheck className="h-2.5 w-2.5 text-leaf shrink-0" />
                     </div>
                   )}
+                  {l.seller_type === "sanctuary" && l.monthly_upkeep_inr ? (
+                    <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-leaf/10 text-leaf text-[10px] font-semibold">
+                      ₹{l.monthly_upkeep_inr.toLocaleString("en-IN")}/mo upkeep
+                    </div>
+                  ) : null}
                   {Array.isArray(l.health_tests) && l.health_tests.length > 0 && (
                     <div className="mt-1.5">
                       <HealthTestRail entries={l.health_tests as any} max={2} />

@@ -176,3 +176,9 @@ Reply **`go round 28`** to start, or **`go all 3`** if you want me to ship 28 �
 - ✅ BreederHome stats: verified — already shows litters, mating requests, listings, pedigree certs.
 - ⏭️ Composer marketplace gating: not needed — Composer has no marketplace/mating entry points to gate (sanctuary/zoo already auto-tag #educational).
 - ⏭️ Sanctuary monthly upkeep field: deferred to Round 30 (pet_listings schema work, grouped with shelter ₹0 lock and kennel capacity).
+
+## Round 30 — done
+- ✅ Shelter ₹0 lock: `enforce_shelter_zero_fee` trigger blocks any paid fee on shelter/sanctuary/rescuer listings; force-coerces them to `adoption` + null fee.
+- ✅ Kennel capacity & next-available: `boarding_services` got `capacity` + `next_available_at`; `BoardingList.tsx` adds inputs in the create form and shows `Users` + `CalendarClock` chips on each card.
+- ✅ Sanctuary monthly upkeep: `pet_listings.monthly_upkeep_inr` field; AdoptListingNew shows the input only for sanctuary accounts; AdoptGrid shows a leaf chip "₹X/mo upkeep" on sanctuary cards.
+- ✅ Buyer wishlist: new `wishlists` table with strict per-user RLS. `useWishlist` hook, `WishlistButton` heart on AdoptGrid cards (auth-gated), `WishlistList` grid, and a "Wishlist" tab on UserProfile (own profile + buyer accounts only).

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, MapPin, Trash2, Hotel } from "lucide-react";
+import { Plus, MapPin, Trash2, Hotel, Users, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 
 const TYPES = ["boarding", "daycare", "grooming", "training"] as const;
@@ -13,7 +13,7 @@ const TYPES = ["boarding", "daycare", "grooming", "training"] as const;
 export const BoardingList = ({ userId, isOwner = false }: { userId: string; isOwner?: boolean }) => {
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", service_type: "boarding", price: "", city: "" });
+  const [form, setForm] = useState({ title: "", description: "", service_type: "boarding", price: "", city: "", capacity: "", next_available: "" });
 
   const { data: services, isLoading } = useQuery({
     queryKey: ["boarding-services", userId],
@@ -36,10 +36,12 @@ export const BoardingList = ({ userId, isOwner = false }: { userId: string; isOw
       service_type: form.service_type,
       price_inr_per_day: form.price ? parseInt(form.price, 10) : null,
       city: form.city.trim() || null,
-    });
+      capacity: form.capacity ? parseInt(form.capacity, 10) : null,
+      next_available_at: form.next_available ? new Date(form.next_available).toISOString() : null,
+    } as any);
     if (error) return toast.error(error.message);
     toast.success("Service added");
-    setForm({ title: "", description: "", service_type: "boarding", price: "", city: "" });
+    setForm({ title: "", description: "", service_type: "boarding", price: "", city: "", capacity: "", next_available: "" });
     setAdding(false);
     qc.invalidateQueries({ queryKey: ["boarding-services", userId] });
   };
@@ -76,6 +78,21 @@ export const BoardingList = ({ userId, isOwner = false }: { userId: string; isOw
             <Input type="number" placeholder="₹ per day" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
           </div>
           <Input placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              min={1}
+              placeholder="Capacity (pets)"
+              value={form.capacity}
+              onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+            />
+            <Input
+              type="datetime-local"
+              placeholder="Next available"
+              value={form.next_available}
+              onChange={(e) => setForm({ ...form, next_available: e.target.value })}
+            />
+          </div>
           <Textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <div className="flex gap-2">
             <Button onClick={submit} className="flex-1 rounded-xl">Save</Button>
@@ -106,6 +123,18 @@ export const BoardingList = ({ userId, isOwner = false }: { userId: string; isOw
             )}
           </div>
           {s.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{s.description}</p>}
+          <div className="flex flex-wrap gap-3 mt-2">
+            {s.capacity ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Users className="h-3 w-3" /> {s.capacity} pets
+              </span>
+            ) : null}
+            {s.next_available_at ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <CalendarClock className="h-3 w-3" /> Next: {new Date(s.next_available_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-center justify-between mt-2">
             {s.city && <span className="text-[11px] text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" />{s.city}</span>}
             {isOwner && (

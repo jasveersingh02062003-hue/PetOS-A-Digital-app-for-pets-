@@ -38,6 +38,7 @@ const AdoptListingNew = () => {
   const [microchip, setMicrochip] = useState("");
   const [parentsInfo, setParentsInfo] = useState("");
   const [healthTests, setHealthTests] = useState<HealthTestEntry[]>([]);
+  const [monthlyUpkeep, setMonthlyUpkeep] = useState<string>("");
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [vaxDocUrl, setVaxDocUrl] = useState<string | null>(null);
@@ -119,6 +120,7 @@ const AdoptListingNew = () => {
       health_tests: healthTests as any,
       photos: photoUrl ? [photoUrl] : [],
       co_listed_with_org_id: coListShelter?.user_id ?? null,
+      monthly_upkeep_inr: accountType === "sanctuary" && monthlyUpkeep ? Number(monthlyUpkeep) : null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -220,6 +222,21 @@ const AdoptListingNew = () => {
             <div>
               <Label>{type === "rehoming" ? "Token fee (₹, optional)" : "Fee (₹)"}</Label>
               <Input type="number" min={0} value={fee} onChange={(e) => setFee(e.target.value)} placeholder={type === "rehoming" ? "0 – 2000" : "Sale price"} />
+            </div>
+          )}
+          {accountType === "sanctuary" && (
+            <div>
+              <Label>Monthly upkeep (₹)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={monthlyUpkeep}
+                onChange={(e) => setMonthlyUpkeep(e.target.value)}
+                placeholder="e.g. 2500"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Helps sponsors see the real monthly cost of caring for this animal.
+              </p>
             </div>
           )}
           <div>
