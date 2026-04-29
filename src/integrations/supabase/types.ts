@@ -2200,6 +2200,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          actor_id: string | null
           body: string | null
           created_at: string
           id: string
@@ -2210,6 +2211,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actor_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -2220,6 +2222,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actor_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -5816,6 +5819,17 @@ export type Database = {
       notify_upcoming_whelpings: { Args: never; Returns: number }
       notify_user: {
         Args: {
+          _body: string
+          _link: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      notify_user_with_actor: {
+        Args: {
+          _actor_id: string
           _body: string
           _link: string
           _title: string
