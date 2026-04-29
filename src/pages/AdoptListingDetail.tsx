@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft, Lock } from "lucide-react";
 import { ReportButton } from "@/components/ReportButton";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
@@ -13,6 +13,7 @@ import { BredOnPetosRibbon } from "@/components/BredOnPetosRibbon";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { LineageTree } from "@/components/LineageTree";
 import { StartTransferSheet, TransferStatusCard } from "@/components/TransferSheet";
+import { PayDepositSheet } from "@/components/marketplace/PayDepositSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
@@ -35,6 +36,7 @@ const AdoptListingDetail = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
+  const [depositOpen, setDepositOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["pet-listing", id],
@@ -230,6 +232,25 @@ const AdoptListingDetail = () => {
           <ReportButton subjectType="listing" subjectId={listing.id} />
         </div>
       )}
+
+      {/* Holding-deposit checkout — only for paid breeder sale listings, non-owners */}
+      {!isOwner && !isSold && listing.listing_type === "breeder_sale" && !!listing.fee_inr && listing.fee_inr > 0 && (
+        <Button
+          variant="outline"
+          onClick={() => setDepositOpen(true)}
+          className="w-full rounded-xl h-12 mt-2 gap-2 border-primary/40 text-primary hover:bg-primary/5"
+        >
+          <Lock className="h-4 w-4" /> Reserve with deposit
+        </Button>
+      )}
+
+      <PayDepositSheet
+        open={depositOpen}
+        onOpenChange={setDepositOpen}
+        listingId={listing.id}
+        listingTitle={listing.title ?? "puppy"}
+        fullPriceInr={listing.fee_inr ?? 0}
+      />
 
       {!!moreFromSeller?.length && (
         <div className="mt-8">

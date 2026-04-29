@@ -4887,6 +4887,10 @@ export type Database = {
         Args: { _limit: number; _table: string; _user: string }
         Returns: undefined
       }
+      create_consult_from_appointment: {
+        Args: { _appointment_id: string }
+        Returns: string
+      }
       current_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["sub_tier"]
@@ -5187,6 +5191,7 @@ export type Database = {
         | "mating_listing"
         | "agreement"
         | "missing_listing"
+        | "puppy_sale"
       pet_gender: "male" | "female"
       pet_listing_status:
         | "active"
@@ -5499,6 +5504,7 @@ export const Constants = {
         "mating_listing",
         "agreement",
         "missing_listing",
+        "puppy_sale",
       ],
       pet_gender: ["male", "female"],
       pet_listing_status: [
