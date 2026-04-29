@@ -197,12 +197,149 @@ These are the items that, if a real user came in tomorrow expecting the PDF, wou
 
 ---
 
+## Implementation plan — 7 material gaps, sequenced
+
+Audit approved. Below is the sequenced plan, grouped into 5 rounds. Each round is independently shippable, has a clear "definition of done", and lists the migrations / files / verifications required. **No code is written yet** — reply `go round 21` (or any round number) to start.
+
+Ordering principle: ship the **wiring-only** rounds first (free wins from components that already exist), then the **net-new systems** (Skill Spotlight, Rescue Journey), and finally the **policy/role** caps that touch many surfaces.
+
+---
+
+### Round 21 — Wire what already exists (½ day, no migrations)
+
+Pure frontend. Closes 3 of the 7 gaps by placing existing components on the surfaces the PDF promises.
+
+**Closes gaps:** #3 Bred-on-PetOS wiring · #4 Streak chip placement · #6 Vet vault in-call handoff
+
+**Tasks**
+1. **Bred-on-PetOS ribbon on feed/listings**
+   - Render `<BredOnPetosRibbon listingId|postId>` over the image in `PostFeed.tsx` (`PostCard`) when the post is linked to a `pet_listings` row with `bred_on_petos = true`.
+   - Same in `AdoptGrid.tsx` card (replace the small chip at line ~190 with the ribbon).
+   - In `AdoptListingDetail.tsx`, tapping the ribbon opens `PedigreeSheet` (already imported under `components/breeder`). Pass `petId` resolved from the listing.
+2. **Streak chip on more surfaces**
+   - Surface `<StreakChip userId={authorId} />` in:
+     - `PostFeed.tsx` `PostCard` header (next to time-ago, only for `pet_parent` and only when streak ≥ 3).
+     - `CommentSheet.tsx` next to commenter name (same threshold).
+     - `MessageThread.tsx` header next to the other person's name.
+   - Throttle: `StreakChip` should already memoize via React Query — confirm cache key is `["streak", userId]`.
+3. **Vet "Open shared vault" in `AppointmentRoom.tsx`**
+   - Query active `vet_grants` for `(vet_id = me, pet_id = appointment.pet_id, expires_at > now)`.
+   - If a grant exists, render a primary button that links to `/vault/:code` (existing `VaultView.tsx`).
+   - If no grant, render a secondary "Request vault access" button that calls existing `vet-grant-create` edge function in "request" mode (function already supports it; verify and add the branch if missing).
+
+**Verify**
+- Open a feed where a known breeder's post is `bred_on_petos = true` → ribbon shows, tap opens pedigree.
+- Pet parent with 5-day streak → chip shows on their post header and in comment row.
+- Vet joins an appointment whose owner granted a code → button visible; clicking lands in `VaultView`.
+
+---
+
+### Round 22 — Health-test chips on listings (½ day, 1 migration)
+
+**Closes gap:** #7
+
+**Migration**
+- `pet_listings` add columns: `health_tests jsonb default '[]'::jsonb` (array of `{ name: string, result: string, verified_by?: uuid, verified_at?: timestamptz }`).
+- Optional lookup table `health_test_catalog (code text pk, label text, species text)` seeded with the common ones (`hips_ofa`, `elbows_ofa`, `eyes_cerf`, `cardiac`, `dna_pra`, `bear_brucella`).
+- RLS: listings already public-read; only listing owner can write to `health_tests`.
+
+**Frontend**
+- `AdoptListingNew.tsx` / `MatesNew.tsx` → add a "Health tests" step. Multi-select from catalog + free-text result chip ("Good", "Excellent", "Clear", "Carrier").
+- New tiny component `<HealthTestChip name result />` rendered:
+  - On `AdoptGrid.tsx` card (max 2 + "+N").
+  - On `AdoptListingDetail.tsx` in a chip rail.
+  - On `MatesGrid.tsx` card.
+- When a verified vet later attests via the vault, set `verified_by` and add a tiny green tick to the chip.
+
+**Verify**
+- Create a breeder listing with "Hips OFA Good" → chip appears on grid + detail.
+
+---
+
+### Round 23 — Rescue Journey (1 day, 1 migration)
+
+**Closes gap:** #2
+
+**Migration**
+- `rescue_journeys` (`id`, `org_id`, `pet_id`, `started_at`, `status` enum `in_care|adopted|rip`, `cover_url`).
+- `rescue_journey_entries` (`id`, `journey_id`, `day_number int`, `image_url`, `caption text`, `created_at`).
+- RLS: anyone can read; only the owning shelter/rescuer org members can write.
+- Trigger: when a `posts` row is created by a shelter/rescuer with `rescue_journey_id` set, append an entry computing `day_number = floor((now - journey.started_at) / 1 day) + 1`.
+
+**Frontend**
+- `<RescueJourneyRibbon journeyId>` — lilac top-left ribbon ("Rescue Journey · Day 7").
+- `<RescueJourneyCarousel journeyId>` — horizontal swipeable card under post body showing entries Day 1 → latest.
+- Composer: when role ∈ {shelter, rescuer}, show a "Tag rescue journey" picker.
+- Render ribbon + carousel inside `PostFeed.tsx` `PostCard` when `post.rescue_journey_id` present.
+- New page `/rescue/:journeyId` for the full timeline.
+
+**Verify**
+- Shelter creates a post tagged to a journey → ribbon + carousel render in feed; full page works.
+
+---
+
+### Round 24 — Skill Spotlight system (1.5 days, 2 migrations)
+
+**Closes gap:** #1 (the largest)
+
+**Migrations**
+- `pet_skills` (`id`, `pet_id`, `name text`, `taught_by uuid`, `created_at`).
+- `skill_spotlights` (`id`, `pet_id`, `skill_id`, `post_id`, `video_url`, `caption`, `created_at`, `vouch_count int default 0`, `wow_count int default 0`).
+- `skill_vouches` (`id`, `spotlight_id`, `voucher_id`, `created_at`, unique (spotlight_id, voucher_id)).
+- `post_reactions` already exists — add `'wow'` (🤯) variant if not present (check `lib/reactions.ts`).
+- Trigger: maintain `vouch_count` on insert/delete; when `vouch_count` crosses 50, set a `crowd_favourite_at` timestamp on `skill_spotlights`.
+- RLS: read public; insert spotlight only by pet owner; insert vouch only authenticated, not self.
+
+**Frontend**
+- New tab "Skills" on `PetProfile.tsx` listing skills + their spotlights.
+- `<SkillSpotlightRibbon>` (orange "Skill Spotlight · Sit") on the post photo when `post.skill_spotlight_id` present, in feed + pet profile.
+- `<VouchButton spotlightId>` on the spotlight card (heart-with-paw icon, "Vouch · N").
+- Add 🤯 to `ReactionBar` (`src/components/social/ReactionBar.tsx`).
+- "Crowd-favourite" gold badge rendered next to skill name when `crowd_favourite_at IS NOT NULL`.
+- Notification: "X vouched for Bruno's Sit" via existing notifications pipeline.
+
+**Verify**
+- Owner creates a skill + uploads a 10-sec clip → spotlight appears on pet profile and in feed with the orange ribbon. Vouch button increments. Manually setting count to 50 flips the gold badge.
+
+---
+
+### Round 25 — Rescuer caps & trust (1 day, 1 migration)
+
+**Closes gap:** #5
+
+**Migration**
+- Add `co_listed_with_org_id uuid references org_profiles(id)` on `pet_listings` (nullable).
+- Trigger / policy on `pet_listings` insert: if author's primary role is `rescuer` AND author has no approved org, then `co_listed_with_org_id` is required and must reference an `approved` shelter org.
+- Add a "pending" state visible to `SellerBadge` — already implementable from `org_profiles.status in ('submitted','review')`.
+
+**Frontend**
+- `SellerBadge`: new `pending` ghost-chip ("KYC pending") when role is rescuer and org status ∈ submitted/review.
+- `AdoptListingNew.tsx`: if user is unverified rescuer, force a "Co-list with shelter" picker (search approved shelters); block submit otherwise.
+- `AdoptGrid.tsx` / `AdoptListingDetail.tsx`: render "Co-listed with [Shelter ✓]" subline when `co_listed_with_org_id` set.
+- `MessageThread.tsx`: when the other party is an unverified rescuer **and** a message contains an amount/UPI/payment intent (regex `/(₹|rs\.?|inr|upi|gpay|paytm)/i`), inject a one-time soft warning bubble: "Heads-up: this account isn't verified yet. Avoid sending money outside Petos."
+
+**Verify**
+- Sign in as rescuer with no org → adoption-listing form forces co-list picker; submitting without one is blocked.
+- Same rescuer's listing in grid shows "Co-listed with Happy Tails ✓".
+- Send "I'll UPI you ₹500" in a thread to that rescuer → warning appears once.
+
+---
+
+## Round summary
+
+| Round | Scope | Time | Migrations | Closes |
+|---|---|---|---|---|
+| 21 | Wire existing components | ½ day | 0 | #3, #4, #6 |
+| 22 | Health-test chips | ½ day | 1 | #7 |
+| 23 | Rescue Journey | 1 day | 1 | #2 |
+| 24 | Skill Spotlight | 1.5 days | 2 | #1 |
+| 25 | Rescuer caps + $-warning | 1 day | 1 | #5 |
+| **Total** | | **~4.5 days** | **5** | **7 / 7** |
+
+After Round 25, every "yes" in `Petos_Viewer_Journey.pdf` will be backed by working code on the surfaces the PDF promises.
+
+---
+
 ## What I need from you next
 
-Reply with one of:
-
-- **"approve audit, plan the gaps"** — I'll produce a sequenced implementation plan (frontend + backend + migrations) for the 7 material gaps above, grouped into rounds.
-- **"approve audit, only fix items X, Y, Z"** — I'll plan only those.
-- **"re-verify item N"** — I'll go deeper on a specific row (e.g. open `UserProfile.tsx` and confirm whether the buyer "What I'm looking for" card actually renders to a third-party viewer).
-
-I will not write any code until you confirm.
+Reply with the round you want to ship first, e.g. **`go round 21`**. I'll start with that round only and stop for your review before moving on.
