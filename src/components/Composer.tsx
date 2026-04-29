@@ -267,7 +267,14 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
           {suggesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
           {suggesting ? "Thinking…" : "AI captions"}
         </button>
-        <span className="text-[10px] text-muted-foreground">{caption.length}/500</span>
+        <div className="flex items-center gap-2">
+          {accountType === "zoo" && (
+            <span className="inline-flex items-center text-[10px] font-semibold text-stone-700 bg-stone-200/70 border border-stone-300 rounded-full px-2 py-0.5">
+              Auto: #educational
+            </span>
+          )}
+          <span className="text-[10px] text-muted-foreground">{caption.length}/500</span>
+        </div>
       </div>
 
       {suggestions && (
