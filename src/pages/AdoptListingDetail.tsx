@@ -67,6 +67,19 @@ const AdoptListingDetail = () => {
     },
   });
 
+  const { data: coListShelter } = useQuery({
+    queryKey: ["colist-shelter-detail", (listing as any)?.co_listed_with_org_id],
+    enabled: !!(listing as any)?.co_listed_with_org_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("org_profiles")
+        .select("user_id, org_name, city")
+        .eq("user_id", (listing as any).co_listed_with_org_id)
+        .maybeSingle();
+      return data as { user_id: string; org_name: string; city: string | null } | null;
+    },
+  });
+
   const { data: moreFromSeller } = useQuery({
     queryKey: ["more-from-seller", listing?.owner_id, listing?.id],
     enabled: !!listing?.owner_id,
@@ -162,6 +175,19 @@ const AdoptListingDetail = () => {
 
       {listing.bred_on_petos && (
         <div className="mb-3"><BredOnPetosRibbon litterId={listing.litter_id} /></div>
+      )}
+
+      {coListShelter && (
+        <Card className="rounded-2xl bg-leaf/5 border-leaf/30 p-3 mb-3 flex items-center gap-2 text-[12px]">
+          <BadgeCheck className="h-4 w-4 text-leaf shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-muted-foreground">Co-listed with </span>
+            <Link to={`/org/${coListShelter.user_id}`} className="font-semibold underline">
+              {coListShelter.org_name}
+            </Link>
+            {coListShelter.city && <span className="text-muted-foreground"> · {coListShelter.city}</span>}
+          </div>
+        </Card>
       )}
 
       {listing.pet_id && <LineageTree petId={listing.pet_id} />}
