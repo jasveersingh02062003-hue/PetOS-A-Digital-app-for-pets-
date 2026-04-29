@@ -164,9 +164,9 @@ const TaxiDetail = () => {
         {/* Payment block */}
         {isCustomer && trip.fare_inr && !tripExt.payment_intent_id && status !== "cancelled" && (
           <PayButton
-            priceId="vet_consult_one"
             kind="transport"
             refId={trip.id}
+            productName={`Pet taxi · ${trip.pickup_address?.slice(0,30) ?? "trip"}`}
             amountInr={trip.fare_inr}
             next={`/taxi/${trip.id}`}
             className="w-full rounded-xl h-11"
