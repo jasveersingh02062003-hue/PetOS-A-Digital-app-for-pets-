@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       const tableMap: Record<string, string> = {
         transport: "transport_bookings",
         service: "service_bookings",
+        appointment: "appointments",
         shop: "shop_orders",
         mating: "mating_listings",
         vet_consult: "vet_consults",

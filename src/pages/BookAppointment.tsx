@@ -87,7 +87,7 @@ const BookAppointment = () => {
     }
     if (fee && data?.id) {
       const params = new URLSearchParams({
-        kind: "service",
+        kind: "appointment",
         ref: data.id,
         amount: String(fee),
         name: `Vet · ${picked.display_name} (${mode})`,
