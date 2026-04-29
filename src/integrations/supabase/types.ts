@@ -654,36 +654,45 @@ export type Database = {
           anonymous: boolean
           created_at: string
           donor_id: string
+          donor_pan: string | null
           id: string
           message: string | null
           org_user_id: string
           paid_at: string | null
           payment_intent_id: string | null
+          receipt_issued_at: string | null
           status: Database["public"]["Enums"]["donation_status"]
+          tax_receipt_number: string | null
         }
         Insert: {
           amount_inr: number
           anonymous?: boolean
           created_at?: string
           donor_id: string
+          donor_pan?: string | null
           id?: string
           message?: string | null
           org_user_id: string
           paid_at?: string | null
           payment_intent_id?: string | null
+          receipt_issued_at?: string | null
           status?: Database["public"]["Enums"]["donation_status"]
+          tax_receipt_number?: string | null
         }
         Update: {
           amount_inr?: number
           anonymous?: boolean
           created_at?: string
           donor_id?: string
+          donor_pan?: string | null
           id?: string
           message?: string | null
           org_user_id?: string
           paid_at?: string | null
           payment_intent_id?: string | null
+          receipt_issued_at?: string | null
           status?: Database["public"]["Enums"]["donation_status"]
+          tax_receipt_number?: string | null
         }
         Relationships: []
       }
