@@ -9,6 +9,7 @@ import { ArrowLeft, Send, Loader2, ImagePlus, X, Check, CheckCheck } from "lucid
 import { toast } from "sonner";
 import { useIsOnline } from "@/hooks/usePresence";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
+import { UserStreakChip } from "@/components/social/UserStreakChip";
 
 type Msg = {
   id: string;
@@ -185,7 +186,13 @@ export default function MessageThread() {
                 <AvatarFallback>{other.name.slice(0,1).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-medium leading-tight">{other.name}</div>
+                <div className="flex items-center gap-1.5">
+                  <div className="font-medium leading-tight">{other.name}</div>
+                  <UserStreakChip
+                    userId={other.id}
+                    className="text-[9px] py-0 px-1.5 h-4"
+                  />
+                </div>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                   {!otherTyping && (
                     <span
