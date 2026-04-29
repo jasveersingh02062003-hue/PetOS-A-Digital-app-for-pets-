@@ -252,8 +252,8 @@ Deno.serve(async (req) => {
       if (data) providerIds[owner] = data.id;
     }
     if (ids["devi_boarding"]) await ensureProvider(ids["devi_boarding"], "Devi Pet Boarding", "boarding", "Mumbai");
-    if (ids["kiran_walks"]) await ensureProvider(ids["kiran_walks"], "Kiran Walks", "walker", "Bengaluru");
-    if (ids["lalit_taxi"]) await ensureProvider(ids["lalit_taxi"], "Lalit Pet Taxi", "transport", "Mumbai");
+    if (ids["kiran_walks"]) await ensureProvider(ids["kiran_walks"], "Kiran Walks", "walking", "Bengaluru");
+    if (ids["lalit_taxi"]) await ensureProvider(ids["lalit_taxi"], "Lalit Pet Taxi", "pet_taxi", "Mumbai");
 
     // 5. Posts (one per main user)
     const postSeeds = [
