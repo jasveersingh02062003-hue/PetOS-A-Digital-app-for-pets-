@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,13 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Search as SearchIcon, PawPrint, Building2, Loader2 } from "lucide-react";
+import { Heart, Search as SearchIcon, PawPrint, Building2, Loader2, X, Sparkles } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
 import { KpiCard } from "./dashboard/KpiCard";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
-import { listSavedSearches } from "@/lib/savedSearches";
+import { useSavedSearches, useNewMatchCounts } from "@/hooks/useSavedSearches";
+import { toast } from "sonner";
 
 const StoryRail = lazy(() =>
   import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })),
@@ -35,15 +36,10 @@ const BuyerHome = () => {
 
   useSeo({ title: "Buyer hub", description: "Discover adoptables and breeders.", noIndex: true });
 
-  // Saved searches live in localStorage
-  const [savedCount, setSavedCount] = useState(0);
-  useEffect(() => {
-    try {
-      setSavedCount(listSavedSearches().length);
-    } catch {
-      setSavedCount(0);
-    }
-  }, []);
+  // Saved searches — DB-backed, with new-match counters from pet_listings
+  const { items: savedSearches, remove, touch } = useSavedSearches();
+  const { data: newCounts } = useNewMatchCounts(savedSearches);
+  const totalNew = Object.values(newCounts ?? {}).reduce((a, b) => a + b, 0);
 
   const adoptables = useQuery({
     queryKey: ["buyer-adopt-recommended"],
@@ -90,9 +86,10 @@ const BuyerHome = () => {
       <div className="grid grid-cols-2 gap-3">
         <KpiCard
           label="Saved searches"
-          value={savedCount}
+          value={savedSearches.length}
+          sub={totalNew > 0 ? `${totalNew} new` : undefined}
           icon={SearchIcon}
-          to="/discover"
+          to="/mates"
           tint="bg-primary/5"
         />
         <KpiCard
@@ -132,6 +129,60 @@ const BuyerHome = () => {
           Post wanted
         </Button>
       </div>
+
+      {/* Saved searches — live, with new match counts */}
+      {savedSearches.length > 0 && (
+        <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-semibold flex items-center gap-1.5">
+              <SearchIcon className="h-3.5 w-3.5 text-primary" />
+              Saved searches
+            </div>
+            {totalNew > 0 && (
+              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                {totalNew} new
+              </span>
+            )}
+          </div>
+          <ul className="space-y-2">
+            {savedSearches.map((s) => {
+              const n = newCounts?.[s.id] ?? 0;
+              const target =
+                s.scope === "mates"
+                  ? `/mates?${new URLSearchParams({ tab: s.tab === "adopt" ? "adopt" : "mating", ...(s.filters?.city ? { city: s.filters.city } : {}) }).toString()}`
+                  : `/search?q=${encodeURIComponent(s.q)}&tab=${s.tab}`;
+              return (
+                <li key={s.id} className="flex items-center gap-2">
+                  <Link
+                    to={target}
+                    onClick={() => touch.mutate(s.id)}
+                    className="flex-1 min-w-0 flex items-center gap-2 px-3 h-9 rounded-xl bg-muted/40 hover:bg-muted text-sm"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate font-medium">{s.label}</span>
+                    {n > 0 && (
+                      <span className="ml-auto text-[10px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full">
+                        {n} new
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      remove.mutate(s.id, {
+                        onSuccess: () => toast("Removed"),
+                      });
+                    }}
+                    aria-label={`Remove ${s.label}`}
+                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       {/* Recommended adoptables */}
       <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
