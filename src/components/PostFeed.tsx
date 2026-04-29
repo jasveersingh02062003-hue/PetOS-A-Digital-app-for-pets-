@@ -20,6 +20,7 @@ import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
 import { UserStreakChip } from "./social/UserStreakChip";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
+import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
 import { useBlockedIds } from "@/hooks/useBlockedIds";
 import { usePawBurst } from "./social/PawBurst";
@@ -248,6 +249,7 @@ const PostCard = ({ post, onComment }: {
           onDoubleClick={(e) => e.preventDefault()}
         >
           <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
+          <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
           <SmartImage
             variant="feed"
             src={post.image_url}

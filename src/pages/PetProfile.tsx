@@ -13,6 +13,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { format } from "date-fns";
+import { SkillsTab } from "@/components/skills/SkillsTab";
 
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
@@ -312,9 +313,12 @@ const PetProfile = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="posts" className="mt-2">
-          <TabsList className="grid grid-cols-4 w-full bg-transparent border-b border-hairline rounded-none h-auto p-0">
+          <TabsList className="grid grid-cols-5 w-full bg-transparent border-b border-hairline rounded-none h-auto p-0">
             <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
               <Grid3x3 className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
+              <Sparkles className="h-4 w-4" />
             </TabsTrigger>
             <TabsTrigger value="lineage" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2">
               <GitBranch className="h-4 w-4" />
@@ -329,6 +333,10 @@ const PetProfile = () => {
 
           <TabsContent value="posts" className="mt-3">
             <PostGrid petId={pet.id} />
+          </TabsContent>
+
+          <TabsContent value="skills" className="mt-3">
+            <SkillsTab petId={pet.id} ownerId={pet.owner_id ?? null} />
           </TabsContent>
 
           <TabsContent value="lineage" className="mt-4 space-y-4">
