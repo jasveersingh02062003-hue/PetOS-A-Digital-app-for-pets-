@@ -12,7 +12,8 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
-import { getRoleRing } from "@/lib/roleTheme";
+import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
+import { AuthorIdentity } from "@/components/AuthorIdentity";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
