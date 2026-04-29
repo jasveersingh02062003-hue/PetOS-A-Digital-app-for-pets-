@@ -2745,6 +2745,45 @@ export type Database = {
           },
         ]
       }
+      pet_skills: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          pet_id: string
+          taught_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          pet_id: string
+          taught_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          pet_id?: string
+          taught_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_skills_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pet_skills_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
@@ -3098,6 +3137,7 @@ export type Database = {
           pet_id: string | null
           reaction_counts: Json
           rescue_journey_id: string | null
+          skill_spotlight_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3117,6 +3157,7 @@ export type Database = {
           pet_id?: string | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
+          skill_spotlight_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3136,6 +3177,7 @@ export type Database = {
           pet_id?: string | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
+          skill_spotlight_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3158,6 +3200,13 @@ export type Database = {
             columns: ["rescue_journey_id"]
             isOneToOne: false
             referencedRelation: "rescue_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_skill_spotlight_id_fkey"
+            columns: ["skill_spotlight_id"]
+            isOneToOne: false
+            referencedRelation: "skill_spotlights"
             referencedColumns: ["id"]
           },
         ]
@@ -4449,6 +4498,106 @@ export type Database = {
           ip_hash?: string | null
         }
         Relationships: []
+      }
+      skill_spotlights: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string
+          crowd_favourite_at: string | null
+          id: string
+          pet_id: string
+          post_id: string | null
+          skill_id: string
+          video_url: string | null
+          vouch_count: number
+          wow_count: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string
+          crowd_favourite_at?: string | null
+          id?: string
+          pet_id: string
+          post_id?: string | null
+          skill_id: string
+          video_url?: string | null
+          vouch_count?: number
+          wow_count?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string
+          crowd_favourite_at?: string | null
+          id?: string
+          pet_id?: string
+          post_id?: string | null
+          skill_id?: string
+          video_url?: string | null
+          vouch_count?: number
+          wow_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_spotlights_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "skill_spotlights_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_spotlights_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_spotlights_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "pet_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_vouches: {
+        Row: {
+          created_at: string
+          id: string
+          spotlight_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spotlight_id: string
+          voucher_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spotlight_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_vouches_spotlight_id_fkey"
+            columns: ["spotlight_id"]
+            isOneToOne: false
+            referencedRelation: "skill_spotlights"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sponsorships: {
         Row: {
