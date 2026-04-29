@@ -2,3 +2,9 @@ project_id = "pyqudgtmpnxnzzjbcdvc"
 
 [functions.payments-create-checkout]
 verify_jwt = false
+
+[functions.payments-mark-paid]
+verify_jwt = false
+
+[functions.payments-refund]
+verify_jwt = false
