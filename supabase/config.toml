@@ -1,1 +1,4 @@
 project_id = "pyqudgtmpnxnzzjbcdvc"
+
+[functions.payments-create-checkout]
+verify_jwt = false

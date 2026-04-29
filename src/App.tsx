@@ -69,6 +69,8 @@ const PetEditor = lazy(() => import("./pages/settings/PetEditor"));
 const Billing = lazy(() => import("./pages/settings/Billing"));
 const Plus = lazy(() => import("./pages/Plus"));
 const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Breeders = lazy(() => import("./pages/Breeders"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
@@ -200,6 +202,8 @@ const App = () => (
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
               <Route path="/plus/success" element={<PlusSuccess />} />
+              <Route path="/checkout/return" element={<CheckoutReturn />} />
+              <Route path="/checkout/:priceId" element={<Checkout />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/breeders" element={<Breeders />} />
               <Route path="/missing" element={<MissingFeed />} />
