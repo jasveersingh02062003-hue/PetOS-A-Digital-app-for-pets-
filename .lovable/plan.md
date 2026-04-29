@@ -1,162 +1,113 @@
-# Execution Plan — Role Identity, Universal Posting & Role Dashboards
+# Round 1 — Plumbing & Identity (real, end-to-end)
 
-Sequenced build plan. Each phase ships a usable improvement. Defaults locked unless you override before we start.
-
----
-
-## Phase 0 — Locked decisions (defaults)
-
-| Decision | Default |
-|---|---|
-| Org post author | Org name + org logo (Instagram-style). Person hidden, shown on org profile as "managed by" |
-| Gaushala top KPI | Animals in care (donations second) |
-| Verified tick | Auto-flip when `org_profiles.status = 'approved'`. Admin can revoke |
-
-If any of these are wrong, say so before we start Task 1.
+Every change in this round is wired to live Supabase data — no UI-only stubs. After this round, a breeder/shelter/zoo can sign up, finish onboarding without being forced through the pet wizard, and appear everywhere (feed, comments, stories, notifications, search) with their org name, org logo, role-tinted ring, and an auto-flipping verified tick.
 
 ---
 
-## Phase 1 — Identity foundation (universal badge + open posting)
+## What's already done (verified in audit)
 
-Goal: every role can post; everywhere a user appears, you can tell what they are.
+- `AccountTypeChooser` already routes correctly: `provider → /onboarding/provider`, `buyer → /onboarding/buyer-prefs`, org roles → `/onboarding/org`, `pet_parent`/`rescuer` → `/onboarding/add-pet`.
+- `FirstRunGate` and `PostAuth` already skip the pet requirement for non-pet-parent roles.
+- `AuthorIdentity` exists and is used inside `PostFeed` and `CommentSheet` with role-tinted rings.
+- All seven role dashboards (`PetParentHome`, `BreederHome`, `ShelterHome`, `KennelHome`, `GaushalaHome`, `BuyerHome`, `ZooHome`) are live-data backed.
 
-**1.1 Open the gate**
-- `FirstRunGate.tsx`: only `account_type === 'pet_parent'` requires ≥1 pet. All others need only `full_name + onboarded`.
-- `PostAuth.tsx`: mirror the same rule.
-- `Onboarding.tsx` branches:
-  - pet_parent → AddFirstPet
-  - buyer → BuyerPrefs
-  - breeder/kennel/shelter/sanctuary/rescuer/zoo → OrgOnboarding
-  - vet → `/vet/onboarding`
-  - provider → `/onboarding/provider/picker`
+## Real gaps this round closes
 
-**1.2 `AuthorIdentity` component**
-- New `src/components/AuthorIdentity.tsx`: input `userId`, renders avatar + name + `<SellerBadge>` + verified tick.
-- For org accounts: shows org name + org logo as author (per Phase 0 default).
-- Replace ad-hoc author rendering in: PostFeed header, CommentSheet rows, StoryRail (small role icon overlay), Notifications rows, Search results, MatesGrid, AdoptGrid, MissingStrip, services cards, UserProfile header.
-
-**1.3 Role-tinted avatar ring**
-- `getRoleRing(account_type)` util → tailwind ring class: breeder=amber, kennel=sky, shelter=lilac, sanctuary=leaf, zoo=stone, rescuer=coral, buyer=primary, vet=red, provider=primary, pet_parent=primary.
-- Applied via `AuthorIdentity`.
-
-**1.4 Universal Composer**
-- `Composer.tsx`: pet-tag becomes optional. No pets → hide pet selector, allow caption + media only.
-- Same for Stories composer.
-
-**Deliverable:** any role logs in → reaches Home → can post photos/stories → role tag visible everywhere.
+1. `/onboarding` (the legacy 7-step wizard) still assumes pet_parent and unconditionally inserts a `pets` row. A breeder/shelter who lands there directly (deep link, refresh) gets blocked. → Add a role guard at the top.
+2. `AuthorIdentity` shows the *personal* `full_name` for org accounts. Posts by a shelter should appear under "Happy Paws Shelter" with the shelter logo, not the admin's personal name.
+3. `StoryRail`, `NotificationBell`, `Notifications` still render `<Avatar>` manually — no role ring, no verified tick.
+4. The verified tick only refreshes on a 5-min stale window. When an admin approves an org, the user keeps seeing the unverified badge until refetch. → Realtime subscription invalidates immediately.
+5. `ContextualFab` and `UserProfile` still ignore `account_type`.
 
 ---
 
-## Phase 2 — Role-aware Home dashboards
+## Tasks
 
-**2.1 Home router**
-- Refactor `src/pages/Home.tsx` into a thin switch on `account_type`:
-  ```text
-  pet_parent  → <PetParentHome/>
-  breeder     → <BreederHome/>
-  kennel      → <KennelHome/>
-  shelter     → <ShelterHome/>
-  rescuer     → <ShelterHome variant="rescuer"/>
-  sanctuary   → <GaushalaHome/>
-  zoo         → <ZooHome/>
-  buyer       → <BuyerHome/>
-  vet         → redirect /vet
-  provider    → redirect /provider
-  ```
+### A. Onboarding role guard *(real)*
 
-**2.2 Dashboards (one task each)**
+File: `src/pages/Onboarding.tsx`
 
-| # | Dashboard | Hero KPI | Quick actions | Below fold |
-|---|---|---|---|---|
-| a | PetParentHome (extract current Home) | Pet card + health ring | Log meal · Walk · Ask vet | Stories, prompts, missing, feed |
-| b | BreederHome | Active litters + pending mating requests | New litter · List for mating · Verify lineage | Mating inbox, enquiries, feed |
-| c | ShelterHome (+Rescuer variant w/ smaller cap) | Adoptable count + open applications | List adoptable · Review apps · Post missing | App inbox, donations strip, feed |
-| d | KennelHome | Today's boarders + occupancy % | Accept booking · New service slot · Daily report | Today's check-ins, services, feed |
-| e | GaushalaHome | Animals in care + month donations | Add animal · Open donate · Post update | Donor wall, sponsorships, feed |
-| f | BuyerHome | Saved searches + new matches | Browse adopt · Browse breeders · Post wanted | Recommended pets, breeders nearby, feed |
-| g | ZooHome | Animals on display + today's events | Add exhibit · Educational post · Event | Events, posts, feed |
+- At mount, read `profile.account_type`. If it is anything other than `pet_parent`, immediately `navigate('/onboarding/account-type', { replace: true })` so the user lands on the proper org/provider/buyer flow instead of a pet wizard that would error on the pet insert.
+- Acceptance: signing up a breeder, deep-linking `/onboarding`, and refreshing all land on the role chooser, not the pet wizard.
 
-All reuse existing data hooks — composing new screens, not new APIs.
+### B. Org-as-author identity *(real)*
 
-**2.3 Role-aware `ContextualFab`**
-- breeder → New litter · Mating availability · Photo
-- shelter/rescuer → List for adoption · Urgent case · Donation drive
-- sanctuary → Animal in care · Sponsorship · Donation drive
-- kennel → Boarding slot · Promo · Photo
-- zoo → Education post · Visitor announcement
-- vet → Open consult · Prescription
-- buyer → Photo · Story · Wanted post
-- pet_parent → Photo · Story · Log
+New file: `src/hooks/useOrgIdentities.ts`
 
----
+```ts
+// One shared cached query returning Map<user_id, { org_name, logo_url, status }>
+// Pulls from org_profiles (user_id, org_name, facility_photos[0] as logo, status).
+// staleTime 5min, gcTime 30min — same pattern as usePublicProfiles.
+```
 
-## Phase 3 — Search by entity type
+Edit `src/components/AuthorIdentity.tsx`:
 
-- `Search.tsx` gets tabs: People · Pets · Breeders · Kennels · Shelters · Sanctuaries · Rescuers · Zoos · Vets · Services.
-- Each tab queries the right table (profiles filtered by `account_type`, `pets`, `service_listings`, etc.).
-- Rows render via `<AuthorIdentity>`.
-- `/discover` gets a top filter chip row with the same entity types.
+- Call `useOrgIdentities()`. If `accountType` is one of `breeder | kennel | shelter | sanctuary | zoo` AND an org row exists for `userId`, override `name` with `org_name` and `avatar` with the org's first facility photo. Personal name moves to a small `subline` ("Managed by Asha").
+- For `pet_parent | buyer | rescuer | provider | vet`, behavior is unchanged.
 
----
+Acceptance: a post made by a verified shelter shows the shelter's name and logo across feed, comments, notifications, search.
 
-## Phase 4 — Public profile per role
+### C. Identity sweep into notifications & stories *(real)*
 
-`UserProfile.tsx` becomes role-aware:
-- breeder → Litters · Mating availability · Reviews
-- kennel → Services · Boarding · Reviews
-- shelter/rescuer → Adoptables · Donate CTA · Stories
-- sanctuary → Animals · Sponsorships · Donate CTA
-- zoo → Exhibits · Events · Educational posts
-- vet → Specialisations · Book appointment · AskVet answers
-- pet_parent / buyer → existing layout
+Files:
+- `src/components/NotificationBell.tsx` — replace inline avatar/name with `<AuthorIdentity userId={actorId} size="sm" showBadge={false} />` for the actor of each notification preview.
+- `src/pages/Notifications.tsx` — same treatment in the row layout. Group headers untouched.
+- `src/components/social/StoryRail.tsx` — replace the bespoke avatar render with `<AuthorIdentity userId={story.user_id} size="sm" showBadge={false} linkTo={false} />` inside the existing scroller. Preserve the gradient-border "unseen" indicator by wrapping AuthorIdentity in the existing ring container (AuthorIdentity's role ring stays as the inner accent).
+- Verify that no carousel/grid (Mates/Adopt/Missing) breaks — these were intentionally left alone last round and are not in scope here.
 
-Header banner colour matches role tint.
+Acceptance: opening Notifications shows role-tinted rings + verified ticks for breeders/shelters; story rail shows them too.
+
+### D. Verified-tick realtime auto-flip *(real)*
+
+Files:
+- `src/hooks/useVerifiedOrgs.ts` — add a `useEffect` (inside a small wrapper component or via a top-level subscriber in `App.tsx`) that subscribes to `postgres_changes` on `org_profiles` filtered by `status=eq.approved`, and calls `qc.invalidateQueries({ queryKey: ['verified-orgs'] })` plus `['org-identities']` on every event.
+- `src/App.tsx` — mount a single `<RealtimeBridge />` component (new file `src/components/RealtimeBridge.tsx`) inside the auth-aware tree so the subscription runs once per session and is cleaned up on unmount.
+
+Migration (required to make realtime fire on `org_profiles`):
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.org_profiles;
+ALTER TABLE public.org_profiles REPLICA IDENTITY FULL;
+```
+
+Acceptance: with two browser windows open (admin + user), an admin approving the org flips the user's badge to verified within ~1s, no refresh needed.
+
+### E. Sanity pass on existing flows
+
+Quick read-only verification — no code unless something is broken:
+
+- `PostAuth` correctly routes new breeder signups to `/onboarding/account-type` (it already does via the `incomplete` branch + AccountTypeChooser).
+- `OrgOnboarding` writes `org_profiles` with `status='pending'` and surfaces in `/admin/orgs`.
+- `useProfile` selects `account_type` so `Home.tsx` switch resolves on first render.
+
+If any of these is missing, fold the fix into Task A or B as a single-line edit; otherwise leave alone.
 
 ---
 
-## Phase 5 — Polish (parallelisable)
+## Out of scope for this round (explicit)
 
-- Auto-flip verified tick on `org_profiles.status='approved'` (ensure `useVerifiedOrgs` invalidates on KYC approval).
-- Notification rows use `AuthorIdentity` (role + tick on every "X liked your post").
-- Video post type in Composer + feed renderer.
-- Per-role onboarding copy & illustrations.
-- Boost/promote post type for kennels (paid).
+To keep scope tight and shippable, these stay for later rounds as already agreed:
 
----
-
-## Task tracker breakdown (in execution order)
-
-1. Open FirstRunGate for non-pet-parent roles
-2. Build AuthorIdentity component + role rings
-3. Replace author rendering across feed, comments, stories, search, notifications
-4. Universal Composer (optional pet tag)
-5. Home router by account_type
-6. PetParentHome (extract current)
-7. BreederHome
-8. ShelterHome (+ Rescuer variant)
-9. KennelHome
-10. GaushalaHome
-11. BuyerHome
-12. ZooHome
-13. Role-aware ContextualFab
-14. Search entity-type tabs
-15. Role-aware UserProfile
-16. Verified tick auto-flip + notification badges
-17. Video post type (later)
+- **Round 2:** Search entity-type tabs + `/discover` role chips.
+- **Round 3:** Role-aware `UserProfile` (banner, conditional tabs).
+- **Round 4:** Role-aware `ContextualFab` actions.
+- **Round 5:** Video post type (storage migration, MIME handling).
 
 ---
-
-## Out of scope (explicitly not in this plan)
-
-- New backend tables — reuses existing schema (`profiles`, `org_profiles`, `pets`, `litters`, `service_listings`, `donations`, etc.). Migrations only if a dashboard reveals a missing column.
-- Payment flows for donations/boosts (existing donate/Stripe stays as-is).
-- Mobile-app shell changes.
 
 ## Technical notes
 
-- All role checks read `profiles.account_type`; org status from `org_profiles.status`.
-- `AuthorIdentity` will be the single source of truth — no other component should render `<Avatar+name+badge>` manually after Phase 1.3 lands.
-- Dashboards are pure composition over existing hooks (`usePets`, `useLitters`, `useAdoptables`, `useBookings`, `useDonations`, …); if a hook is missing, we add it in that dashboard's task.
-- `getRoleRing` lives in `src/lib/roleTheme.ts` alongside existing role colour helpers.
+- `org_profiles.facility_photos` is a `text[]`. Use `facility_photos?.[0] ?? null` as the org logo. If empty, `AuthorIdentity` falls back to the person's avatar.
+- The new `useOrgIdentities` hook intentionally returns a `Map<string, OrgIdentity>` (not an array) so `AuthorIdentity` is O(1) per render — same shape as `useVerifiedOrgs` returning a `Set`.
+- Realtime channel name: `verified-orgs-watch`. Use a single subscription, not one per component.
+- No RLS changes needed: `org_profiles` already exposes `user_id, org_name, facility_photos, status` to authenticated reads via the existing public-org policy.
+- No new tables, no destructive migrations. Only the publication add for realtime.
 
-Approve and I'll switch to build mode and start with task 1 (FirstRunGate), one task in_progress at a time.
+## Deliverables
+
+- `src/hooks/useOrgIdentities.ts` (new)
+- `src/components/RealtimeBridge.tsx` (new)
+- Edits: `Onboarding.tsx`, `AuthorIdentity.tsx`, `useVerifiedOrgs.ts`, `NotificationBell.tsx`, `Notifications.tsx`, `social/StoryRail.tsx`, `App.tsx`
+- One migration: add `org_profiles` to `supabase_realtime` publication.
+
+Reply **"go"** to execute Round 1 end-to-end.
