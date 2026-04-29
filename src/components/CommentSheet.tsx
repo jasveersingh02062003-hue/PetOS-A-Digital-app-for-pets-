@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { getRoleRing } from "@/lib/roleTheme";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
@@ -95,7 +96,11 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
             const avatar = asPet ? c.pet.avatar_url : c.author?.avatar_url;
             return (
               <div key={c.id} className="flex gap-3 group">
-                <Avatar className="h-8 w-8 shrink-0">
+                <Avatar
+                  className={`h-8 w-8 shrink-0 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(
+                    asPet ? "pet_parent" : c.author?.account_type,
+                  )}`}
+                >
                   <AvatarImage src={avatar ?? undefined} />
                   <AvatarFallback className="bg-primary-soft text-primary text-xs">
                     {(name?.[0] ?? "P").toUpperCase()}

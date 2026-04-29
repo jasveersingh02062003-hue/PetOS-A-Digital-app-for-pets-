@@ -13,6 +13,7 @@ import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { SellerBadge } from "./SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { getRoleRing } from "@/lib/roleTheme";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
@@ -183,7 +184,11 @@ const PostCard = ({ post, onComment }: {
     <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
       <div className="flex items-center gap-3 p-4">
         <Link to={`/u/${post.author_id}`} className="shrink-0">
-          <Avatar className="h-9 w-9">
+          <Avatar
+            className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(
+              post.author?.account_type,
+            )}`}
+          >
             <AvatarImage src={displayImg} alt={displayName} />
             <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
           </Avatar>
