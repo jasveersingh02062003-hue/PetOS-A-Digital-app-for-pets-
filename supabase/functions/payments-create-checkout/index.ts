@@ -22,6 +22,8 @@ Deno.serve(async (req) => {
     const customerEmail: string | undefined = body?.customerEmail;
     const userId: string | undefined = body?.userId;
     const returnUrl: string | undefined = body?.returnUrl;
+    const kind: string | undefined = body?.kind;
+    const refId: string | undefined = body?.refId;
     const environment: StripeEnv = body?.environment === "live" ? "live" : "sandbox";
 
     if (!priceId || !/^[a-zA-Z0-9_-]+$/.test(priceId)) {
@@ -54,9 +56,21 @@ Deno.serve(async (req) => {
       ui_mode: "embedded",
       return_url: returnUrl,
       ...(customerEmail && { customer_email: customerEmail }),
-      ...(userId && {
-        metadata: { userId, priceId },
-        ...(isRecurring && { subscription_data: { metadata: { userId, priceId } } }),
+      metadata: {
+        ...(userId && { userId }),
+        priceId,
+        ...(kind && { kind }),
+        ...(refId && { refId }),
+      },
+      ...(isRecurring && {
+        subscription_data: {
+          metadata: {
+            ...(userId && { userId }),
+            priceId,
+            ...(kind && { kind }),
+            ...(refId && { refId }),
+          },
+        },
       }),
     });
 
