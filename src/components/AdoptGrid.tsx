@@ -12,6 +12,7 @@ import { SellerBadge } from "@/components/SellerBadge";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { HealthTestRail } from "@/components/marketplace/HealthTestChip";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
 type Filters = {
@@ -64,7 +65,7 @@ export const AdoptGrid = () => {
     queryFn: async () => {
       let q = supabase
         .from("pet_listings")
-        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id")
+        .select("id, owner_id, listing_type, fee_inr, city, title, photos, age_weeks, species, breed, gender, seller_type, bred_on_petos, litter_id, health_tests")
         .eq("active", true)
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -207,6 +208,11 @@ export const AdoptGrid = () => {
                   {isRepeatSeller && (
                     <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-semibold border border-amber-500/30">
                       <AlertTriangle className="h-2.5 w-2.5" /> Repeat seller
+                    </div>
+                  )}
+                  {Array.isArray(l.health_tests) && l.health_tests.length > 0 && (
+                    <div className="mt-1.5">
+                      <HealthTestRail entries={l.health_tests as any} max={2} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mt-2 text-xs">
