@@ -187,6 +187,23 @@ export default function MessageThread() {
     return null;
   }, [messages, user?.id]);
 
+  // Soft-warning trigger: any message in this thread mentions a payment intent
+  // (₹ / INR / UPI / GPay / Paytm / PayPal) AND the other party is an unverified rescuer.
+  const PAYMENT_RE = /(₹|\brs\.?\b|\binr\b|\bupi\b|\bgpay\b|\bpaytm\b|\bpaypal\b)/i;
+  const showRescuerWarning = useMemo(() => {
+    if (!other) return false;
+    if (warningDismissed) return false;
+    if (other.accountType !== "rescuer") return false;
+    if (other.orgApproved) return false;
+    return messages.some((m) => m.body && PAYMENT_RE.test(m.body));
+  }, [other, warningDismissed, messages]);
+
+  const dismissWarning = () => {
+    if (!convId) return;
+    localStorage.setItem(`petos:rescuer-warn:${convId}`, "1");
+    setWarningDismissed(true);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-hairline">
@@ -222,6 +239,17 @@ export default function MessageThread() {
       </header>
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto container-app py-4 space-y-1">
+        {showRescuerWarning && (
+          <div className="my-2 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 flex gap-2 items-start">
+            <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 text-[12px] leading-relaxed text-amber-900 dark:text-amber-200">
+              <strong>Heads-up:</strong> this account isn't KYC-verified yet. Avoid sending money outside Petos — meet the pet first and use Petos's protected payment flow.
+            </div>
+            <button onClick={dismissWarning} className="text-amber-700 hover:text-amber-900 p-0.5 shrink-0" aria-label="Dismiss">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         {grouped.map((it, idx) => {
           if (it.kind === "divider") {
             return (
