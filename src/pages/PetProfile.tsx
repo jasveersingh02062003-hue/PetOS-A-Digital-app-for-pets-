@@ -32,16 +32,10 @@ const PetProfile = () => {
       const { data: byId } = await supabase.from("pets").select("*").eq("id", publicId!).maybeSingle();
       if (byId) return byId;
 
-      // 2. Fall back to the public RPC so visitors can view other people's pets.
-      //    RLS hides direct row access from non-owners; get_pets_public is SECURITY DEFINER
-      //    and returns a safe subset (no DOB/microchip/insurance/lat/lng).
-      const { data: all } = await supabase.rpc("get_pets_public");
-      const list = (all ?? []) as any[];
-      return (
-        list.find((p) => p.public_id === publicId) ??
-        list.find((p) => p.id === publicId) ??
-        null
-      );
+      // 2. Fall back to the safe single-row public RPC for non-owners.
+      const { data: pub } = await supabase.rpc("get_pet_public_by_ref" as any, { _ref: publicId! });
+      const row = Array.isArray(pub) ? pub[0] : pub;
+      return row ?? null;
     },
   });
 
