@@ -49,6 +49,7 @@ const OrgDonations = lazy(() => import("./pages/OrgDonations"));
 const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopNew = lazy(() => import("./pages/ShopNew"));
+const ShopReminders = lazy(() => import("./pages/ShopReminders"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Vet = lazy(() => import("./pages/Vet"));
@@ -214,6 +215,7 @@ const App = () => (
               <Route path="/bookings/recurring" element={<RecurringBookings />} />
               <Route path="/pregnancies" element={<Pregnancies />} />
               <Route path="/org/donations" element={<OrgDonations />} />
+              <Route path="/shop/reminders" element={<ShopReminders />} />
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />

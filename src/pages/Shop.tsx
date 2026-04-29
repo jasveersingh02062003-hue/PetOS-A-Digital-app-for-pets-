@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { usePets } from "@/hooks/useProfile";
 import { SubjectRating } from "@/components/SubjectRating";
+import { ReorderReminderButton } from "@/components/shop/ReorderReminderButton";
 import type { Database } from "@/integrations/supabase/types";
 
 type ProductCategory = Database["public"]["Enums"]["product_category"];
@@ -398,22 +399,25 @@ const Shop = () => {
               <div className="mt-1"><SubjectRating type="product" id={p.id} size="sm" /></div>
               <div className="mt-auto pt-2 flex items-center justify-between">
                 <div className="font-display text-base">₹{p.price_inr}</div>
-                <Button
-                  size="sm"
-                  className="rounded-full h-8 px-3 text-xs"
-                  onClick={() =>
-                    add({
-                      product_id: p.id,
-                      seller_id: p.seller_id,
-                      title: p.title,
-                      price_inr: p.price_inr,
-                      image_url: p.image_url,
-                    })
-                  }
-                  disabled={p.stock <= 0}
-                >
-                  {p.stock <= 0 ? "Out" : "Add"}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <ReorderReminderButton productId={p.id} productTitle={p.title} />
+                  <Button
+                    size="sm"
+                    className="rounded-full h-8 px-3 text-xs"
+                    onClick={() =>
+                      add({
+                        product_id: p.id,
+                        seller_id: p.seller_id,
+                        title: p.title,
+                        price_inr: p.price_inr,
+                        image_url: p.image_url,
+                      })
+                    }
+                    disabled={p.stock <= 0}
+                  >
+                    {p.stock <= 0 ? "Out" : "Add"}
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
