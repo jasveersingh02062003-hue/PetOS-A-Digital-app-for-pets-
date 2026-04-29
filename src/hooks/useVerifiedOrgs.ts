@@ -27,3 +27,28 @@ export const useIsVerifiedOrg = (userId?: string | null) => {
   if (!userId) return false;
   return data?.has(userId) ?? false;
 };
+
+/**
+ * Returns a Set of user_ids whose org_profiles row is pending (submitted but not yet approved).
+ * Used to flip the amber "KYC pending" chip on SellerBadge.
+ */
+export const usePendingOrgs = () =>
+  useQuery({
+    queryKey: ["pending-orgs"],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_profiles")
+        .select("user_id")
+        .eq("status", "pending");
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.user_id));
+    },
+  });
+
+export const useIsPendingOrg = (userId?: string | null) => {
+  const { data } = usePendingOrgs();
+  if (!userId) return false;
+  return data?.has(userId) ?? false;
+};
