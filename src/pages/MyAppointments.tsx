@@ -5,7 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, Video, MapPin, Plus } from "lucide-react";
+import { ArrowLeft, MessageSquare, Video, MapPin, Plus, FileText } from "lucide-react";
+import { RefundButton } from "@/components/payments/RefundButton";
 
 const modeIcon: Record<string, JSX.Element> = {
   chat: <MessageSquare className="h-3.5 w-3.5" />,
@@ -64,12 +65,27 @@ export default function MyAppointments() {
                   <span>{new Date(a.scheduled_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</span>
                 </div>
               </div>
-              <Badge variant="secondary" className="capitalize">{a.status.replace("_", " ")}</Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="secondary" className="capitalize">{a.status.replace("_", " ")}</Badge>
+                {a.payment_intent_id && (
+                  <span className="text-[10px] rounded-full bg-emerald-500/15 text-emerald-700 px-2 py-0.5 font-medium">Paid</span>
+                )}
+              </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-hairline">
-              <Button asChild size="sm" variant="outline" className="w-full rounded-full">
+            <div className="mt-3 pt-3 border-t border-hairline flex items-center gap-2">
+              <Button asChild size="sm" variant="outline" className="flex-1 rounded-full">
                 <Link to={`/appointment/${a.id}`}>Open</Link>
               </Button>
+              {a.payment_intent_id && (
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <Link to={`/receipt/${a.payment_intent_id}`}>
+                    <FileText className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              )}
+              {a.payment_intent_id && a.status !== "completed" && (
+                <RefundButton intentId={a.payment_intent_id} amountInr={0} />
+              )}
             </div>
           </Card>
         ))}

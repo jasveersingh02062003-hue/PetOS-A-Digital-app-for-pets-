@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileText } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
+import { Link } from "react-router-dom";
+import { RefundButton } from "@/components/payments/RefundButton";
 
 const Orders = () => {
   const nav = useNavigate();
@@ -49,9 +51,14 @@ const Orders = () => {
               <span className="text-xs text-muted-foreground">
                 {new Date(o.created_at).toLocaleDateString()}
               </span>
-              <span className="text-xs rounded-full bg-muted px-2 py-1 capitalize">
-                {o.status}
-              </span>
+              <div className="flex items-center gap-1.5">
+                {o.payment_intent_id && (
+                  <span className="text-[10px] rounded-full bg-emerald-500/15 text-emerald-700 px-2 py-0.5 font-medium">Paid</span>
+                )}
+                <span className="text-xs rounded-full bg-muted px-2 py-1 capitalize">
+                  {o.status}
+                </span>
+              </div>
             </div>
             <div className="text-sm space-y-1">
               {o.shop_order_items?.map((it: any) => (
@@ -65,6 +72,16 @@ const Orders = () => {
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-lg">₹{o.total_inr}</span>
             </div>
+            {o.payment_intent_id && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-hairline">
+                <Button asChild size="sm" variant="outline" className="flex-1">
+                  <Link to={`/receipt/${o.payment_intent_id}`}>
+                    <FileText className="h-3.5 w-3.5 mr-1.5" /> Receipt
+                  </Link>
+                </Button>
+                <RefundButton intentId={o.payment_intent_id} amountInr={o.total_inr} />
+              </div>
+            )}
           </Card>
         ))}
       </div>
