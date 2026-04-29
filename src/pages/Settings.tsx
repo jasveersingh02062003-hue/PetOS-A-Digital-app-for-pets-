@@ -106,6 +106,7 @@ const Settings = () => {
         <Section title="Bookings">
           <Row icon={Repeat} label="Recurring bookings" desc="Pause, resume or cancel schedules" onClick={() => nav("/bookings/recurring")} />
           <Row icon={Baby} label="Pregnancies" desc="Track gestation and whelping reminders" onClick={() => nav("/pregnancies")} />
+          <Row icon={Bell} label="Shop reminders" desc="Reorder food, litter & meds on time" onClick={() => nav("/shop/reminders")} />
         </Section>
 
         <Section title="App">
