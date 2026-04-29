@@ -14,6 +14,7 @@ import { jsonLd } from "@/lib/seo";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { format } from "date-fns";
 import { SkillsTab } from "@/components/skills/SkillsTab";
+import { MateAvailableBadge } from "@/components/marketplace/MateAvailableBadge";
 
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
@@ -218,6 +219,7 @@ const PetProfile = () => {
                   <BadgeCheck className="h-3 w-3" /> Bred on PetOS
                 </span>
               )}
+              <MateAvailableBadge petId={pet.id} />
             </div>
             <div className="text-sm text-muted-foreground truncate">
               {[pet.breed, pet.gender].filter(Boolean).join(" · ") || "—"}

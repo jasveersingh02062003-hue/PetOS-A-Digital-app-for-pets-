@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { logError } from "@/lib/logError";
+import { useBlockedIds } from "@/hooks/useBlockedIds";
 
 export type Notification = {
   id: string;
@@ -20,9 +21,10 @@ export type Notification = {
 export const useNotifications = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { data: blocked } = useBlockedIds();
 
   const query = useQuery({
-    queryKey: ["notifications", user?.id],
+    queryKey: ["notifications", user?.id, blocked?.size ?? 0],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
@@ -30,7 +32,9 @@ export const useNotifications = () => {
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data as Notification[];
+      const all = (data ?? []) as Notification[];
+      if (!blocked || blocked.size === 0) return all;
+      return all.filter((n) => !n.actor_id || !blocked.has(n.actor_id));
     },
     enabled: !!user,
   });
