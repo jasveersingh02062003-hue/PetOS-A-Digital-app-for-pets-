@@ -23,11 +23,18 @@ export default function PostAuth() {
       const userId = session.user.id;
 
       const [{ data: profile }, { data: pets }] = await Promise.all([
-        supabase.from("profiles").select("full_name, onboarded").eq("id", userId).maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("full_name, onboarded, account_type")
+          .eq("id", userId)
+          .maybeSingle(),
         supabase.from("pets").select("id").eq("owner_id", userId).limit(1),
       ]);
 
-      const incomplete = !profile?.full_name?.trim() || !profile?.onboarded || !pets || pets.length === 0;
+      const isPetParent = (profile?.account_type ?? "pet_parent") === "pet_parent";
+      const profileMissing = !profile?.full_name?.trim() || !profile?.onboarded;
+      const petGateFailed = isPetParent && (!pets || pets.length === 0);
+      const incomplete = profileMissing || petGateFailed;
       if (import.meta.env.DEV) {
         console.info("[PostAuth] decision", { incomplete, hasProfile: !!profile, pets: pets?.length });
       }
