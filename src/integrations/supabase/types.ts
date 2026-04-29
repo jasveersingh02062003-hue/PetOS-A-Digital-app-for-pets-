@@ -1226,6 +1226,136 @@ export type Database = {
         }
         Relationships: []
       }
+      job_offers: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          message: string | null
+          price_inr: number | null
+          provider_id: string
+          provider_owner_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          message?: string | null
+          price_inr?: number | null
+          provider_id: string
+          provider_owner_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          message?: string | null
+          price_inr?: number | null
+          provider_id?: string
+          provider_owner_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_offers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_posts: {
+        Row: {
+          address: string | null
+          assigned_provider_id: string | null
+          budget_inr: number | null
+          category: Database["public"]["Enums"]["service_category"]
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          lat: number | null
+          lng: number | null
+          owner_id: string
+          pet_id: string | null
+          scheduled_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          assigned_provider_id?: string | null
+          budget_inr?: number | null
+          category: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          owner_id: string
+          pet_id?: string | null
+          scheduled_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          assigned_provider_id?: string | null
+          budget_inr?: number | null
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          owner_id?: string
+          pet_id?: string | null
+          scheduled_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_posts_assigned_provider_id_fkey"
+            columns: ["assigned_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_posts_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "job_posts_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       litter_groups: {
         Row: {
           birth_date: string | null
@@ -1898,6 +2028,33 @@ export type Database = {
           payload?: Json
           processed_at?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email: boolean
+          per_kind: Json
+          push: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: boolean
+          per_kind?: Json
+          push?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: boolean
+          per_kind?: Json
+          push?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3068,6 +3225,56 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_documents: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          kind: string
+          notes: string | null
+          owner_id: string
+          provider_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          kind: string
+          notes?: string | null
+          owner_id: string
+          provider_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          owner_id?: string
+          provider_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_documents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_payouts: {
         Row: {
           commission_inr: number
@@ -3596,6 +3803,7 @@ export type Database = {
       }
       service_providers: {
         Row: {
+          accepting_jobs: boolean
           active: boolean
           address_proof_path: string | null
           bio: string | null
@@ -3604,21 +3812,29 @@ export type Database = {
           contact_phone: string | null
           cover_url: string | null
           created_at: string
+          days_available: string[]
+          details: Json
           hourly_rate_inr: number | null
           id: string
           id_proof_path: string | null
+          languages: string[]
           lat: number | null
           lng: number | null
           name: string
           owner_id: string
           quiz_passed_at: string | null
           quiz_score: number | null
+          service_radius_km: number
+          time_slots: string[]
           trust_status: string
           updated_at: string
+          verification_notes: string | null
+          verification_status: string
           verified: boolean
           years_experience: number | null
         }
         Insert: {
+          accepting_jobs?: boolean
           active?: boolean
           address_proof_path?: string | null
           bio?: string | null
@@ -3627,21 +3843,29 @@ export type Database = {
           contact_phone?: string | null
           cover_url?: string | null
           created_at?: string
+          days_available?: string[]
+          details?: Json
           hourly_rate_inr?: number | null
           id?: string
           id_proof_path?: string | null
+          languages?: string[]
           lat?: number | null
           lng?: number | null
           name: string
           owner_id: string
           quiz_passed_at?: string | null
           quiz_score?: number | null
+          service_radius_km?: number
+          time_slots?: string[]
           trust_status?: string
           updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
           verified?: boolean
           years_experience?: number | null
         }
         Update: {
+          accepting_jobs?: boolean
           active?: boolean
           address_proof_path?: string | null
           bio?: string | null
@@ -3650,17 +3874,24 @@ export type Database = {
           contact_phone?: string | null
           cover_url?: string | null
           created_at?: string
+          days_available?: string[]
+          details?: Json
           hourly_rate_inr?: number | null
           id?: string
           id_proof_path?: string | null
+          languages?: string[]
           lat?: number | null
           lng?: number | null
           name?: string
           owner_id?: string
           quiz_passed_at?: string | null
           quiz_score?: number | null
+          service_radius_km?: number
+          time_slots?: string[]
           trust_status?: string
           updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
           verified?: boolean
           years_experience?: number | null
         }
@@ -5217,6 +5448,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_staff: { Args: { _uid: string }; Returns: boolean }
       is_transport_driver: { Args: { _booking: string }; Returns: boolean }
       mark_conversation_read: { Args: { _conv: string }; Returns: undefined }
       nearby_meetups: {
