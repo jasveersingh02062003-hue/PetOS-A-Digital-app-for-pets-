@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2, MapPin, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import {
   type SavedSearch,
 } from "@/lib/savedSearches";
 import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { toast } from "sonner";
 
 const RECENTS_KEY = "petos:recent_searches";
@@ -65,6 +66,8 @@ export default function Search() {
   const debounced = useDebounced(q.trim(), 300);
   const { items: savedItems, create: saveMut, remove: removeMut } = useSavedSearches();
   const [recentsTick, setRecentsTick] = useState(0);
+  const { coords: geo, loading: geoLoading, request: requestGeo, clear: clearGeo } = useGeolocation();
+  const [radiusKm, setRadiusKm] = useState<number>(10);
 
   useEffect(() => { document.title = q ? `${q} — Search · Petos` : "Search · Petos"; }, [q]);
 
@@ -87,6 +90,34 @@ export default function Search() {
   const enabled = debounced.length >= 2;
   const browseByRoleOnly = !enabled && role !== "all";
   const like = `%${debounced}%`;
+
+  // Ranked, geo-aware "Best matches" via search_entities RPC
+  const { data: ranked } = useQuery({
+    queryKey: ["search-ranked", debounced, geo?.lat, geo?.lng, radiusKm],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("search_entities", {
+        p_query: debounced,
+        p_lat: geo?.lat ?? null,
+        p_lng: geo?.lng ?? null,
+        p_radius_km: radiusKm,
+        p_entity_type: "all",
+        p_limit: 12,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        entity_type: string;
+        id: string;
+        title: string;
+        subtitle: string | null;
+        image_url: string | null;
+        city: string | null;
+        distance_km: number | null;
+        score: number;
+        payload: any;
+      }>;
+    },
+  });
 
   const { data, isFetching } = useQuery({
     queryKey: ["search-page", debounced, role],
@@ -226,6 +257,16 @@ export default function Search() {
             </button>
           )}
         </div>
+        <div className="max-w-2xl mx-auto px-3 pb-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <LocationChip
+            active={!!geo}
+            loading={geoLoading}
+            radiusKm={radiusKm}
+            onRequest={requestGeo}
+            onClear={clearGeo}
+            onCycleRadius={() => setRadiusKm((r) => (r === 5 ? 10 : r === 10 ? 25 : r === 25 ? 50 : 5))}
+          />
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-3 py-4 space-y-4">
@@ -292,6 +333,11 @@ export default function Search() {
 
               <TabsContent value="all" className="mt-4 space-y-5">
                 {data && Object.values(counts!).every((n) => n === 0) && <Empty q={debounced} />}
+                {!!ranked?.length && (
+                  <Section title={geo ? `Best matches · within ${radiusKm} km` : "Best matches"}>
+                    <RankedList items={ranked} />
+                  </Section>
+                )}
                 {!!data?.pets.length && <Section title="Pets"><PetsList items={data.pets} /></Section>}
                 {!!filteredPeople.length && <Section title="People"><PeopleList items={filteredPeople} /></Section>}
                 {!!data?.tags.length && <Section title="Hashtags"><TagsList items={data.tags} /></Section>}
