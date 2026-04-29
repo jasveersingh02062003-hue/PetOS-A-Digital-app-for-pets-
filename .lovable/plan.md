@@ -125,3 +125,14 @@ After Round 27, every ❌ from the original PDF audit is closed. The only remain
 - The blocked-id sweep is a non-breaking additive filter; missing it today silently leaks blocked authors into feeds.
 
 Reply **`go round 25`** to start, or tell me to reorder / skip a round.
+
+---
+
+## ✅ Round 27 — DONE (2026-04-29)
+
+- Added `notify_skill_vouch()` trigger on `skill_vouches` → inserts into `notifications` with `type='skill_vouch'`, links to `/pet/:id`.
+- Owner-self vouches are skipped; voucher display name resolved from `profiles`.
+- `Notifications.tsx` now renders `skill_vouch` rows with an amber `Award` icon overlay; categorised under **Social** filter.
+- Realtime bell + toast already wired via existing `useNotifications` channel — no client subscription change needed.
+
+**All three rounds (25, 26, 27) complete. PDF audit gaps closed.**

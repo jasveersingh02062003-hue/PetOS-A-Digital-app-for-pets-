@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   ArrowLeft, Bell, Check, Users, Heart, MessageSquare, Calendar, ShoppingBag,
-  Stethoscope, Sparkles, AlertTriangle, MapPin, UserPlus, ShieldCheck, X,
+  Stethoscope, Sparkles, AlertTriangle, MapPin, UserPlus, ShieldCheck, X, Award,
 } from "lucide-react";
 import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ const ICONS: Record<string, { icon: any; tone: string }> = {
   missing_pet: { icon: AlertTriangle, tone: "text-coral bg-coral/10" },
   sighting: { icon: MapPin, tone: "text-coral bg-coral/10" },
   order: { icon: ShoppingBag, tone: "text-emerald-600 bg-emerald-500/10" },
+  skill_vouch: { icon: Award, tone: "text-amber-600 bg-amber-500/10" },
 };
 
 const CATEGORY: Record<string, Filter> = {
@@ -44,6 +45,7 @@ const CATEGORY: Record<string, Filter> = {
   missing_pet: "alerts", sighting: "alerts",
   access_request: "alerts", access_approved: "alerts", access_rejected: "alerts",
   trust_status: "alerts",
+  skill_vouch: "social",
 };
 
 const groupKey = (iso: string) => {
