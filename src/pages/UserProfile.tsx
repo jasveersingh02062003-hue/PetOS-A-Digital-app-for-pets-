@@ -136,6 +136,21 @@ const UserProfile = () => {
     | null
     | undefined;
 
+  // Vet-only: load specialisations rail from vet_profiles.
+  const { data: vetProfile } = useQuery({
+    queryKey: ["vet-profile-public", userId],
+    enabled: !!userId && accountType === "vet",
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vet_profiles" as any)
+        .select("specialisations, clinic_name, city")
+        .eq("user_id", userId!)
+        .maybeSingle();
+      return (data as any) ?? null;
+    },
+  });
+
   const shareProfile = async () => {
     const url = handle ? `${window.location.origin}/u/${handle}` : `${window.location.origin}/u/${userId}`;
     try {
