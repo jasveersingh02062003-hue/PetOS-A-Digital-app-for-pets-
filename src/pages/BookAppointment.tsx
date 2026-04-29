@@ -84,6 +84,8 @@ const BookAppointment = () => {
         .from("vet_triage_sessions" as any)
         .update({ escalated_to_appointment_id: data.id, closed_at: new Date().toISOString() })
         .eq("id", triageSessionId);
+      // Create a vet_consult mirror so the vet sees the AI summary in their dashboard
+      await supabase.rpc("create_consult_from_appointment" as any, { _appointment_id: data.id });
     }
     if (fee && data?.id) {
       const params = new URLSearchParams({
