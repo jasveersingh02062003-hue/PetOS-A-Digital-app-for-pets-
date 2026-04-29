@@ -74,6 +74,7 @@ const PlusSuccess = lazy(() => import("./pages/PlusSuccess"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const Receipt = lazy(() => import("./pages/Receipt"));
+const DonationReceipt = lazy(() => import("./pages/DonationReceipt"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Breeders = lazy(() => import("./pages/Breeders"));
 const MissingFeed = lazy(() => import("./pages/MissingFeed"));
