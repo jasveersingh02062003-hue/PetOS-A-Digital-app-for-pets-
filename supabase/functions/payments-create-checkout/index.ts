@@ -24,13 +24,19 @@ Deno.serve(async (req) => {
     const returnUrl: string | undefined = body?.returnUrl;
     const kind: string | undefined = body?.kind;
     const refId: string | undefined = body?.refId;
+    const amountInr: number | undefined = body?.amountInr;
+    const productName: string | undefined = body?.productName;
+    const currencyIn: string = (body?.currency ?? "inr").toLowerCase();
     const environment: StripeEnv = body?.environment === "live" ? "live" : "sandbox";
 
-    if (!priceId || !/^[a-zA-Z0-9_-]+$/.test(priceId)) {
-      return new Response(JSON.stringify({ error: "invalid priceId" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const useDynamic = !priceId && typeof amountInr === "number" && amountInr > 0 && !!productName;
+    if (!useDynamic) {
+      if (!priceId || !/^[a-zA-Z0-9_-]+$/.test(priceId)) {
+        return new Response(JSON.stringify({ error: "invalid priceId" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
     if (!returnUrl) {
       return new Response(JSON.stringify({ error: "returnUrl required" }), {
@@ -40,25 +46,52 @@ Deno.serve(async (req) => {
     }
 
     const stripe = createStripeClient(environment);
-    const prices = await stripe.prices.list({ lookup_keys: [priceId], expand: ["data.product"] });
-    if (!prices.data.length) {
-      return new Response(JSON.stringify({ error: "price not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let lineItem: any;
+    let isRecurring = false;
+    let resolvedAmount: number | null = null;
+    let resolvedCurrency = currencyIn;
+    let resolvedInterval: string | null = null;
+    let resolvedProductName = productName ?? "";
+
+    if (useDynamic) {
+      // amountInr is in rupees; Stripe wants paise (smallest unit)
+      const unitAmount = Math.round(amountInr! * 100);
+      lineItem = {
+        price_data: {
+          currency: resolvedCurrency,
+          product_data: { name: productName! },
+          unit_amount: unitAmount,
+        },
+        quantity: Math.max(1, quantity),
+      };
+      resolvedAmount = unitAmount;
+    } else {
+      const prices = await stripe.prices.list({ lookup_keys: [priceId!], expand: ["data.product"] });
+      if (!prices.data.length) {
+        return new Response(JSON.stringify({ error: "price not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const stripePrice = prices.data[0];
+      isRecurring = stripePrice.type === "recurring";
+      lineItem = { price: stripePrice.id, quantity: Math.max(1, quantity) };
+      resolvedAmount = stripePrice.unit_amount;
+      resolvedCurrency = stripePrice.currency;
+      resolvedInterval = stripePrice.recurring?.interval ?? null;
+      const product = stripePrice.product as { name?: string } | string;
+      resolvedProductName = typeof product === "object" && product?.name ? product.name : "";
     }
-    const stripePrice = prices.data[0];
-    const isRecurring = stripePrice.type === "recurring";
 
     const session = await stripe.checkout.sessions.create({
-      line_items: [{ price: stripePrice.id, quantity: Math.max(1, quantity) }],
+      line_items: [lineItem],
       mode: isRecurring ? "subscription" : "payment",
       ui_mode: "embedded",
       return_url: returnUrl,
       ...(customerEmail && { customer_email: customerEmail }),
       metadata: {
         ...(userId && { userId }),
-        priceId,
+        ...(priceId && { priceId }),
         ...(kind && { kind }),
         ...(refId && { refId }),
       },
@@ -66,7 +99,7 @@ Deno.serve(async (req) => {
         subscription_data: {
           metadata: {
             ...(userId && { userId }),
-            priceId,
+            ...(priceId && { priceId }),
             ...(kind && { kind }),
             ...(refId && { refId }),
           },
@@ -74,16 +107,13 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const product = stripePrice.product as { name?: string } | string;
-    const productName = typeof product === "object" && product?.name ? product.name : "";
-
     return new Response(
       JSON.stringify({
         clientSecret: session.client_secret,
-        productName,
-        amount: stripePrice.unit_amount,
-        currency: stripePrice.currency,
-        interval: stripePrice.recurring?.interval ?? null,
+        productName: resolvedProductName,
+        amount: resolvedAmount,
+        currency: resolvedCurrency,
+        interval: resolvedInterval,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
