@@ -299,6 +299,14 @@ const PetProfile = () => {
                 <Tag className="h-3.5 w-3.5" /> Create adopt/sale listing
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full rounded-xl border-hairline mt-1 gap-1.5"
+              onClick={() => nav(`/pets/${pet.id}/tracker`)}
+            >
+              <MapPin className="h-3.5 w-3.5" /> Live GPS tracker
+            </Button>
           </div>
         )}
 
