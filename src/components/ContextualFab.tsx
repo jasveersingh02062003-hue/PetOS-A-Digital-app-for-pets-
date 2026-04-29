@@ -44,7 +44,7 @@ export const ContextualFab = ({ onEmergency }: { onEmergency: () => void }) => {
           icon: GitBranch,
           label: "New litter",
           tone: "bg-amber-500 text-white",
-          onPress: () => nav("/litter/new"),
+          onPress: () => nav("/litters/new"),
         };
         break;
       case "shelter":
