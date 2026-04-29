@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,13 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldAlert, CalendarDays, Plus, BookOpen, Loader2 } from "lucide-react";
+import { Heart, ShieldAlert, CalendarDays, Plus, BookOpen, Loader2, Eye } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
 import { KpiCard } from "./dashboard/KpiCard";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
+import { ExhibitSheet } from "@/components/zoo/ExhibitSheet";
 
 const StoryRail = lazy(() =>
   import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })),
@@ -32,21 +33,24 @@ const ZooHome = () => {
   const { data: profile } = useProfile();
   const uid = user?.id;
   const firstName = profile?.full_name?.split(" ")[0];
+  const [exhibitOpen, setExhibitOpen] = useState(false);
 
   useSeo({ title: "Zoo hub", description: "Exhibits, events and educational content.", noIndex: true });
 
-  const animals = useQuery({
-    queryKey: ["zoo-animals", uid],
+  const exhibits = useQuery({
+    queryKey: ["zoo-exhibits", uid],
     enabled: !!uid,
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from("pets")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", uid!);
+      const { data, error } = await supabase
+        .from("exhibits")
+        .select("id, name, species, habitat, on_display, created_at")
+        .eq("zoo_user_id", uid!)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return count ?? 0;
+      return data ?? [];
     },
   });
+  const onDisplayCount = exhibits.data?.filter((e) => e.on_display).length ?? 0;
 
   const upcomingEvents = useQuery({
     queryKey: ["zoo-events", uid],
