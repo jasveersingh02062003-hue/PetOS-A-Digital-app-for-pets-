@@ -86,6 +86,23 @@ const GaushalaHome = () => {
     },
   });
 
+  // Real sponsorships KPI
+  const sponsorships = useQuery({
+    queryKey: ["gaushala-sponsorships", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sponsorships")
+        .select("id, amount_inr, status, anonymous, message, created_at, listing_id")
+        .eq("org_user_id", uid!)
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const sponsorMrr = (sponsorships.data ?? []).reduce((s, x: any) => s + (x.amount_inr ?? 0), 0);
+
   const tint = "bg-leaf/10";
 
   return (
@@ -121,9 +138,9 @@ const GaushalaHome = () => {
         />
         <KpiCard
           label="Sponsorships"
-          value={recentDonors.data?.length ?? 0}
-          sub="recent supporters"
-          loading={recentDonors.isLoading}
+          value={sponsorships.data?.length ?? 0}
+          sub={sponsorMrr ? `₹${sponsorMrr.toLocaleString("en-IN")}/mo` : "active monthly"}
+          loading={sponsorships.isLoading}
           icon={Heart}
           to="/org/donations"
           tint="bg-coral/10"
@@ -178,6 +195,46 @@ const GaushalaHome = () => {
                   <div className="text-[11px] text-muted-foreground">
                     {d.anonymous ? "Anonymous" : "Donor"} ·{" "}
                     {formatDistanceToNow(new Date(d.paid_at ?? d.created_at), { addSuffix: true })}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Active sponsors panel */}
+      <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-semibold flex items-center gap-1.5">
+            <Heart className="h-3.5 w-3.5 text-coral" fill="currentColor" />
+            Active sponsors
+          </div>
+          <span className="text-[10px] font-semibold text-coral bg-coral/10 px-2 py-0.5 rounded-full">
+            {sponsorships.data?.length ?? 0}
+          </span>
+        </div>
+        {sponsorships.isLoading ? (
+          <div className="py-6 grid place-items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !sponsorships.data?.length ? (
+          <p className="text-sm text-muted-foreground py-4">
+            No monthly sponsors yet. Add animals so supporters can sponsor them.
+          </p>
+        ) : (
+          <ul className="divide-y divide-hairline">
+            {sponsorships.data.slice(0, 5).map((s: any) => (
+              <li key={s.id} className="py-2 flex items-center gap-3">
+                <Heart className="h-4 w-4 text-coral shrink-0" fill="currentColor" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">
+                    ₹{s.amount_inr.toLocaleString("en-IN")}/mo
+                    {s.message ? ` · ${s.message}` : ""}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {s.anonymous ? "Anonymous" : "Sponsor"} ·{" "}
+                    {formatDistanceToNow(new Date(s.created_at), { addSuffix: true })}
                   </div>
                 </div>
               </li>
