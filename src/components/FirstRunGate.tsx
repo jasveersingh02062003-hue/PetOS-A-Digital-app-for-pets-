@@ -43,10 +43,20 @@ export const FirstRunGate = ({ children }: { children: ReactNode }) => {
   }
 
   // 4. Profile incomplete → onboarding.
+  //    Only pet_parent accounts require ≥1 pet; every other role (breeder, kennel,
+  //    shelter, sanctuary, zoo, rescuer, buyer, vet, provider, …) just needs a
+  //    completed profile to proceed.
   const profileMissing = !profile?.full_name?.trim() || !profile?.onboarded;
+  const isPetParent = (profile?.account_type ?? "pet_parent") === "pet_parent";
   const noPets = !pets || pets.length === 0;
-  if (profileMissing || noPets) {
-    if (import.meta.env.DEV) console.info("[FirstRunGate] incomplete → /onboarding", { profileMissing, noPets });
+  const petGateFailed = isPetParent && noPets;
+  if (profileMissing || petGateFailed) {
+    if (import.meta.env.DEV)
+      console.info("[FirstRunGate] incomplete → /onboarding", {
+        profileMissing,
+        petGateFailed,
+        accountType: profile?.account_type,
+      });
     return <Navigate to="/onboarding" replace />;
   }
 
