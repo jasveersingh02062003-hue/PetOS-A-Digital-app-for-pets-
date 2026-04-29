@@ -206,6 +206,9 @@ export const AdoptGrid = () => {
                       <Sparkles className="h-3 w-3 text-coral" /> Bred on PetOS
                     </Badge>
                   )}
+                  <div className="absolute bottom-2 right-2">
+                    <WishlistButton listingId={l.id} />
+                  </div>
                 </div>
                 <div className="p-3">
                   <div className="font-medium truncate">{l.title}</div>
