@@ -293,6 +293,10 @@ const VetDashboard = () => {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="earnings" className="space-y-3 pt-4">
+          <EarningsCard />
+        </TabsContent>
       </Tabs>
     </div>
   );
