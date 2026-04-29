@@ -521,6 +521,21 @@ const PetsList = ({ items }: { items: any[] }) => items.length ? (
 
 const PeopleList = ({ items }: { items: any[] }) => {
   const { data: verifiedOrgs } = useVerifiedOrgs();
+  const buyerIds = items.filter((p) => p.account_type === "buyer").map((p) => p.id);
+  const { data: lookingFor } = useQuery({
+    queryKey: ["search-buyer-lookingfor", buyerIds.sort().join(",")],
+    enabled: buyerIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, looking_for")
+        .in("id", buyerIds);
+      const map = new Map<string, any>();
+      (data ?? []).forEach((r: any) => map.set(r.id, r.looking_for));
+      return map;
+    },
+  });
   return items.length ? (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
     {items.map((p) => (
@@ -535,6 +550,11 @@ const PeopleList = ({ items }: { items: any[] }) => {
                 verified={verifiedOrgs?.has(p.id) ?? false}
                 className="text-[9px] py-0 px-1.5 h-4"
               />
+            )}
+            {p.account_type === "buyer" && lookingFor?.get(p.id)?.breed && (
+              <span className="inline-flex items-center text-[10px] font-medium text-primary bg-primary/10 border border-primary/30 rounded-full px-1.5 py-0.5">
+                Looking for: {lookingFor.get(p.id).breed}
+              </span>
             )}
           </div>
           {(p.city || p.bio) && <div className="text-xs text-muted-foreground truncate">{p.city || p.bio?.slice(0, 60)}</div>}
