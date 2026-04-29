@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, Users } from "lucide-react";
 import type { Meetup } from "@/hooks/useMeetups";
+import { AuthorIdentity } from "@/components/AuthorIdentity";
 
 const fmt = (iso: string) => {
   const d = new Date(iso);
@@ -34,6 +35,11 @@ export const MeetupCard = ({ meetup }: { meetup: Meetup }) => {
       </div>
       {meetup.description && (
         <p className="text-xs text-muted-foreground line-clamp-2 mt-2">{meetup.description}</p>
+      )}
+      {meetup.host_id && (
+        <div className="mt-3 pt-3 border-t border-hairline">
+          <AuthorIdentity userId={meetup.host_id} size="sm" linkTo={false} />
+        </div>
       )}
     </Link>
   );

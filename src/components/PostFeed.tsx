@@ -13,7 +13,8 @@ import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { SellerBadge } from "./SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
-import { getRoleRing } from "@/lib/roleTheme";
+import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
+import { AuthorIdentity } from "./AuthorIdentity";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
@@ -133,6 +134,8 @@ const PostCard = ({ post, onComment }: {
   const qc = useQueryClient();
   const { data: verifiedOrgs } = useVerifiedOrgs();
   const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
+  const accountType = post.author?.account_type ?? "pet_parent";
+  const orgPost = isOrgRole(accountType) && !post.pet_id;
   const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
   const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
   const initial = displayName[0]?.toUpperCase() || "P";
@@ -183,11 +186,27 @@ const PostCard = ({ post, onComment }: {
   return (
     <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
       <div className="flex items-center gap-3 p-4">
+        {orgPost ? (
+          <div className="flex-1 min-w-0">
+            <AuthorIdentity
+              userId={post.author_id}
+              fallbackName={post.author?.full_name}
+              fallbackAvatar={post.author?.avatar_url}
+              fallbackAccountType={accountType}
+              size="md"
+              subline={
+                <span className="text-[11px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </span>
+              }
+            />
+            <CollabBadge postId={post.id} />
+          </div>
+        ) : (
+          <>
         <Link to={`/u/${post.author_id}`} className="shrink-0">
           <Avatar
-            className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(
-              post.author?.account_type,
-            )}`}
+            className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(accountType)}`}
           >
             <AvatarImage src={displayImg} alt={displayName} />
             <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
@@ -198,8 +217,8 @@ const PostCard = ({ post, onComment }: {
             <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate hover:underline">
               {displayName}
             </Link>
-            {post.author?.account_type && post.author.account_type !== "pet_parent" && (
-              <SellerBadge type={post.author.account_type as any} verified={authorVerified} />
+            {accountType !== "pet_parent" && (
+              <SellerBadge type={accountType as any} verified={authorVerified} />
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
@@ -207,6 +226,8 @@ const PostCard = ({ post, onComment }: {
           </div>
           <CollabBadge postId={post.id} />
         </div>
+          </>
+        )}
         <FollowButton targetId={post.author_id} />
       </div>
 

@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
 import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
+import { SellerBadge } from "@/components/SellerBadge";
+import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 
 type Filters = { species?: string; intent?: string; city?: string };
 
@@ -17,6 +20,12 @@ export const MatesGrid = () => {
   const nav = useNavigate();
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
+  const { data: verifiedOrgs } = useVerifiedOrgs();
+  const { data: publicProfiles } = usePublicProfiles();
+  const profileById = useMemo(
+    () => Object.fromEntries((publicProfiles ?? []).map((p: any) => [p.id, p])),
+    [publicProfiles],
+  );
 
   const { data: listings, isLoading } = useQuery({
     queryKey: ["mating-listings", filters],
@@ -126,6 +135,14 @@ export const MatesGrid = () => {
               <button onClick={() => nav(`/mates/listing/${l.id}`)} className="p-3 text-left">
                 <div className="font-medium truncate">{l.pets?.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{l.pets?.breed ?? l.pets?.species}</div>
+                {profileById[l.owner_id]?.account_type && profileById[l.owner_id].account_type !== "pet_parent" && (
+                  <div className="mt-1.5">
+                    <SellerBadge
+                      type={profileById[l.owner_id].account_type as any}
+                      verified={verifiedOrgs?.has(l.owner_id) ?? false}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between mt-2 text-xs">
                   {l.city ? <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{l.city}</span> : <span />}
                   {l.fee_inr ? <span className="font-medium text-primary">₹{l.fee_inr.toLocaleString("en-IN")}</span> : <span className="text-muted-foreground">Free</span>}

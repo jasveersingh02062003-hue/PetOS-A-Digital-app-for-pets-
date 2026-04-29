@@ -12,7 +12,8 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
-import { getRoleRing } from "@/lib/roleTheme";
+import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
+import { AuthorIdentity } from "@/components/AuthorIdentity";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
@@ -94,8 +95,28 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
             const asPet = !!c.pet;
             const name = asPet ? c.pet.name : (c.author?.full_name ?? "Pet parent");
             const avatar = asPet ? c.pet.avatar_url : c.author?.avatar_url;
+            const commentAccountType = (c.author?.account_type ?? "pet_parent") as string;
+            const orgAuthor = !asPet && isOrgRole(commentAccountType);
             return (
               <div key={c.id} className="flex gap-3 group">
+                {orgAuthor ? (
+                  <div className="flex-1 min-w-0">
+                    <AuthorIdentity
+                      userId={c.author_id}
+                      fallbackName={c.author?.full_name}
+                      fallbackAvatar={c.author?.avatar_url}
+                      fallbackAccountType={commentAccountType}
+                      size="sm"
+                      subline={
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                        </span>
+                      }
+                    />
+                    <p className="text-sm text-ink-soft mt-1 whitespace-pre-wrap break-words pl-9">{c.body}</p>
+                  </div>
+                ) : (
+                  <>
                 <Avatar
                   className={`h-8 w-8 shrink-0 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(
                     asPet ? "pet_parent" : c.author?.account_type,
@@ -121,6 +142,8 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
                   </div>
                   <p className="text-sm text-ink-soft mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
                 </div>
+                  </>
+                )}
                 {c.author_id === user?.id && (
                   <button onClick={() => del(c.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1 transition-opacity">
                     <Trash2 className="h-3.5 w-3.5" />
