@@ -44,9 +44,13 @@ Deno.serve(async (req) => {
     if (intent.status !== "paid") return json({ error: "only paid intents are refundable" }, 400);
     if (!intent.provider_payment_intent_id) return json({ error: "no provider intent" }, 400);
     if (intent.user_id !== user.id) {
-      // Allow admin role to refund any
-      const { data: hasRole } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-      if (hasRole !== true) return json({ error: "forbidden" }, 403);
+      // Allow moderators / super_admins to refund any
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const allowed = (roles ?? []).some((r: any) => r.role === "super_admin" || r.role === "moderator");
+      if (!allowed) return json({ error: "forbidden" }, 403);
     }
 
     const stripe = createStripeClient(environment);
