@@ -12,6 +12,7 @@ import { SellerBadge } from "@/components/SellerBadge";
 import { BredOnPetosRibbon } from "@/components/BredOnPetosRibbon";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { LineageTree } from "@/components/LineageTree";
+import { HealthTestRail } from "@/components/marketplace/HealthTestChip";
 import { StartTransferSheet, TransferStatusCard } from "@/components/TransferSheet";
 import { PayDepositSheet } from "@/components/marketplace/PayDepositSheet";
 import { useAuth } from "@/hooks/useAuth";
@@ -203,6 +204,12 @@ const AdoptListingDetail = () => {
         {listing.microchip_id && <div className="text-sm text-muted-foreground">Microchip: <span className="font-mono">{listing.microchip_id}</span></div>}
         {(listing.parents_info as any)?.notes && (
           <div className="text-sm text-muted-foreground">Parents: {(listing.parents_info as any).notes}</div>
+        )}
+        {Array.isArray((listing as any).health_tests) && (listing as any).health_tests.length > 0 && (
+          <div className="pt-1">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Health screening</div>
+            <HealthTestRail entries={(listing as any).health_tests} max={20} />
+          </div>
         )}
       </Card>
 
