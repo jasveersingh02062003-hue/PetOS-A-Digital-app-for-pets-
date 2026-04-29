@@ -12,6 +12,7 @@ import { PayButton } from "@/components/payments/PayButton";
 import { RefundButton } from "@/components/payments/RefundButton";
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
+import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
