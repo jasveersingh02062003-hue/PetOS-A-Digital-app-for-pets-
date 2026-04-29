@@ -5,6 +5,7 @@ import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { useOrgIdentity } from "@/hooks/useOrgIdentities";
 import { useIsHelpfulVet } from "@/hooks/useHelpfulVetIds";
+import { useProviderCategory } from "@/hooks/useProviderCategory";
 import { getRoleRing } from "@/lib/roleTheme";
 import { cn } from "@/lib/utils";
 import { Stethoscope } from "lucide-react";
@@ -61,6 +62,7 @@ export const AuthorIdentity = ({
   const verified = useIsVerifiedOrg(userId);
   const isHelpfulVet = useIsHelpfulVet(userId);
   const org = useOrgIdentity(userId);
+  const providerCategory = useProviderCategory(userId, accountType === "service_provider");
 
   const accountType = (profile?.account_type ?? fallbackAccountType ?? "pet_parent") as string;
   const personalName = profile?.full_name ?? fallbackName ?? "Member";
@@ -99,6 +101,14 @@ export const AuthorIdentity = ({
                   title="Helpful vet"
                 >
                   <Stethoscope className="h-2.5 w-2.5" /> Helpful
+                </span>
+              )}
+              {accountType === "service_provider" && providerCategory && (
+                <span
+                  className="inline-flex items-center text-[9px] font-semibold text-sky bg-sky/10 border border-sky/30 rounded-full px-1.5 py-0.5 capitalize"
+                  title={providerCategory}
+                >
+                  {providerCategory}
                 </span>
               )}
             </span>
