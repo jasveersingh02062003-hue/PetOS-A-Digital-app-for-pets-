@@ -3,16 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search } from "lucide-react";
+import { ArrowLeft, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { WizardSteps } from "@/components/onboarding/WizardSteps";
 
-type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer";
+type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer" | "provider";
 
-const OPTIONS: { value: AccountType; title: string; sub: string; Icon: any; needsOrg: boolean; buyerOnly?: boolean }[] = [
+const OPTIONS: { value: AccountType; title: string; sub: string; Icon: any; needsOrg: boolean; buyerOnly?: boolean; providerOnly?: boolean }[] = [
   { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders, no pet required", Icon: Search, needsOrg: false, buyerOnly: true },
   { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint, needsOrg: false },
+  { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, daycare, driver…", Icon: Briefcase, needsOrg: false, providerOnly: true },
   { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, needsOrg: true },
   { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, needsOrg: true },
   { value: "shelter", title: "Shelter / Rescue NGO", sub: "We rescue and rehome animals", Icon: Home, needsOrg: true },
