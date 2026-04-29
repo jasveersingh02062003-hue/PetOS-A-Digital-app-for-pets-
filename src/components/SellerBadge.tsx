@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search } from "lucide-react";
+import { BadgeCheck, PawPrint, Building2, Heart, Home, ShieldHalf, ShieldAlert, Search, Clock } from "lucide-react";
 
 type AccountType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer";
 
@@ -17,8 +17,9 @@ const META: Record<AccountType, { label: string; tone: string; Icon: any }> = {
 export const SellerBadge = ({
   type,
   verified,
+  pending,
   className,
-}: { type?: AccountType | null; verified?: boolean; className?: string }) => {
+}: { type?: AccountType | null; verified?: boolean; pending?: boolean; className?: string }) => {
   const t = (type ?? "pet_parent") as AccountType;
   const m = META[t];
   const Icon = m.Icon;
@@ -28,6 +29,11 @@ export const SellerBadge = ({
       {m.label}
       {verified && t !== "pet_parent" && t !== "buyer" && (
         <BadgeCheck className="h-3 w-3 text-leaf" />
+      )}
+      {!verified && pending && t !== "pet_parent" && t !== "buyer" && (
+        <span className="ml-1 inline-flex items-center gap-0.5 text-[9px] font-semibold text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-1.5 py-0.5">
+          <Clock className="h-2.5 w-2.5" /> KYC pending
+        </span>
       )}
     </Badge>
   );

@@ -2641,6 +2641,7 @@ export type Database = {
           breed: string | null
           breeder_cert_url: string | null
           city: string | null
+          co_listed_with_org_id: string | null
           created_at: string
           description: string | null
           fee_inr: number | null
@@ -2670,6 +2671,7 @@ export type Database = {
           breed?: string | null
           breeder_cert_url?: string | null
           city?: string | null
+          co_listed_with_org_id?: string | null
           created_at?: string
           description?: string | null
           fee_inr?: number | null
@@ -2699,6 +2701,7 @@ export type Database = {
           breed?: string | null
           breeder_cert_url?: string | null
           city?: string | null
+          co_listed_with_org_id?: string | null
           created_at?: string
           description?: string | null
           fee_inr?: number | null
@@ -2722,6 +2725,13 @@ export type Database = {
           vaccination_doc_url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pet_listings_co_listed_with_org_id_fkey"
+            columns: ["co_listed_with_org_id"]
+            isOneToOne: false
+            referencedRelation: "org_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "pet_listings_litter_id_fkey"
             columns: ["litter_id"]

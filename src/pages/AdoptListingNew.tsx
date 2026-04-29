@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { HealthTestPicker } from "@/components/marketplace/HealthTestPicker";
 import type { HealthTestEntry } from "@/lib/healthTests";
+import { CoListShelterPicker, type CoListShelter } from "@/components/marketplace/CoListShelterPicker";
 
 type ListingType = "adoption" | "rehoming" | "breeder_sale";
 
@@ -22,6 +23,9 @@ const AdoptListingNew = () => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [type, setType] = useState<ListingType>("adoption");
   const [breederVerified, setBreederVerified] = useState(false);
+  const [accountType, setAccountType] = useState<string | null>(null);
+  const [ownOrgApproved, setOwnOrgApproved] = useState(false);
+  const [coListShelter, setCoListShelter] = useState<CoListShelter | null>(null);
 
   const [title, setTitle] = useState("");
   const [species, setSpecies] = useState("dog");
@@ -51,11 +55,16 @@ const AdoptListingNew = () => {
   useEffect(() => {
     (async () => {
       if (!user) return;
-      const { data } = await supabase.from("profiles").select("breeder_verified, breeder_cert_url, city").eq("id", user.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("breeder_verified, breeder_cert_url, city, account_type").eq("id", user.id).maybeSingle();
       setBreederVerified(!!data?.breeder_verified);
+      setAccountType((data as any)?.account_type ?? null);
       if (data?.city && !city) setCity(data.city);
+      const { data: org } = await supabase.from("org_profiles").select("status").eq("user_id", user.id).maybeSingle();
+      setOwnOrgApproved((org as any)?.status === "approved");
     })();
   }, [user]);
+
+  const isUnverifiedRescuer = accountType === "rescuer" && !ownOrgApproved;
 
   const upload = async (file: File, kind: "photo" | "vax" | "cert") => {
     if (!user) { toast.error("Sign in first"); return null; }
@@ -88,6 +97,9 @@ const AdoptListingNew = () => {
     if (!vaxDocUrl) return toast.error("Vaccination record is required");
     if (type === "breeder_sale" && !breederVerified) return toast.error("Only verified breeders can list breeder sales. Apply in Settings.");
     if (type === "breeder_sale" && !breederCertUrl) return toast.error("Attach breeder certificate");
+    if (isUnverifiedRescuer && !coListShelter) {
+      return toast.error("Select an approved shelter to co-list with.");
+    }
     setSaving(true);
     const { error } = await supabase.from("pet_listings").insert({
       owner_id: user.id,
@@ -106,6 +118,7 @@ const AdoptListingNew = () => {
       breeder_cert_url: breederCertUrl,
       health_tests: healthTests as any,
       photos: photoUrl ? [photoUrl] : [],
+      co_listed_with_org_id: coListShelter?.user_id ?? null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -222,6 +235,17 @@ const AdoptListingNew = () => {
 
       {step === 3 && (
         <Card className="rounded-2xl border-hairline p-4 space-y-4">
+          {isUnverifiedRescuer && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                Co-list with shelter <span className="text-coral">*</span>
+              </Label>
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Independent rescuers must co-list with an approved shelter for buyer safety. Pick one to continue.
+              </p>
+              <CoListShelterPicker value={coListShelter} onChange={setCoListShelter} />
+            </div>
+          )}
           <div>
             <Label>Pet photo</Label>
             <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
