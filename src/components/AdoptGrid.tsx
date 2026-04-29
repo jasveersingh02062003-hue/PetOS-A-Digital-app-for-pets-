@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { HealthTestRail } from "@/components/marketplace/HealthTestChip";
+import { WishlistButton } from "@/components/marketplace/WishlistButton";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
 type Filters = {
