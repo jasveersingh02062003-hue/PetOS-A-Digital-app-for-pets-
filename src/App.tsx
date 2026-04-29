@@ -95,6 +95,7 @@ const AppointmentRoom = lazy(() => import("./pages/AppointmentRoom"));
 const MyAppointments = lazy(() => import("./pages/MyAppointments"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const PetProfile = lazy(() => import("./pages/PetProfile"));
+const PetTracker = lazy(() => import("./pages/PetTracker"));
 const Groups = lazy(() => import("./pages/Groups"));
 const GroupDetail = lazy(() => import("./pages/GroupDetail"));
 const Meetups = lazy(() => import("./pages/Meetups"));
@@ -242,6 +243,7 @@ const App = () => (
               <Route path="/v/:code" element={<VaultView />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/pet/:publicId" element={<PetProfile />} />
+              <Route path="/pets/:petId/tracker" element={<PetTracker />} />
               <Route path="/groups" element={<Groups />} />
               <Route path="/g/:slug" element={<GroupDetail />} />
               <Route path="/meetups" element={<Meetups />} />
