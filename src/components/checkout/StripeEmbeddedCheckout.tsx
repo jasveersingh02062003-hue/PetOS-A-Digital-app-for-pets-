@@ -5,25 +5,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 interface Props {
-  priceId: string;
+  priceId?: string;
   quantity?: number;
   customerEmail?: string;
   userId?: string;
   returnUrl: string;
   kind?: string;
   refId?: string;
+  amountInr?: number;
+  productName?: string;
+  currency?: string;
   onMeta?: (meta: { productName: string; amount: number | null; currency: string; interval: string | null }) => void;
 }
 
-export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userId, returnUrl, kind, refId, onMeta }: Props) {
+export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userId, returnUrl, kind, refId, amountInr, productName, currency, onMeta }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => { setReady(false); setError(null); }, [priceId]);
+  useEffect(() => { setReady(false); setError(null); }, [priceId, amountInr, productName]);
 
   const fetchClientSecret = async (): Promise<string> => {
     const { data, error } = await supabase.functions.invoke("payments-create-checkout", {
-      body: { priceId, quantity, customerEmail, userId, returnUrl, kind, refId, environment: getStripeEnvironment() },
+      body: { priceId, quantity, customerEmail, userId, returnUrl, kind, refId, amountInr, productName, currency, environment: getStripeEnvironment() },
     });
     if (error || !data?.clientSecret) {
       const msg = error?.message || data?.error || "Failed to start checkout";
