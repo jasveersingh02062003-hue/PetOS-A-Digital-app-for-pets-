@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, Users, Search, Video, MessageSquare, MapPin, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
+import { EarningsCard } from "@/components/payments/EarningsCard";
 
 const modeIcon: Record<string, JSX.Element> = {
   chat: <MessageSquare className="h-3.5 w-3.5" />,
@@ -173,11 +174,12 @@ const VetDashboard = () => {
       </header>
 
       <Tabs defaultValue="today">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="today">Today</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="patients">Patients</TabsTrigger>
           <TabsTrigger value="lookup">Lookup</TabsTrigger>
+          <TabsTrigger value="earnings">$</TabsTrigger>
         </TabsList>
 
         <TabsContent value="today" className="space-y-3 pt-4">
