@@ -92,6 +92,17 @@ Deno.serve(async (req) => {
           .update({ payment_intent_id: intentId, paid_at: new Date().toISOString() })
           .eq("id", refIdMeta);
       }
+
+      // Reward escrow funding → mark missing_pets row as escrowed
+      if (kindMeta === "reward_escrow") {
+        await supabase
+          .from("missing_pets")
+          .update({
+            reward_payment_intent_id: intentId,
+            reward_status: "escrowed",
+          })
+          .eq("id", refIdMeta);
+      }
     }
 
     return json({
