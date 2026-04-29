@@ -14,6 +14,7 @@ import { useInviteCollaborators } from "@/hooks/useCollabs";
 import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPicker";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { getRoleSubmit, getRoleComposerCopy, isOrgRole } from "@/lib/roleTheme";
+import { RescueJourneyPicker } from "@/components/rescue/RescueJourneyPicker";
 
 export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
   ({ variant = "icon" }, ref) => {
@@ -73,6 +74,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const submitClass = getRoleSubmit(accountType);
   // Pet-tag + health-log only make sense for accounts that own pets.
   const showPetTag = !orgRole && (pets?.length ?? 0) > 0;
+  const canRescueJourney = ["shelter", "rescuer", "sanctuary"].includes(accountType);
   const qc = useQueryClient();
   const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
@@ -81,6 +83,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [preview, setPreview] = useState<string | null>(null);
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
+  const [rescueJourneyId, setRescueJourneyId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<{ captions: string[]; hashtags: string[] } | null>(null);
@@ -178,6 +181,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         health_kind: healthTag?.kind ?? null,
         health_pet_id: healthTag?.pet_id ?? null,
         health_value: healthTag?.value ?? null,
+        rescue_journey_id: rescueJourneyId,
       } as any).select().single();
       if (error) throw error;
       if (collabs.length && post) {
@@ -185,7 +189,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       }
       toast.success(healthTag ? "Posted & logged to health" : "Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]); setHealthTag(null);
+      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]); setHealthTag(null); setRescueJourneyId(null);
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
@@ -322,6 +326,10 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
 
       {showPetTag && (
         <HealthTagPicker pets={pets} value={healthTag} onChange={setHealthTag} />
+      )}
+
+      {canRescueJourney && (
+        <RescueJourneyPicker value={rescueJourneyId} onChange={setRescueJourneyId} />
       )}
 
       <Button
