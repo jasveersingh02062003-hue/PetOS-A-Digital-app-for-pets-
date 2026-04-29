@@ -1,232 +1,162 @@
+# Execution Plan — Role Identity, Universal Posting & Role Dashboards
 
-# Provider Onboarding, Job Board & Role-Based Notification Plan
+Sequenced build plan. Each phase ships a usable improvement. Defaults locked unless you override before we start.
 
-## 1. What already exists
+---
 
-| Area | Status |
+## Phase 0 — Locked decisions (defaults)
+
+| Decision | Default |
 |---|---|
-| Account types in `AccountTypeChooser` | Pet parent, Buyer, Breeder, Kennel, Shelter, Sanctuary, Rescuer, Zoo |
-| Vet onboarding | Full 3-step flow (`/vet/onboarding`) → `vet_profiles`, admin verifies in `/vet/verifications` |
-| Org onboarding | `/onboarding/org` for shelters/breeders/kennels → `org_profiles`, admin reviews in `/admin/org-review` |
-| Service listings | `service_providers` table + `/services/new` form covers all 9 categories (grooming, training, walking, sitting, boarding, daycare, caretaker, vet_clinic, pet_taxi) |
-| Bookings + payouts | `service_bookings` with status notifications via `notify_user` trigger |
-| Notifications | `notifications` table, `notification_jobs` queue, `push_subscriptions`, `send-push` edge function (no-op until VAPID keys) |
-| Pet taxi driver tracking | `update_driver_location`, live pin on `/taxi/:id` |
+| Org post author | Org name + org logo (Instagram-style). Person hidden, shown on org profile as "managed by" |
+| Gaushala top KPI | Animals in care (donations second) |
+| Verified tick | Auto-flip when `org_profiles.status = 'approved'`. Admin can revoke |
 
-## 2. Gaps (what's missing)
+If any of these are wrong, say so before we start Task 1.
 
-1. **No provider account-type onboarding path.** A user wanting to become a walker / groomer / sitter / caretaker / daycare host / trainer / pet-taxi driver has no guided flow — they have to know to navigate to `/services/new` and fill a generic form. The `AccountTypeChooser` does not list "Service provider" at all.
-2. **No KYC / trust documents for individual providers.** `service_providers.verified` exists but no upload path, no admin review queue (unlike vets/orgs).
-3. **No category-specific intake.** Walker should capture availability days, max dogs per walk, neighborhoods. Groomer should capture mobile-vs-salon, breed sizes accepted. Daycare: capacity, hours, vaccination policy. Caretaker: live-in vs visiting, languages. Driver: vehicle, license, AC/crate. Trainer: methods, group/private. Boarding: rooms, cat/dog/exotic.
-4. **No job board.** Owners cannot post a one-off job ("need a walker tomorrow 6 PM") and have nearby providers get notified to accept. Today everything is owner→provider one-direction (owner picks listing).
-5. **No provider dashboard for non-vets.** Vets get `/vet/dashboard`; service providers only get `/services/manage` (CRUD listings) and `EarningsCard`. They have no inbox of new booking requests, no daily schedule, no "new job nearby" feed.
-6. **No role-aware notification routing.** Triggers send to one user_id at a time. There is no concept of "broadcast to every active walker within 5 km" (the missing-pet fanout pattern is the only example and is hard-coded for owners).
-7. **No availability / on-duty toggle.** A driver/walker/sitter can't say "I'm available now". Discoverability is binary `active` only.
-8. **Onboarding wizard only branches 3 ways** (`/onboarding/org`, `/onboarding/buyer-prefs`, `/onboarding/add-pet`). Provider path is missing.
-9. **No notification preference per role.** All notifications go to all enabled channels.
+---
 
-## 3. Plan — what to build
+## Phase 1 — Identity foundation (universal badge + open posting)
 
-### 3.1 Add provider account types + branched onboarding
+Goal: every role can post; everywhere a user appears, you can tell what they are.
 
-Extend `AccountTypeChooser` with a new group "I offer pet services":
+**1.1 Open the gate**
+- `FirstRunGate.tsx`: only `account_type === 'pet_parent'` requires ≥1 pet. All others need only `full_name + onboarded`.
+- `PostAuth.tsx`: mirror the same rule.
+- `Onboarding.tsx` branches:
+  - pet_parent → AddFirstPet
+  - buyer → BuyerPrefs
+  - breeder/kennel/shelter/sanctuary/rescuer/zoo → OrgOnboarding
+  - vet → `/vet/onboarding`
+  - provider → `/onboarding/provider/picker`
 
-- Walker
-- Groomer (salon / mobile)
-- Pet sitter (drop-in)
-- Caretaker (in-home)
-- Daycare host
-- Boarding host
-- Trainer
-- Pet-taxi driver
-- Handyman/other (catch-all)
+**1.2 `AuthorIdentity` component**
+- New `src/components/AuthorIdentity.tsx`: input `userId`, renders avatar + name + `<SellerBadge>` + verified tick.
+- For org accounts: shows org name + org logo as author (per Phase 0 default).
+- Replace ad-hoc author rendering in: PostFeed header, CommentSheet rows, StoryRail (small role icon overlay), Notifications rows, Search results, MatesGrid, AdoptGrid, MissingStrip, services cards, UserProfile header.
 
-Each maps to a `service_category` enum value. On select → route to a new `/onboarding/provider/:category` wizard.
+**1.3 Role-tinted avatar ring**
+- `getRoleRing(account_type)` util → tailwind ring class: breeder=amber, kennel=sky, shelter=lilac, sanctuary=leaf, zoo=stone, rescuer=coral, buyer=primary, vet=red, provider=primary, pet_parent=primary.
+- Applied via `AuthorIdentity`.
 
-### 3.2 Provider onboarding wizard (3 steps, category-aware)
+**1.4 Universal Composer**
+- `Composer.tsx`: pet-tag becomes optional. No pets → hide pet selector, allow caption + media only.
+- Same for Stories composer.
 
-```
-Step 1 — Identity & area
-  full_name, profile_photo, city, service_radius_km, languages[]
+**Deliverable:** any role logs in → reaches Home → can post photos/stories → role tag visible everywhere.
 
-Step 2 — Service details (category-specific block)
-  walker:    days[], time_slots[], max_dogs_per_walk, accepts (puppy/senior), price_per_walk
-  groomer:   mode (mobile|salon), accepted_sizes[], price_table (XS/S/M/L)
-  sitter:    visit_lengths[], price_per_visit
-  caretaker: live_in?, min_days, price_per_day
-  daycare:   capacity, open_hours, vaccination_strict?
-  boarding:  room_count, species_accepted[], price_per_night
-  trainer:   methods[], group_or_private, package_prices
-  driver:    vehicle, plate, has_crate, ac, capacity, license_no
-  handyman:  free-text
+---
 
-Step 3 — Trust & verification
-  upload: govt_id, address_proof, certification (optional)
-  agree to background check + code of conduct
-  → creates service_providers row (verified=false, accepting=false)
-  → creates provider_documents rows (private bucket)
-  → creates admin review entry
-```
+## Phase 2 — Role-aware Home dashboards
 
-### 3.3 New tables / columns
+**2.1 Home router**
+- Refactor `src/pages/Home.tsx` into a thin switch on `account_type`:
+  ```text
+  pet_parent  → <PetParentHome/>
+  breeder     → <BreederHome/>
+  kennel      → <KennelHome/>
+  shelter     → <ShelterHome/>
+  rescuer     → <ShelterHome variant="rescuer"/>
+  sanctuary   → <GaushalaHome/>
+  zoo         → <ZooHome/>
+  buyer       → <BuyerHome/>
+  vet         → redirect /vet
+  provider    → redirect /provider
+  ```
 
-```text
-service_providers
-  + provider_kind text ('individual' | 'business')   -- already implicit
-  + service_radius_km int default 5
-  + languages text[] default '{}'
-  + days_available text[]                            -- ['mon','tue',...]
-  + time_slots text[]                                -- ['morning','evening']
-  + accepting_jobs boolean default false             -- on-duty toggle
-  + verification_status text default 'pending'       -- pending|approved|rejected
-  + verification_notes text
-  + details jsonb default '{}'                       -- category-specific bag
-  + lat numeric, lng numeric                         -- for radius matching
+**2.2 Dashboards (one task each)**
 
-provider_documents (NEW)
-  id, provider_id, kind ('govt_id'|'address'|'cert'|'license'),
-  file_path, status, reviewed_by, reviewed_at, notes,
-  RLS: owner read/write own, admins read all
+| # | Dashboard | Hero KPI | Quick actions | Below fold |
+|---|---|---|---|---|
+| a | PetParentHome (extract current Home) | Pet card + health ring | Log meal · Walk · Ask vet | Stories, prompts, missing, feed |
+| b | BreederHome | Active litters + pending mating requests | New litter · List for mating · Verify lineage | Mating inbox, enquiries, feed |
+| c | ShelterHome (+Rescuer variant w/ smaller cap) | Adoptable count + open applications | List adoptable · Review apps · Post missing | App inbox, donations strip, feed |
+| d | KennelHome | Today's boarders + occupancy % | Accept booking · New service slot · Daily report | Today's check-ins, services, feed |
+| e | GaushalaHome | Animals in care + month donations | Add animal · Open donate · Post update | Donor wall, sponsorships, feed |
+| f | BuyerHome | Saved searches + new matches | Browse adopt · Browse breeders · Post wanted | Recommended pets, breeders nearby, feed |
+| g | ZooHome | Animals on display + today's events | Add exhibit · Educational post · Event | Events, posts, feed |
 
-job_posts (NEW)                                      -- "I need a walker tomorrow"
-  id, owner_id, pet_id, category, title, description,
-  scheduled_at, duration_minutes, address, lat, lng,
-  budget_inr, status ('open'|'assigned'|'completed'|'cancelled'),
-  assigned_provider_id, created_at
+All reuse existing data hooks — composing new screens, not new APIs.
 
-job_offers (NEW)                                     -- providers who responded
-  id, job_id, provider_id, message, price_inr,
-  status ('pending'|'accepted'|'declined'|'withdrawn')
-  unique (job_id, provider_id)
+**2.3 Role-aware `ContextualFab`**
+- breeder → New litter · Mating availability · Photo
+- shelter/rescuer → List for adoption · Urgent case · Donation drive
+- sanctuary → Animal in care · Sponsorship · Donation drive
+- kennel → Boarding slot · Promo · Photo
+- zoo → Education post · Visitor announcement
+- vet → Open consult · Prescription
+- buyer → Photo · Story · Wanted post
+- pet_parent → Photo · Story · Log
 
-notification_preferences (NEW)
-  user_id PK, push boolean, email boolean,
-  per_kind jsonb default '{}'                        -- {booking_new:true, job_nearby:true, ...}
-```
+---
 
-### 3.4 Job board flow (two-sided)
+## Phase 3 — Search by entity type
 
-```text
-Owner /jobs/new
-  pick pet → pick category → date/time → budget → post
-        │
-        ▼
-trigger tg_fanout_job_to_providers
-  → INSERT INTO notification_jobs (kind='job_fanout', payload={job_id})
-        │
-        ▼
-process-notification-jobs cron
-  → SELECT providers WHERE category=$ AND accepting_jobs AND verified
-                     AND distance(lat,lng, job.lat,job.lng) <= service_radius_km
-  → notify_user(provider, 'job_nearby', title, body, '/jobs/'||id)
-  → optional push via send-push
-        │
-        ▼
-Provider /jobs (inbox)
-  sees nearby open jobs → "Send offer" → INSERT job_offers
-        │
-        ▼
-Owner /jobs/:id
-  sees offers → accept one → sets job.assigned_provider_id, status='assigned'
-  → trigger notify_user(provider,'job_accepted')
-  → other offers auto-decline
-        │
-        ▼
-On completion → existing payments flow (kind='service') → receipt + payout
-```
+- `Search.tsx` gets tabs: People · Pets · Breeders · Kennels · Shelters · Sanctuaries · Rescuers · Zoos · Vets · Services.
+- Each tab queries the right table (profiles filtered by `account_type`, `pets`, `service_listings`, etc.).
+- Rows render via `<AuthorIdentity>`.
+- `/discover` gets a top filter chip row with the same entity types.
 
-### 3.5 Provider dashboard `/provider`
+---
 
-Single screen for any non-vet provider:
+## Phase 4 — Public profile per role
 
-- Header: on-duty toggle (writes `accepting_jobs`)
-- Today's schedule (from `service_bookings` where date=today)
-- Inbox: new booking requests + new job offers awaiting reply
-- Nearby jobs feed (radius-filtered)
-- Earnings card (existing)
-- Listings shortcut (`/services/manage`)
-- Verification status banner (pending/approved/rejected)
+`UserProfile.tsx` becomes role-aware:
+- breeder → Litters · Mating availability · Reviews
+- kennel → Services · Boarding · Reviews
+- shelter/rescuer → Adoptables · Donate CTA · Stories
+- sanctuary → Animals · Sponsorships · Donate CTA
+- zoo → Exhibits · Events · Educational posts
+- vet → Specialisations · Book appointment · AskVet answers
+- pet_parent / buyer → existing layout
 
-### 3.6 Admin review queue for individual providers
+Header banner colour matches role tint.
 
-New tab in `/admin` → "Provider verifications" mirroring `/admin/org-review`:
+---
 
-- List `service_providers` with `verification_status='pending'`
-- View uploaded `provider_documents`
-- Approve → sets `verified=true`, `verification_status='approved'`, `notify_user('verification_approved')`
-- Reject with reason → notify user, allow re-upload
+## Phase 5 — Polish (parallelisable)
 
-### 3.7 Notification routing improvements
+- Auto-flip verified tick on `org_profiles.status='approved'` (ensure `useVerifiedOrgs` invalidates on KYC approval).
+- Notification rows use `AuthorIdentity` (role + tick on every "X liked your post").
+- Video post type in Composer + feed renderer.
+- Per-role onboarding copy & illustrations.
+- Boost/promote post type for kennels (paid).
 
-Add `notification_preferences` and respect them inside `notify_user` / `send-push`:
+---
 
-```sql
--- inside notify_user, before insert:
-IF NOT user wants this kind THEN RETURN; END IF;
-```
+## Task tracker breakdown (in execution order)
 
-New notification kinds and where they fire:
+1. Open FirstRunGate for non-pet-parent roles
+2. Build AuthorIdentity component + role rings
+3. Replace author rendering across feed, comments, stories, search, notifications
+4. Universal Composer (optional pet tag)
+5. Home router by account_type
+6. PetParentHome (extract current)
+7. BreederHome
+8. ShelterHome (+ Rescuer variant)
+9. KennelHome
+10. GaushalaHome
+11. BuyerHome
+12. ZooHome
+13. Role-aware ContextualFab
+14. Search entity-type tabs
+15. Role-aware UserProfile
+16. Verified tick auto-flip + notification badges
+17. Video post type (later)
 
-| Kind | Audience | Trigger |
-|---|---|---|
-| `job_nearby` | providers in radius | `process-notification-jobs` drains `job_fanout` |
-| `job_offer_received` | owner | INSERT on `job_offers` |
-| `job_accepted` | provider | UPDATE on `job_posts.status='assigned'` |
-| `verification_approved` / `_rejected` | provider | admin action |
-| `provider_on_duty_reminder` | provider | daily 8 AM cron if `accepting_jobs=false` for 7 days |
-| `caretaker_handover_due` | both parties | T-2h before booking start |
+---
 
-### 3.8 Updated `AccountTypeChooser` flow
+## Out of scope (explicitly not in this plan)
 
-```text
-Choose role
- ├─ Buyer        → /onboarding/buyer-prefs
- ├─ Pet parent   → /onboarding/add-pet
- ├─ Breeder/Org  → /onboarding/org
- ├─ Provider     → sub-picker (9 categories) → /onboarding/provider/:cat
- └─ Vet          → /vet/onboarding (existing)
-```
+- New backend tables — reuses existing schema (`profiles`, `org_profiles`, `pets`, `litters`, `service_listings`, `donations`, etc.). Migrations only if a dashboard reveals a missing column.
+- Payment flows for donations/boosts (existing donate/Stripe stays as-is).
+- Mobile-app shell changes.
 
-### 3.9 Notification delivery checklist (per role)
+## Technical notes
 
-| Role | Default channels | Key notification kinds |
-|---|---|---|
-| Pet parent | push + in-app | booking_status, job_offer_received, vet_answer, missing_pet_alert, mate_status, order_status, vaccination_due |
-| Walker / Sitter | push + in-app | booking_new, job_nearby, job_accepted, schedule_reminder, payout_paid |
-| Groomer / Trainer | push + in-app | booking_new, review_new, payout_paid |
-| Daycare / Boarding | push + in-app + email | booking_new, vaccination_gate_blocked, capacity_alert |
-| Caretaker | push + in-app | job_nearby (long-term), handover_due, daily_checkin_reminder |
-| Driver | push (high-priority) | job_nearby, taxi_assigned, taxi_status, payout_paid |
-| Vet | push + email | new_consult, appointment_booked, prescription_request |
-| Shelter / NGO | push + email | adoption_application, donation_received, missing_pet_in_area |
-| Admin | in-app + email | new_org_pending, new_provider_pending, report_filed, payment_failed |
+- All role checks read `profiles.account_type`; org status from `org_profiles.status`.
+- `AuthorIdentity` will be the single source of truth — no other component should render `<Avatar+name+badge>` manually after Phase 1.3 lands.
+- Dashboards are pure composition over existing hooks (`usePets`, `useLitters`, `useAdoptables`, `useBookings`, `useDonations`, …); if a hook is missing, we add it in that dashboard's task.
+- `getRoleRing` lives in `src/lib/roleTheme.ts` alongside existing role colour helpers.
 
-### 3.10 Implementation order (smallest shippable first)
-
-1. DB migration — new columns, `provider_documents`, `notification_preferences`
-2. `AccountTypeChooser` extension + sub-picker
-3. `/onboarding/provider/:category` wizard (steps 1–3) + storage bucket
-4. Admin `/admin/provider-review` queue
-5. `/provider` dashboard (read-only first, then on-duty toggle)
-6. `job_posts` + `job_offers` migration
-7. `/jobs/new`, `/jobs`, `/jobs/:id` pages
-8. `tg_fanout_job_to_providers` trigger + `process-notification-jobs` extension for `job_fanout`
-9. Notification preferences screen + enforcement in `notify_user`
-10. Per-role notification kinds + push payload tweaks
-
-## 4. Out of scope (explicit non-goals)
-
-- Background-check vendor integration (we collect docs, an admin reviews manually).
-- In-app chat between owner and provider before booking (already covered by existing `messages`).
-- Native mobile push beyond web-push (PWA only at launch).
-- Scheduling conflicts engine (calendar overlap detection) — phase 2.
-
-## 5. Acceptance checks after build
-
-- New user can sign up → choose "I offer services" → pick "Walker" → finish wizard → see "Pending verification" banner on `/provider`.
-- Admin approves → walker receives `verification_approved` push.
-- Owner posts a walking job 2 km away → walker sees it in `/jobs` within 1 cron cycle and gets a push.
-- Walker sends offer → owner accepts → both get correct notifications, other offers auto-decline.
-- Boarding host with `vaccination_strict=true` blocks a booking when pet is unvaccinated (uses existing `check_pet_boarding_eligible`).
-- `notification_preferences` UI lets a user turn off `job_nearby` and they stop receiving them.
-
+Approve and I'll switch to build mode and start with task 1 (FirstRunGate), one task in_progress at a time.
