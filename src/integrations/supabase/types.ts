@@ -318,10 +318,12 @@ export type Database = {
       boarding_services: {
         Row: {
           active: boolean
+          capacity: number | null
           city: string | null
           created_at: string
           description: string | null
           id: string
+          next_available_at: string | null
           owner_id: string
           photos: string[]
           price_inr_per_day: number | null
@@ -331,10 +333,12 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          capacity?: number | null
           city?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          next_available_at?: string | null
           owner_id: string
           photos?: string[]
           price_inr_per_day?: number | null
@@ -344,10 +348,12 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          capacity?: number | null
           city?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          next_available_at?: string | null
           owner_id?: string
           photos?: string[]
           price_inr_per_day?: number | null
@@ -2662,6 +2668,7 @@ export type Database = {
           litter_id: string | null
           lng: number | null
           microchip_id: string | null
+          monthly_upkeep_inr: number | null
           owner_id: string
           parents_info: Json | null
           pet_id: string | null
@@ -2692,6 +2699,7 @@ export type Database = {
           litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
+          monthly_upkeep_inr?: number | null
           owner_id: string
           parents_info?: Json | null
           pet_id?: string | null
@@ -2722,6 +2730,7 @@ export type Database = {
           litter_id?: string | null
           lng?: number | null
           microchip_id?: string | null
+          monthly_upkeep_inr?: number | null
           owner_id?: string
           parents_info?: Json | null
           pet_id?: string | null
@@ -5802,6 +5811,35 @@ export type Database = {
           recorded_at?: string
         }
         Relationships: []
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "pet_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
