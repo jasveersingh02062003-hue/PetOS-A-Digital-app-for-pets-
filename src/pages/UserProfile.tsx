@@ -40,12 +40,11 @@ const UserProfile = () => {
     queryKey: ["handle->id", param],
     enabled: !!param && !isUuid,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("handle", param!)
-        .maybeSingle();
-      return (data as any)?.id ?? null;
+      // RLS blocks direct reads of profiles for non-self, so use the public RPC
+      // which accepts either a UUID or a handle.
+      const { data } = await supabase.rpc("get_profile_public_by_ref" as any, { _ref: param! });
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as any)?.id ?? null;
     },
   });
 
