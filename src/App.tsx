@@ -14,6 +14,7 @@ import { RouteFallback } from "./components/RouteFallback";
 import { logError } from "./lib/logError";
 import { FirstRunGate } from "./components/FirstRunGate";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
+import { RealtimeBridge } from "./components/RealtimeBridge";
 
 // Eager — only the entry route the user sees first.
 import Home from "./pages/Home";
@@ -159,6 +160,7 @@ const App = () => (
         <AuthProvider>
           <PresenceProvider>
           <CartProvider>
+            <RealtimeBridge />
             <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
             <Routes>

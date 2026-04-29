@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -32,6 +33,19 @@ const Onboarding = () => {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+
+  // Role guard: this 7-step wizard is pet_parent-only. Any other role that
+  // lands here (deep link, refresh after picking a role) gets bounced to the
+  // proper chooser/wizard so we never try to insert a pet for a shelter, etc.
+  useEffect(() => {
+    if (profileLoading) return;
+    const accountType = profile?.account_type ?? "pet_parent";
+    if (accountType !== "pet_parent" && accountType !== "rescuer") {
+      nav("/onboarding/account-type", { replace: true });
+    }
+  }, [profile, profileLoading, nav]);
+
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);

@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
+import { useOrgIdentity } from "@/hooks/useOrgIdentities";
 import { getRoleRing } from "@/lib/roleTheme";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,8 @@ interface Props {
  * Use this everywhere a user appears (post header, comments, stories, search,
  * notifications, grids). Do not render avatar+name+badge by hand.
  */
+const ORG_ROLES = new Set(["breeder", "kennel", "shelter", "sanctuary", "zoo"]);
+
 export const AuthorIdentity = ({
   userId,
   fallbackName,
@@ -51,10 +54,21 @@ export const AuthorIdentity = ({
   const { data: profiles } = usePublicProfiles();
   const profile = profiles?.find((p) => p.id === userId);
   const verified = useIsVerifiedOrg(userId);
+  const org = useOrgIdentity(userId);
 
-  const name = profile?.full_name ?? fallbackName ?? "Member";
-  const avatar = profile?.avatar_url ?? fallbackAvatar ?? undefined;
-  const accountType = (profile?.account_type ?? fallbackAccountType ?? "pet_parent") as any;
+  const accountType = (profile?.account_type ?? fallbackAccountType ?? "pet_parent") as string;
+  const personalName = profile?.full_name ?? fallbackName ?? "Member";
+  const personalAvatar = profile?.avatar_url ?? fallbackAvatar ?? undefined;
+
+  // Org-as-author: for org-type accounts with a registered org_profiles row,
+  // surface the org name and logo. Personal name moves to the subline.
+  const useOrg = ORG_ROLES.has(accountType) && !!org?.org_name;
+  const name = useOrg ? (org!.org_name as string) : personalName;
+  const avatar = useOrg ? (org!.logo_url ?? personalAvatar) : personalAvatar;
+  const effectiveSubline =
+    subline ??
+    (useOrg ? <>Managed by {personalName}</> : null);
+
   const ring = getRoleRing(accountType);
   const s = SIZE[size];
 
@@ -70,10 +84,10 @@ export const AuthorIdentity = ({
         </div>
         {showBadge && (
           <div className="mt-0.5">
-            <SellerBadge type={accountType} verified={verified} />
+            <SellerBadge type={accountType as any} verified={verified} />
           </div>
         )}
-        {subline ? <div className="text-xs text-muted-foreground truncate">{subline}</div> : null}
+        {effectiveSubline ? <div className="text-xs text-muted-foreground truncate">{effectiveSubline}</div> : null}
       </div>
     </div>
   );
