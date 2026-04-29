@@ -14,6 +14,7 @@ import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "@/components/AuthorIdentity";
+import { UserStreakChip } from "@/components/social/UserStreakChip";
 
 export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; onOpenChange: (open: boolean) => void }) => {
   const { user } = useAuth();
@@ -134,6 +135,12 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
                       <SellerBadge
                         type={c.author.account_type}
                         verified={verifiedOrgs?.has(c.author_id) ?? false}
+                        className="text-[9px] py-0 px-1.5 h-4"
+                      />
+                    )}
+                    {!asPet && (!c.author?.account_type || c.author.account_type === "pet_parent") && (
+                      <UserStreakChip
+                        userId={c.author_id}
                         className="text-[9px] py-0 px-1.5 h-4"
                       />
                     )}
