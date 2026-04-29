@@ -720,6 +720,45 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibits: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          habitat: string | null
+          id: string
+          name: string
+          on_display: boolean
+          species: string | null
+          updated_at: string
+          zoo_user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          habitat?: string | null
+          id?: string
+          name: string
+          on_display?: boolean
+          species?: string | null
+          updated_at?: string
+          zoo_user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          habitat?: string | null
+          id?: string
+          name?: string
+          on_display?: boolean
+          species?: string | null
+          updated_at?: string
+          zoo_user_id?: string
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           description: string | null
@@ -2467,6 +2506,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      pedigree_certificates: {
+        Row: {
+          breed: string | null
+          certificate_number: string
+          created_at: string
+          dam_name: string | null
+          document_url: string | null
+          id: string
+          issued_at: string
+          issued_by: string
+          notes: string | null
+          pet_id: string
+          registry_name: string | null
+          sire_name: string | null
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          breed?: string | null
+          certificate_number: string
+          created_at?: string
+          dam_name?: string | null
+          document_url?: string | null
+          id?: string
+          issued_at?: string
+          issued_by: string
+          notes?: string | null
+          pet_id: string
+          registry_name?: string | null
+          sire_name?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          breed?: string | null
+          certificate_number?: string
+          created_at?: string
+          dam_name?: string | null
+          document_url?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string
+          notes?: string | null
+          pet_id?: string
+          registry_name?: string | null
+          sire_name?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedigree_certificates_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pedigree_certificates_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pet_access_requests: {
         Row: {
