@@ -11,6 +11,8 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2, Upload, ShieldAlert, BadgeCheck, Heart, Home as HomeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
+import { HealthTestPicker } from "@/components/marketplace/HealthTestPicker";
+import type { HealthTestEntry } from "@/lib/healthTests";
 
 type ListingType = "adoption" | "rehoming" | "breeder_sale";
 
@@ -31,6 +33,7 @@ const AdoptListingNew = () => {
   const [description, setDescription] = useState("");
   const [microchip, setMicrochip] = useState("");
   const [parentsInfo, setParentsInfo] = useState("");
+  const [healthTests, setHealthTests] = useState<HealthTestEntry[]>([]);
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [vaxDocUrl, setVaxDocUrl] = useState<string | null>(null);
@@ -101,6 +104,7 @@ const AdoptListingNew = () => {
       parents_info: parentsInfo.trim() ? { notes: parentsInfo.trim() } : null,
       vaccination_doc_url: vaxDocUrl,
       breeder_cert_url: breederCertUrl,
+      health_tests: healthTests as any,
       photos: photoUrl ? [photoUrl] : [],
     });
     setSaving(false);
@@ -265,6 +269,16 @@ const AdoptListingNew = () => {
               <div>
                 <Label>Parents info</Label>
                 <Textarea value={parentsInfo} onChange={(e) => setParentsInfo(e.target.value)} rows={2} placeholder="Sire, dam, lineage details" />
+              </div>
+              <div>
+                <Label>Health screening tests</Label>
+                <div className="mt-2">
+                  <HealthTestPicker
+                    species={species}
+                    value={healthTests}
+                    onChange={setHealthTests}
+                  />
+                </div>
               </div>
             </>
           )}
