@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft, Lock } from "lucide-react";
+import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft, Lock, Heart } from "lucide-react";
 import { ReportButton } from "@/components/ReportButton";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
@@ -17,6 +17,7 @@ import { PayDepositSheet } from "@/components/marketplace/PayDepositSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
+import { SponsorSheet } from "@/components/sponsor/SponsorSheet";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -37,6 +38,7 @@ const AdoptListingDetail = () => {
   const [transferOpen, setTransferOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [depositOpen, setDepositOpen] = useState(false);
+  const [sponsorOpen, setSponsorOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["pet-listing", id],
@@ -94,6 +96,7 @@ const AdoptListingDetail = () => {
   const isSold = listing.status === "sold";
   const sellerKind = sellerInfo?.profile?.account_type as string | undefined;
   const isShelterSeller = sellerKind === "shelter" || sellerKind === "sanctuary" || sellerKind === "rescuer";
+  const canSponsor = sellerKind === "sanctuary" || sellerKind === "shelter" || sellerKind === "rescuer";
 
   const contact = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -243,6 +246,25 @@ const AdoptListingDetail = () => {
           <Lock className="h-4 w-4" /> Reserve with deposit
         </Button>
       )}
+
+      {/* Sponsor monthly — only for sanctuary/shelter/rescuer-owned animals */}
+      {!isOwner && canSponsor && (
+        <Button
+          variant="outline"
+          onClick={() => setSponsorOpen(true)}
+          className="w-full rounded-xl h-12 mt-2 gap-2 border-coral/40 text-coral hover:bg-coral/5"
+        >
+          <Heart className="h-4 w-4" fill="currentColor" /> Sponsor monthly
+        </Button>
+      )}
+
+      <SponsorSheet
+        open={sponsorOpen}
+        onOpenChange={setSponsorOpen}
+        orgUserId={listing.owner_id}
+        listingId={listing.id}
+        listingTitle={listing.title}
+      />
 
       <PayDepositSheet
         open={depositOpen}
