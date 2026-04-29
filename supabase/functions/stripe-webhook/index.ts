@@ -85,6 +85,14 @@ serve(async (req) => {
               .from("missing_pets")
               .update({ boosted_until: until.toISOString() })
               .eq("id", refId);
+          } else if (kind === "reward_escrow" && refId && intentId) {
+            await supabase
+              .from("missing_pets")
+              .update({
+                reward_payment_intent_id: intentId,
+                reward_status: "escrowed",
+              })
+              .eq("id", refId);
           } else if (kind === "donation") {
             const donationId = (session.metadata?.donation_id as string | undefined) || null;
             if (donationId) {
