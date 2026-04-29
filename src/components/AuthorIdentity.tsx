@@ -62,9 +62,9 @@ export const AuthorIdentity = ({
   const verified = useIsVerifiedOrg(userId);
   const isHelpfulVet = useIsHelpfulVet(userId);
   const org = useOrgIdentity(userId);
-  const providerCategory = useProviderCategory(userId, accountType === "service_provider");
 
   const accountType = (profile?.account_type ?? fallbackAccountType ?? "pet_parent") as string;
+  const providerCategory = useProviderCategory(userId, accountType === "service_provider");
   const personalName = profile?.full_name ?? fallbackName ?? "Member";
   const personalAvatar = profile?.avatar_url ?? fallbackAvatar ?? undefined;
 
