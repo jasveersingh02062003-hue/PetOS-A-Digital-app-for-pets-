@@ -251,19 +251,21 @@ Deno.serve(async (req) => {
 
     // 6. Rescue journey
     if (ids["esha_rescue"] && petIds["Brownie"]) {
-      const { data: rj } = await admin.from("rescue_journeys").insert({
+      const { data: rj, error: rjErr } = await admin.from("rescue_journeys").insert({
         org_id: ids["esha_rescue"],
         pet_id: petIds["Brownie"],
         title: "Brownie's Rescue Journey",
-        status: "ready_for_adoption",
+        status: "in_care",
       }).select("id").single();
+      if (rjErr) log.push(`FAIL rescue_journey: ${rjErr.message}`);
       if (rj) {
-        await admin.from("rescue_journey_entries").insert([
+        const { error: rjeErr } = await admin.from("rescue_journey_entries").insert([
           { journey_id: rj.id, day_number: 1, caption: "Found on the street, scared and hungry." },
           { journey_id: rj.id, day_number: 7, caption: "First vet visit, vaccinations started." },
           { journey_id: rj.id, day_number: 30, caption: "Healthy, playful, ready for a home." },
           { journey_id: rj.id, day_number: 45, caption: "Listed for adoption!" },
         ]);
+        if (rjeErr) log.push(`FAIL rescue_journey_entries: ${rjeErr.message}`);
       }
     }
 
@@ -280,7 +282,7 @@ Deno.serve(async (req) => {
       });
     }
     if (ids["devi_boarding"] && ids["aarti_parent"] && petIds["Mochi"]) {
-      const { data: bk } = await admin.from("service_bookings").insert({
+      const { data: bk, error: bkErr } = await admin.from("service_bookings").insert({
         provider_id: ids["devi_boarding"],
         customer_id: ids["aarti_parent"],
         pet_id: petIds["Mochi"],
@@ -288,17 +290,19 @@ Deno.serve(async (req) => {
         status: "confirmed" as any,
         notes: "3-night stay",
       }).select("id").single();
+      if (bkErr) log.push(`FAIL service_booking: ${bkErr.message}`);
       if (bk) {
-        await admin.from("kennel_daily_reports").insert({
+        const { error: krErr } = await admin.from("kennel_daily_reports").insert({
           booking_id: bk.id,
           provider_id: ids["devi_boarding"],
           author_id: ids["devi_boarding"],
           meals: 2,
           walks: 3,
           potty: 4,
-          mood: "great",
+          mood: "happy",
           notes: "Mochi loved the morning walk and made a new friend!",
         });
+        if (krErr) log.push(`FAIL kennel_daily_report: ${krErr.message}`);
       }
     }
 
