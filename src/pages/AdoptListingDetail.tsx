@@ -160,6 +160,10 @@ const AdoptListingDetail = () => {
         <SellerBadge
           type={(listing.seller_type as any) ?? sellerInfo?.profile?.account_type ?? "pet_parent"}
           verified={!!sellerInfo?.profile?.breeder_verified}
+          pending={
+            ((listing.seller_type as any) === "rescuer" || sellerInfo?.profile?.account_type === "rescuer")
+            && !sellerInfo?.org
+          }
         />
         {sellerInfo?.org && (
           <Link to={`/org/${sellerInfo.org.user_id}`} className="text-xs underline text-muted-foreground">
