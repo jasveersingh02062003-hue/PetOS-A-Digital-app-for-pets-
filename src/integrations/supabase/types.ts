@@ -727,6 +727,178 @@ export type Database = {
         }
         Relationships: []
       }
+      geofences: {
+        Row: {
+          active: boolean
+          center_lat: number
+          center_lng: number
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          pet_id: string
+          radius_m: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          center_lat: number
+          center_lng: number
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id: string
+          pet_id: string
+          radius_m?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          center_lat?: number
+          center_lng?: number
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          pet_id?: string
+          radius_m?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geofences_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "geofences_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gps_devices: {
+        Row: {
+          active: boolean
+          battery_pct: number | null
+          created_at: string
+          device_type: string
+          id: string
+          label: string
+          last_seen_at: string | null
+          owner_id: string
+          pairing_code: string
+          pet_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          battery_pct?: number | null
+          created_at?: string
+          device_type?: string
+          id?: string
+          label?: string
+          last_seen_at?: string | null
+          owner_id: string
+          pairing_code?: string
+          pet_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          battery_pct?: number | null
+          created_at?: string
+          device_type?: string
+          id?: string
+          label?: string
+          last_seen_at?: string | null
+          owner_id?: string
+          pairing_code?: string
+          pet_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gps_devices_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "gps_devices_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gps_pings: {
+        Row: {
+          accuracy_m: number | null
+          battery_pct: number | null
+          created_at: string
+          device_id: string
+          id: string
+          lat: number
+          lng: number
+          outside_geofence: boolean
+          pet_id: string
+          recorded_at: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          battery_pct?: number | null
+          created_at?: string
+          device_id: string
+          id?: string
+          lat: number
+          lng: number
+          outside_geofence?: boolean
+          pet_id: string
+          recorded_at?: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          battery_pct?: number | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          lat?: number
+          lng?: number
+          outside_geofence?: boolean
+          pet_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gps_pings_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "gps_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gps_pings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "gps_pings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -5026,6 +5198,16 @@ export type Database = {
       increment_usage: {
         Args: { _kind: string; _limit: number; _window_days: number }
         Returns: Json
+      }
+      ingest_gps_ping: {
+        Args: {
+          _accuracy_m?: number
+          _battery_pct?: number
+          _lat: number
+          _lng: number
+          _pairing_code: string
+        }
+        Returns: string
       }
       is_blocked: {
         Args: { _blocked: string; _blocker: string }
