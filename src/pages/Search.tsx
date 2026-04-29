@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, X, PawPrint, User, Hash, Stethoscope, CalendarDays, Users, Scissors, AlertCircle, FileText, Bookmark, BookmarkCheck, Trash2, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import {
   type SavedSearch,
 } from "@/lib/savedSearches";
 import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { toast } from "sonner";
 
 const RECENTS_KEY = "petos:recent_searches";
@@ -65,6 +66,8 @@ export default function Search() {
   const debounced = useDebounced(q.trim(), 300);
   const { items: savedItems, create: saveMut, remove: removeMut } = useSavedSearches();
   const [recentsTick, setRecentsTick] = useState(0);
+  const { coords: geo, loading: geoLoading, request: requestGeo, clear: clearGeo } = useGeolocation();
+  const [radiusKm, setRadiusKm] = useState<number>(10);
 
   useEffect(() => { document.title = q ? `${q} — Search · Petos` : "Search · Petos"; }, [q]);
 
@@ -87,6 +90,34 @@ export default function Search() {
   const enabled = debounced.length >= 2;
   const browseByRoleOnly = !enabled && role !== "all";
   const like = `%${debounced}%`;
+
+  // Ranked, geo-aware "Best matches" via search_entities RPC
+  const { data: ranked } = useQuery({
+    queryKey: ["search-ranked", debounced, geo?.lat, geo?.lng, radiusKm],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("search_entities", {
+        p_query: debounced,
+        p_lat: geo?.lat ?? null,
+        p_lng: geo?.lng ?? null,
+        p_radius_km: radiusKm,
+        p_entity_type: "all",
+        p_limit: 12,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        entity_type: string;
+        id: string;
+        title: string;
+        subtitle: string | null;
+        image_url: string | null;
+        city: string | null;
+        distance_km: number | null;
+        score: number;
+        payload: any;
+      }>;
+    },
+  });
 
   const { data, isFetching } = useQuery({
     queryKey: ["search-page", debounced, role],
@@ -226,6 +257,16 @@ export default function Search() {
             </button>
           )}
         </div>
+        <div className="max-w-2xl mx-auto px-3 pb-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <LocationChip
+            active={!!geo}
+            loading={geoLoading}
+            radiusKm={radiusKm}
+            onRequest={requestGeo}
+            onClear={clearGeo}
+            onCycleRadius={() => setRadiusKm((r) => (r === 5 ? 10 : r === 10 ? 25 : r === 25 ? 50 : 5))}
+          />
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-3 py-4 space-y-4">
@@ -292,6 +333,11 @@ export default function Search() {
 
               <TabsContent value="all" className="mt-4 space-y-5">
                 {data && Object.values(counts!).every((n) => n === 0) && <Empty q={debounced} />}
+                {!!ranked?.length && (
+                  <Section title={geo ? `Best matches · within ${radiusKm} km` : "Best matches"}>
+                    <RankedList items={ranked} />
+                  </Section>
+                )}
                 {!!data?.pets.length && <Section title="Pets"><PetsList items={data.pets} /></Section>}
                 {!!filteredPeople.length && <Section title="People"><PeopleList items={filteredPeople} /></Section>}
                 {!!data?.tags.length && <Section title="Hashtags"><TagsList items={data.tags} /></Section>}
@@ -563,3 +609,86 @@ const MissingList = ({ items }: { items: any[] }) => items.length ? (
     ))}
   </div>
 ) : <Empty q="" />;
+
+function LocationChip({
+  active, loading, radiusKm, onRequest, onClear, onCycleRadius,
+}: {
+  active: boolean;
+  loading: boolean;
+  radiusKm: number;
+  onRequest: () => void;
+  onClear: () => void;
+  onCycleRadius: () => void;
+}) {
+  if (!active) {
+    return (
+      <button
+        onClick={onRequest}
+        disabled={loading}
+        className="shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-[11px] font-medium border bg-card text-muted-foreground border-hairline hover:text-foreground"
+      >
+        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+        {loading ? "Locating…" : "Use my location"}
+      </button>
+    );
+  }
+  return (
+    <div className="shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-medium pl-2.5 pr-1 h-7">
+      <MapPin className="h-3 w-3" />
+      <button onClick={onCycleRadius} className="px-1 py-0.5 rounded hover:bg-primary/20" aria-label="Change radius">
+        Near me · {radiusKm} km
+      </button>
+      <button onClick={onClear} aria-label="Clear location" className="p-1 rounded-full hover:bg-primary/20">
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+function RankedList({ items }: { items: Array<{
+  entity_type: string; id: string; title: string; subtitle: string | null;
+  image_url: string | null; city: string | null; distance_km: number | null;
+  score: number; payload: any;
+}> }) {
+  const linkFor = (it: typeof items[number]) => {
+    if (it.entity_type === "people") return `/u/${it.payload?.handle ?? it.id}`;
+    if (it.entity_type === "pets") return `/listing/${it.id}`;
+    if (it.entity_type === "providers") return `/services/${it.id}`;
+    return "#";
+  };
+  const iconFor = (t: string) =>
+    t === "people" ? <User className="w-5 h-5" />
+    : t === "pets" ? <PawPrint className="w-5 h-5" />
+    : <Scissors className="w-5 h-5" />;
+  return (
+    <div className="space-y-1">
+      {items.map((it) => (
+        <Link
+          key={`${it.entity_type}-${it.id}`}
+          to={linkFor(it)}
+          className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted/60"
+        >
+          {it.image_url
+            ? <img src={it.image_url} alt="" className="h-10 w-10 rounded-full object-cover" loading="lazy" />
+            : <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">{iconFor(it.entity_type)}</div>}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-medium truncate">{it.title}</span>
+              <span className="text-[9px] uppercase tracking-wide px-1.5 py-0 rounded bg-muted text-muted-foreground">
+                {it.entity_type === "people" ? "person" : it.entity_type === "pets" ? "listing" : "service"}
+              </span>
+            </div>
+            {(it.subtitle || it.city) && (
+              <div className="text-xs text-muted-foreground truncate">{it.subtitle || it.city}</div>
+            )}
+          </div>
+          {typeof it.distance_km === "number" && (
+            <span className="text-[10px] text-muted-foreground shrink-0 inline-flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" />{it.distance_km < 1 ? "<1" : Math.round(it.distance_km)} km
+            </span>
+          )}
+        </Link>
+      ))}
+    </div>
+  );
+}

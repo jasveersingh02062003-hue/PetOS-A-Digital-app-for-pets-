@@ -5877,6 +5877,27 @@ export type Database = {
         }
         Returns: Json
       }
+      search_entities: {
+        Args: {
+          p_entity_type?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_query: string
+          p_radius_km?: number
+        }
+        Returns: {
+          city: string
+          distance_km: number
+          entity_type: string
+          id: string
+          image_url: string
+          payload: Json
+          score: number
+          subtitle: string
+          title: string
+        }[]
+      }
       send_broadcast: {
         Args: {
           _body: string
