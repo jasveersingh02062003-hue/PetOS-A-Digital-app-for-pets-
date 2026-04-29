@@ -160,7 +160,7 @@ const ZooHome = () => {
                   </div>
                 </div>
                 <Link
-                  to={`/meetup/${m.id}`}
+                  to={`/meetups/${m.id}`}
                   className="text-xs font-medium text-primary hover:underline shrink-0"
                 >
                   Open
