@@ -175,6 +175,34 @@ const TaxiDetail = () => {
           </Card>
         )}
 
+        {/* Live driver map */}
+        {(trip as any).driver_lat && (trip as any).driver_lng && status !== "cancelled" && status !== "dropped_off" && (() => {
+          const dLat = Number((trip as any).driver_lat);
+          const dLng = Number((trip as any).driver_lng);
+          const markers: MapMarker[] = [
+            { id: "driver", lat: dLat, lng: dLng, color: "primary", title: "Driver", description: "Live location" },
+          ];
+          if (trip.pickup_lat && trip.pickup_lng) {
+            markers.push({ id: "pickup", lat: Number(trip.pickup_lat), lng: Number(trip.pickup_lng), color: "success", title: "Pickup" });
+          }
+          if (trip.dropoff_lat && trip.dropoff_lng) {
+            markers.push({ id: "drop", lat: Number(trip.dropoff_lat), lng: Number(trip.dropoff_lng), color: "danger", title: "Drop-off" });
+          }
+          const updatedAt = (trip as any).driver_location_at
+            ? new Date((trip as any).driver_location_at).toLocaleTimeString()
+            : null;
+          return (
+            <Card className="rounded-2xl border-hairline overflow-hidden">
+              <LeafletMap center={[dLat, dLng]} zoom={14} height="240px" markers={markers} />
+              {updatedAt && (
+                <div className="px-4 py-2 text-xs text-muted-foreground border-t border-hairline">
+                  Driver location updated at {updatedAt}
+                </div>
+              )}
+            </Card>
+          );
+        })()}
+
         {/* Driver controls */}
         {isDriver && status !== "cancelled" && nextStatus && (
           <Button className="w-full rounded-xl h-11" onClick={() => setStatus(nextStatus)}>
