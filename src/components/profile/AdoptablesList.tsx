@@ -18,7 +18,8 @@ export const AdoptablesList = ({ userId }: { userId: string }) => {
         .eq("owner_id", userId)
         .in("listing_type", ["adoption", "rehoming"])
         .eq("active", true)
-        .neq("status", "closed")
+        .neq("status", "taken_down")
+        .neq("status", "sold")
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
