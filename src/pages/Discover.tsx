@@ -116,6 +116,33 @@ const Discover = () => {
             </button>
           ))}
         </div>
+
+        {/* Browse by role — entity-type chip rail wired to Search */}
+        <div className="mt-3 -mx-1">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-1.5 px-1">Browse by role</div>
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex gap-1.5 w-max px-1">
+              {[
+                { key: "breeder", label: "Breeders" },
+                { key: "kennel", label: "Kennels" },
+                { key: "shelter", label: "Shelters" },
+                { key: "sanctuary", label: "Sanctuaries" },
+                { key: "zoo", label: "Zoos" },
+                { key: "rescuer", label: "Rescuers" },
+                { key: "vet", label: "Vets" },
+                { key: "provider", label: "Providers" },
+              ].map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => nav(`/search?tab=people&role=${r.key}`)}
+                  className="shrink-0 h-8 px-3 rounded-full text-xs font-medium border bg-card text-muted-foreground border-hairline hover:text-foreground"
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <TrendingHashtagsRail />
