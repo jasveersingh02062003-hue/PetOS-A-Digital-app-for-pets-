@@ -232,6 +232,25 @@ const UserProfile = () => {
           </div>
         ) : null}
 
+        {accountType === "vet" && Array.isArray(vetProfile?.specialisations) && vetProfile.specialisations.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {vetProfile.specialisations.map((s: string) => (
+              <span
+                key={s}
+                className="px-2 h-6 inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 text-[11px] font-medium capitalize"
+              >
+                {s}
+              </span>
+            ))}
+            {vetProfile?.clinic_name && (
+              <span className="px-2 h-6 inline-flex items-center rounded-full bg-muted text-[11px] text-muted-foreground">
+                {vetProfile.clinic_name}
+                {vetProfile.city ? ` · ${vetProfile.city}` : ""}
+              </span>
+            )}
+          </div>
+        )}
+
         {!isMe && userId && (
           <div className="flex items-center gap-2 mb-4">
             <FollowButton targetId={userId} size="default" />
