@@ -86,6 +86,41 @@ export type Database = {
         }
         Relationships: []
       }
+      adoption_application_decisions: {
+        Row: {
+          application_id: string
+          created_at: string
+          decided_by: string
+          id: string
+          note: string | null
+          status: Database["public"]["Enums"]["adoption_application_status"]
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          decided_by: string
+          id?: string
+          note?: string | null
+          status: Database["public"]["Enums"]["adoption_application_status"]
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          decided_by?: string
+          id?: string
+          note?: string | null
+          status?: Database["public"]["Enums"]["adoption_application_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adoption_application_decisions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "adoption_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adoption_applications: {
         Row: {
           applicant_id: string
