@@ -17,6 +17,24 @@ export const useVetQuestions = (category?: VetCategory | "all") =>
     },
   });
 
+/** Questions asked by the current user (for "My questions" inbox). */
+export const useMyVetQuestions = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-vet-questions", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vet_questions")
+        .select("*")
+        .eq("asker_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+};
+
 export const useVetQuestion = (id?: string) =>
   useQuery({
     queryKey: ["vet-question", id],
