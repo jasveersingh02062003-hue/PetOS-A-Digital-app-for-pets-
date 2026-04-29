@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,13 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, PawPrint, Sparkles, Inbox, Plus, Loader2 } from "lucide-react";
+import { Heart, PawPrint, Sparkles, Inbox, Plus, Loader2, ScrollText, BadgeCheck } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
 import { KpiCard } from "./dashboard/KpiCard";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { formatDistanceToNow } from "date-fns";
+import { PedigreeSheet } from "@/components/breeder/PedigreeSheet";
 
 const StoryRail = lazy(() =>
   import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })),
@@ -34,6 +35,7 @@ const BreederHome = () => {
   const { data: profile } = useProfile();
   const uid = user?.id;
   const firstName = profile?.full_name?.split(" ")[0];
+  const [pedigreeOpen, setPedigreeOpen] = useState(false);
 
   useSeo({ title: "Breeder hub", description: "Litters, mating requests and enquiries.", noIndex: true });
 
@@ -94,6 +96,21 @@ const BreederHome = () => {
     },
   });
 
+  const certificates = useQuery({
+    queryKey: ["breeder-certificates", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedigree_certificates")
+        .select("id, certificate_number, breed, registry_name, issued_at, pet_id, pets(name)")
+        .eq("issued_by", uid!)
+        .order("issued_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   return (
     <div className="container-app pad-top-safe">
       <header className="pt-6 pb-4">
@@ -137,17 +154,21 @@ const BreederHome = () => {
           tint="bg-amber-500/10"
         />
         <KpiCard
-          label="Post a moment"
-          value="Share"
-          icon={Plus}
-          tint="bg-primary/5"
-          to=""
+          label="Pedigree certs"
+          value={certificates.data?.length ?? 0}
+          sub="issued"
+          loading={certificates.isLoading}
+          icon={ScrollText}
+          tint="bg-amber-500/10"
         />
       </div>
 
       <div className="flex flex-wrap gap-2 mt-4">
         <Button size="sm" onClick={() => nav("/breeders")} className="rounded-full">
           <Plus className="h-3.5 w-3.5 mr-1.5" /> New litter
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setPedigreeOpen(true)} className="rounded-full">
+          <ScrollText className="h-3.5 w-3.5 mr-1.5" /> Verify lineage
         </Button>
         <Button size="sm" variant="outline" onClick={() => nav("/mates")} className="rounded-full">
           Mating board
@@ -161,6 +182,47 @@ const BreederHome = () => {
           <Plus className="h-3.5 w-3.5 mr-1.5" /> Post photo
         </Button>
       </div>
+
+      <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-semibold">Pedigree certificates</div>
+          <button
+            onClick={() => setPedigreeOpen(true)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Issue
+          </button>
+        </div>
+        {certificates.isLoading ? (
+          <div className="py-6 grid place-items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !certificates.data?.length ? (
+          <p className="text-sm text-muted-foreground py-4">
+            No certificates yet. Issue one to verify a pet's lineage.
+          </p>
+        ) : (
+          <ul className="divide-y divide-hairline">
+            {certificates.data.map((c: any) => (
+              <li key={c.id} className="py-2 flex items-center gap-3">
+                <BadgeCheck className="h-4 w-4 text-amber-600 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">
+                    {c.pets?.name ?? "Pet"} · {c.breed ?? "—"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {c.certificate_number}
+                    {c.registry_name ? ` · ${c.registry_name}` : ""}
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {formatDistanceToNow(new Date(c.issued_at), { addSuffix: true })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       {/* Mating requests inbox preview */}
       <Card className="rounded-2xl border-hairline shadow-none p-4 mt-4">
@@ -219,6 +281,7 @@ const BreederHome = () => {
           }
         />
       </section>
+      <PedigreeSheet open={pedigreeOpen} onOpenChange={setPedigreeOpen} />
     </div>
   );
 };
