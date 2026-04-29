@@ -19,6 +19,8 @@ import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
 import { UserStreakChip } from "./social/UserStreakChip";
+import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
+import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
 import { useBlockedIds } from "@/hooks/useBlockedIds";
 import { usePawBurst } from "./social/PawBurst";
 import { addReaction } from "@/lib/reactions";
@@ -41,6 +43,7 @@ export type FeedPost = {
   comment_count: number;
   created_at: string;
   reaction_counts?: Record<string, number> | null;
+  rescue_journey_id?: string | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
@@ -63,7 +66,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
         followingIds = (f ?? []).map((r: any) => r.following_id);
         if (!followingIds.length) return [];
       }
-      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts");
+      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id");
       if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
@@ -244,6 +247,7 @@ const PostCard = ({ post, onComment }: {
           onClick={handleImageTap}
           onDoubleClick={(e) => e.preventDefault()}
         >
+          <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
           <SmartImage
             variant="feed"
             src={post.image_url}
@@ -265,6 +269,8 @@ const PostCard = ({ post, onComment }: {
           className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap"
         />
       )}
+
+      <RescueJourneyCarousel journeyId={post.rescue_journey_id} />
 
       <div className="flex items-center gap-1 px-2 py-2">
         <ReactionBar postId={post.id} initialCounts={post.reaction_counts ?? {}} />
