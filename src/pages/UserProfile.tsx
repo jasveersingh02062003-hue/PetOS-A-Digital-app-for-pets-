@@ -40,12 +40,11 @@ const UserProfile = () => {
     queryKey: ["handle->id", param],
     enabled: !!param && !isUuid,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("handle", param!)
-        .maybeSingle();
-      return (data as any)?.id ?? null;
+      // RLS blocks direct reads of profiles for non-self, so use the public RPC
+      // which accepts either a UUID or a handle.
+      const { data } = await supabase.rpc("get_profile_public_by_ref" as any, { _ref: param! });
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as any)?.id ?? null;
     },
   });
 
@@ -106,15 +105,6 @@ const UserProfile = () => {
     },
   });
 
-  if (param && !isUuid && handleResolved === null) {
-    return (
-      <div className="container-app pt-8 text-center">
-        <div className="font-display text-xl mb-2">User not found</div>
-        <Button onClick={() => nav("/")} variant="outline">Go home</Button>
-      </div>
-    );
-  }
-
   const accountType = (profile as any)?.account_type ?? "pet_parent";
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
@@ -166,6 +156,16 @@ const UserProfile = () => {
       }
     } catch {}
   };
+
+  // After ALL hooks: handle the "handle not found" case.
+  if (param && !isUuid && handleResolved === null) {
+    return (
+      <div className="container-app pt-8 text-center">
+        <div className="font-display text-xl mb-2">User not found</div>
+        <Button onClick={() => nav("/")} variant="outline">Go home</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container-app pad-top-safe pb-24">
