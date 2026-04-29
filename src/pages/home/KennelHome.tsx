@@ -12,7 +12,7 @@ import { SellerBadge } from "@/components/SellerBadge";
 import { KpiCard } from "./dashboard/KpiCard";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 const StoryRail = lazy(() =>
   import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })),
