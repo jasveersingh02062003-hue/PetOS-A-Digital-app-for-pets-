@@ -5884,6 +5884,7 @@ export type Database = {
           discoverable_for_mating: boolean | null
           gender: Database["public"]["Enums"]["pet_gender"] | null
           id: string | null
+          litter_id: string | null
           name: string | null
           owner_id: string | null
           public_id: string | null
@@ -5983,6 +5984,28 @@ export type Database = {
       }
       generate_pet_public_id: { Args: never; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
+      get_pet_public_by_ref: {
+        Args: { _ref: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          breed: string
+          city: string
+          dam_pet_id: string
+          date_of_birth: string
+          discoverable_for_mating: boolean
+          gender: Database["public"]["Enums"]["pet_gender"]
+          id: string
+          litter_id: string
+          name: string
+          owner_id: string
+          public_id: string
+          sire_pet_id: string
+          species: Database["public"]["Enums"]["pet_species"]
+          status_chip: string
+          vaccination_verified: boolean
+        }[]
+      }
       get_pets_public: {
         Args: never
         Returns: {
@@ -5995,6 +6018,7 @@ export type Database = {
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"]
           id: string
+          litter_id: string
           name: string
           owner_id: string
           public_id: string
@@ -6002,6 +6026,19 @@ export type Database = {
           species: Database["public"]["Enums"]["pet_species"]
           status_chip: string
           vaccination_verified: boolean
+        }[]
+      }
+      get_profile_public_by_ref: {
+        Args: { _ref: string }
+        Returns: {
+          account_type: string
+          avatar_url: string
+          bio: string
+          city: string
+          cover_url: string
+          full_name: string
+          handle: string
+          id: string
         }[]
       }
       get_profiles_public: {
