@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { PayButton } from "@/components/payments/PayButton";
+import { RefundButton } from "@/components/payments/RefundButton";
+import { Link } from "react-router-dom";
+import { FileText } from "lucide-react";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
@@ -154,6 +158,34 @@ const TaxiDetail = () => {
           <Button variant="outline" className="w-full rounded-xl h-10 text-destructive" onClick={cancel}>
             <X className="h-4 w-4 mr-1" /> Cancel trip
           </Button>
+        )}
+
+        {/* Payment block */}
+        {isCustomer && trip.fare_inr && !trip.payment_intent_id && status !== "cancelled" && (
+          <PayButton
+            priceId="vet_consult_one"
+            kind="transport"
+            refId={trip.id}
+            amountInr={trip.fare_inr}
+            next={`/taxi/${trip.id}`}
+            className="w-full rounded-xl h-11"
+          />
+        )}
+        {trip.payment_intent_id && (
+          <Card className="rounded-2xl border-hairline p-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4 text-primary" />
+              <span>Paid · receipt available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/receipt/${trip.payment_intent_id}`}>View receipt</Link>
+              </Button>
+              {isCustomer && (
+                <RefundButton intentId={trip.payment_intent_id} amountInr={trip.fare_inr ?? 0} onRefunded={refetch} />
+              )}
+            </div>
+          </Card>
         )}
 
         {/* Timeline */}
