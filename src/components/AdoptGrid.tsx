@@ -233,6 +233,11 @@ export const AdoptGrid = () => {
                       <BadgeCheck className="h-2.5 w-2.5 text-leaf shrink-0" />
                     </div>
                   )}
+                  {l.seller_type === "sanctuary" && l.monthly_upkeep_inr ? (
+                    <div className="mt-1.5 inline-flex items-center gap-1 px-2 h-5 rounded-full bg-leaf/10 text-leaf text-[10px] font-semibold">
+                      ₹{l.monthly_upkeep_inr.toLocaleString("en-IN")}/mo upkeep
+                    </div>
+                  ) : null}
                   {Array.isArray(l.health_tests) && l.health_tests.length > 0 && (
                     <div className="mt-1.5">
                       <HealthTestRail entries={l.health_tests as any} max={2} />
