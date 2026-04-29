@@ -13,7 +13,7 @@ export const MateAvailableBadge = ({ petId }: { petId: string }) => {
     queryKey: ["mate-active-for-pet", petId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("mate_listings")
+        .from("mating_listings")
         .select("id")
         .eq("pet_id", petId)
         .eq("active", true)

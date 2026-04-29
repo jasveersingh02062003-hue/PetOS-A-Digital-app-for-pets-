@@ -14,6 +14,7 @@ import { jsonLd } from "@/lib/seo";
 import { AchievementChips } from "@/components/social/AchievementChips";
 import { format } from "date-fns";
 import { SkillsTab } from "@/components/skills/SkillsTab";
+import { MateAvailableBadge } from "@/components/marketplace/MateAvailableBadge";
 
 const PetProfile = () => {
   const { publicId } = useParams<{ publicId: string }>();
