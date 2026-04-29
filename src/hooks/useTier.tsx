@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 export type Tier = "free" | "plus";
 
@@ -21,15 +22,21 @@ export const useTier = () => {
       currentPeriodEnd: string | null;
       cancelAtPeriodEnd: boolean;
     }> => {
+      const env = getStripeEnvironment();
+      // Server-authoritative Plus check
+      const { data: isActive } = await supabase.rpc("has_active_subscription", {
+        user_uuid: user!.id,
+        check_env: env,
+      });
+      // Pull display fields (period end, cancel flag) from latest row in same env
       const { data } = await supabase
         .from("subscriptions")
-        .select("tier, status, current_period_end, cancel_at_period_end")
+        .select("status, current_period_end, cancel_at_period_end")
         .eq("user_id", user!.id)
+        .eq("environment", env)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
-      const isActive =
-        data?.tier === "plus" &&
-        (data.status === "active" || data.status === "trialing") &&
-        (!data.current_period_end || new Date(data.current_period_end) > new Date());
       return {
         tier: isActive ? "plus" : "free",
         status: data?.status ?? null,

@@ -358,6 +358,27 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_rates: {
+        Row: {
+          kind: string
+          notes: string | null
+          rate_pct: number
+          updated_at: string
+        }
+        Insert: {
+          kind: string
+          notes?: string | null
+          rate_pct: number
+          updated_at?: string
+        }
+        Update: {
+          kind?: string
+          notes?: string | null
+          rate_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_moderation_log: {
         Row: {
           author_id: string | null
@@ -2837,6 +2858,56 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_payouts: {
+        Row: {
+          commission_inr: number
+          created_at: string
+          gross_inr: number
+          id: string
+          kind: string
+          net_inr: number
+          paid_at: string | null
+          payment_intent_id: string
+          provider_user_id: string
+          ref_id: string | null
+          status: string
+        }
+        Insert: {
+          commission_inr: number
+          created_at?: string
+          gross_inr: number
+          id?: string
+          kind: string
+          net_inr: number
+          paid_at?: string | null
+          payment_intent_id: string
+          provider_user_id: string
+          ref_id?: string | null
+          status?: string
+        }
+        Update: {
+          commission_inr?: number
+          created_at?: string
+          gross_inr?: number
+          id?: string
+          kind?: string
+          net_inr?: number
+          paid_at?: string | null
+          payment_intent_id?: string
+          provider_user_id?: string
+          ref_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_payouts_payment_intent_id_fkey"
+            columns: ["payment_intent_id"]
+            isOneToOne: true
+            referencedRelation: "payment_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_quiz_attempts: {
         Row: {
           answers: Json
@@ -3646,10 +3717,16 @@ export type Database = {
           cancel_at_period_end: boolean
           created_at: string
           current_period_end: string | null
+          current_period_start: string | null
+          environment: string
+          price_id: string | null
+          product_id: string | null
           provider: string | null
           provider_customer_id: string | null
           provider_subscription_id: string | null
           status: Database["public"]["Enums"]["sub_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           tier: Database["public"]["Enums"]["sub_tier"]
           updated_at: string
           user_id: string
@@ -3658,10 +3735,16 @@ export type Database = {
           cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          price_id?: string | null
+          product_id?: string | null
           provider?: string | null
           provider_customer_id?: string | null
           provider_subscription_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["sub_tier"]
           updated_at?: string
           user_id: string
@@ -3670,10 +3753,16 @@ export type Database = {
           cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          price_id?: string | null
+          product_id?: string | null
           provider?: string | null
           provider_customer_id?: string | null
           provider_subscription_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["sub_tier"]
           updated_at?: string
           user_id?: string
@@ -4858,6 +4947,10 @@ export type Database = {
         Returns: {
           user_id: string
         }[]
+      }
+      has_active_subscription: {
+        Args: { check_env?: string; user_uuid: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
