@@ -280,6 +280,8 @@ Pure frontend. Closes 3 of the 7 gaps by placing existing components on the surf
 
 ### Round 24 — Skill Spotlight system (1.5 days, 2 migrations)
 
+✅ **DONE** — Migration shipped (`pet_skills`, `skill_spotlights`, `skill_vouches`, `posts.skill_spotlight_id`, vouch-count trigger with auto crowd-favourite at ≥50). New `<SkillSpotlightRibbon>` overlays post photos in feed. New `<VouchButton>` and `<SkillsTab>` on `PetProfile`. `ReactionBar` 🤯 emoji updated. RLS: public read, owner-only writes for skills/spotlights, one-vouch-per-user (cannot vouch own pet).
+
 **Closes gap:** #1 (the largest)
 
 **Migrations**
