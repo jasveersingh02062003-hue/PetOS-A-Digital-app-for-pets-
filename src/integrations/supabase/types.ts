@@ -5187,6 +5187,7 @@ export type Database = {
         | "mating_listing"
         | "agreement"
         | "missing_listing"
+        | "puppy_sale"
       pet_gender: "male" | "female"
       pet_listing_status:
         | "active"
@@ -5499,6 +5500,7 @@ export const Constants = {
         "mating_listing",
         "agreement",
         "missing_listing",
+        "puppy_sale",
       ],
       pet_gender: ["male", "female"],
       pet_listing_status: [
