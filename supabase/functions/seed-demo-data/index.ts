@@ -219,18 +219,41 @@ Deno.serve(async (req) => {
     }
 
     // 4. Boarding services
+    // Idempotent: only insert if owner has no existing boarding_services rows
+    async function seedBoarding(owner: string, rows: any[]) {
+      const { count } = await admin.from("boarding_services").select("*", { count: "exact", head: true }).eq("owner_id", owner);
+      if ((count ?? 0) === 0) {
+        const { error } = await admin.from("boarding_services").insert(rows);
+        if (error) log.push(`FAIL boarding_services for ${owner}: ${error.message}`);
+      }
+    }
     if (ids["devi_boarding"]) {
-      await admin.from("boarding_services").insert([
+      await seedBoarding(ids["devi_boarding"], [
         { owner_id: ids["devi_boarding"], title: "Devi 5-star Dog Boarding", service_type: "boarding", price_inr_per_day: 800, city: "Mumbai", capacity: 12, description: "AC suites, 3 walks/day, daily reports." },
         { owner_id: ids["devi_boarding"], title: "Cat-only Boarding", service_type: "boarding", price_inr_per_day: 600, city: "Mumbai", capacity: 8 },
       ]);
     }
     if (ids["kiran_walks"]) {
-      await admin.from("boarding_services").insert({ owner_id: ids["kiran_walks"], title: "Kiran Daily Walks", service_type: "walker", price_inr_per_day: 300, city: "Bengaluru" });
+      await seedBoarding(ids["kiran_walks"], [{ owner_id: ids["kiran_walks"], title: "Kiran Daily Walks", service_type: "walker", price_inr_per_day: 300, city: "Bengaluru" }]);
     }
     if (ids["lalit_taxi"]) {
-      await admin.from("boarding_services").insert({ owner_id: ids["lalit_taxi"], title: "Lalit Pet Taxi", service_type: "transport", price_inr_per_day: 500, city: "Mumbai" });
+      await seedBoarding(ids["lalit_taxi"], [{ owner_id: ids["lalit_taxi"], title: "Lalit Pet Taxi", service_type: "transport", price_inr_per_day: 500, city: "Mumbai" }]);
     }
+
+    // 4b. service_providers (canonical provider rows for kennel/walker/taxi/vet)
+    const providerIds: Record<string, string> = {};
+    async function ensureProvider(owner: string, name: string, category: string, city: string) {
+      const { data: existing } = await admin.from("service_providers").select("id").eq("owner_id", owner).limit(1).maybeSingle();
+      if (existing?.id) { providerIds[owner] = existing.id; return; }
+      const { data, error } = await admin.from("service_providers").insert({
+        owner_id: owner, name, category: category as any, city, active: true, verified: true, trust_status: "verified",
+      }).select("id").single();
+      if (error) { log.push(`FAIL service_provider ${name}: ${error.message}`); return; }
+      if (data) providerIds[owner] = data.id;
+    }
+    if (ids["devi_boarding"]) await ensureProvider(ids["devi_boarding"], "Devi Pet Boarding", "boarding", "Mumbai");
+    if (ids["kiran_walks"]) await ensureProvider(ids["kiran_walks"], "Kiran Walks", "walker", "Bengaluru");
+    if (ids["lalit_taxi"]) await ensureProvider(ids["lalit_taxi"], "Lalit Pet Taxi", "transport", "Mumbai");
 
     // 5. Posts (one per main user)
     const postSeeds = [
@@ -294,7 +317,7 @@ Deno.serve(async (req) => {
       if (bk) {
         const { error: krErr } = await admin.from("kennel_daily_reports").insert({
           booking_id: bk.id,
-          provider_id: ids["devi_boarding"],
+          provider_id: providerIds[ids["devi_boarding"]],
           author_id: ids["devi_boarding"],
           meals: 2,
           walks: 3,
