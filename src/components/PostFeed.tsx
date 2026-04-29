@@ -20,6 +20,7 @@ import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
 import { UserStreakChip } from "./social/UserStreakChip";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
+import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
 import { useBlockedIds } from "@/hooks/useBlockedIds";
 import { usePawBurst } from "./social/PawBurst";
@@ -44,6 +45,7 @@ export type FeedPost = {
   created_at: string;
   reaction_counts?: Record<string, number> | null;
   rescue_journey_id?: string | null;
+  skill_spotlight_id?: string | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
@@ -66,7 +68,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
         followingIds = (f ?? []).map((r: any) => r.following_id);
         if (!followingIds.length) return [];
       }
-      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id");
+      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id");
       if (followingIds) q = q.in("author_id", followingIds);
       q = scope === "trending"
         ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
@@ -248,6 +250,7 @@ const PostCard = ({ post, onComment }: {
           onDoubleClick={(e) => e.preventDefault()}
         >
           <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
+          <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
           <SmartImage
             variant="feed"
             src={post.image_url}

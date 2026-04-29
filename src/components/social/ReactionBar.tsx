@@ -13,7 +13,7 @@ const REACTIONS: { kind: ReactionKind; emoji: string; label: string }[] = [
   { kind: "love", emoji: "❤️", label: "Love" },
   { kind: "paw", emoji: "🐾", label: "Paw" },
   { kind: "laugh", emoji: "😂", label: "Haha" },
-  { kind: "wow", emoji: "😍", label: "Wow" },
+  { kind: "wow", emoji: "🤯", label: "Mind-blown" },
   { kind: "sad", emoji: "😢", label: "Sad" },
 ];
 
