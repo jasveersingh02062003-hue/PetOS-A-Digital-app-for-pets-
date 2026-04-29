@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { AuthorIdentity } from "@/components/AuthorIdentity";
+import { ORG_ROLES } from "@/lib/roleTheme";
 import {
   listSavedSearches,
   saveSearch,
@@ -41,11 +43,28 @@ const useDebounced = (v: string, ms = 250) => {
 
 type Tab = "all" | "pets" | "people" | "posts" | "tags" | "services" | "vets" | "meetups" | "groups" | "missing";
 
+type RoleFilter = "all" | "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "zoo" | "rescuer" | "buyer" | "vet" | "provider";
+
+const ROLE_FILTERS: { key: RoleFilter; label: string }[] = [
+  { key: "all", label: "All roles" },
+  { key: "breeder", label: "Breeders" },
+  { key: "kennel", label: "Kennels" },
+  { key: "shelter", label: "Shelters" },
+  { key: "sanctuary", label: "Sanctuaries" },
+  { key: "zoo", label: "Zoos" },
+  { key: "rescuer", label: "Rescuers" },
+  { key: "vet", label: "Vets" },
+  { key: "provider", label: "Providers" },
+  { key: "pet_parent", label: "Pet parents" },
+  { key: "buyer", label: "Buyers" },
+];
+
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const [q, setQ] = useState(params.get("q") || "");
   const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "all");
+  const [role, setRole] = useState<RoleFilter>(((params.get("role") as RoleFilter) || "all"));
   const debounced = useDebounced(q.trim(), 300);
   const [savedTick, setSavedTick] = useState(0); // bump to refresh saved list
 
@@ -55,17 +74,35 @@ export default function Search() {
     const next = new URLSearchParams(params);
     if (debounced) next.set("q", debounced); else next.delete("q");
     next.set("tab", tab);
+    if (role && role !== "all") next.set("role", role); else next.delete("role");
     setParams(next, { replace: true });
     if (debounced.length >= 2) pushRecent(debounced);
-  }, [debounced, tab]); // eslint-disable-line
+  }, [debounced, tab, role]); // eslint-disable-line
+
+  // If a role is preselected (from Discover chip) but no query yet, allow browsing
+  // by switching to people tab so the user sees results immediately.
+  useEffect(() => {
+    if (role !== "all" && tab === "all") setTab("people");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const enabled = debounced.length >= 2;
+  const browseByRoleOnly = !enabled && role !== "all";
   const like = `%${debounced}%`;
 
   const { data, isFetching } = useQuery({
-    queryKey: ["search-page", debounced],
-    enabled,
+    queryKey: ["search-page", debounced, role],
+    enabled: enabled || browseByRoleOnly,
     queryFn: async () => {
+      // When browsing-by-role with no query, just list people of that role.
+      if (browseByRoleOnly) {
+        const { data: people } = await supabase.rpc("get_profiles_public");
+        const filtered = (people ?? []).filter((p: any) => p.account_type === role).slice(0, 60);
+        return {
+          pets: [], people: filtered, posts: [], tags: [],
+          providers: [], vets: [], meetups: [], groups: [], missing: [],
+        };
+      }
       const [pets, people, posts, tags, providers, vets, meetups, groups, missing] = await Promise.all([
         supabase.rpc("get_pets_public").then((r) => ({
           data: (r.data ?? []).filter((p: any) =>
@@ -106,6 +143,13 @@ export default function Search() {
     },
   });
 
+  // Apply role filter on the People list in-memory (cheap; people array capped at 24/60).
+  const filteredPeople = useMemo(() => {
+    if (!data?.people) return [] as any[];
+    if (role === "all") return data.people;
+    return data.people.filter((p: any) => (p.account_type ?? "pet_parent") === role);
+  }, [data, role]);
+
   const recents = useMemo(() => readRecents(), [debounced]);
   const saved = useMemo<SavedSearch[]>(
     () => listSavedSearches(),
@@ -136,7 +180,7 @@ export default function Search() {
   };
 
   const counts = data ? {
-    pets: data.pets.length, people: data.people.length, posts: data.posts.length,
+    pets: data.pets.length, people: filteredPeople.length, posts: data.posts.length,
     tags: data.tags.length, services: data.providers.length, vets: data.vets.length,
     meetups: data.meetups.length, groups: data.groups.length, missing: data.missing.length,
   } : null;
@@ -181,18 +225,20 @@ export default function Search() {
       </header>
 
       <main className="max-w-2xl mx-auto px-3 py-4 space-y-4">
-        {!enabled ? (
+        {!enabled && !browseByRoleOnly ? (
           <RecentsAndSuggestions
             recents={recents}
             saved={saved}
             onPick={(s, t) => { setQ(s); if (t) setTab(t as Tab); }}
             onRemoveSaved={(s) => { unsaveSearch(s.q, s.tab); setSavedTick((n) => n + 1); }}
             onClearRecents={handleClearRecents}
+            onPickRole={(r) => { setRole(r); setTab("people"); }}
           />
         ) : (
           <>
             <div className="text-xs text-muted-foreground">
               {isFetching ? "Searching…" : total === 0 ? "No matches" : `${total} result${total === 1 ? "" : "s"}`}
+              {role !== "all" && <span> · filtered by <span className="text-foreground font-medium">{ROLE_FILTERS.find(r => r.key === role)?.label}</span></span>}
             </div>
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
@@ -217,10 +263,33 @@ export default function Search() {
                 </TabsList>
               </div>
 
+              {/* Role chip rail — visible on All + People tabs */}
+              {(tab === "people" || tab === "all") && (
+                <div className="-mx-3 px-3 overflow-x-auto no-scrollbar mt-3">
+                  <div className="flex gap-1.5 w-max">
+                    {ROLE_FILTERS.map((r) => {
+                      const active = role === r.key;
+                      return (
+                        <button
+                          key={r.key}
+                          onClick={() => setRole(r.key)}
+                          className={`shrink-0 h-7 px-3 rounded-full text-[11px] font-medium border transition ${
+                            active ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-hairline hover:text-foreground"
+                          }`}
+                          aria-pressed={active}
+                        >
+                          {r.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <TabsContent value="all" className="mt-4 space-y-5">
                 {data && Object.values(counts!).every((n) => n === 0) && <Empty q={debounced} />}
                 {!!data?.pets.length && <Section title="Pets"><PetsList items={data.pets} /></Section>}
-                {!!data?.people.length && <Section title="People"><PeopleList items={data.people} /></Section>}
+                {!!filteredPeople.length && <Section title="People"><PeopleList items={filteredPeople} /></Section>}
                 {!!data?.tags.length && <Section title="Hashtags"><TagsList items={data.tags} /></Section>}
                 {!!data?.posts.length && <Section title="Posts"><PostsList items={data.posts} /></Section>}
                 {!!data?.providers.length && <Section title="Services"><ProvidersList items={data.providers} /></Section>}
@@ -231,7 +300,7 @@ export default function Search() {
               </TabsContent>
 
               <TabsContent value="pets" className="mt-4"><PetsList items={data?.pets ?? []} /></TabsContent>
-              <TabsContent value="people" className="mt-4"><PeopleList items={data?.people ?? []} /></TabsContent>
+              <TabsContent value="people" className="mt-4"><PeopleList items={filteredPeople} /></TabsContent>
               <TabsContent value="posts" className="mt-4"><PostsList items={data?.posts ?? []} /></TabsContent>
               <TabsContent value="tags" className="mt-4"><TagsList items={data?.tags ?? []} /></TabsContent>
               <TabsContent value="services" className="mt-4"><ProvidersList items={data?.providers ?? []} /></TabsContent>
