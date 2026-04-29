@@ -1364,6 +1364,13 @@ export type Database = {
             referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "job_offers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       job_posts: {
@@ -1427,6 +1434,13 @@ export type Database = {
             columns: ["assigned_provider_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_posts_assigned_provider_id_fkey"
+            columns: ["assigned_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
             referencedColumns: ["id"]
           },
           {
@@ -1507,6 +1521,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kennel_daily_reports_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2751,6 +2772,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "pet_listings_co_listed_with_org_id_fkey"
+            columns: ["co_listed_with_org_id"]
+            isOneToOne: false
+            referencedRelation: "org_profiles_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "pet_listings_litter_id_fkey"
             columns: ["litter_id"]
             isOneToOne: false
@@ -3572,6 +3600,13 @@ export type Database = {
             referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "provider_documents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       provider_payouts: {
@@ -3661,6 +3696,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_quiz_attempts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3764,6 +3806,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -4947,6 +4996,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transport_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transport_bookings_service_booking_id_fkey"
             columns: ["service_booking_id"]
             isOneToOne: false
@@ -5843,6 +5899,117 @@ export type Database = {
       }
     }
     Views: {
+      donations_for_org: {
+        Row: {
+          amount_inr: number | null
+          anonymous: boolean | null
+          created_at: string | null
+          donor_id: string | null
+          id: string | null
+          message: string | null
+          org_user_id: string | null
+          paid_at: string | null
+          payment_intent_id: string | null
+          receipt_issued_at: string | null
+          status: Database["public"]["Enums"]["donation_status"] | null
+          tax_receipt_number: string | null
+        }
+        Insert: {
+          amount_inr?: number | null
+          anonymous?: boolean | null
+          created_at?: string | null
+          donor_id?: string | null
+          id?: string | null
+          message?: string | null
+          org_user_id?: string | null
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          receipt_issued_at?: string | null
+          status?: Database["public"]["Enums"]["donation_status"] | null
+          tax_receipt_number?: string | null
+        }
+        Update: {
+          amount_inr?: number | null
+          anonymous?: boolean | null
+          created_at?: string | null
+          donor_id?: string | null
+          id?: string | null
+          message?: string | null
+          org_user_id?: string | null
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          receipt_issued_at?: string | null
+          status?: Database["public"]["Enums"]["donation_status"] | null
+          tax_receipt_number?: string | null
+        }
+        Relationships: []
+      }
+      org_profiles_public: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          donation_upi: string | null
+          donation_url: string | null
+          donor_count: number | null
+          facility_photos: string[] | null
+          lat: number | null
+          lng: number | null
+          org_name: string | null
+          org_type: Database["public"]["Enums"]["account_type"] | null
+          pincode: string | null
+          state: string | null
+          status: string | null
+          total_donations_inr: number | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          donation_upi?: string | null
+          donation_url?: string | null
+          donor_count?: number | null
+          facility_photos?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          org_name?: string | null
+          org_type?: Database["public"]["Enums"]["account_type"] | null
+          pincode?: string | null
+          state?: string | null
+          status?: string | null
+          total_donations_inr?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          donation_upi?: string | null
+          donation_url?: string | null
+          donor_count?: number | null
+          facility_photos?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          org_name?: string | null
+          org_type?: Database["public"]["Enums"]["account_type"] | null
+          pincode?: string | null
+          state?: string | null
+          status?: string | null
+          total_donations_inr?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       pet_health_status: {
         Row: {
           last_activity_on: string | null
@@ -5912,6 +6079,84 @@ export type Database = {
         Row: {
           active_listings: number | null
           owner_id: string | null
+        }
+        Relationships: []
+      }
+      service_providers_public: {
+        Row: {
+          accepting_jobs: boolean | null
+          active: boolean | null
+          bio: string | null
+          category: Database["public"]["Enums"]["service_category"] | null
+          city: string | null
+          cover_url: string | null
+          created_at: string | null
+          days_available: string[] | null
+          details: Json | null
+          hourly_rate_inr: number | null
+          id: string | null
+          languages: string[] | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          owner_id: string | null
+          service_radius_km: number | null
+          time_slots: string[] | null
+          trust_status: string | null
+          updated_at: string | null
+          verification_status: string | null
+          verified: boolean | null
+          years_experience: number | null
+        }
+        Insert: {
+          accepting_jobs?: boolean | null
+          active?: boolean | null
+          bio?: string | null
+          category?: Database["public"]["Enums"]["service_category"] | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          days_available?: string[] | null
+          details?: Json | null
+          hourly_rate_inr?: number | null
+          id?: string | null
+          languages?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          owner_id?: string | null
+          service_radius_km?: number | null
+          time_slots?: string[] | null
+          trust_status?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          verified?: boolean | null
+          years_experience?: number | null
+        }
+        Update: {
+          accepting_jobs?: boolean | null
+          active?: boolean | null
+          bio?: string | null
+          category?: Database["public"]["Enums"]["service_category"] | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          days_available?: string[] | null
+          details?: Json | null
+          hourly_rate_inr?: number | null
+          id?: string | null
+          languages?: string[] | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          owner_id?: string | null
+          service_radius_km?: number | null
+          time_slots?: string[] | null
+          trust_status?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          verified?: boolean | null
+          years_experience?: number | null
         }
         Relationships: []
       }
