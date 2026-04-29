@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Sparkles, Lock } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, Lock, Download } from "lucide-react";
 import { format } from "date-fns";
 import { PaywallSheet } from "@/components/PaywallSheet";
 
@@ -43,6 +43,7 @@ export const AgreementCard = ({
   const [meetingLocation, setMeetingLocation] = useState<string>("");
   const [extraTerms, setExtraTerms] = useState<string>("");
   const [savingTerms, setSavingTerms] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +160,24 @@ export const AgreementCard = ({
   const fullySigned = mySig && theirSig;
   const locked = !!agreement?.terms_locked;
 
+  const downloadPdf = async () => {
+    if (!agreement) return;
+    setPdfLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mating-agreement-pdf", {
+        body: { agreementId: agreement.id },
+      });
+      if (error) throw error;
+      const url: string | undefined = (data as any)?.signedUrl;
+      if (!url) throw new Error("PDF not ready");
+      window.open(url, "_blank", "noopener");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not generate PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <>
     <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 space-y-3">
@@ -268,6 +287,18 @@ export const AgreementCard = ({
           <div className="text-sm">{contactInfo.name}</div>
           {contactInfo.phone && <div className="text-sm text-muted-foreground">{contactInfo.phone}</div>}
         </Card>
+      )}
+
+      {fullySigned && (
+        <Button
+          variant="outline"
+          onClick={downloadPdf}
+          disabled={pdfLoading}
+          className="w-full rounded-xl gap-2"
+        >
+          {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {agreement?.signed_pdf_url ? "Download signed PDF" : "Generate signed PDF"}
+        </Button>
       )}
     </Card>
     <PaywallSheet

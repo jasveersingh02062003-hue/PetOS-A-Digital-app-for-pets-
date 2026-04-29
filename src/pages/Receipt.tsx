@@ -18,6 +18,10 @@ interface IntentRow {
   refunded_at: string | null;
   refund_reason: string | null;
   user_id: string;
+  gst_rate_pct: number | null;
+  gst_amount_inr: number | null;
+  subtotal_inr: number | null;
+  place_of_supply: string | null;
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -54,6 +58,16 @@ export default function Receipt() {
   const date = new Date(intent.created_at).toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" });
   const isRefunded = intent.status === "refunded";
   const productLabel = KIND_LABEL[intent.kind] ?? intent.price_id ?? intent.kind;
+
+  // Derive GST split from gross-inclusive amount if columns are missing (legacy intents)
+  const gstRate = intent.gst_rate_pct ?? 18;
+  const subtotal = intent.subtotal_inr ?? Math.round(intent.amount_inr / (1 + gstRate / 100));
+  const gstTotal = intent.gst_amount_inr ?? (intent.amount_inr - subtotal);
+  // Place of supply: if outside Maharashtra (Petos billing state) → IGST; else split CGST+SGST.
+  const isInterState = intent.place_of_supply && intent.place_of_supply.toUpperCase() !== "MH";
+  const cgst = isInterState ? 0 : Math.round(gstTotal / 2);
+  const sgst = isInterState ? 0 : gstTotal - cgst;
+  const igst = isInterState ? gstTotal : 0;
 
   return (
     <div className="min-h-screen bg-muted/20 pad-bottom-safe">
@@ -102,8 +116,25 @@ export default function Receipt() {
               <tbody>
                 <tr className="border-t border-hairline">
                   <td className="py-3 px-3">{productLabel}</td>
-                  <td className="py-3 px-3 text-right font-medium">{formatINR(intent.amount_inr)}</td>
+                  <td className="py-3 px-3 text-right font-medium">{formatINR(subtotal)}</td>
                 </tr>
+                {isInterState ? (
+                  <tr className="border-t border-hairline text-muted-foreground">
+                    <td className="py-3 px-3">IGST @ {gstRate}%</td>
+                    <td className="py-3 px-3 text-right">{formatINR(igst)}</td>
+                  </tr>
+                ) : (
+                  <>
+                    <tr className="border-t border-hairline text-muted-foreground">
+                      <td className="py-3 px-3">CGST @ {(gstRate/2).toFixed(1)}%</td>
+                      <td className="py-3 px-3 text-right">{formatINR(cgst)}</td>
+                    </tr>
+                    <tr className="border-t border-hairline text-muted-foreground">
+                      <td className="py-3 px-3">SGST @ {(gstRate/2).toFixed(1)}%</td>
+                      <td className="py-3 px-3 text-right">{formatINR(sgst)}</td>
+                    </tr>
+                  </>
+                )}
                 {isRefunded && intent.refunded_amount_inr > 0 && (
                   <tr className="border-t border-hairline text-amber-700">
                     <td className="py-3 px-3">Refund {intent.refund_reason ? `(${intent.refund_reason})` : ""}</td>

@@ -1126,6 +1126,7 @@ export type Database = {
       }
       mating_agreements: {
         Row: {
+          agreement_number: string | null
           created_at: string
           deal_type: string
           extra_terms: string | null
@@ -1137,6 +1138,7 @@ export type Database = {
           puppy_split_owner_pct: number | null
           puppy_split_partner_pct: number | null
           request_id: string
+          signed_pdf_url: string | null
           stud_fee_inr: number | null
           terms_locked: boolean
           terms_text: string
@@ -1145,6 +1147,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agreement_number?: string | null
           created_at?: string
           deal_type?: string
           extra_terms?: string | null
@@ -1156,6 +1159,7 @@ export type Database = {
           puppy_split_owner_pct?: number | null
           puppy_split_partner_pct?: number | null
           request_id: string
+          signed_pdf_url?: string | null
           stud_fee_inr?: number | null
           terms_locked?: boolean
           terms_text: string
@@ -1164,6 +1168,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agreement_number?: string | null
           created_at?: string
           deal_type?: string
           extra_terms?: string | null
@@ -1175,6 +1180,7 @@ export type Database = {
           puppy_split_owner_pct?: number | null
           puppy_split_partner_pct?: number | null
           request_id?: string
+          signed_pdf_url?: string | null
           stud_fee_inr?: number | null
           terms_locked?: boolean
           terms_text?: string
@@ -1945,9 +1951,12 @@ export type Database = {
           amount_inr: number
           created_at: string
           currency: string
+          gst_amount_inr: number | null
+          gst_rate_pct: number
           id: string
           kind: Database["public"]["Enums"]["payment_kind"]
           metadata: Json
+          place_of_supply: string | null
           price_id: string | null
           provider_payment_intent_id: string | null
           provider_session_id: string | null
@@ -1957,6 +1966,7 @@ export type Database = {
           refunded_amount_inr: number
           refunded_at: string | null
           status: Database["public"]["Enums"]["payment_intent_status"]
+          subtotal_inr: number | null
           updated_at: string
           user_id: string
         }
@@ -1964,9 +1974,12 @@ export type Database = {
           amount_inr: number
           created_at?: string
           currency?: string
+          gst_amount_inr?: number | null
+          gst_rate_pct?: number
           id?: string
           kind: Database["public"]["Enums"]["payment_kind"]
           metadata?: Json
+          place_of_supply?: string | null
           price_id?: string | null
           provider_payment_intent_id?: string | null
           provider_session_id?: string | null
@@ -1976,6 +1989,7 @@ export type Database = {
           refunded_amount_inr?: number
           refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_intent_status"]
+          subtotal_inr?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1983,9 +1997,12 @@ export type Database = {
           amount_inr?: number
           created_at?: string
           currency?: string
+          gst_amount_inr?: number | null
+          gst_rate_pct?: number
           id?: string
           kind?: Database["public"]["Enums"]["payment_kind"]
           metadata?: Json
+          place_of_supply?: string | null
           price_id?: string | null
           provider_payment_intent_id?: string | null
           provider_session_id?: string | null
@@ -1995,6 +2012,7 @@ export type Database = {
           refunded_amount_inr?: number
           refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_intent_status"]
+          subtotal_inr?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -4887,6 +4905,7 @@ export type Database = {
         Args: { _limit: number; _table: string; _user: string }
         Returns: undefined
       }
+      check_pet_boarding_eligible: { Args: { _pet_id: string }; Returns: Json }
       create_consult_from_appointment: {
         Args: { _appointment_id: string }
         Returns: string

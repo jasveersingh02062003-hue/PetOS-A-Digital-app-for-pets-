@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ShieldAlert } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -54,6 +55,33 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
     enabled: !!user && open,
   });
 
+  // Load provider's category to know if boarding/daycare gating applies
+  const { data: provider } = useQuery({
+    queryKey: ["provider-category", providerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_providers")
+        .select("category")
+        .eq("id", providerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!providerId,
+  });
+  const requiresVaccGate = provider?.category === "boarding" || provider?.category === "daycare";
+
+  // Check vaccination eligibility for the chosen pet when gate applies
+  const { data: eligibility, isFetching: checkingElig } = useQuery({
+    queryKey: ["boarding-eligible", petId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("check_pet_boarding_eligible" as any, { _pet_id: petId });
+      if (error) throw error;
+      return data as { eligible: boolean; missing?: string[]; reason?: string };
+    },
+    enabled: !!petId && requiresVaccGate,
+  });
+
   const submit = async () => {
     if (!user) {
       toast.error("Please sign in first");
@@ -62,6 +90,16 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
     if (!when) {
       toast.error("Pick a date & time");
       return;
+    }
+    if (requiresVaccGate) {
+      if (!petId) {
+        toast.error("Choose a pet — boarding requires vaccination check");
+        return;
+      }
+      if (eligibility && !eligibility.eligible) {
+        toast.error(`Pet not eligible for boarding. Missing: ${(eligibility.missing ?? []).join(", ") || "vaccinations"}`);
+        return;
+      }
     }
     if (recurring && weekdays.length === 0) {
       toast.error("Pick at least one weekday for the recurring schedule");
@@ -134,6 +172,24 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
               </SelectContent>
             </Select>
           </div>
+
+          {requiresVaccGate && petId && (
+            <Card className={`rounded-xl p-3 border ${eligibility?.eligible ? "bg-leaf/10 border-leaf/30" : "bg-amber-500/10 border-amber-500/30"}`}>
+              <div className={`flex items-start gap-2 text-xs leading-relaxed ${eligibility?.eligible ? "text-leaf" : "text-amber-700"}`}>
+                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                {checkingElig ? (
+                  <span>Checking vaccination records…</span>
+                ) : eligibility?.eligible ? (
+                  <span>Pet meets boarding vaccination requirements.</span>
+                ) : (
+                  <span>
+                    Pet missing required vaccinations: <strong>{(eligibility?.missing ?? []).join(", ") || "DHPP and Rabies"}</strong>.
+                    Add records under Health → Vaccinations before booking.
+                  </span>
+                )}
+              </div>
+            </Card>
+          )}
           <div className="space-y-1.5">
             <Label>When</Label>
             <Input
@@ -199,7 +255,11 @@ export const BookingSheet = ({ open, onOpenChange, providerId, providerName }: P
             )}
           </Card>
 
-          <Button onClick={submit} disabled={saving} className="w-full rounded-full h-12">
+          <Button
+            onClick={submit}
+            disabled={saving || (requiresVaccGate && (!petId || !eligibility?.eligible))}
+            className="w-full rounded-full h-12"
+          >
             {saving ? "Sending…" : recurring ? "Create recurring booking" : "Request booking"}
           </Button>
         </div>
