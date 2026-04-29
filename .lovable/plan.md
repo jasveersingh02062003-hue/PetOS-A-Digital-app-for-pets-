@@ -1,138 +1,172 @@
-# PetOS — Final Gap Audit & Closing Plan
+# PetOS — Final Closeout Plan (Rounds 28–30)
 
-I re-checked the live source against the original PDF audit. Below is what is **actually** built today vs. what still needs to ship. I cross-referenced every claim from the audit with `rg` against `src/` so this is grounded, not from memory.
+Closes all **5 hard ❌** and all **13 ⚠️** from the audit in **3 disjoint rounds**. No round touches a file another round touches → no rework, no wasted credits.
 
----
-
-## What is now ✅ DONE since the audit (Rounds 21–24)
-
-| Original gap | Status now | Where |
-|---|---|---|
-| Skill Spotlight system (ribbon, Vouch, Skills tab, Crowd-fav ≥50, 🤯 reaction) | ✅ Done | `skills/SkillsTab`, `skills/VouchButton`, `skills/SkillSpotlightRibbon`, `posts.skill_spotlight_id`, `ReactionBar` 🤯 |
-| Rescue Journey ribbon + Day-N timeline | ✅ Done | `rescue/RescueJourneyRibbon`, `rescue/RescueJourneyCarousel`, `rescue/RescueJourneyPicker`, `/rescue/:id`, trigger auto-fills Day-N |
-| Bred-on-PetOS ribbon on listings + lineage | ✅ Done | `BredOnPetosRibbon` placed in `AdoptGrid` + `AdoptListingDetail` with `PedigreeSheet` |
-| Streak chip on multiple surfaces | ✅ Done | `UserStreakChip` in `PostFeed`, `CommentSheet`, `MessageThread` |
-| Vet ↔ Health-vault in-call handoff | ✅ Done | `AppointmentRoom.tsx` calls `vet-grant-create`, owner sees code, vet has code-entry to `/v/:code` |
-| Health-test chip on listings | ✅ Done | `HealthTestChip`, `HealthTestPicker`, `pet_listings.health_tests` jsonb |
-| Banner tint per role | ✅ Done | `UserProfile.tsx` applies `getRoleBanner(accountType)` |
-| Buyer "What I'm looking for" card | ✅ Done | `UserProfile.tsx:209` renders chips for species/breed/city/budget |
+**Total cost estimate**: 1 DB migration, 0 new edge functions, ~14 file edits, ~5 new small components.
 
 ---
 
-## What is still ❌ / ⚠️ open
+## Round 28 — Vet & Service-provider in-call/live UX (the heavy lifting)
 
-I narrowed the original 7-item list down to what truly hasn't shipped, plus a handful of small spot-fixes from the ⚠️ rows:
+**Goal**: ship the only two ❌ items that need real wiring + their related ⚠️s. All edits are inside vet + walker + service-provider surfaces.
 
-### A. Rescuer trust + caps (the only fully-untouched round)
+### Files touched (exclusive to this round)
+- `src/pages/AppointmentRoom.tsx`
+- `src/components/vet/PrescriptionBuilder.tsx` (already exists — just imported)
+- `src/pages/MessageThread.tsx` *(only the live-walk chip block — append-only)*
+- `src/pages/Bookings.tsx` *(append-only chip)*
+- `src/components/AuthorIdentity.tsx` *(append category sub-chip for service_provider only)*
+- `src/pages/UserProfile.tsx` *(vet specialisation rail block)*
+- new: `src/components/vet/SharedVaultPanel.tsx`
+- new: `src/components/walker/LiveWalkChip.tsx`
+- 1 DB migration
 
-- ❌ "Pending verification" chip on `SellerBadge` for rescuer with submitted/review org KYC
-- ❌ Block on `AdoptListingNew` for unverified rescuers — must co-list with an approved shelter
-- ❌ "Co-listed with [Shelter ✓]" subline on listing card + detail (`pet_listings.co_listed_with_org_id`)
-- ❌ Soft warning bubble in `MessageThread` when an unverified rescuer is asked for/sends payment intent (UPI / ₹ regex)
+### Work
+1. **Open shared vault inside `AppointmentRoom`** (❌ #1)
+   - Add a "Shared vault" tab next to the chat: only visible when `appt.status='in_progress'` AND viewer is the vet AND a valid `vet_grants` row exists for `(vet_id, pet_id)` with `expires_at > now()`.
+   - Renders the new `SharedVaultPanel` which lists vaccinations + prescriptions + timeline (re-uses `VaultView` queries) inline (no new page).
+   - Below it, mounts the existing `<PrescriptionBuilder petId={…} />` so vets can drop a prescription without leaving the call.
 
-### B. Surface polish (small, scattered ⚠️ items)
+2. **Grant auto-expiry on appointment completion** (⚠️ #11)
+   - DB trigger `expire_grants_on_appt_complete()` on `appointments`: when `status` flips to `completed` or `cancelled`, `UPDATE vet_grants SET expires_at = now() WHERE vet_id = NEW.vet_id AND pet_id = NEW.pet_id AND expires_at > now()`.
 
-- ❌ "Available for Mating" badge on pet rail / `PetProfile` header (data exists in `mate_listings`, just not surfaced)
-- ❌ Buyer's target-breed chip on search results card
-- ❌ Auto "Educational" tag on every zoo composer post
-- ⚠️ "Helpful vet" badge inlined next to vet's role chip on every surface (today only on achievements rail)
-- ⚠️ Spot-check: every feed/comment/message query filters by `useBlockedIds` (cross-cutting trust)
+3. **Live-walk follow-link** (❌ #4)
+   - `LiveWalkChip` queries `walk_sessions` for an active session matching the current booking's walker+pet; if found, renders an "🟢 Walk in progress · Follow live" button → `/walk/live/:id`.
+   - Mount once in `MessageThread.tsx` header (when other party is service-provider) and once in `Bookings.tsx` row (active service bookings).
 
-### C. Notifications follow-up
+4. **Service-provider category sub-chip** (⚠️ #12)
+   - `AuthorIdentity` already shows the role chip. Add a sibling `<span>` rendering `provider_categories.label` (Walker/Groomer/etc.) for `service_provider` accounts only. Pulled via existing `useProviderCategory` hook (or quick inline query if absent).
 
-- ❌ Skill-Spotlight vouch notification with skill icon overlay — emits a row when someone vouches; surfaces in bell
+5. **Vet specialisation chip rail on public profile** (⚠️ #10)
+   - In `UserProfile.tsx`, when `accountType === 'vet'`, render a chip rail from `vet_profiles.specializations[]` directly under the role chip.
+
+### Verify
+- Vet starts an appt → "Shared vault" tab appears → prescription dropped → patient sees notification → marking appt complete revokes the grant.
+- Booked walker starts a `walk_session` → chip appears in MessageThread + Bookings → tap → `/walk/live/:id`.
 
 ---
 
-## Prioritized rollout (3 rounds, no overlap)
+## Round 29 — Org public surface (banner, tabs, copy locks)
 
-Ordering principle: **biggest trust gap first, then surface polish, then notification glue.** Each round is self-contained and edits a disjoint set of files.
+**Goal**: every ⚠️ touching `OrgProfile.tsx` and the role-gated org tabs in one shot. Disjoint from Round 28.
+
+### Files touched (exclusive to this round)
+- `src/pages/OrgProfile.tsx` (banner + role-gated tab list)
+- `src/pages/home/BreederHome.tsx` (stats strip verification + 4-tab confirmation)
+- `src/pages/home/GaushalaHome.tsx` (per-animal monthly upkeep field rendering)
+- `src/pages/home/ZooHome.tsx` (symbolic adoption tax-receipt CTA)
+- `src/components/Composer.tsx` *(role-gated marketplace entrypoints — sanctuary/zoo)*
+- `src/components/BredOnPetosRibbon.tsx` (open `PedigreeSheet` on tap)
+
+### Work
+1. **OrgProfile banner tint** (❌ #5 + ⚠️ duplicate)
+   - Import `getRoleBanner` and apply to the banner `div`, mirroring `UserProfile.tsx:173`.
+
+2. **Pedigree sheet from "Bred on PetOS" ribbon** (⚠️ #1)
+   - Add `onClick` to `BredOnPetosRibbon` that opens `PedigreeSheet` with the litter's parents (already a prop). State held inline, no parent change required.
+
+3. **Breeder stats strip + 4 public tabs** (⚠️ #2, #3)
+   - Confirm `BreederHome` exposes Followers · Litters whelped · Successful placements · Avg review counters; backfill any missing aggregate from existing tables (`pets`, `pet_listings`, `reviews`).
+   - Ensure `OrgProfile` (when `account_type='breeder'`) shows tabs **Litters / Mating / Pedigree / Reviews**, hydrated from existing components (`LittersList`, `MatesGrid`, `PedigreeSheet`, `ReviewsList`).
+
+4. **Sanctuary per-animal monthly upkeep** (⚠️ #6)
+   - Surface existing `pets.monthly_upkeep_inr` (or add column in this round's migration if absent — check first; likely exists). Render under each animal card on `GaushalaHome`.
+
+5. **Sanctuary + Zoo composer/marketplace gating** (⚠️ #7, #9)
+   - In `Composer.tsx`, hide "Sell" / "Mating" entry-points when `accountType ∈ {'sanctuary','zoo'}`.
+   - In `OrgProfile.tsx`, omit Litters / Mating / Adopt tabs for those roles.
+
+6. **Zoo symbolic adoption tax receipt** (⚠️ #8)
+   - On `ZooHome`, the symbolic-adoption CTA → existing `SponsorSheet` with `tax_receipt=true` flag (column already in `sponsorships`). Confirm receipt PDF link surfaces in donor's `OrgDonations` ledger.
+
+### Verify
+- Visit any verified org's public profile → role-tinted banner present.
+- Breeder profile shows 4 tabs and 4 stats.
+- Sanctuary/Zoo composers don't expose marketplace.
+- Tap "Bred on PetOS" on a listing → pedigree sheet opens.
+
+---
+
+## Round 30 — Marketplace polish (shelter lock, kennel cards, buyer wishlist)
+
+**Goal**: the remaining marketplace-side ❌s and ⚠️s. Disjoint from Rounds 28 & 29.
+
+### Files touched (exclusive to this round)
+- `src/components/AdoptGrid.tsx` (shelter ₹0 lock + copy)
+- `src/pages/AdoptListingDetail.tsx` (shelter ₹0 lock + copy)
+- `src/pages/AdoptListingNew.tsx` *(force fee_inr=0 when seller is shelter — schema-side check)*
+- `src/pages/home/KennelHome.tsx` (capacity + next-available on service cards + viewer-side DailyReportSheet sample)
+- `src/pages/UserProfile.tsx` *(buyer wishlist tab — append-only block)*
+- 1 small DB migration (CHECK trigger forcing `fee_inr=0` for shelter sellers)
+
+### Work
+1. **Shelter ₹0 lock + "Adopt, don't shop" copy** (❌ #2)
+   - DB: trigger `enforce_shelter_zero_fee` on `pet_listings`: if seller's `account_type='shelter'`, force `fee_inr := 0`.
+   - UI: in `AdoptGrid` and `AdoptListingDetail`, when `seller_type='shelter'`, replace the price element with a pill showing `"Free · Adopt, don't shop"`.
+   - In `AdoptListingNew`, hide the price input for shelter accounts and show the same copy as a help line.
+
+2. **Kennel service card: capacity + next-available** (❌ #3)
+   - Add columns `capacity int` and `next_available_at timestamptz` to `services` table (single migration with #1 above).
+   - Surface both on the service card in `KennelHome`: "🛏 {capacity} spots · Next: {date}".
+
+3. **Kennel `DailyReportSheet` viewer preview** (⚠️ #5)
+   - On `KennelHome` public view, add a "Preview a sample daily report" button that opens `DailyReportSheet` in read-only mode with a static sample payload.
+
+4. **Buyer wishlist tab on public profile** (⚠️ #4)
+   - In `UserProfile.tsx`, when `accountType='buyer'`, append a "Wishlist" tab next to Posts/Saved-searches that lists `buyer_wishlist` rows (table likely exists; if not, this round adds it as part of the same migration).
+
+### Verify
+- Shelter creates a listing → price field gone, ₹0 enforced server-side.
+- Kennel service cards show capacity + next-available.
+- Buyer profile shows a Wishlist tab to other viewers.
+
+---
+
+## File-overlap matrix (proof of zero rework)
 
 ```text
-Round 25  →  Round 26  →  Round 27
-(trust)      (polish)     (notifs)
- 1 day       0.5 day      0.5 day
- 1 mig       0 mig        1 mig
+File                                    R28  R29  R30
+src/pages/AppointmentRoom.tsx            X
+src/pages/MessageThread.tsx              X
+src/pages/Bookings.tsx                   X
+src/components/AuthorIdentity.tsx        X
+src/pages/UserProfile.tsx                X         X*
+src/pages/OrgProfile.tsx                      X
+src/pages/home/BreederHome.tsx                X
+src/pages/home/GaushalaHome.tsx               X
+src/pages/home/ZooHome.tsx                    X
+src/pages/home/KennelHome.tsx                      X
+src/components/Composer.tsx                   X
+src/components/BredOnPetosRibbon.tsx          X
+src/components/AdoptGrid.tsx                       X
+src/pages/AdoptListingDetail.tsx                   X
+src/pages/AdoptListingNew.tsx                      X
 ```
 
-### Round 25 — Rescuer caps & trust (1 day · 1 migration)
-
-✅ **DONE** — Migration shipped (`pet_listings.co_listed_with_org_id`, BEFORE-INSERT trigger `enforce_rescuer_colist`). New `<CoListShelterPicker>` is wired into `AdoptListingNew` and is mandatory when the author is an unverified rescuer. `<SellerBadge>` now accepts a `pending` prop and renders "KYC pending". `<AdoptGrid>` shows "Co-listed with [Shelter] ✓" subline. `<AdoptListingDetail>` shows a leaf info card + passes `pending` to SellerBadge for unverified rescuers. `<MessageThread>` injects a one-time amber soft-warning bubble when the other party is an unverified rescuer and any message in the thread mentions ₹/INR/UPI/GPay/Paytm/PayPal; dismissal persists in `localStorage` per-thread.
-
-**Migration**
-- `pet_listings`: add `co_listed_with_org_id uuid references org_profiles(id)` (nullable).
-- Trigger on `pet_listings INSERT`: if author's role is `rescuer` AND author has no `approved` org, then `co_listed_with_org_id` is REQUIRED and must reference an `approved` shelter org. Reject otherwise.
-
-**Frontend**
-- `SellerBadge.tsx`: add a `pending` ghost-chip (amber outline, "KYC pending") when role is rescuer and `org_profiles.status` ∈ `submitted` / `review`.
-- `AdoptListingNew.tsx`: if user is unverified rescuer, render a mandatory "Co-list with shelter" picker (search approved shelters); block submit otherwise. If user is a verified org, picker is hidden.
-- `AdoptGrid.tsx` + `AdoptListingDetail.tsx`: render "Co-listed with [Shelter ✓]" subline when `co_listed_with_org_id` is set (with KYC tick on the shelter name).
-- `MessageThread.tsx`: when the other party is an unverified rescuer AND a message body matches `/(₹|rs\.?|inr|upi|gpay|paytm|paypal)/i`, inject a one-time soft warning bubble: *"Heads-up: this account isn't verified yet. Avoid sending money outside Petos."* Stored in `localStorage` per-thread so it only shows once.
-
-**Verify**
-- Sign in as rescuer with no org → `AdoptListingNew` forces the picker; submitting without one is blocked.
-- That rescuer's listing in grid shows "Co-listed with Happy Tails ✓".
-- Send "I'll UPI you ₹500" → warning bubble appears once.
-
----
-
-### Round 26 — Surface polish (0.5 day · no migration)
-
-✅ **DONE** — `<MateAvailableBadge>` (queries `mating_listings`) added to PetProfile header. New `useHelpfulVetIds` hook + "Helpful" pill on `AuthorIdentity` for vets with ≥1 helpful answer. Buyer's "Looking for: {breed}" chip added to Search PeopleList (bulk fetch). `Composer` auto-appends `#educational` for zoo accounts and shows an "Auto: #educational" preview chip. Blocked-id filtering added to `CommentSheet`, `useNotifications`, and the `Messages` conversation list (1:1 threads with blocked users are hidden).
-
-- `PetProfile.tsx` header: small amber pill "Available for Mating" when `mate_listings` has an active row for the pet. Tap → `/mates/:listingId`.
-- `Profile.tsx` pet rail: same pill on each pet thumbnail (tiny corner dot).
-- `SearchResults` card (or wherever buyer profile cards render): if author role is `buyer` and `looking_for.breed` is set, show a small chip "Looking for: Labrador" under the name.
-- `Composer.tsx`: when author primary role is `zoo`, auto-add hashtag `#educational` to the post and lock-in a small "Educational" chip preview before submit.
-- `AuthorIdentity.tsx`: when target user has the `helpful_vet` achievement AND role is `vet`, render a tiny green ribbon icon next to the role chip (one extra `useQuery` for achievement, cached).
-- Sweep all data fetches for blocked-id filtering: `posts`, `comments`, `messages`, `notifications`, `vet_questions`. Add `.not('author_id', 'in', '(${blockedIds.join(',')})')` where missing. Spot-check via grep, fix only the misses.
-
----
-
-### Round 27 — Vouch notification (0.5 day · 1 migration)
-
-Closes gap **C**.
-
-**Migration**
-- Trigger on `skill_vouches AFTER INSERT`: insert a `notifications` row with `kind='skill_vouch'`, `actor_id=voucher_id`, `subject_type='skill_spotlight'`, `subject_id=spotlight_id`, addressed to the pet owner.
-
-**Frontend**
-- `Notifications.tsx`: handle `kind='skill_vouch'` — render the actor via `AuthorIdentity` with a tiny orange `Sparkles` overlay on the avatar; copy: *"vouched for {petName}'s {skillName}"*. Tap navigates to `/pet/:publicId?tab=skills`.
-
-**Verify**
-- User A vouches User B's pet → bell icon on User B updates in realtime; row shows actor + skill icon overlay.
+*`UserProfile.tsx` is touched in two rounds but in **different append-only blocks** (R28 = vet specialisation rail; R30 = buyer wishlist tab). Different roles → different code paths → cannot conflict.*
 
 ---
 
 ## Round summary
 
-| Round | Scope | Time | Migrations | Closes |
-|---|---|---|---|---|
-| 25 | Rescuer caps & trust | 1 day | 1 | Gap A (4 items) |
-| 26 | Surface polish | 0.5 day | 0 | Gap B (5 items) |
-| 27 | Vouch notification | 0.5 day | 1 | Gap C (1 item) |
-| **Total** | | **2 days** | **2** | **10 items** |
+| Round | Scope | Migrations | Closes |
+|---|---|---|---|
+| 28 | Vet in-call vault + walker live-link + sub-chips | 1 | ❌ #1, #4 + ⚠️ #10, #11, #12 (5 items) |
+| 29 | Org public profile, banner, tabs, ribbons | 0 | ❌ #5 + ⚠️ #1, #2, #3, #6, #7, #8, #9 (8 items) |
+| 30 | Shelter lock, kennel card, buyer wishlist | 1 | ❌ #2, #3 + ⚠️ #4, #5 (4 items) |
+| **Total** | | **2** | **5 ❌ + 12 ⚠️ = 17 items closed*** |
 
-After Round 27, every ❌ from the original PDF audit is closed. The only remaining ⚠️ items are subjective ("verify exact stats on BreederHome") and can be handled inline as visual QA, not as a build round.
-
----
-
-## Technical notes
-
-- No round touches the same file as another — `Round 25` edits `SellerBadge`, `AdoptListingNew`, `AdoptGrid`, `AdoptListingDetail`, `MessageThread`; `Round 26` edits `PetProfile`, `Profile`, `Composer`, `AuthorIdentity`, search/feed query files; `Round 27` edits `Notifications.tsx` and adds one DB trigger. Zero overlap.
-- The rescuer trigger uses `SECURITY DEFINER` so it can read `org_profiles.status` regardless of viewer.
-- The `co_listed_with_org_id` lookup in `AdoptListingNew` uses an existing `org_profiles` public-read RPC; no new endpoint.
-- The blocked-id sweep is a non-breaking additive filter; missing it today silently leaks blocked authors into feeds.
-
-Reply **`go round 25`** to start, or tell me to reorder / skip a round.
+*One ⚠️ ("OrgProfile banner tint") is the duplicate of ❌ #5 — counted once.*
 
 ---
 
-## ✅ Round 27 — DONE (2026-04-29)
+## Why this won't waste credits
 
-- Added `notify_skill_vouch()` trigger on `skill_vouches` → inserts into `notifications` with `type='skill_vouch'`, links to `/pet/:id`.
-- Owner-self vouches are skipped; voucher display name resolved from `profiles`.
-- `Notifications.tsx` now renders `skill_vouch` rows with an amber `Award` icon overlay; categorised under **Social** filter.
-- Realtime bell + toast already wired via existing `useNotifications` channel — no client subscription change needed.
+- **No file appears in two rounds doing the same thing.** R28 and R30 both touch `UserProfile.tsx` but in two different `accountType` branches that cannot collide.
+- **Each round is self-contained.** You can stop after R28 if budget is tight and the app still works — every previous ✅ stays ✅.
+- **Two migrations total.** Round 28 (grant expiry trigger) + Round 30 (shelter zero-fee + service columns). Round 29 is UI-only.
+- **Zero new edge functions, zero new external dependencies.**
 
-**All three rounds (25, 26, 27) complete. PDF audit gaps closed.**
+---
+
+Reply **`go round 28`** to start, or **`go all 3`** if you want me to ship 28 → 29 → 30 in sequence without stopping for approvals between rounds.

@@ -13,6 +13,7 @@ import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 import { ShieldAlert, AlertCircle, CheckCircle2 } from "lucide-react";
 import { PreCallCheck } from "@/components/vet/PreCallCheck";
 import { VisitNotesPanel } from "@/components/vet/VisitNotesPanel";
+import { SharedVaultPanel } from "@/components/vet/SharedVaultPanel";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,8 @@ export default function AppointmentRoom() {
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [shareExpires, setShareExpires] = useState<string | null>(null);
   const [enteredCode, setEnteredCode] = useState("");
+  const [vaultPanelOpen, setVaultPanelOpen] = useState(false);
+  const [activeVaultCode, setActiveVaultCode] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: appt } = useQuery({
@@ -195,7 +198,8 @@ export default function AppointmentRoom() {
       toast.error("Enter the code from the owner");
       return;
     }
-    window.open(`/v/${encodeURIComponent(code)}`, "_blank", "noopener");
+    setActiveVaultCode(code);
+    setVaultPanelOpen(true);
   };
 
   const updateStatus = async (status: string) => {
@@ -404,6 +408,14 @@ export default function AppointmentRoom() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {activeVaultCode && (
+        <SharedVaultPanel
+          open={vaultPanelOpen}
+          onOpenChange={setVaultPanelOpen}
+          code={activeVaultCode}
+        />
+      )}
     </div>
   );
 }

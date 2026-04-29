@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useIsOnline } from "@/hooks/usePresence";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { UserStreakChip } from "@/components/social/UserStreakChip";
+import { LiveWalkChip } from "@/components/walker/LiveWalkChip";
 
 type Msg = {
   id: string;
@@ -233,6 +234,13 @@ export default function MessageThread() {
                   {otherTyping ? "typing…" : otherOnline ? "online" : "offline"}
                 </div>
               </div>
+              {other.accountType === "service_provider" && user?.id && (
+                <LiveWalkChip
+                  providerId={other.id}
+                  customerId={user.id}
+                  className="ml-2"
+                />
+              )}
             </div>
           )}
         </div>
