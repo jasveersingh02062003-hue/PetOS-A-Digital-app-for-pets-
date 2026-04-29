@@ -8,6 +8,7 @@ import { logError } from "@/lib/logError";
 export type Notification = {
   id: string;
   user_id: string;
+  actor_id: string | null;
   type: string;
   title: string;
   body: string | null;
