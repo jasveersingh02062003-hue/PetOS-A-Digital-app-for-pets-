@@ -106,15 +106,6 @@ const UserProfile = () => {
     },
   });
 
-  if (param && !isUuid && handleResolved === null) {
-    return (
-      <div className="container-app pt-8 text-center">
-        <div className="font-display text-xl mb-2">User not found</div>
-        <Button onClick={() => nav("/")} variant="outline">Go home</Button>
-      </div>
-    );
-  }
-
   const accountType = (profile as any)?.account_type ?? "pet_parent";
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
@@ -166,6 +157,16 @@ const UserProfile = () => {
       }
     } catch {}
   };
+
+  // After ALL hooks: handle the "handle not found" case.
+  if (param && !isUuid && handleResolved === null) {
+    return (
+      <div className="container-app pt-8 text-center">
+        <div className="font-display text-xl mb-2">User not found</div>
+        <Button onClick={() => nav("/")} variant="outline">Go home</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container-app pad-top-safe pb-24">
