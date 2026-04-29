@@ -22,6 +22,10 @@ import { toast } from "sonner";
 import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
+import { AdoptablesList } from "@/components/profile/AdoptablesList";
+import { EventsList } from "@/components/profile/EventsList";
+import { getRoleBanner } from "@/lib/roleTheme";
+import { Heart as HeartIcon, CalendarDays as CalendarIcon } from "lucide-react";
 
 const UserProfile = () => {
   const { userId: param } = useParams<{ userId: string }>();
@@ -114,6 +118,19 @@ const UserProfile = () => {
   const handle = (profile as any)?.handle as string | null | undefined;
   const coverUrl = (profile as any)?.cover_url as string | null | undefined;
   const isVerifiedOrg = useIsVerifiedOrg(userId);
+
+  // Role-aware tab visibility (drives both the TabsList grid + the conditional <TabsTrigger>s)
+  const showAdoptables = ["shelter", "sanctuary", "rescuer"].includes(accountType);
+  const showEvents = ["zoo", "sanctuary"].includes(accountType);
+  const showBreederTabs = !!org && (org.org_type === "breeder" || org.org_type === "kennel");
+  const showReviews = !!org;
+  const tabCount = 3 // posts, tagged, pets
+    + (showBreederTabs ? 2 : 0)
+    + (showAdoptables ? 1 : 0)
+    + (showEvents ? 1 : 0)
+    + 1 // badges
+    + (showReviews ? 1 : 0);
+  const roleBanner = getRoleBanner(accountType as any);
   const lookingFor = (profile as any)?.looking_for as
     | { species?: string[] | null; breed?: string | null; city?: string | null; max_price_inr?: number | null }
     | null
@@ -153,7 +170,7 @@ const UserProfile = () => {
 
       {/* COVER */}
       <div className="-mx-4 sm:-mx-6 mb-0">
-        <div className="aspect-[16/6] w-full bg-muted relative overflow-hidden">
+        <div className={`aspect-[16/6] w-full bg-muted relative overflow-hidden ${roleBanner}`}>
           {coverUrl ? (
             <img src={coverUrl} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -259,13 +276,8 @@ const UserProfile = () => {
       {org && <div className="mb-2"><RatingChip subjectType="provider" subjectId={userId} /></div>}
       <Tabs defaultValue="posts" className="mt-2">
         <TabsList
-          className={`grid w-full ${
-            org && (org.org_type === "breeder" || org.org_type === "kennel")
-              ? "grid-cols-7"
-              : org
-              ? "grid-cols-5"
-              : "grid-cols-4"
-          } rounded-xl h-11 p-1 bg-muted/50`}
+          className="flex w-full overflow-x-auto no-scrollbar rounded-xl h-11 p-1 bg-muted/50 gap-1"
+          style={{ display: "grid", gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}
         >
           <TabsTrigger value="posts" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Grid3x3 className="h-4 w-4" />
@@ -276,20 +288,30 @@ const UserProfile = () => {
           <TabsTrigger value="pets" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <PawPrint className="h-4 w-4" />
           </TabsTrigger>
-          {org && (org.org_type === "breeder" || org.org_type === "kennel") && (
+          {showBreederTabs && (
             <TabsTrigger value="litters" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
               <GitBranch className="h-4 w-4" />
             </TabsTrigger>
           )}
-          {org && (org.org_type === "breeder" || org.org_type === "kennel") && (
+          {showBreederTabs && (
             <TabsTrigger value="boarding" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
               <Hotel className="h-4 w-4" />
+            </TabsTrigger>
+          )}
+          {showAdoptables && (
+            <TabsTrigger value="adoptables" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <HeartIcon className="h-4 w-4" />
+            </TabsTrigger>
+          )}
+          {showEvents && (
+            <TabsTrigger value="events" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
+              <CalendarIcon className="h-4 w-4" />
             </TabsTrigger>
           )}
           <TabsTrigger value="badges" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
             <Award className="h-4 w-4" />
           </TabsTrigger>
-          {org && (
+          {showReviews && (
             <TabsTrigger value="reviews" className="rounded-lg gap-1 data-[state=active]:bg-card text-xs">
               <Star className="h-4 w-4" />
             </TabsTrigger>
@@ -329,6 +351,16 @@ const UserProfile = () => {
         <TabsContent value="boarding" className="mt-3">
           {userId && <BoardingList userId={userId} isOwner={isMe} />}
         </TabsContent>
+        {showAdoptables && (
+          <TabsContent value="adoptables" className="mt-3">
+            {userId && <AdoptablesList userId={userId} />}
+          </TabsContent>
+        )}
+        {showEvents && (
+          <TabsContent value="events" className="mt-3">
+            {userId && <EventsList userId={userId} />}
+          </TabsContent>
+        )}
         {org && (
           <TabsContent value="reviews" className="mt-3">
             {userId && <ReviewsList subjectType="provider" subjectId={userId} />}
