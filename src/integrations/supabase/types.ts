@@ -3097,6 +3097,7 @@ export type Database = {
           like_count: number
           pet_id: string | null
           reaction_counts: Json
+          rescue_journey_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3115,6 +3116,7 @@ export type Database = {
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
+          rescue_journey_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3133,6 +3135,7 @@ export type Database = {
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
+          rescue_journey_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3148,6 +3151,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_rescue_journey_id_fkey"
+            columns: ["rescue_journey_id"]
+            isOneToOne: false
+            referencedRelation: "rescue_journeys"
             referencedColumns: ["id"]
           },
         ]
@@ -3782,6 +3792,102 @@ export type Database = {
           pet_id?: string
         }
         Relationships: []
+      }
+      rescue_journey_entries: {
+        Row: {
+          caption: string | null
+          created_at: string
+          day_number: number
+          id: string
+          image_url: string | null
+          journey_id: string
+          post_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          day_number: number
+          id?: string
+          image_url?: string | null
+          journey_id: string
+          post_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          day_number?: number
+          id?: string
+          image_url?: string | null
+          journey_id?: string
+          post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rescue_journey_entries_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "rescue_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rescue_journey_entries_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rescue_journeys: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          id: string
+          org_id: string
+          pet_id: string | null
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          pet_id?: string | null
+          started_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          pet_id?: string | null
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rescue_journeys_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "rescue_journeys_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {

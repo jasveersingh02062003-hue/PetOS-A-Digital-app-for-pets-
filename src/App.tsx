@@ -33,6 +33,7 @@ const Explore = lazy(() => import("./pages/Explore"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AiChat = lazy(() => import("./pages/AiChat"));
 const VaultView = lazy(() => import("./pages/VaultView"));
+const RescueJourneyDetail = lazy(() => import("./pages/RescueJourneyDetail"));
 const VetConsult = lazy(() => import("./pages/VetConsult"));
 const MatesNew = lazy(() => import("./pages/MatesNew"));
 const MateListing = lazy(() => import("./pages/MateListing"));
@@ -257,6 +258,7 @@ const App = () => (
               <Route path="/admin/errors" element={<AdminErrors />} />
               <Route path="/health/:petId/timeline" element={<Timeline />} />
               <Route path="/v/:code" element={<VaultView />} />
+              <Route path="/rescue/:id" element={<RescueJourneyDetail />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/pet/:publicId" element={<PetProfile />} />
               <Route path="/pets/:petId/tracker" element={<PetTracker />} />
