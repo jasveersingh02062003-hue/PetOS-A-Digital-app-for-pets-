@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { LittersList } from "@/components/profile/LittersList";
 import { BoardingList } from "@/components/profile/BoardingList";
+import { DailyReportSamplePreview } from "@/components/kennel/DailyReportSamplePreview";
 import { AdoptionApplicationSheet } from "@/components/adopt/AdoptionApplicationSheet";
 import { ReviewsList, RatingChip } from "@/components/reviews/ReviewsList";
 import { DonateDialog } from "@/components/donations/DonateDialog";
@@ -232,6 +233,11 @@ const OrgProfile = () => {
         <div className="mt-6">
           <h2 className="font-display text-lg mb-2">Boarding & services</h2>
           <BoardingList userId={userId} isOwner={isOwner} />
+          {org.org_type === "kennel" && (
+            <div className="mt-3">
+              <DailyReportSamplePreview />
+            </div>
+          )}
         </div>
       )}
 
