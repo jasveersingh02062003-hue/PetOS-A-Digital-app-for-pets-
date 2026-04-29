@@ -6,12 +6,20 @@ import { StoryComposer } from "./StoryComposer";
 import { StoryViewer } from "./StoryViewer";
 import { SmartImage } from "@/components/SmartImage";
 import { StoryRailSkeleton } from "@/components/skeletons/FeedSkeleton";
+import { getRoleRing } from "@/lib/roleTheme";
+import { usePublicProfiles } from "@/hooks/usePublicProfiles";
+import { useOrgIdentities } from "@/hooks/useOrgIdentities";
+import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
+
+const ORG_ROLES = new Set(["breeder", "kennel", "shelter", "sanctuary", "zoo"]);
 
 export const StoryRail = () => {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: groups, isLoading } = useActiveStories();
+  const { data: profilesPublic } = usePublicProfiles();
+  const { data: orgs } = useOrgIdentities();
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerIdx, setViewerIdx] = useState<number | null>(null);
 
@@ -19,6 +27,7 @@ export const StoryRail = () => {
 
   const myGroupIdx = groups?.findIndex((g) => g.author_id === user?.id) ?? -1;
   const others = (groups ?? []).filter((g) => g.author_id !== user?.id);
+  const myRing = getRoleRing((profile?.account_type as any) ?? "pet_parent");
 
   return (
     <>
@@ -28,7 +37,7 @@ export const StoryRail = () => {
           onClick={() => myGroupIdx >= 0 ? setViewerIdx(myGroupIdx) : setComposerOpen(true)}
           className="flex flex-col items-center gap-1.5 shrink-0"
         >
-          <div className="relative h-16 w-16 rounded-full bg-muted overflow-hidden flex items-center justify-center ring-2 ring-offset-2 ring-offset-background ring-primary/30">
+          <div className={cn("relative h-16 w-16 rounded-full bg-muted overflow-hidden flex items-center justify-center ring-2 ring-offset-2 ring-offset-background", myRing)}>
             {profile?.avatar_url ? (
               <SmartImage src={profile.avatar_url} alt="You" className="w-full h-full" aspect="1/1" />
             ) : (
@@ -47,16 +56,23 @@ export const StoryRail = () => {
         {others.map((g) => {
           const realIdx = groups!.findIndex((x) => x.author_id === g.author_id);
           const cover = g.stories[0];
+          const authorProfile = profilesPublic?.find((p) => p.id === g.author_id);
+          const accountType = (authorProfile?.account_type ?? "pet_parent") as string;
+          const ringClass = getRoleRing(accountType as any);
+          const org = orgs?.get(g.author_id);
+          const isOrg = ORG_ROLES.has(accountType) && !!org?.org_name;
+          const labelRaw = isOrg ? (org!.org_name as string) : (g.author_name ?? authorProfile?.full_name ?? "Pet");
+          const label = labelRaw.split(" ")[0];
           return (
             <button
               key={g.author_id}
               onClick={() => setViewerIdx(realIdx)}
               className="flex flex-col items-center gap-1.5 shrink-0"
             >
-              <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-background ring-primary">
+              <div className={cn("h-16 w-16 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-background", ringClass)}>
                 <SmartImage src={cover.image_url} alt="" className="w-full h-full" aspect="1/1" />
               </div>
-              <span className="text-[11px] text-muted-foreground max-w-[64px] truncate">{g.author_name?.split(" ")[0] ?? "Pet"}</span>
+              <span className="text-[11px] text-muted-foreground max-w-[64px] truncate">{label}</span>
             </button>
           );
         })}

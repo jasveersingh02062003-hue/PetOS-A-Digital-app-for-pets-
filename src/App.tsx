@@ -160,6 +160,7 @@ const App = () => (
         <AuthProvider>
           <PresenceProvider>
           <CartProvider>
+            <RealtimeBridge />
             <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
             <Routes>
