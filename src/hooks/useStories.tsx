@@ -18,8 +18,13 @@ export type StoryGroup = {
   author_id: string;
   author_name: string | null;
   author_avatar: string | null;
+  account_type: string | null;
+  /** True when an org's branding (org name + logo) overrides the personal name. */
+  is_org: boolean;
   stories: Story[];
 };
+
+const ORG_ROLES = new Set(["breeder", "kennel", "shelter", "sanctuary", "zoo"]);
 
 export const useActiveStories = () => {
   return useQuery({
@@ -35,15 +40,32 @@ export const useActiveStories = () => {
       if (!stories?.length) return [];
       const authorIds = [...new Set(stories.map((s) => s.author_id))];
       const { data: profiles } = await supabase.rpc("get_profiles_public");
-      const pMap = new Map((profiles ?? []).filter((p: any) => authorIds.includes(p.id)).map((p: any) => [p.id, p]));
+      const pMap = new Map(
+        (profiles ?? [])
+          .filter((p: any) => authorIds.includes(p.id))
+          .map((p: any) => [p.id, p]),
+      );
+      // Pull approved org_profiles for any org-type authors so we can
+      // surface org name + logo in the rail and viewer (Instagram-style).
+      const { data: orgRows } = await supabase
+        .from("org_profiles")
+        .select("user_id, org_name, logo_url, status")
+        .in("user_id", authorIds)
+        .eq("status", "approved");
+      const oMap = new Map((orgRows ?? []).map((o: any) => [o.user_id, o]));
       const groups = new Map<string, StoryGroup>();
       for (const s of stories as Story[]) {
         if (!groups.has(s.author_id)) {
           const p: any = pMap.get(s.author_id);
+          const o: any = oMap.get(s.author_id);
+          const accountType = (p?.account_type ?? null) as string | null;
+          const isOrg = !!o && !!accountType && ORG_ROLES.has(accountType);
           groups.set(s.author_id, {
             author_id: s.author_id,
-            author_name: p?.full_name ?? null,
-            author_avatar: p?.avatar_url ?? null,
+            author_name: isOrg ? (o.org_name as string) : (p?.full_name ?? null),
+            author_avatar: isOrg ? (o.logo_url ?? p?.avatar_url ?? null) : (p?.avatar_url ?? null),
+            account_type: accountType,
+            is_org: isOrg,
             stories: [],
           });
         }
