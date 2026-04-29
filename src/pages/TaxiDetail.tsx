@@ -69,6 +69,33 @@ const TaxiDetail = () => {
     return () => { supabase.removeChannel(ch); };
   }, [id, qc, refetch]);
 
+  // Driver-side live location ping (every 30s while trip is active)
+  useEffect(() => {
+    if (!trip || !id) return;
+    const isAssignedDriver = user?.id === trip.service_providers?.owner_id;
+    const activeStates = ["accepted","en_route_pickup","picked_up","en_route_drop"];
+    if (!isAssignedDriver || !activeStates.includes(trip.status)) return;
+    if (!("geolocation" in navigator)) return;
+
+    const ping = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          await supabase.rpc("update_driver_location" as any, {
+            _booking_id: id,
+            _lat: pos.coords.latitude,
+            _lng: pos.coords.longitude,
+          });
+        },
+        () => { /* ignore one-shot errors */ },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10_000 },
+      );
+    };
+    ping();
+    const handle = window.setInterval(ping, 30_000);
+    return () => window.clearInterval(handle);
+  }, [id, trip?.status, trip?.service_providers?.owner_id, user?.id]);
+
+
   if (!trip) return <div className="container-app py-10 text-sm text-muted-foreground">Loading…</div>;
 
   const isCustomer = user?.id === trip.customer_id;
