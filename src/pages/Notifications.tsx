@@ -184,9 +184,27 @@ const Notifications = () => {
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${meta.tone}`}>
-                        <Icon className="h-4 w-4" strokeWidth={2.2} />
-                      </div>
+                      {n.actor_id ? (
+                        <div className="relative shrink-0">
+                          <AuthorIdentity
+                            userId={n.actor_id}
+                            size="md"
+                            showBadge={false}
+                            linkTo={false}
+                            className="!gap-0"
+                          />
+                          <span
+                            className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full grid place-items-center ring-2 ring-background ${meta.tone}`}
+                            aria-hidden
+                          >
+                            <Icon className="h-3 w-3" strokeWidth={2.4} />
+                          </span>
+                        </div>
+                      ) : (
+                        <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${meta.tone}`}>
+                          <Icon className="h-4 w-4" strokeWidth={2.2} />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-2">
                           <div className="text-sm font-medium leading-snug flex-1">{n.title}</div>
