@@ -4,8 +4,10 @@ import { SellerBadge } from "@/components/SellerBadge";
 import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { useOrgIdentity } from "@/hooks/useOrgIdentities";
+import { useIsHelpfulVet } from "@/hooks/useHelpfulVetIds";
 import { getRoleRing } from "@/lib/roleTheme";
 import { cn } from "@/lib/utils";
+import { Stethoscope } from "lucide-react";
 
 type Size = "sm" | "md" | "lg";
 
@@ -57,6 +59,7 @@ export const AuthorIdentity = ({
   const { data: profiles } = usePublicProfiles();
   const profile = profiles?.find((p) => p.id === userId);
   const verified = useIsVerifiedOrg(userId);
+  const isHelpfulVet = useIsHelpfulVet(userId);
   const org = useOrgIdentity(userId);
 
   const accountType = (profile?.account_type ?? fallbackAccountType ?? "pet_parent") as string;
@@ -88,7 +91,17 @@ export const AuthorIdentity = ({
         </div>
         {showBadge && (
           <div className="mt-0.5">
-            <SellerBadge type={accountType as any} verified={verified} />
+            <span className="inline-flex items-center gap-1">
+              <SellerBadge type={accountType as any} verified={verified} />
+              {accountType === "vet" && isHelpfulVet && (
+                <span
+                  className="inline-flex items-center gap-0.5 text-[9px] font-bold text-leaf bg-leaf/10 border border-leaf/30 rounded-full px-1.5 py-0.5"
+                  title="Helpful vet"
+                >
+                  <Stethoscope className="h-2.5 w-2.5" /> Helpful
+                </span>
+              )}
+            </span>
           </div>
         )}
         {effectiveSubline ? <div className="text-xs text-muted-foreground truncate">{effectiveSubline}</div> : null}
