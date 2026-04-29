@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
-import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2, Printer, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Eye, CheckCircle2, Loader2, Share2, Printer, Sparkles, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 import { MissingPoster } from "@/components/missing/MissingPoster";
@@ -80,12 +80,28 @@ const MissingDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [boosting, setBoosting] = useState(false);
+  const [releasingFinderId, setReleasingFinderId] = useState<string | null>(null);
 
   if (isLoading) return <div className="container-app pt-12 text-sm text-muted-foreground">Loading…</div>;
   if (!missing) return <div className="container-app pt-12 text-sm">Not found.</div>;
 
   const isOwner = user?.id === missing.owner_id;
   const isResolved = missing.status === "resolved";
+  const rewardStatus = (missing as any).reward_status as string | undefined;
+  const rewardEscrowed = rewardStatus === "escrowed";
+
+  const releaseRewardTo = async (finderId: string) => {
+    if (!confirm(`Release ₹${missing.reward_inr} reward to this finder? This cannot be undone.`)) return;
+    setReleasingFinderId(finderId);
+    const { error } = await supabase.rpc("release_reward" as any, {
+      _missing_pet_id: missing.id,
+      _finder_id: finderId,
+    });
+    setReleasingFinderId(null);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["missing", id] });
+    toast.success("Reward released — finder notified 🎉");
+  };
 
   const submitSighting = async () => {
     if (!user || !id) return;
