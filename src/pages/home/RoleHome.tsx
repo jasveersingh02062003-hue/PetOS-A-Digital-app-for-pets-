@@ -5,7 +5,7 @@ import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, Search } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
 import { SellerBadge } from "@/components/SellerBadge";
@@ -33,25 +33,25 @@ const CONFIG: Record<string, RoleConfig> = {
     hero: "Today's bookings",
     blurb: "Boarding bookings, services and daily reports.",
     primaryCta: { label: "New service slot", to: "/services" },
-    secondaryCta: { label: "View bookings", to: "/bookings" },
+    secondaryCta: { label: "View bookings", to: "/bookings/recurring" },
   },
   shelter: {
     hero: "Adoptable animals & open applications",
     blurb: "List adoptables, review applications and post missing pets.",
-    primaryCta: { label: "List for adoption", to: "/adopt" },
+    primaryCta: { label: "List for adoption", to: "/mates/adopt/new" },
     secondaryCta: { label: "Post missing", to: "/missing" },
   },
   rescuer: {
     hero: "Open rescue cases",
     blurb: "Coordinate rescues, post urgent cases and updates.",
     primaryCta: { label: "Urgent case", to: "/missing" },
-    secondaryCta: { label: "Adoptables", to: "/adopt" },
+    secondaryCta: { label: "Adoptables", to: "/mates" },
   },
   sanctuary: {
     hero: "Animals in care",
     blurb: "Add animals in care, post updates and accept donations.",
-    primaryCta: { label: "Add animal", to: "/adopt" },
-    secondaryCta: { label: "Donate page", to: "/donate" },
+    primaryCta: { label: "Add animal", to: "/mates/adopt/new" },
+    secondaryCta: { label: "Donations", to: "/org/donations" },
   },
   zoo: {
     hero: "Today's exhibits & events",
@@ -61,7 +61,7 @@ const CONFIG: Record<string, RoleConfig> = {
   buyer: {
     hero: "Saved searches & new matches",
     blurb: "Browse adoptables, breeders nearby and post a wanted listing.",
-    primaryCta: { label: "Browse adopt", to: "/adopt" },
+    primaryCta: { label: "Browse adopt", to: "/mates" },
     secondaryCta: { label: "Browse breeders", to: "/breeders" },
   },
 };
