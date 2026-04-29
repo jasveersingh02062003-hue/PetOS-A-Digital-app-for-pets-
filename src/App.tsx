@@ -243,6 +243,7 @@ const App = () => (
               <Route path="/bookings/recurring" element={<RecurringBookings />} />
               <Route path="/pregnancies" element={<Pregnancies />} />
               <Route path="/org/donations" element={<OrgDonations />} />
+              <Route path="/donations/:donationId/receipt" element={<DonationReceipt />} />
               <Route path="/shop/reminders" element={<ShopReminders />} />
               <Route path="/taxi" element={<Taxi />} />
               <Route path="/taxi/new" element={<TaxiNew />} />
