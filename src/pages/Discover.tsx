@@ -12,7 +12,7 @@ import { NearMePanel } from "@/components/maps/NearMePanel";
 import {
   Compass, Flame, Users, CalendarDays, Stethoscope, Heart, ArrowRight,
   Scissors, GraduationCap, Hotel, Sun, Home, Footprints, Car, AlertTriangle,
-  MapPin, Sparkles, ShoppingBag,
+  MapPin, Sparkles, ShoppingBag, Baby, Bell,
   type LucideIcon,
 } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
@@ -43,7 +43,9 @@ const TILES: Tile[] = [
   { key: "boarding",  title: "Boarding",         subtitle: "Overnight stays nearby",        icon: Hotel,        tone: "lilac",     to: "/services/category/boarding",  serviceKey: "boarding" },
   { key: "sitting",   title: "Sitters",          subtitle: "Drop-ins & check-ups",          icon: Heart,        tone: "coral",     to: "/services/category/sitting",   serviceKey: "sitting" },
   { key: "walking",   title: "Walkers",          subtitle: "Daily walks & exercise",        icon: Footprints,   tone: "leaf",      to: "/services/category/walking",   serviceKey: "walking" },
-  { key: "pet_taxi",  title: "Pet taxi",         subtitle: "Safe transport & pickups",      icon: Car,          tone: "primary",   to: "/services/category/pet_taxi",  serviceKey: "pet_taxi" },
+  { key: "pet_taxi",  title: "Pet taxi",         subtitle: "Book a verified driver",        icon: Car,          tone: "primary",   to: "/taxi",                        serviceKey: "pet_taxi" },
+  { key: "pregnancy", title: "Pregnancy",        subtitle: "Track gestation & whelping",    icon: Baby,         tone: "lilac",     to: "/pregnancies" },
+  { key: "reorder",   title: "Reorder reminders",subtitle: "Never run out of food or meds", icon: Bell,         tone: "leaf",      to: "/shop/reminders" },
   { key: "meetups",   title: "Meetups",          subtitle: "Local events & playdates",      icon: CalendarDays, tone: "amber",     to: "/meetups" },
   { key: "groups",    title: "Groups",           subtitle: "Communities by breed & city",   icon: Users,        tone: "primary",   to: "/groups" },
   { key: "missing",   title: "Missing pets",     subtitle: "Help reunite pets nearby",      icon: AlertTriangle,tone: "emergency", to: "/missing" },

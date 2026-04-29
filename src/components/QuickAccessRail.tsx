@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ShoppingBag,
   Siren,
+  Car,
 } from "lucide-react";
 
 /**
@@ -21,6 +22,7 @@ const items: {
 }[] = [
   { to: "/askvet", label: "Ask vet", icon: Stethoscope, tone: "sky" },
   { to: "/walk/new", label: "Walks", icon: Footprints, tone: "leaf" },
+  { to: "/taxi", label: "Pet taxi", icon: Car, tone: "primary" },
   { to: "/meetups", label: "Meetups", icon: CalendarDays, tone: "amber" },
   { to: "/shop", label: "Shop", icon: ShoppingBag, tone: "primary" },
   { to: "/missing", label: "Missing", icon: Siren, tone: "emergency" },
