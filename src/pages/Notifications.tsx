@@ -12,6 +12,7 @@ import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthorIdentity } from "@/components/AuthorIdentity";
 
 type Filter = "all" | "unread" | "social" | "bookings" | "alerts";
 
