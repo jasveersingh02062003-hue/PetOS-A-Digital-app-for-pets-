@@ -57,7 +57,7 @@ Round 25  →  Round 26  →  Round 27
 
 ### Round 25 — Rescuer caps & trust (1 day · 1 migration)
 
-Closes gap **A** end-to-end.
+✅ **DONE** — Migration shipped (`pet_listings.co_listed_with_org_id`, BEFORE-INSERT trigger `enforce_rescuer_colist`). New `<CoListShelterPicker>` is wired into `AdoptListingNew` and is mandatory when the author is an unverified rescuer. `<SellerBadge>` now accepts a `pending` prop and renders "KYC pending". `<AdoptGrid>` shows "Co-listed with [Shelter] ✓" subline. `<AdoptListingDetail>` shows a leaf info card + passes `pending` to SellerBadge for unverified rescuers. `<MessageThread>` injects a one-time amber soft-warning bubble when the other party is an unverified rescuer and any message in the thread mentions ₹/INR/UPI/GPay/Paytm/PayPal; dismissal persists in `localStorage` per-thread.
 
 **Migration**
 - `pet_listings`: add `co_listed_with_org_id uuid references org_profiles(id)` (nullable).
