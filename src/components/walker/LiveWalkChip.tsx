@@ -23,13 +23,13 @@ export const LiveWalkChip = ({ providerId, customerId, className }: Props) => {
     enabled: !!providerId && !!customerId,
     refetchInterval: 15_000,
     queryFn: async () => {
-      // Find an in-progress booking between this customer and provider.
+      // Find recent confirmed bookings between this customer and provider.
       const { data: bookings } = await supabase
         .from("service_bookings")
         .select("id, public_share_token, status")
         .eq("provider_id", providerId)
         .eq("customer_id", customerId)
-        .in("status", ["in_progress"])
+        .in("status", ["confirmed"])
         .order("scheduled_at", { ascending: false })
         .limit(5);
       if (!bookings?.length) return null;
