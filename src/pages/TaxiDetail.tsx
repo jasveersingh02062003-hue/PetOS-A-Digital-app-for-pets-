@@ -12,6 +12,7 @@ import { PayButton } from "@/components/payments/PayButton";
 import { RefundButton } from "@/components/payments/RefundButton";
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
+import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
@@ -68,6 +69,33 @@ const TaxiDetail = () => {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [id, qc, refetch]);
+
+  // Driver-side live location ping (every 30s while trip is active)
+  useEffect(() => {
+    if (!trip || !id) return;
+    const isAssignedDriver = user?.id === trip.service_providers?.owner_id;
+    const activeStates = ["accepted","en_route_pickup","picked_up","en_route_drop"];
+    if (!isAssignedDriver || !activeStates.includes(trip.status)) return;
+    if (!("geolocation" in navigator)) return;
+
+    const ping = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          await supabase.rpc("update_driver_location" as any, {
+            _booking_id: id,
+            _lat: pos.coords.latitude,
+            _lng: pos.coords.longitude,
+          });
+        },
+        () => { /* ignore one-shot errors */ },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10_000 },
+      );
+    };
+    ping();
+    const handle = window.setInterval(ping, 30_000);
+    return () => window.clearInterval(handle);
+  }, [id, trip?.status, trip?.service_providers?.owner_id, user?.id]);
+
 
   if (!trip) return <div className="container-app py-10 text-sm text-muted-foreground">Loading…</div>;
 
@@ -146,6 +174,34 @@ const TaxiDetail = () => {
             )}
           </Card>
         )}
+
+        {/* Live driver map */}
+        {(trip as any).driver_lat && (trip as any).driver_lng && status !== "cancelled" && status !== "dropped_off" && (() => {
+          const dLat = Number((trip as any).driver_lat);
+          const dLng = Number((trip as any).driver_lng);
+          const markers: MapMarker[] = [
+            { id: "driver", lat: dLat, lng: dLng, color: "primary", title: "Driver", description: "Live location" },
+          ];
+          if (trip.pickup_lat && trip.pickup_lng) {
+            markers.push({ id: "pickup", lat: Number(trip.pickup_lat), lng: Number(trip.pickup_lng), color: "success", title: "Pickup" });
+          }
+          if (trip.dropoff_lat && trip.dropoff_lng) {
+            markers.push({ id: "drop", lat: Number(trip.dropoff_lat), lng: Number(trip.dropoff_lng), color: "danger", title: "Drop-off" });
+          }
+          const updatedAt = (trip as any).driver_location_at
+            ? new Date((trip as any).driver_location_at).toLocaleTimeString()
+            : null;
+          return (
+            <Card className="rounded-2xl border-hairline overflow-hidden">
+              <LeafletMap center={[dLat, dLng]} zoom={14} height="240px" markers={markers} />
+              {updatedAt && (
+                <div className="px-4 py-2 text-xs text-muted-foreground border-t border-hairline">
+                  Driver location updated at {updatedAt}
+                </div>
+              )}
+            </Card>
+          );
+        })()}
 
         {/* Driver controls */}
         {isDriver && status !== "cancelled" && nextStatus && (

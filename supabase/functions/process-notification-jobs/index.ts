@@ -71,30 +71,49 @@ serve(async (req) => {
 });
 
 async function fanoutMissingPet(admin: any, payload: any) {
-  const { missing_pet_id, pet_id, owner_id, last_seen_city } = payload;
-  if (!last_seen_city) return;
+  const { missing_pet_id, pet_id, owner_id, last_seen_city,
+    last_seen_lat, last_seen_lng, radius_km } = payload;
 
   const { data: pet } = await admin.from("pets")
     .select("name, species").eq("id", pet_id).maybeSingle();
   const petName = pet?.name ?? "a pet";
   const species = pet?.species ?? "pet";
 
-  const { data: recipients } = await admin
-    .from("profiles")
-    .select("id")
-    .neq("id", owner_id)
-    .ilike("city", last_seen_city)
-    .limit(RECIPIENTS_PER_JOB);
+  let recipients: { id: string }[] = [];
 
-  if (!recipients?.length) return;
+  // Prefer GPS radius fanout when coordinates are available
+  if (last_seen_lat != null && last_seen_lng != null) {
+    const km = Math.min(Number(radius_km) || 10, 50);
+    const { data: nearby } = await admin.rpc("find_users_within_radius_km", {
+      _lat: last_seen_lat,
+      _lng: last_seen_lng,
+      _radius_km: km,
+      _exclude_user: owner_id,
+    });
+    recipients = (nearby ?? []).slice(0, RECIPIENTS_PER_JOB)
+      .map((r: any) => ({ id: r.user_id }));
+  }
 
-  // Batch insert via notify_user (respects per-user notification prefs)
+  // Fallback to city match if no GPS results
+  if (!recipients.length && last_seen_city) {
+    const { data: byCity } = await admin
+      .from("profiles")
+      .select("id")
+      .neq("id", owner_id)
+      .ilike("city", last_seen_city)
+      .limit(RECIPIENTS_PER_JOB);
+    recipients = byCity ?? [];
+  }
+
+  if (!recipients.length) return;
+
+  const where = last_seen_city ?? "your area";
   for (const r of recipients) {
     await admin.rpc("notify_user", {
       _user_id: r.id,
       _type: "missing_pet",
       _title: `Help find ${petName}`,
-      _body: `${species} last seen in ${last_seen_city}`,
+      _body: `${species} last seen in ${where}`,
       _link: `/missing/${missing_pet_id}`,
     });
   }
