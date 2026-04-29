@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SellerBadge } from "@/components/SellerBadge";
-import { useIsVerifiedOrg } from "@/hooks/useVerifiedOrgs";
+import { useIsVerifiedOrg, useIsPendingOrg } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { useOrgIdentity } from "@/hooks/useOrgIdentities";
 import { useIsHelpfulVet } from "@/hooks/useHelpfulVetIds";
@@ -60,6 +60,7 @@ export const AuthorIdentity = ({
   const { data: profiles } = usePublicProfiles();
   const profile = profiles?.find((p) => p.id === userId);
   const verified = useIsVerifiedOrg(userId);
+  const pending = useIsPendingOrg(userId);
   const isHelpfulVet = useIsHelpfulVet(userId);
   const org = useOrgIdentity(userId);
 
@@ -94,7 +95,7 @@ export const AuthorIdentity = ({
         {showBadge && (
           <div className="mt-0.5">
             <span className="inline-flex items-center gap-1">
-              <SellerBadge type={accountType as any} verified={verified} />
+              <SellerBadge type={accountType as any} verified={verified} pending={pending} />
               {accountType === "vet" && isHelpfulVet && (
                 <span
                   className="inline-flex items-center gap-0.5 text-[9px] font-bold text-leaf bg-leaf/10 border border-leaf/30 rounded-full px-1.5 py-0.5"

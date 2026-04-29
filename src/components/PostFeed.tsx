@@ -12,7 +12,7 @@ import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
 import { SellerBadge } from "./SellerBadge";
-import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
+import { useVerifiedOrgs, usePendingOrgs } from "@/hooks/useVerifiedOrgs";
 import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "./AuthorIdentity";
 import { ReactionBar } from "./social/ReactionBar";
@@ -30,6 +30,7 @@ import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { toast } from "sonner";
 import { SmartImage } from "./SmartImage";
 import { FeedSkeleton } from "./skeletons/FeedSkeleton";
+import { Sparkles } from "lucide-react";
 
 export type FeedPost = {
   id: string;
@@ -139,9 +140,21 @@ const PostCard = ({ post, onComment }: {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: verifiedOrgs } = useVerifiedOrgs();
+  const { data: pendingOrgs } = usePendingOrgs();
   const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
+  const authorPending = !!(post.author_id && pendingOrgs?.has(post.author_id));
   const accountType = post.author?.account_type ?? "pet_parent";
   const orgPost = isOrgRole(accountType) && !post.pet_id;
+  // Bred-on-PetOS ribbon: breeder-authored post tied to a pet that has a litter_id
+  const { data: postLitter } = useQuery({
+    queryKey: ["post-pet-litter", post.pet_id],
+    enabled: !!post.pet_id && accountType === "breeder",
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("pets").select("litter_id").eq("id", post.pet_id!).maybeSingle();
+      return (data?.litter_id as string | null) ?? null;
+    },
+  });
   const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
   const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
   const initial = displayName[0]?.toUpperCase() || "P";
@@ -224,7 +237,7 @@ const PostCard = ({ post, onComment }: {
               {displayName}
             </Link>
             {accountType !== "pet_parent" && (
-              <SellerBadge type={accountType as any} verified={authorVerified} />
+              <SellerBadge type={accountType as any} verified={authorVerified} pending={authorPending} />
             )}
             {accountType === "pet_parent" && (
               <UserStreakChip
@@ -251,6 +264,11 @@ const PostCard = ({ post, onComment }: {
         >
           <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
           <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
+          {postLitter && (
+            <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
+              <Sparkles className="h-3 w-3" /> Bred on PetOS
+            </div>
+          )}
           <SmartImage
             variant="feed"
             src={post.image_url}
