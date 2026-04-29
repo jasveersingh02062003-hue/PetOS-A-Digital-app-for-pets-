@@ -235,6 +235,17 @@ const AdoptListingNew = () => {
 
       {step === 3 && (
         <Card className="rounded-2xl border-hairline p-4 space-y-4">
+          {isUnverifiedRescuer && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                Co-list with shelter <span className="text-coral">*</span>
+              </Label>
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Independent rescuers must co-list with an approved shelter for buyer safety. Pick one to continue.
+              </p>
+              <CoListShelterPicker value={coListShelter} onChange={setCoListShelter} />
+            </div>
+          )}
           <div>
             <Label>Pet photo</Label>
             <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
