@@ -1391,6 +1391,72 @@ export type Database = {
           },
         ]
       }
+      kennel_daily_reports: {
+        Row: {
+          author_id: string
+          booking_id: string
+          created_at: string
+          id: string
+          incidents: string | null
+          meals: number
+          mood: string
+          notes: string | null
+          photo_urls: string[]
+          potty: number
+          provider_id: string
+          report_date: string
+          updated_at: string
+          walks: number
+        }
+        Insert: {
+          author_id: string
+          booking_id: string
+          created_at?: string
+          id?: string
+          incidents?: string | null
+          meals?: number
+          mood?: string
+          notes?: string | null
+          photo_urls?: string[]
+          potty?: number
+          provider_id: string
+          report_date?: string
+          updated_at?: string
+          walks?: number
+        }
+        Update: {
+          author_id?: string
+          booking_id?: string
+          created_at?: string
+          id?: string
+          incidents?: string | null
+          meals?: number
+          mood?: string
+          notes?: string | null
+          photo_urls?: string[]
+          potty?: number
+          provider_id?: string
+          report_date?: string
+          updated_at?: string
+          walks?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kennel_daily_reports_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "service_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kennel_daily_reports_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       litter_groups: {
         Row: {
           birth_date: string | null

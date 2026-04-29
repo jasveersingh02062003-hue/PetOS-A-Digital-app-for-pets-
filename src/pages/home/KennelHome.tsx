@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,13 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Building2, Calendar, Plus, BedDouble, Loader2 } from "lucide-react";
+import { Heart, Building2, Calendar, Plus, BedDouble, Loader2, ClipboardCheck } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { SellerBadge } from "@/components/SellerBadge";
 import { KpiCard } from "./dashboard/KpiCard";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
+import { DailyReportSheet, type DailyReportTarget } from "@/components/kennel/DailyReportSheet";
 
 const StoryRail = lazy(() =>
   import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })),
@@ -49,6 +50,7 @@ const KennelHome = () => {
     },
   });
   const ids = providerIds.data ?? [];
+  const [reportTarget, setReportTarget] = useState<DailyReportTarget | null>(null);
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -61,7 +63,7 @@ const KennelHome = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_bookings")
-        .select("id, scheduled_at, status, customer_id, pet_id, notes")
+        .select("id, scheduled_at, status, customer_id, pet_id, notes, provider_id")
         .in("provider_id", ids)
         .gte("scheduled_at", todayStart.toISOString())
         .lte("scheduled_at", todayEnd.toISOString())
@@ -98,6 +100,25 @@ const KennelHome = () => {
       return count ?? 0;
     },
   });
+
+  // Today's report-completion KPI: how many of today's bookings already have a report?
+  const todayReports = useQuery({
+    queryKey: ["kdr-today-count", uid, ids],
+    enabled: !!uid && ids.length > 0,
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("kennel_daily_reports")
+        .select("booking_id")
+        .in("provider_id", ids)
+        .eq("report_date", today);
+      if (error) throw error;
+      return new Set((data ?? []).map((r: any) => r.booking_id as string));
+    },
+  });
+  const reportedSet = todayReports.data ?? new Set<string>();
+  const totalToday = todayBookings.data?.length ?? 0;
+  const doneToday = (todayBookings.data ?? []).filter((b) => reportedSet.has(b.id)).length;
 
   const tint = "bg-sky/10";
 
@@ -142,10 +163,11 @@ const KennelHome = () => {
           tint={tint}
         />
         <KpiCard
-          label="Daily report"
-          value="Open"
-          icon={Plus}
-          to="/services"
+          label="Reports today"
+          value={`${doneToday}/${totalToday}`}
+          sub={totalToday === 0 ? "no bookings" : doneToday === totalToday ? "all done" : "pending"}
+          loading={todayReports.isLoading || todayBookings.isLoading}
+          icon={ClipboardCheck}
           tint="bg-primary/5"
         />
       </div>
@@ -182,20 +204,45 @@ const KennelHome = () => {
           <p className="text-sm text-muted-foreground py-4">No bookings today.</p>
         ) : (
           <ul className="divide-y divide-hairline">
-            {todayBookings.data.slice(0, 5).map((b) => (
-              <li key={b.id} className="py-2 flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-sky shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm truncate">{b.notes ?? "Booking"}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {format(new Date(b.scheduled_at), "h:mm a")} · {b.status}
+            {todayBookings.data.slice(0, 5).map((b) => {
+              const done = reportedSet.has(b.id);
+              return (
+                <li key={b.id} className="py-2 flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-sky shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm truncate">{b.notes ?? "Booking"}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {format(new Date(b.scheduled_at), "h:mm a")} · {b.status}
+                      {done && <span className="ml-1 text-leaf">· report sent</span>}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                  <Button
+                    size="sm"
+                    variant={done ? "outline" : "default"}
+                    onClick={() =>
+                      setReportTarget({
+                        bookingId: b.id,
+                        providerId: (b as any).provider_id,
+                        customerLabel: b.notes ?? "today's guest",
+                      })
+                    }
+                    className="rounded-full h-8 px-3 text-[11px] gap-1"
+                  >
+                    <ClipboardCheck className="h-3 w-3" />
+                    {done ? "Edit" : "Report"}
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>
+
+      <DailyReportSheet
+        target={reportTarget}
+        open={!!reportTarget}
+        onOpenChange={(o) => !o && setReportTarget(null)}
+      />
 
       <Suspense fallback={<div className="h-[88px]" />}>
         <StoryRail />
