@@ -1636,7 +1636,11 @@ export type Database = {
           pet_id: string
           photo_url: string | null
           resolved_at: string | null
+          reward_finder_id: string | null
           reward_inr: number | null
+          reward_payment_intent_id: string | null
+          reward_released_at: string | null
+          reward_status: string
           status: Database["public"]["Enums"]["missing_status"]
           updated_at: string
         }
@@ -1653,7 +1657,11 @@ export type Database = {
           pet_id: string
           photo_url?: string | null
           resolved_at?: string | null
+          reward_finder_id?: string | null
           reward_inr?: number | null
+          reward_payment_intent_id?: string | null
+          reward_released_at?: string | null
+          reward_status?: string
           status?: Database["public"]["Enums"]["missing_status"]
           updated_at?: string
         }
@@ -1670,11 +1678,23 @@ export type Database = {
           pet_id?: string
           photo_url?: string | null
           resolved_at?: string | null
+          reward_finder_id?: string | null
           reward_inr?: number | null
+          reward_payment_intent_id?: string | null
+          reward_released_at?: string | null
+          reward_status?: string
           status?: Database["public"]["Enums"]["missing_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "missing_pets_reward_payment_intent_id_fkey"
+            columns: ["reward_payment_intent_id"]
+            isOneToOne: false
+            referencedRelation: "payment_intents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_jobs: {
         Row: {
@@ -3845,6 +3865,9 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string
+          driver_lat: number | null
+          driver_lng: number | null
+          driver_location_at: string | null
           dropoff_address: string
           dropoff_lat: number | null
           dropoff_lng: number | null
@@ -3865,6 +3888,9 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id: string
+          driver_lat?: number | null
+          driver_lng?: number | null
+          driver_location_at?: string | null
           dropoff_address: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
@@ -3885,6 +3911,9 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string
+          driver_lat?: number | null
+          driver_lng?: number | null
+          driver_location_at?: string | null
           dropoff_address?: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
@@ -4918,6 +4947,18 @@ export type Database = {
       expire_mating_listings: { Args: never; Returns: undefined }
       expire_missing_pet_boosts: { Args: never; Returns: number }
       expire_paid_mating_listings: { Args: never; Returns: number }
+      find_users_within_radius_km: {
+        Args: {
+          _exclude_user?: string
+          _lat: number
+          _lng: number
+          _radius_km: number
+        }
+        Returns: {
+          distance_km: number
+          user_id: string
+        }[]
+      }
       generate_pet_public_id: { Args: never; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_pets_public: {
@@ -5084,6 +5125,10 @@ export type Database = {
         Returns: string
       }
       release_due_rewards: { Args: never; Returns: number }
+      release_reward: {
+        Args: { _finder_id: string; _missing_pet_id: string }
+        Returns: Json
+      }
       review_summaries_bulk: {
         Args: {
           _ids: string[]
@@ -5119,6 +5164,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      update_driver_location: {
+        Args: { _booking_id: string; _lat: number; _lng: number }
+        Returns: undefined
+      }
       vet_can_read_pet: { Args: { _pet_id: string }; Returns: boolean }
     }
     Enums: {
@@ -5211,6 +5260,7 @@ export type Database = {
         | "agreement"
         | "missing_listing"
         | "puppy_sale"
+        | "reward_escrow"
       pet_gender: "male" | "female"
       pet_listing_status:
         | "active"
@@ -5524,6 +5574,7 @@ export const Constants = {
         "agreement",
         "missing_listing",
         "puppy_sale",
+        "reward_escrow",
       ],
       pet_gender: ["male", "female"],
       pet_listing_status: [
