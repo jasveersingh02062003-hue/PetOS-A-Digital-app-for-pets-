@@ -170,3 +170,9 @@ src/pages/AdoptListingNew.tsx                      X
 ---
 
 Reply **`go round 28`** to start, or **`go all 3`** if you want me to ship 28 → 29 → 30 in sequence without stopping for approvals between rounds.
+
+## Round 29 — finished
+- ✅ Tax-receipt loop: donations table got `donor_pan`, `tax_receipt_number`, `receipt_issued_at`; trigger auto-issues 80G receipt for sanctuary/zoo/shelter on `status=paid`. New `/donations/:id/receipt` page renders a printable 80G receipt. OrgDonations now shows a "80G receipt" link per donation.
+- ✅ BreederHome stats: verified — already shows litters, mating requests, listings, pedigree certs.
+- ⏭️ Composer marketplace gating: not needed — Composer has no marketplace/mating entry points to gate (sanctuary/zoo already auto-tag #educational).
+- ⏭️ Sanctuary monthly upkeep field: deferred to Round 30 (pet_listings schema work, grouped with shelter ₹0 lock and kennel capacity).
