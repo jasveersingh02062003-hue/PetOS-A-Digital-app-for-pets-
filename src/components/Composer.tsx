@@ -170,10 +170,18 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         image_url_full = v.full;
         image_url = v.feed; // keep legacy column populated for backwards compat
       }
+      // Zoo accounts: every post is auto-tagged #educational so PetOS can flag
+      // wildlife content as informational, not commercial.
+      let finalCaption = caption.trim() || null;
+      if (accountType === "zoo" && finalCaption && !/#educational\b/i.test(finalCaption)) {
+        finalCaption = `${finalCaption} #educational`;
+      } else if (accountType === "zoo" && !finalCaption) {
+        finalCaption = "#educational";
+      }
       const { data: post, error } = await supabase.from("posts").insert({
         author_id: user.id,
         pet_id: petId === "none" ? null : petId,
-        caption: caption.trim() || null,
+        caption: finalCaption,
         image_url,
         image_url_thumb,
         image_url_feed,
