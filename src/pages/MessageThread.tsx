@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2, ImagePlus, X, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Loader2, ImagePlus, X, Check, CheckCheck, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useIsOnline } from "@/hooks/usePresence";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
@@ -29,7 +29,8 @@ export default function MessageThread() {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
-  const [other, setOther] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
+  const [other, setOther] = useState<{ id: string; name: string; avatar: string | null; accountType: string | null; orgApproved: boolean } | null>(null);
+  const [warningDismissed, setWarningDismissed] = useState(false);
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +44,8 @@ export default function MessageThread() {
     if (!user) { nav("/auth", { replace: true }); return; }
     if (!convId) return;
     load();
+    // Persist "warning shown" per thread so it only appears once.
+    setWarningDismissed(localStorage.getItem(`petos:rescuer-warn:${convId}`) === "1");
 
     const ch = supabase
       .channel(`thread-${convId}`)
@@ -96,7 +99,17 @@ export default function MessageThread() {
     if (otherId) {
       const { data: profs } = await supabase.rpc("get_profiles_public");
       const p = ((profs ?? []) as any[]).find(x => x.id === otherId);
-      if (p) setOther({ id: p.id, name: p.full_name ?? "User", avatar: p.avatar_url });
+      if (p) {
+        const { data: org } = await supabase
+          .from("org_profiles").select("status").eq("user_id", otherId).maybeSingle();
+        setOther({
+          id: p.id,
+          name: p.full_name ?? "User",
+          avatar: p.avatar_url,
+          accountType: (p as any).account_type ?? null,
+          orgApproved: (org as any)?.status === "approved",
+        });
+      }
     }
   }
 
