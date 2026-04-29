@@ -3475,6 +3475,67 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_reminders: {
+        Row: {
+          active: boolean
+          cadence_days: number
+          created_at: string
+          id: string
+          last_notified_on: string | null
+          next_run_on: string
+          pet_id: string | null
+          product_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          cadence_days: number
+          created_at?: string
+          id?: string
+          last_notified_on?: string | null
+          next_run_on: string
+          pet_id?: string | null
+          product_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          cadence_days?: number
+          created_at?: string
+          id?: string
+          last_notified_on?: string | null
+          next_run_on?: string
+          pet_id?: string | null
+          product_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_reminders_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "shop_reminders_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_reminders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "shop_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signup_attempts: {
         Row: {
           attempted_at: string
