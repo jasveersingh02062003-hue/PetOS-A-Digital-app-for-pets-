@@ -308,6 +308,7 @@ const ProvidersTab = () => {
       <div className="flex gap-2">
         <Button size="sm" variant={filter === "unverified" ? "default" : "outline"} onClick={() => setFilter("unverified")}>Pending</Button>
         <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+        <Button size="sm" variant="outline" className="ml-auto" onClick={() => (window.location.href = "/admin/providers")}>KYC review →</Button>
       </div>
       {loading ? (
         <Loader2 className="h-5 w-5 animate-spin mx-auto mt-8" />
