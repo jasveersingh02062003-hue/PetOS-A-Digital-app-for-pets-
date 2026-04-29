@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 type Kind = "transport" | "service" | "shop" | "mating" | "vet_consult";
 
 interface Props {
-  priceId: string;
+  priceId?: string;            // omit for dynamic pricing
+  productName?: string;        // required when dynamic
   kind: Kind;
   refId: string;
   next?: string;
@@ -19,11 +20,16 @@ interface Props {
 }
 
 export function PayButton({
-  priceId, kind, refId, next, label, amountInr, className, variant = "default", size = "default", disabled,
+  priceId, productName, kind, refId, next, label, amountInr, className, variant = "default", size = "default", disabled,
 }: Props) {
+  const isDynamic = !priceId;
   const params = new URLSearchParams({ kind, ref: refId });
   if (next) params.set("next", next);
-  const href = `/checkout/${priceId}?${params.toString()}`;
+  if (isDynamic) {
+    if (amountInr != null) params.set("amount", String(amountInr));
+    if (productName) params.set("name", productName);
+  }
+  const href = `/checkout/${isDynamic ? "dynamic" : priceId}?${params.toString()}`;
   const display =
     label ?? (amountInr != null ? `Pay ₹${amountInr.toLocaleString("en-IN")} & confirm` : "Pay & confirm");
 
