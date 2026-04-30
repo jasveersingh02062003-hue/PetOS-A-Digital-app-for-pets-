@@ -280,9 +280,30 @@ const BookingsTab = ({ userId }: { userId: string }) => {
           <div className="text-xs text-muted-foreground capitalize mb-2">{b.service_providers?.category}</div>
           <div className="text-sm">{new Date(b.scheduled_at).toLocaleString()}</div>
           {b.notes && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{b.notes}</p>}
+          {b.status === "completed" && b.provider_id && (
+            <RateBookingButton providerId={b.provider_id} providerName={b.service_providers?.name} />
+          )}
         </Card>
       ))}
     </div>
+  );
+};
+
+const RateBookingButton = ({ providerId, providerName }: { providerId: string; providerName?: string }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" className="rounded-full mt-3" onClick={() => setOpen(true)}>
+        <Star className="h-3.5 w-3.5 mr-1.5" /> Rate provider
+      </Button>
+      <LeaveReviewSheet
+        open={open}
+        onOpenChange={setOpen}
+        subjectType="provider"
+        subjectId={providerId}
+        subjectName={providerName}
+      />
+    </>
   );
 };
 
