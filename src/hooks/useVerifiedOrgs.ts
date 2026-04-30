@@ -25,7 +25,7 @@ export const useVerifiedOrgs = () =>
 export const useIsVerifiedOrg = (userId?: string | null) => {
   const { data } = useVerifiedOrgs();
   if (!userId) return false;
-  return data?.has(userId) ?? false;
+  return data instanceof Set ? data.has(userId) : false;
 };
 
 /**
@@ -50,5 +50,5 @@ export const usePendingOrgs = () =>
 export const useIsPendingOrg = (userId?: string | null) => {
   const { data } = usePendingOrgs();
   if (!userId) return false;
-  return data?.has(userId) ?? false;
+  return data instanceof Set ? data.has(userId) : false;
 };

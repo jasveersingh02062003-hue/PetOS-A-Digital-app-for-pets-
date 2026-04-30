@@ -59,6 +59,9 @@ const NON_PERSISTED_PREFIXES = [
   "typing",
   "upload",
   "stream",
+  // Sets / Maps don't survive JSON serialization — refetch on cold start.
+  "verified-orgs",
+  "pending-orgs",
 ];
 
 /** Hard size cap to keep IndexedDB sane. */
