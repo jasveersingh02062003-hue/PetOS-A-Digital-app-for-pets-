@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ShoppingBag, FileText, Calendar, Heart, Car, Truck, PackageCheck, Package as PackageIcon, Clock } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileText, Calendar, Heart, Car, Truck, PackageCheck, Package as PackageIcon, Clock, Star } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
 import { RefundButton } from "@/components/payments/RefundButton";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LeaveReviewSheet } from "@/components/reviews/LeaveReviewSheet";
 
 /**
  * Unified order & booking history.
@@ -208,9 +209,47 @@ const ShopOrdersTab = ({ userId }: { userId: string }) => {
               <RefundButton intentId={o.payment_intent_id} amountInr={o.total_inr} />
             </div>
           )}
+          {o.status === "delivered" && o.shop_order_items?.[0]?.product_id && (
+            <ReviewItemsRow items={o.shop_order_items} />
+          )}
         </Card>
       ))}
     </div>
+  );
+};
+
+const ReviewItemsRow = ({ items }: { items: any[] }) => {
+  const [open, setOpen] = useState<{ id: string; title: string } | null>(null);
+  const unique = Array.from(new Map(items.map((i) => [i.product_id, i])).values()).filter((i) => i.product_id);
+  if (!unique.length) return null;
+  return (
+    <>
+      <div className="mt-3 pt-3 border-t border-hairline">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">How was it?</div>
+        <div className="flex flex-wrap gap-2">
+          {unique.map((it) => (
+            <Button
+              key={it.product_id}
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setOpen({ id: it.product_id, title: it.title_snapshot })}
+            >
+              <Star className="h-3.5 w-3.5 mr-1.5" /> Rate {it.title_snapshot.slice(0, 24)}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {open && (
+        <LeaveReviewSheet
+          open={!!open}
+          onOpenChange={(v) => !v && setOpen(null)}
+          subjectType="product"
+          subjectId={open.id}
+          subjectName={open.title}
+        />
+      )}
+    </>
   );
 };
 
@@ -241,9 +280,30 @@ const BookingsTab = ({ userId }: { userId: string }) => {
           <div className="text-xs text-muted-foreground capitalize mb-2">{b.service_providers?.category}</div>
           <div className="text-sm">{new Date(b.scheduled_at).toLocaleString()}</div>
           {b.notes && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{b.notes}</p>}
+          {b.status === "completed" && b.provider_id && (
+            <RateBookingButton providerId={b.provider_id} providerName={b.service_providers?.name} />
+          )}
         </Card>
       ))}
     </div>
+  );
+};
+
+const RateBookingButton = ({ providerId, providerName }: { providerId: string; providerName?: string }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" className="rounded-full mt-3" onClick={() => setOpen(true)}>
+        <Star className="h-3.5 w-3.5 mr-1.5" /> Rate provider
+      </Button>
+      <LeaveReviewSheet
+        open={open}
+        onOpenChange={setOpen}
+        subjectType="provider"
+        subjectId={providerId}
+        subjectName={providerName}
+      />
+    </>
   );
 };
 
