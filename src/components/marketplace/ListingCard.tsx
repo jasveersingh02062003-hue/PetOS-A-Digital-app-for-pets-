@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/marketplace/WishlistButton";
+import type { WishlistKind } from "@/hooks/useWishlist";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { TrustChip, TrustChipKind } from "@/components/marketplace/TrustChip";
 import { PriceTag } from "@/components/marketplace/PriceTag";
