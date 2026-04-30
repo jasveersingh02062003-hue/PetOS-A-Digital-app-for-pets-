@@ -447,6 +447,63 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_suggestions: {
+        Row: {
+          created_at: string
+          deep_link: string | null
+          id: string
+          kind: Database["public"]["Enums"]["booking_suggestion_kind"]
+          owner_id: string
+          pet_id: string | null
+          reason: string
+          source_booking_id: string | null
+          source_walk_event_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deep_link?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["booking_suggestion_kind"]
+          owner_id: string
+          pet_id?: string | null
+          reason: string
+          source_booking_id?: string | null
+          source_walk_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deep_link?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["booking_suggestion_kind"]
+          owner_id?: string
+          pet_id?: string | null
+          reason?: string
+          source_booking_id?: string | null
+          source_walk_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_suggestions_source_booking_id_fkey"
+            columns: ["source_booking_id"]
+            isOneToOne: false
+            referencedRelation: "service_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_suggestions_source_walk_event_id_fkey"
+            columns: ["source_walk_event_id"]
+            isOneToOne: false
+            referencedRelation: "walk_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcasts: {
         Row: {
           body: string | null
@@ -1598,6 +1655,7 @@ export type Database = {
           report_date: string
           updated_at: string
           walks: number
+          wellness_score: number | null
         }
         Insert: {
           author_id: string
@@ -1614,6 +1672,7 @@ export type Database = {
           report_date?: string
           updated_at?: string
           walks?: number
+          wellness_score?: number | null
         }
         Update: {
           author_id?: string
@@ -1630,6 +1689,7 @@ export type Database = {
           report_date?: string
           updated_at?: string
           walks?: number
+          wellness_score?: number | null
         }
         Relationships: [
           {
@@ -5974,6 +6034,41 @@ export type Database = {
         }
         Relationships: []
       }
+      walk_events: {
+        Row: {
+          author_id: string
+          booking_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["walk_event_kind"]
+          payload: Json
+        }
+        Insert: {
+          author_id: string
+          booking_id: string
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["walk_event_kind"]
+          payload?: Json
+        }
+        Update: {
+          author_id?: string
+          booking_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["walk_event_kind"]
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "service_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       walk_summaries: {
         Row: {
           avg_pace_min_per_km: number | null
@@ -6737,6 +6832,12 @@ export type Database = {
         | "declined"
         | "completed"
         | "cancelled"
+      booking_suggestion_kind:
+        | "vet_followup"
+        | "wellness_check"
+        | "grooming"
+        | "training"
+        | "dental"
       collab_status: "pending" | "accepted" | "declined"
       consult_severity: "mild" | "moderate" | "severe"
       consult_status:
@@ -6875,6 +6976,7 @@ export type Database = {
         | "training"
         | "other"
       vet_q_status: "open" | "answered" | "closed"
+      walk_event_kind: "health_flag" | "behavior_note" | "photo" | "geo_ping"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7047,6 +7149,13 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      booking_suggestion_kind: [
+        "vet_followup",
+        "wellness_check",
+        "grooming",
+        "training",
+        "dental",
+      ],
       collab_status: ["pending", "accepted", "declined"],
       consult_severity: ["mild", "moderate", "severe"],
       consult_status: [
@@ -7195,6 +7304,7 @@ export const Constants = {
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
       vet_q_status: ["open", "answered", "closed"],
+      walk_event_kind: ["health_flag", "behavior_note", "photo", "geo_ping"],
     },
   },
 } as const

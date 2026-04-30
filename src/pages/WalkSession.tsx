@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, Play, Square, Loader2, Share2, Timer, Gauge, Activity, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { LeafletMap } from "@/components/maps/LeafletMap";
+import { WalkHealthFlagSheet } from "@/components/walker/WalkHealthFlagSheet";
 import { pawIcon } from "@/components/maps/PawMarker";
 import { totalDistanceKm, formatDuration, paceMinPerKm, formatPace, type LatLng } from "@/lib/walkStats";
 
@@ -33,6 +34,7 @@ const WalkSession = () => {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [now, setNow] = useState<number>(Date.now());
   const [lastPingAt, setLastPingAt] = useState<number | null>(null);
+  const [flagOpen, setFlagOpen] = useState(false);
   const stalenessWarnedRef = useRef(false);
 
   const { data: booking } = useQuery({
@@ -326,6 +328,16 @@ const WalkSession = () => {
           </Button>
         )}
 
+        {isProvider && tracking && (
+          <Button
+            variant="outline"
+            onClick={() => setFlagOpen(true)}
+            className="rounded-full w-full border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" /> Flag health concern
+          </Button>
+        )}
+
         {isCustomer && (
           <div className="text-xs text-muted-foreground text-center">
             Live location updates from your walker. Refreshes automatically.
@@ -336,6 +348,9 @@ const WalkSession = () => {
           <div className="text-xs text-muted-foreground text-center">You can't view this walk.</div>
         )}
       </div>
+      {isProvider && id && (
+        <WalkHealthFlagSheet open={flagOpen} onOpenChange={setFlagOpen} bookingId={id} />
+      )}
     </div>
   );
 };

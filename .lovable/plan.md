@@ -73,7 +73,19 @@ Original spec retained below for reference:
 
 ---
 
-## Phase I — Cross-Actor Workflows (Walker→Vet, Rx→Shop, Sitter→Owner)
+## Phase I — Cross-Actor Workflows (Walker→Vet, Rx→Shop, Sitter→Owner)  ✅ shipped
+
+Done in this pass:
+- New table `walk_events` (`booking_id, author_id, kind, payload jsonb`) with RLS: walker inserts, walker + customer read.
+- New table `booking_suggestions` (`owner_id, pet_id, kind, reason, source_walk_event_id, source_booking_id, deep_link, status`) — unified owner-side "next action" inbox.
+- DB trigger `tg_walk_event_to_suggestion`: a `health_flag` walk event auto-creates a `vet_followup` suggestion AND inserts a `notifications` row → which auto-pushes via the Phase H bridge. End-to-end: walker taps flag → owner gets push + Book Vet card.
+- Added optional `wellness_score` (1-5) to `kennel_daily_reports` for at-a-glance caretaker stay health.
+- Frontend: `<WalkHealthFlagSheet>` (6 quick tags + free note) wired into `WalkSession` for the assigned walker; `<BookingSuggestionsCard>` on `PetParentHome` shows open suggestions with one-tap Book Vet / Dismiss.
+
+Reused existing infrastructure (no parallel tables created):
+- Vet → Shop refill: `pharmacy_suggestions` already covers this end-to-end.
+- Caretaker → Owner notify: `trg_kdr_notify` already pushes daily reports.
+- Shop reorder cron: `shop_reminders` + `shop-reorder-scan` already wired.
 
 **Backend**
 - New table `walk_events` (`walk_id, type ENUM(health_flag, behavior_note, photo, geo_ping), payload jsonb`).
