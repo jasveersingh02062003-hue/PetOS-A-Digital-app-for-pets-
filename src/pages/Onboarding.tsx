@@ -427,6 +427,21 @@ const Onboarding = () => {
             ]} />
           </div>
           <p className="text-[11px] text-muted-foreground -mt-2">AI vet replies in your language; charts use your units.</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Your age" value={parentAge} onChange={setParentAge} type="number" placeholder="e.g. 28" />
+            <SelectField
+              label="First-time pet parent?"
+              value={firstTimeParent}
+              onChange={(v: any) => setFirstTimeParent(v)}
+              options={[
+                { v: "", l: "Choose…" },
+                { v: "yes", l: "Yes — I'm new" },
+                { v: "no", l: "No — I've had pets before" },
+              ]}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-2">Helps us tune tips, reminders and AI replies for your experience level.</p>
         </div>
       </StepShell>
     );
