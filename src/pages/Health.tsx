@@ -27,6 +27,7 @@ import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDial
 import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton";
 import { InsuranceCard } from "@/components/health/InsuranceCard";
 import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
+import { DailyCareCard } from "@/components/health/DailyCareCard";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -106,6 +107,8 @@ const Health = () => {
               <div className="text-xs opacity-80">Personalised to {active.name}</div>
             </div>
           </Button>
+
+          <DailyCareCard petId={active.id} petName={active.name} />
 
           <InsuranceCard petId={active.id} currentProvider={(active as any).insurance_provider} />
 
