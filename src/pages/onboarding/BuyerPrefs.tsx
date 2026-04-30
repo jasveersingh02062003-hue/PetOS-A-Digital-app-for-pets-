@@ -100,10 +100,10 @@ export default function BuyerPrefs() {
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
       <button
-        onClick={() => nav(-1)}
+        onClick={() => nav("/onboarding?stage=role", { replace: true })}
         className="flex items-center gap-1 text-sm text-muted-foreground mb-3"
       >
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> Back to account type
       </button>
       <WizardSteps current={2} labels={["Account type", "Preferences", "Browse"]} />
 

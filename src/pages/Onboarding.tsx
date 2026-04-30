@@ -93,6 +93,7 @@ const Onboarding = () => {
     const hasIdentity = !!profile?.handle && !!profile?.full_name;
     const accountType = profile?.account_type as RoleChoice | undefined;
     const hasPets = (pets?.length ?? 0) > 0;
+    const isOnboarded = (profile as any)?.onboarded === true;
 
     if (stageParam === "parent" && accountType === "pet_parent" && hasPets) {
       setStage("done");
@@ -102,6 +103,14 @@ const Onboarding = () => {
     if (stageParam) return; // user is explicitly at a stage; respect it
 
     if (!hasIdentity) return; // stay on identity
+
+    // Once a user has finished onboarding, never re-prompt them with the
+    // role-specific mini-flow. Send them to the completion screen instead.
+    if (isOnboarded) {
+      setStage("done");
+      return;
+    }
+
     if (!accountType) {
       setStage("role");
       return;
