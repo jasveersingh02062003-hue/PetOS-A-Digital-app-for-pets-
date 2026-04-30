@@ -5,11 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Mail, KeyRound } from "lucide-react";
+import { Loader2, Mail, KeyRound, Phone } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email").max(255);
+// E.164: +<country><number>, total digits 8–15
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\+[1-9]\d{7,14}$/, "Enter phone in international format, e.g. +14155551234");
 
 /**
  * Pending intent — replayed after OTP verifies.
@@ -18,7 +23,14 @@ const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email")
 export type PendingIntent =
   | { kind: "contact_seller"; listingId: string; listingType: "adopt" | "mate" | "service"; ownerId: string; redirect: string }
   | { kind: "book_service"; providerId: string; redirect: string }
-  | { kind: "follow_org"; orgUserId: string; redirect: string };
+  | { kind: "follow_org"; orgUserId: string; redirect: string }
+  | { kind: "apply_to_adopt"; listingId: string; ownerId: string; redirect: string }
+  | { kind: "donate"; orgUserId: string; amount?: number; redirect: string }
+  | { kind: "taxi_post"; redirect: string }
+  | { kind: "subscribe_missing_alert"; missingPetId: string; redirect: string }
+  | { kind: "shop_checkout"; redirect: string }
+  | { kind: "vet_book"; providerId: string; redirect: string }
+  | { kind: "report_sighting"; missingPetId: string; redirect: string };
 
 const INTENT_KEY = "petos_pending_intent";
 
@@ -44,7 +56,9 @@ type Props = {
 };
 
 export const ContactSellerSheet = ({ open, onOpenChange, intent, title, description }: Props) => {
+  const [channel, setChannel] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
   const [busy, setBusy] = useState(false);
@@ -58,28 +72,43 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
   }, [resendIn]);
 
   const sendCode = async () => {
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Enter a valid email");
-      return;
-    }
-    const cleanEmail = parsed.data;
     setBusy(true);
     savePendingIntent(intent);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + intent.redirect },
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    if (channel === "email") {
+      const parsed = emailSchema.safeParse(email);
+      if (!parsed.success) {
+        setBusy(false);
+        toast.error(parsed.error.issues[0]?.message ?? "Enter a valid email");
+        return;
+      }
+      const cleanEmail = parsed.data;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + intent.redirect },
+      });
+      setBusy(false);
+      if (error) { toast.error(error.message); return; }
+      setEmail(cleanEmail);
+    } else {
+      const parsed = phoneSchema.safeParse(phone);
+      if (!parsed.success) {
+        setBusy(false);
+        toast.error(parsed.error.issues[0]?.message ?? "Enter a valid phone");
+        return;
+      }
+      const cleanPhone = parsed.data;
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: cleanPhone,
+        options: { shouldCreateUser: true },
+      });
+      setBusy(false);
+      if (error) { toast.error(error.message); return; }
+      setPhone(cleanPhone);
     }
-    setEmail(cleanEmail);
-    track("otp_sent", { intent: intent.kind });
+    track("otp_sent", { intent: intent.kind, channel });
     setStep("code");
     setResendIn(45);
-    toast.success("Code sent. Check your inbox.");
+    toast.success(channel === "email" ? "Code sent. Check your inbox." : "Code sent via SMS.");
   };
 
   const verifyCode = async () => {
@@ -88,13 +117,15 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
+    const { error } = channel === "email"
+      ? await supabase.auth.verifyOtp({ email, token: code, type: "email" })
+      : await supabase.auth.verifyOtp({ phone, token: code, type: "sms" });
     setBusy(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    track("otp_verified", { intent: intent.kind });
+    track("otp_verified", { intent: intent.kind, channel });
     toast.success("Account ready. Continuing…");
     onOpenChange(false);
     // Stay in-page so the in-memory `beforeinstallprompt` event survives.
@@ -108,12 +139,25 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
         <SheetHeader className="text-left">
           <SheetTitle>{title ?? "Sign in to contact"}</SheetTitle>
           <SheetDescription>
-            {description ?? "We'll send a 6-digit code to your email. No password needed."}
+            {description ?? "We'll send a 6-digit code. No password needed."}
           </SheetDescription>
         </SheetHeader>
         <div className="py-6 space-y-4">
           {step === "email" ? (
             <>
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-muted">
+                <button
+                  type="button"
+                  onClick={() => setChannel("email")}
+                  className={`h-9 rounded-lg text-sm font-medium transition ${channel === "email" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                >Email</button>
+                <button
+                  type="button"
+                  onClick={() => setChannel("phone")}
+                  className={`h-9 rounded-lg text-sm font-medium transition ${channel === "phone" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                >Phone</button>
+              </div>
+              {channel === "email" ? (
               <div className="space-y-2">
                 <Label htmlFor="csheet-email" className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Email</Label>
                 <Input
@@ -127,6 +171,22 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
                   disabled={busy}
                 />
               </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="csheet-phone" className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> Phone</Label>
+                  <Input
+                    id="csheet-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+14155551234"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={busy}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Use international format, including country code.</p>
+                </div>
+              )}
               <Button onClick={sendCode} disabled={busy} className="w-full rounded-xl h-12">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send code"}
               </Button>
@@ -145,14 +205,14 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   disabled={busy}
                 />
-                <p className="text-xs text-muted-foreground">Sent to {email}</p>
+                <p className="text-xs text-muted-foreground">Sent to {channel === "email" ? email : phone}</p>
               </div>
               <Button onClick={verifyCode} disabled={busy} className="w-full rounded-xl h-12">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & continue"}
               </Button>
               <div className="flex items-center justify-between">
                 <Button variant="link" onClick={() => setStep("email")} className="px-0">
-                  Use a different email
+                  Use a different {channel === "email" ? "email" : "phone"}
                 </Button>
                 <Button
                   variant="link"
