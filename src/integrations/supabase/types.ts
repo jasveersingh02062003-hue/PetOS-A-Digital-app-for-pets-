@@ -2055,6 +2055,67 @@ export type Database = {
           },
         ]
       }
+      medication_doses: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          scheduled_at: string
+          skipped: boolean
+          taken_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          scheduled_at: string
+          skipped?: boolean
+          taken_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          scheduled_at?: string
+          skipped?: boolean
+          taken_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_doses_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medication_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_doses_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "medication_doses_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medication_logs: {
         Row: {
           active: boolean
@@ -2062,6 +2123,7 @@ export type Database = {
           created_at: string
           dose: string | null
           end_on: string | null
+          every_n_hours: number | null
           frequency: string | null
           id: string
           name: string
@@ -2070,7 +2132,9 @@ export type Database = {
           prescribing_vet: string | null
           reason: string | null
           route: string | null
+          schedule_kind: string | null
           start_on: string
+          times_of_day: string[] | null
           updated_at: string
         }
         Insert: {
@@ -2079,6 +2143,7 @@ export type Database = {
           created_at?: string
           dose?: string | null
           end_on?: string | null
+          every_n_hours?: number | null
           frequency?: string | null
           id?: string
           name: string
@@ -2087,7 +2152,9 @@ export type Database = {
           prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
+          schedule_kind?: string | null
           start_on?: string
+          times_of_day?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -2096,6 +2163,7 @@ export type Database = {
           created_at?: string
           dose?: string | null
           end_on?: string | null
+          every_n_hours?: number | null
           frequency?: string | null
           id?: string
           name?: string
@@ -2104,7 +2172,9 @@ export type Database = {
           prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
+          schedule_kind?: string | null
           start_on?: string
+          times_of_day?: string[] | null
           updated_at?: string
         }
         Relationships: []
@@ -7115,6 +7185,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      spawn_medication_doses: {
+        Args: { _days?: number; _med_id: string }
+        Returns: number
+      }
       update_driver_location: {
         Args: { _booking_id: string; _lat: number; _lng: number }
         Returns: undefined
