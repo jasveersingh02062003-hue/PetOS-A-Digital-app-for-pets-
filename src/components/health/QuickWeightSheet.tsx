@@ -24,7 +24,7 @@ export function QuickWeightSheet({
   petId: string;
 }) {
   const qc = useQueryClient();
-  const { weightUnit, parseWeightToKg } = useUnits();
+  const { weightUnit, parseWeightToKg, kgToDisplay } = useUnits();
   const [weight, setWeight] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -39,9 +39,32 @@ export function QuickWeightSheet({
     });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Weight logged");
+    // Traffic-light feedback vs target_weight_kg
+    try {
+      const { data: petRow } = await supabase
+        .from("pets")
+        .select("target_weight_kg")
+        .eq("id", petId)
+        .maybeSingle();
+      const targetKg = petRow?.target_weight_kg ? Number(petRow.target_weight_kg) : null;
+      if (targetKg && targetKg > 0) {
+        const deltaKg = kg - targetKg;
+        const pct = Math.abs(deltaKg) / targetKg;
+        const deltaDisplay = kgToDisplay(Math.abs(deltaKg)) ?? Math.abs(deltaKg);
+        const dir = deltaKg > 0 ? "over" : "under";
+        const copy = `Saved · ${deltaDisplay.toFixed(1)} ${weightUnit} ${dir} target`;
+        if (pct <= 0.02) toast.success("Saved · on target");
+        else if (pct <= 0.10) toast.warning(copy);
+        else toast.error(copy);
+      } else {
+        toast.success("Weight logged");
+      }
+    } catch {
+      toast.success("Weight logged");
+    }
     qc.invalidateQueries({ queryKey: ["vitals", petId] });
     qc.invalidateQueries({ queryKey: ["health-status", petId] });
+    qc.invalidateQueries({ queryKey: ["weight-trend", petId] });
     setWeight("");
     onOpenChange(false);
   };

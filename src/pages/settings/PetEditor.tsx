@@ -12,6 +12,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS } from "@/lib/breeds";
 import { SettingsLayout } from "./SettingsLayout";
+import { useUnits } from "@/hooks/useUnits";
 
 const PetEditor = () => {
   const { id } = useParams();
@@ -20,6 +21,7 @@ const PetEditor = () => {
   const [pet, setPet] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const { weightUnit, parseWeightToKg, kgToDisplay } = useUnits();
 
   useEffect(() => {
     if (!id) return;
@@ -102,8 +104,18 @@ const PetEditor = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Weight (kg)" type="number" value={pet.weight_kg?.toString() ?? ""} onChange={(v) => update({ weight_kg: v })} />
-        <Field label="Target weight (kg)" type="number" value={pet.target_weight_kg?.toString() ?? ""} onChange={(v) => update({ target_weight_kg: v })} />
+        <Field
+          label={`Weight (${weightUnit})`}
+          type="number"
+          value={pet.weight_kg != null && pet.weight_kg !== "" ? (kgToDisplay(Number(pet.weight_kg))?.toFixed(1) ?? "") : ""}
+          onChange={(v) => update({ weight_kg: v === "" ? null : parseWeightToKg(v) })}
+        />
+        <Field
+          label={`Target weight (${weightUnit})`}
+          type="number"
+          value={pet.target_weight_kg != null && pet.target_weight_kg !== "" ? (kgToDisplay(Number(pet.target_weight_kg))?.toFixed(1) ?? "") : ""}
+          onChange={(v) => update({ target_weight_kg: v === "" ? null : parseWeightToKg(v) })}
+        />
       </div>
 
       <Field label="Microchip ID" value={pet.microchip_id ?? ""} onChange={(v) => update({ microchip_id: v })} />
