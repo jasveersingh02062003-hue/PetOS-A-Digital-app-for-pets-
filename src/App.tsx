@@ -142,6 +142,8 @@ const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
 const AddAnotherPet = lazy(() => import("./pages/onboarding/AddAnotherPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
+const RescuerProfile = lazy(() => import("./pages/onboarding/RescuerProfile"));
+const BreederProfile = lazy(() => import("./pages/onboarding/BreederProfile"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
 const ServiceCategoryPage = lazy(() => import("./pages/ServiceCategory"));
 const VetTriage = lazy(() => import("./pages/VetTriage"));
@@ -246,6 +248,8 @@ const App = () => (
               <Route path="/onboarding/add-another-pet" element={<AddAnotherPet />} />
               <Route path="/onboarding/done" element={<OnboardingDone />} />
               <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
+              <Route path="/onboarding/rescuer" element={<RescuerProfile />} />
+              <Route path="/onboarding/breeder" element={<BreederProfile />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
