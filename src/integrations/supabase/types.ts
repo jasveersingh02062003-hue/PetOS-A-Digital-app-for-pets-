@@ -3268,6 +3268,7 @@ export type Database = {
       pets: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
+          adoption_date: string | null
           allergies: string[]
           avatar_url: string | null
           avatar_url_feed: string | null
@@ -3285,6 +3286,7 @@ export type Database = {
           diet_type: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating: boolean
           gender: Database["public"]["Enums"]["pet_gender"] | null
+          health_setup_complete: boolean
           id: string
           insurance_policy: string | null
           insurance_provider: string | null
@@ -3309,6 +3311,7 @@ export type Database = {
         }
         Insert: {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          adoption_date?: string | null
           allergies?: string[]
           avatar_url?: string | null
           avatar_url_feed?: string | null
@@ -3326,6 +3329,7 @@ export type Database = {
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
+          health_setup_complete?: boolean
           id?: string
           insurance_policy?: string | null
           insurance_provider?: string | null
@@ -3350,6 +3354,7 @@ export type Database = {
         }
         Update: {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          adoption_date?: string | null
           allergies?: string[]
           avatar_url?: string | null
           avatar_url_feed?: string | null
@@ -3367,6 +3372,7 @@ export type Database = {
           diet_type?: Database["public"]["Enums"]["diet_type"] | null
           discoverable_for_mating?: boolean
           gender?: Database["public"]["Enums"]["pet_gender"] | null
+          health_setup_complete?: boolean
           id?: string
           insurance_policy?: string | null
           insurance_provider?: string | null
@@ -3910,6 +3916,7 @@ export type Database = {
           cover_url: string | null
           created_at: string
           emergency_vet: Json | null
+          first_time_parent: boolean | null
           full_name: string | null
           goals: string[]
           handle: string | null
@@ -3922,6 +3929,8 @@ export type Database = {
           notif_prefs: Json
           notify_plus_launch: boolean
           onboarded: boolean
+          onboarding_state: Json
+          parent_age: number | null
           phone: string | null
           unit_system: string
           units: Json
@@ -3940,6 +3949,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           emergency_vet?: Json | null
+          first_time_parent?: boolean | null
           full_name?: string | null
           goals?: string[]
           handle?: string | null
@@ -3952,6 +3962,8 @@ export type Database = {
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
+          onboarding_state?: Json
+          parent_age?: number | null
           phone?: string | null
           unit_system?: string
           units?: Json
@@ -3970,6 +3982,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           emergency_vet?: Json | null
+          first_time_parent?: boolean | null
           full_name?: string | null
           goals?: string[]
           handle?: string | null
@@ -3982,6 +3995,8 @@ export type Database = {
           notif_prefs?: Json
           notify_plus_launch?: boolean
           onboarded?: boolean
+          onboarding_state?: Json
+          parent_age?: number | null
           phone?: string | null
           unit_system?: string
           units?: Json
@@ -7563,6 +7578,7 @@ export type Database = {
         | "zoo"
         | "rescuer"
         | "buyer"
+        | "provider"
       activity_level: "low" | "medium" | "high"
       adoption_application_status:
         | "pending"
@@ -7884,6 +7900,7 @@ export const Constants = {
         "zoo",
         "rescuer",
         "buyer",
+        "provider",
       ],
       activity_level: ["low", "medium", "high"],
       adoption_application_status: [
