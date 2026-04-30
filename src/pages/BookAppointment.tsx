@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Search, MessageSquare, Video, MapPin, Star } from "lucide-react";
 import { toast } from "sonner";
+import { AvailabilityPicker } from "@/components/booking/AvailabilityPicker";
 
 type Mode = "chat" | "video" | "in_clinic";
 
@@ -195,7 +196,11 @@ const BookAppointment = () => {
 
           <div className="space-y-1.5">
             <Label>When</Label>
-            <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+            <AvailabilityPicker
+              vetId={picked.user_id}
+              mode={mode}
+              onChange={(iso) => setWhen(iso ?? "")}
+            />
           </div>
 
           <div className="space-y-1.5">
