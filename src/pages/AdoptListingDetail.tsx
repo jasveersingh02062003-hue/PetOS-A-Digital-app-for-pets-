@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft, Lock, Heart } from "lucide-react";
-import { ReportButton } from "@/components/ReportButton";
+import { AnonReportButton } from "@/components/AnonReportButton";
+import { TrustSignals } from "@/components/trust/TrustSignals";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { ContactSellerSheet, savePendingIntent } from "@/components/ContactSellerSheet";
@@ -208,6 +209,10 @@ const AdoptListingDetail = () => {
         )}
       </div>
 
+      <div className="mb-3">
+        <TrustSignals userId={listing.owner_id} />
+      </div>
+
       {listing.bred_on_petos && (
         <div className="mb-3"><BredOnPetosRibbon litterId={listing.litter_id} /></div>
       )}
@@ -300,7 +305,7 @@ const AdoptListingDetail = () => {
               {isSold ? "No longer available" : "Contact owner"}
             </Button>
           )}
-          <ReportButton subjectType="listing" subjectId={listing.id} />
+          <AnonReportButton subjectType="listing" subjectId={listing.id} />
         </div>
       )}
 
