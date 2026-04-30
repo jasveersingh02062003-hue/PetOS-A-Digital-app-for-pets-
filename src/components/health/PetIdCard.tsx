@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Copy, IdCard } from "lucide-react";
 import { toast } from "sonner";
 
-export const PetIdButton = ({ publicId, petName }: { publicId: string; petName: string }) => {
+export const PetIdButton = ({ publicId, petName, microchipId }: { publicId: string; petName: string; microchipId?: string | null }) => {
   if (!publicId) return null;
   const url = `${window.location.origin}/v/${publicId}`;
   return (
@@ -25,6 +25,12 @@ export const PetIdButton = ({ publicId, petName }: { publicId: string; petName: 
             <QRCodeSVG value={url} size={160} bgColor="transparent" fgColor="hsl(var(--foreground))" />
             <div className="font-display text-2xl tracking-[0.25em] mt-4">{publicId}</div>
             <div className="text-xs text-muted-foreground mt-1">Permanent · share with trusted vets only</div>
+            {microchipId && (
+              <div className="mt-3 pt-3 border-t border-hairline w-full text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Microchip</div>
+                <div className="font-mono text-sm mt-0.5">{microchipId}</div>
+              </div>
+            )}
           </Card>
           <Button
             variant="outline"

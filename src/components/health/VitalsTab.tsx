@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { WeightChart } from "./WeightChart";
+import { useUnits } from "@/hooks/useUnits";
 
 export const VitalsTab = ({ petId }: { petId: string }) => {
   const qc = useQueryClient();
+  const { formatWeight, formatTemp, weightUnit, tempUnit, parseWeightToKg } = useUnits();
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["vitals", petId],
@@ -56,8 +58,8 @@ export const VitalsTab = ({ petId }: { petId: string }) => {
                   <Calendar className="h-3 w-3" /> {format(new Date(v.recorded_at), "d MMM, h:mm a")}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                  {v.weight_kg != null && <span><b>{v.weight_kg}</b> kg</span>}
-                  {v.temperature_c != null && <span><b>{v.temperature_c}</b> °C</span>}
+                  {v.weight_kg != null && <span><b>{formatWeight(Number(v.weight_kg), { unit: false })}</b> {weightUnit}</span>}
+                  {v.temperature_c != null && <span><b>{formatTemp(Number(v.temperature_c), { unit: false })}</b> °{tempUnit.toUpperCase()}</span>}
                   {v.heart_rate_bpm != null && <span>HR <b>{v.heart_rate_bpm}</b></span>}
                   {v.respiratory_rate_rpm != null && <span>RR <b>{v.respiratory_rate_rpm}</b></span>}
                   {v.body_condition != null && <span>BCS <b>{v.body_condition}</b>/9</span>}
@@ -73,12 +75,15 @@ export const VitalsTab = ({ petId }: { petId: string }) => {
           </Card>
         ))
       )}
-      <VitalsDialog open={open} onOpenChange={setOpen} petId={petId} />
+      <VitalsDialog open={open} onOpenChange={setOpen} petId={petId} weightUnit={weightUnit} tempUnit={tempUnit} parseWeightToKg={parseWeightToKg} />
     </div>
   );
 };
 
-const VitalsDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChange: (b: boolean) => void; petId: string }) => {
+const VitalsDialog = ({ open, onOpenChange, petId, weightUnit, tempUnit, parseWeightToKg }: {
+  open: boolean; onOpenChange: (b: boolean) => void; petId: string;
+  weightUnit: "kg" | "lb"; tempUnit: "c" | "f"; parseWeightToKg: (v: string | number) => number | null;
+}) => {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     weight_kg: "", temperature_c: "", heart_rate_bpm: "", respiratory_rate_rpm: "",
@@ -87,14 +92,20 @@ const VitalsDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
   const [saving, setSaving] = useState(false);
 
   const num = (s: string) => (s.trim() === "" ? null : Number(s));
+  // Convert the user's input unit to canonical storage unit (kg / °C)
+  const tempToC = (s: string): number | null => {
+    const n = num(s);
+    if (n == null) return null;
+    return tempUnit === "f" ? ((n - 32) * 5) / 9 : n;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     const { error } = await supabase.from("vital_logs").insert({
       pet_id: petId,
-      weight_kg: num(form.weight_kg),
-      temperature_c: num(form.temperature_c),
+      weight_kg: form.weight_kg.trim() === "" ? null : parseWeightToKg(form.weight_kg),
+      temperature_c: tempToC(form.temperature_c),
       heart_rate_bpm: num(form.heart_rate_bpm) as any,
       respiratory_rate_rpm: num(form.respiratory_rate_rpm) as any,
       body_condition: num(form.body_condition) as any,
@@ -117,8 +128,8 @@ const VitalsDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
         <DialogHeader><DialogTitle className="font-display">Log vitals</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Weight (kg)" value={form.weight_kg} onChange={(v) => setForm({ ...form, weight_kg: v })} type="number" step="0.1" />
-            <Field label="Temp (°C)" value={form.temperature_c} onChange={(v) => setForm({ ...form, temperature_c: v })} type="number" step="0.1" />
+            <Field label={`Weight (${weightUnit})`} value={form.weight_kg} onChange={(v) => setForm({ ...form, weight_kg: v })} type="number" step="0.1" />
+            <Field label={`Temp (°${tempUnit.toUpperCase()})`} value={form.temperature_c} onChange={(v) => setForm({ ...form, temperature_c: v })} type="number" step="0.1" />
             <Field label="Heart rate (bpm)" value={form.heart_rate_bpm} onChange={(v) => setForm({ ...form, heart_rate_bpm: v })} type="number" />
             <Field label="Resp rate (rpm)" value={form.respiratory_rate_rpm} onChange={(v) => setForm({ ...form, respiratory_rate_rpm: v })} type="number" />
             <Field label="Body cond. (1–9)" value={form.body_condition} onChange={(v) => setForm({ ...form, body_condition: v })} type="number" min="1" max="9" />

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pill, ShoppingBag, Check, Loader2 } from "lucide-react";
+import { Pill, ShoppingBag, Check, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = { petId: string };
@@ -13,6 +13,7 @@ type Props = { petId: string };
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-primary-soft text-primary border-0",
   ordered: "bg-amber-500/15 text-amber-700 border-0",
+  filled: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-0",
   dismissed: "bg-muted text-muted-foreground border-0",
 };
 
@@ -37,15 +38,16 @@ export const PharmacySuggestionsCard = ({ petId }: Props) => {
   });
 
   const setStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "ordered" | "dismissed" | "pending" }) => {
+    mutationFn: async ({ id, status }: { id: string; status: "ordered" | "dismissed" | "pending" | "filled" }) => {
       const { error } = await supabase
         .from("pharmacy_suggestions" as any)
         .update({ status })
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["pharmacy-suggestions", petId, user?.id] });
+      if (vars.status === "filled") toast.success("Marked as filled — your vet will see this.");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not update"),
   });
@@ -107,6 +109,16 @@ export const PharmacySuggestionsCard = ({ petId }: Props) => {
                   <ShoppingBag className="h-3.5 w-3.5 mr-1" />
                   {rx.status === "ordered" ? "View in shop" : "Find in shop"}
                 </Button>
+                {rx.status !== "filled" && rx.status !== "dismissed" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full h-8 text-xs"
+                    onClick={() => setStatus.mutate({ id: rx.id, status: "filled" })}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark filled
+                  </Button>
+                )}
                 {rx.status !== "dismissed" && (
                   <Button
                     size="sm"

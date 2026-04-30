@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from "recharts";
 import { format } from "date-fns";
 import { TrendingUp, Target } from "lucide-react";
+import { useUnits } from "@/hooks/useUnits";
 
 export const WeightChart = ({ petId }: { petId: string }) => {
+  const { weightUnit, kgToDisplay, formatWeight } = useUnits();
   const { data: pet } = useQuery({
     queryKey: ["pet-target-weight", petId],
     queryFn: async () => {
@@ -18,9 +20,10 @@ export const WeightChart = ({ petId }: { petId: string }) => {
     },
   });
   const target = pet?.target_weight_kg ? Number(pet.target_weight_kg) : null;
+  const targetDisp = target != null ? kgToDisplay(target) : null;
 
   const { data } = useQuery({
-    queryKey: ["weight-trend", petId],
+    queryKey: ["weight-trend", petId, weightUnit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vital_logs")
@@ -32,7 +35,7 @@ export const WeightChart = ({ petId }: { petId: string }) => {
       if (error) throw error;
       return (data ?? []).map((d) => ({
         date: format(new Date(d.recorded_at), "d MMM"),
-        weight: Number(d.weight_kg),
+        weight: Number(kgToDisplay(Number(d.weight_kg)) ?? 0),
       }));
     },
   });
@@ -40,13 +43,13 @@ export const WeightChart = ({ petId }: { petId: string }) => {
   if (!data || data.length < 2) return null;
 
   const latest = data[data.length - 1].weight;
-  const delta = target ? latest - target : null;
+  const delta = targetDisp != null ? latest - targetDisp : null;
   const deltaLabel =
     delta == null
       ? null
       : Math.abs(delta) < 0.05
       ? "On target"
-      : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg vs target`;
+      : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${weightUnit} vs target`;
   const deltaTone =
     delta == null
       ? ""
@@ -75,15 +78,15 @@ export const WeightChart = ({ petId }: { petId: string }) => {
           <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
           <Tooltip
             contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
-            formatter={(v: any) => [`${v} kg`, "Weight"]}
+            formatter={(v: any) => [`${v} ${weightUnit}`, "Weight"]}
           />
-          {target && (
+          {targetDisp != null && (
             <ReferenceLine
-              y={target}
+              y={targetDisp}
               stroke="hsl(var(--leaf, var(--primary)))"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={{ value: `Target ${target} kg`, fontSize: 10, fill: "hsl(var(--muted-foreground))", position: "insideTopRight" }}
+              label={{ value: `Target ${formatWeight(target, { precision: 1 })}`, fontSize: 10, fill: "hsl(var(--muted-foreground))", position: "insideTopRight" }}
             />
           )}
           <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />

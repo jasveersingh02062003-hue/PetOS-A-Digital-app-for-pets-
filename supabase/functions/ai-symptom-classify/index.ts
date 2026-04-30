@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const { data: pet } = await supabase
       .from("pets")
-      .select("id, name, species, breed, owner_id, weight_kg")
+      .select("id, name, species, breed, owner_id, weight_kg, allergies, conditions, microchip_id")
       .eq("id", log.pet_id)
       .maybeSingle();
     if (!pet || pet.owner_id !== u.user.id) return j({ error: "forbidden" }, 403);
@@ -54,7 +54,11 @@ serve(async (req) => {
 - "watch": minor and self-limiting; monitor at home (single sneeze, mild itch, one normal stool variation).
 Return JSON only: {"flag":"watch|vet_soon|emergency","reason":"max 140 chars, plain English"}.`;
 
+    const allergies = (pet as any).allergies?.length ? `Known allergies: ${(pet as any).allergies.join(", ")}` : "";
+    const conditions = (pet as any).conditions?.length ? `Chronic conditions: ${(pet as any).conditions.join(", ")}` : "";
     const userMsg = `Pet: ${pet.name} (${pet.species}${pet.breed ? `, ${pet.breed}` : ""}${pet.weight_kg ? `, ${pet.weight_kg}kg` : ""})
+${allergies}
+${conditions}
 Symptom: ${log.symptom}
 Severity (owner-rated 1-5): ${log.severity}
 Notes: ${log.notes ?? "(none)"}`;

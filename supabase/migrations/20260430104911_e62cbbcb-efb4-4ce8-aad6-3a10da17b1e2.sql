@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS unit_system text NOT NULL DEFAULT 'metric' CHECK (unit_system IN ('metric','imperial'));

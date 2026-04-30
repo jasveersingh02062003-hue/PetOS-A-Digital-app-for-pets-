@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     const { data: pet, error: petErr } = await admin
       .from("pets")
       .select(
-        "id, name, species, breed, gender, date_of_birth, owner_id, vaccination_verified, neutered",
+        "id, name, species, breed, gender, date_of_birth, owner_id, vaccination_verified, neutered, allergies, conditions",
       )
       .eq("id", petId)
       .maybeSingle();
@@ -127,6 +127,8 @@ Deno.serve(async (req) => {
         dob: pet.date_of_birth,
         vaccination_verified: pet.vaccination_verified,
         neutered: pet.neutered,
+        allergies: (pet as any).allergies ?? [],
+        conditions: (pet as any).conditions ?? [],
       },
       weights: weights.data ?? [],
       nutrition: nutrition.data ?? [],

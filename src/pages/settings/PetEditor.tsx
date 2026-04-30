@@ -44,6 +44,7 @@ const PetEditor = () => {
       activity_level: pet.activity_level, diet_type: pet.diet_type,
       social_level: pet.social_level,
       allergies: pet.allergies ?? [], conditions: pet.conditions ?? [],
+      microchip_id: pet.microchip_id?.trim() || null,
       temperament: pet.temperament ?? [],
       bio: pet.bio,
       ...(willBeNeutered ? { discoverable_for_mating: false } : {}),
@@ -104,6 +105,8 @@ const PetEditor = () => {
         <Field label="Weight (kg)" type="number" value={pet.weight_kg?.toString() ?? ""} onChange={(v) => update({ weight_kg: v })} />
         <Field label="Target weight (kg)" type="number" value={pet.target_weight_kg?.toString() ?? ""} onChange={(v) => update({ target_weight_kg: v })} />
       </div>
+
+      <Field label="Microchip ID" value={pet.microchip_id ?? ""} onChange={(v) => update({ microchip_id: v })} />
 
       <div className="grid grid-cols-1 gap-3">
         <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px]">

@@ -34,6 +34,7 @@ import { VetVisitNotesCard } from "@/components/health/VetVisitNotesCard";
 import { HeatCycleCard } from "@/components/health/HeatCycleCard";
 import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
 import { VaxVerifyDialog } from "@/components/health/VaxVerifyDialog";
+import { MultiPetSummary } from "@/components/health/MultiPetSummary";
 import { Scale } from "lucide-react";
 
 const Health = () => {
@@ -63,6 +64,17 @@ const Health = () => {
             </button>
           ))}
         </div>
+      )}
+
+      {pets && pets.length > 1 && (
+        <MultiPetSummary
+          pets={pets as any}
+          activeId={active?.id}
+          onSelect={(id) => {
+            const idx = pets.findIndex((p) => p.id === id);
+            if (idx >= 0) setActiveIdx(idx);
+          }}
+        />
       )}
 
       {!active ? (
@@ -96,9 +108,26 @@ const Health = () => {
                 {(active as any).public_id && (
                   <div className="text-[11px] text-muted-foreground mt-1 tracking-wider font-mono">{(active as any).public_id}</div>
                 )}
+                {(((active as any).allergies?.length ?? 0) > 0 || ((active as any).conditions?.length ?? 0) > 0) && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {((active as any).allergies ?? []).map((a: string) => (
+                      <Badge key={`a-${a}`} variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-0 text-[10px]">
+                        Allergy: {a}
+                      </Badge>
+                    ))}
+                    {((active as any).conditions ?? []).map((c: string) => (
+                      <Badge key={`c-${c}`} variant="secondary" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-0 text-[10px]">
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {(active as any).microchip_id && (
+                  <div className="text-[10px] text-muted-foreground mt-1 font-mono">Chip: {(active as any).microchip_id}</div>
+                )}
               </div>
               <div className="flex flex-col gap-2 shrink-0">
-                <PetIdButton publicId={(active as any).public_id} petName={active.name} />
+                <PetIdButton publicId={(active as any).public_id} petName={active.name} microchipId={(active as any).microchip_id} />
                 <VetShareButton petId={active.id} petName={active.name} />
                 <ExportHealthPdfButton petId={active.id} petName={active.name} />
               </div>
@@ -153,16 +182,24 @@ const Health = () => {
           <VaxVerifyDialog open={vaxVerifyOpen} onOpenChange={setVaxVerifyOpen} petId={active.id} />
 
           <Tabs defaultValue="vitals" className="w-full">
-            <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
-              <TabsList className="inline-flex w-max bg-muted rounded-xl h-11 p-1">
-                <TabsTrigger value="vitals" className="rounded-lg gap-1.5 text-xs px-3"><Heart className="h-3.5 w-3.5" />Vitals</TabsTrigger>
-                <TabsTrigger value="vaccinations" className="rounded-lg gap-1.5 text-xs px-3"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
-                <TabsTrigger value="meds" className="rounded-lg gap-1.5 text-xs px-3"><Pill className="h-3.5 w-3.5" />Meds</TabsTrigger>
-                <TabsTrigger value="parasite" className="rounded-lg gap-1.5 text-xs px-3"><Bug className="h-3.5 w-3.5" />Parasite</TabsTrigger>
-                <TabsTrigger value="symptoms" className="rounded-lg gap-1.5 text-xs px-3"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
-                <TabsTrigger value="nutrition" className="rounded-lg gap-1.5 text-xs px-3"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
-                <TabsTrigger value="records" className="rounded-lg gap-1.5 text-xs px-3"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
-              </TabsList>
+            <div className="relative -mx-5">
+              <div
+                className="overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
+                style={{ scrollPaddingLeft: 20, scrollPaddingRight: 20 }}
+              >
+                <TabsList className="inline-flex w-max bg-muted rounded-xl h-11 p-1">
+                  <TabsTrigger value="vitals" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Heart className="h-3.5 w-3.5" />Vitals</TabsTrigger>
+                  <TabsTrigger value="vaccinations" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Syringe className="h-3.5 w-3.5" />Vax</TabsTrigger>
+                  <TabsTrigger value="meds" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Pill className="h-3.5 w-3.5" />Meds</TabsTrigger>
+                  <TabsTrigger value="parasite" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Bug className="h-3.5 w-3.5" />Parasite</TabsTrigger>
+                  <TabsTrigger value="symptoms" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Activity className="h-3.5 w-3.5" />Symptoms</TabsTrigger>
+                  <TabsTrigger value="nutrition" className="snap-start rounded-lg gap-1.5 text-xs px-3"><Utensils className="h-3.5 w-3.5" />Food</TabsTrigger>
+                  <TabsTrigger value="records" className="snap-start rounded-lg gap-1.5 text-xs px-3"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
+                </TabsList>
+              </div>
+              {/* Edge fades hint that more tabs exist */}
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-background to-transparent" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-background to-transparent" />
             </div>
 
             <TabsContent value="vitals" className="mt-4"><VitalsTab petId={active.id} /></TabsContent>
