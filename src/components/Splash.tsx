@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { PetosLogo } from "./PetosLogo";
 
@@ -11,8 +11,12 @@ interface SplashProps {
 /**
  * Cold-start splash. Shows once per browser session (sessionStorage).
  * Auto-dismisses after ~1.6s, or on tap.
+ *
+ * Wrapped in forwardRef so framer-motion's <AnimatePresence> can attach
+ * its internal ref without triggering React's "Function components cannot
+ * be given refs" warning.
  */
-export const Splash = ({ children }: SplashProps) => {
+export const Splash = forwardRef<HTMLDivElement, SplashProps>(({ children }, ref) => {
   const reduceMotion = useReducedMotion();
   const [show, setShow] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -32,7 +36,7 @@ export const Splash = ({ children }: SplashProps) => {
   };
 
   return (
-    <>
+    <div ref={ref}>
       {children}
       <AnimatePresence>
         {show && (
@@ -73,6 +77,8 @@ export const Splash = ({ children }: SplashProps) => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
-};
+});
+
+Splash.displayName = "Splash";
