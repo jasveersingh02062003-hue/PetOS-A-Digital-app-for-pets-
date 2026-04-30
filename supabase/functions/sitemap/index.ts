@@ -18,9 +18,27 @@ const STATIC_PATHS = [
   "/groups",
   "/breeders",
   "/how-it-works",
+  "/adopt",
+  "/adopt/dog",
+  "/adopt/cat",
+  "/shop",
   "/legal/terms",
   "/legal/privacy",
   "/legal/refunds",
+];
+
+const SERVICE_CATEGORIES = [
+  "grooming","vet_clinic","training","boarding","daycare",
+  "caretaker","sitting","walking","pet_taxi",
+];
+const POPULAR_CITIES = [
+  "mumbai","delhi","bengaluru","hyderabad","chennai","kolkata",
+  "pune","ahmedabad","jaipur","lucknow","chandigarh","kochi","goa",
+];
+const POPULAR_BREEDS = [
+  ["dog","labrador-retriever"],["dog","golden-retriever"],["dog","german-shepherd"],
+  ["dog","beagle"],["dog","pug"],["dog","pomeranian"],["dog","indie-pariah"],
+  ["cat","persian"],["cat","siamese"],["cat","bengal"],
 ];
 
 function escapeXml(s: string) {
@@ -42,17 +60,40 @@ Deno.serve(async (req) => {
 
   for (const p of STATIC_PATHS) urls.push({ loc: `${origin}${p}` });
 
+  // Category permutations — services × city, adopt species/breed/city
+  for (const cat of SERVICE_CATEGORIES) {
+    for (const city of POPULAR_CITIES) {
+      urls.push({ loc: `${origin}/services/${cat}/${city}` });
+    }
+  }
+  for (const [species, breed] of POPULAR_BREEDS) {
+    for (const city of POPULAR_CITIES) {
+      urls.push({ loc: `${origin}/adopt/${species}/${breed}/${city}` });
+    }
+  }
+
   // Public pets
   const { data: pets } = await supabase.rpc("get_pets_public");
   for (const p of (pets ?? []) as any[]) {
     if (p.public_id) urls.push({ loc: `${origin}/p/${p.public_id}` });
   }
 
+  // Pet listings (active) — adoption / rehoming / breeder sale
+  const { data: pets_listings } = await supabase
+    .from("pet_listings")
+    .select("id, updated_at")
+    .eq("active", true)
+    .eq("status", "active")
+    .limit(5000);
+  for (const l of pets_listings ?? []) {
+    urls.push({ loc: `${origin}/mates/adopt/${l.id}`, lastmod: (l as any).updated_at });
+  }
+
   // Mating listings (active)
   const { data: mates } = await supabase
     .from("mating_listings")
     .select("id, updated_at")
-    .eq("status", "active")
+    .eq("active", true)
     .limit(2000);
   for (const m of mates ?? []) {
     urls.push({ loc: `${origin}/mates/listing/${m.id}`, lastmod: (m as any).updated_at });
