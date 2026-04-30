@@ -56,7 +56,6 @@ const AdoptCategory = () => {
       if (filters.gender) q = q.eq("gender", filters.gender);
       if (filters.priceMin != null) q = q.gte("fee_inr", filters.priceMin);
       if (filters.priceMax != null) q = q.lte("fee_inr", filters.priceMax);
-      if (filters.matingOnly) q = q.eq("listing_type", "mate");
       if (filters.ageMonths) {
         const map: Record<string, [number, number | null]> = {
           "0-3": [0, 12], "3-6": [12, 24], "6-12": [24, 52], "12+": [52, null],
@@ -133,11 +132,17 @@ const AdoptCategory = () => {
         if (slug) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}/${slug}`);
         else if (city) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}`);
       }} />
-      <ListingFilters
-        value={filters}
-        onChange={onFilterChange}
-        showMatingOnly
-      />
+      <ListingFilters value={filters} onChange={onFilterChange} />
+      <div className="mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-full text-xs gap-1.5"
+          onClick={() => nav("/mates")}
+        >
+          🤝 Looking for a mate? Browse mating listings
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>
