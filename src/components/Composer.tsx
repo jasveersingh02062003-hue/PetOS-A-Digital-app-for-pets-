@@ -548,6 +548,27 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         <RescueJourneyPicker value={rescueJourneyId} onChange={setRescueJourneyId} />
       )}
 
+      {/* Visibility — who can see this post */}
+      <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-card px-3 py-2">
+        <span className="text-xs font-semibold text-muted-foreground shrink-0">Who can see</span>
+        <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
+          <SelectTrigger className="h-9 rounded-xl border-hairline ml-auto w-auto min-w-[150px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="public">
+              <span className="inline-flex items-center gap-2"><Globe className="h-4 w-4" /> Public · anyone</span>
+            </SelectItem>
+            <SelectItem value="followers">
+              <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> Followers only</span>
+            </SelectItem>
+            <SelectItem value="private">
+              <span className="inline-flex items-center gap-2"><Lock className="h-4 w-4" /> Only me</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         type="submit"
         disabled={uploading}
