@@ -3872,6 +3872,7 @@ export type Database = {
           notify_plus_launch: boolean
           onboarded: boolean
           phone: string | null
+          unit_system: string
           units: Json
           updated_at: string
         }
@@ -3901,6 +3902,7 @@ export type Database = {
           notify_plus_launch?: boolean
           onboarded?: boolean
           phone?: string | null
+          unit_system?: string
           units?: Json
           updated_at?: string
         }
@@ -3930,6 +3932,7 @@ export type Database = {
           notify_plus_launch?: boolean
           onboarded?: boolean
           phone?: string | null
+          unit_system?: string
           units?: Json
           updated_at?: string
         }
