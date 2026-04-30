@@ -57,7 +57,7 @@ const BookingDetail = () => {
 
   const isProvider = !!user && booking.provider?.owner_id === user.id;
   const isCustomer = !!user && booking.customer_id === user.id;
-  const isWalker = booking.provider?.category === "walker";
+  const isWalker = booking.provider?.category === "walking";
   const status = booking.status as string;
 
   const setStatus = async (s: string) => {
