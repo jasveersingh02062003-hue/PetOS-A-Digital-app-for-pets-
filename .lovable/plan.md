@@ -1,187 +1,81 @@
-I checked the codebase. The flow is only partially real today, which is why it feels broken.
 
-What is real right now
-- Everyone already uses one login page: `/auth`.
-- Post-login routing exists in `/post-auth`.
-- Role selection exists, but in two different places:
-  - inside `src/pages/Onboarding.tsx`
-  - as a separate page `src/pages/AccountTypeChooser.tsx`
-- Pet parent/rescuer have a richer inline onboarding wizard in `src/pages/Onboarding.tsx`.
-- Buyer has a basic preferences page: `/onboarding/buyer-prefs`.
-- Provider has a separate setup flow: `/onboarding/provider`.
-- Org roles have a verification flow: `/onboarding/org`.
-- Admin review exists at `/admin/orgs`.
-- Verified/pending org badges already exist through `SellerBadge` + `useVerifiedOrgs`.
+# Final rewire pass — health reminders + deeper role trees
 
-Why it is not working as the full journey you described
-- There is no single source of truth for onboarding. The app currently mixes multiple onboarding systems.
-- `provider` is not part of the database `account_type` enum, so provider is treated differently from every other role. This causes routing inconsistency.
-- `/onboarding/add-pet` is too shallow for your intended flow. It only asks name/species/breed and then ends.
-- Pet parent onboarding does not ask:
-  - first-time parent or not
-  - number of pets first
-  - looped pet setup for 2+ pets
-  - adoption date vs birth date decision
-  - “do health now or later” decision in the way you want
-- Buyer, breeder, rescuer, kennel, shelter, sanctuary, zoo do not yet have equally strong role-specific question trees.
-- Your requested route `/admin/org-review` does not currently exist. The real route today is `/admin/orgs`.
-- Home routing is inconsistent for provider: providers land on `/provider`, while most other roles land on `/`.
+The previous pass landed schema + pet-parent flow + multi-pet loop. This pass closes the loop on the remaining items from the approved scope.
 
-Target flow to make real
+## 1. Deferred-health reminder cards
+
+Goal: any pet with `health_setup_complete = false` should nudge the parent to finish setup, in two places.
+
+- **New shared component** `src/components/health/HealthSetupReminder.tsx`
+  - Queries pets where `health_setup_complete = false`
+  - Renders a dismissible card: "Finish health setup for {name}" → links to `/health` with that pet preselected
+  - Variants: `compact` (Home) and `full` (Health tab)
+  - Dismissal stored in `localStorage` per-pet for the Home variant; the Health-tab variant is non-dismissible
+
+- **`src/pages/home/PetParentHome.tsx`** — mount `<HealthSetupReminder variant="compact" />` near the top welcome block.
+
+- **`src/pages/Health.tsx`** — mount `<HealthSetupReminder variant="full" />` above the existing alerts banner. Clicking "Set up now" opens the existing add-pet/edit flow with `health_setup_complete` set to true on save.
+
+## 2. Buyer flow — deepen the question tree
+
+`src/pages/onboarding/BuyerPrefs.tsx` currently asks only species/breed/city/price. Add:
+
+- **Living situation** chips: Apartment / House w/ yard / Farm
+- **Experience** chips: First-time / Some / Experienced
+- **Time available daily** chips: < 1h / 1–3h / 3+ h
+- **Purpose** chips: Companion / Guard / Show / Therapy
+- **Budget range slider** (replace single max-price input)
+- All optional, persist into `profiles.looking_for` JSON; keep "Skip" path.
+
+## 3. Rescuer / Shelter flow
+
+New `src/pages/onboarding/RescuerProfile.tsx` (routed `/onboarding/rescuer`):
+- Capacity (pets you can house), service area (city + radius km), species you take, urgent-foster toggle
+- Persist to `org_profiles` (rescuer/shelter use the same table) with `org_type` set automatically
+- Then route to `/onboarding/org` for document verification (existing page)
+
+## 4. Breeder / Kennel flow
+
+New `src/pages/onboarding/BreederProfile.tsx` (routed `/onboarding/breeder`):
+- Breeds specialised in (multi-select), years of experience, KCI member toggle, # of breeding pairs
+- Persist to `org_profiles`; then route to `/onboarding/org`
+
+## 5. Org / Sanctuary / Zoo
+
+`OrgOnboarding.tsx` already covers the verification step. Add a small intro card explaining what documents are needed and expected review time so users don't drop off.
+
+## 6. Onboarding router glue
+
+Update `src/pages/Onboarding.tsx` switch on `account_type`:
 ```text
-Install app
-  -> Welcome
-  -> /auth
-  -> login/signup with email+password or Google
-  -> /post-auth
-  -> /onboarding
-  -> choose role
-  -> role-specific onboarding
-  -> finish required setup
-  -> land on role-specific home
+pet_parent  → existing parent-age + multi-pet loop
+buyer       → /onboarding/buyer-prefs
+breeder/kennel → /onboarding/breeder → /onboarding/org → /onboarding/done
+shelter/rescuer → /onboarding/rescuer → /onboarding/org → /onboarding/done
+sanctuary/zoo  → /onboarding/org → /onboarding/done
+provider    → /provider (skip onboarding wizard, already saved)
 ```
 
-Planned rewire
+## 7. Routes
 
-1. Unify onboarding into one real router
-- Make `/onboarding` the only entry point for first-time users.
-- Remove the current split-brain behavior between:
-  - `Onboarding.tsx`
-  - `AccountTypeChooser.tsx`
-  - `AddFirstPet.tsx`
-  - separate role branches
-- Convert onboarding into a single state-driven flow with explicit branches per role.
-- Persist progress after every step so refresh/back does not lose progress.
+In `src/App.tsx`, register:
+- `/onboarding/rescuer` → `RescuerProfile`
+- `/onboarding/breeder` → `BreederProfile`
 
-2. Fix role modeling so provider is a real first-class role
-- Add `provider` to the account type model in the backend schema.
-- Make role-based routing consistent in `PostAuth`, `FirstRunGate`, and `Home`.
-- Ensure every role can be identified from profile state without hidden exceptions.
+## 8. Done page polish
 
-3. Build the pet parent onboarding exactly in the structure you want
-- About the pet parent:
-  - full name
-  - area/location
-  - age of pet parent
-  - first-time pet parent? yes/no
-- Pet count step:
-  - 1
-  - 2
-  - more than 2
-- Loop through pet setup for each pet:
-  - pet category/species
-  - breed
-  - birthday or adoption date
-  - optional photo/name/gender if needed by current features
-- Expand supported species list beyond the current small set.
-- Add a decision step:
-  - set up pet health now
-  - skip for later
-- If user skips health:
-  - onboarding still completes
-  - health tab shows a clear “Set up health for this pet” CTA
-  - home can surface a reminder until done
+`src/pages/onboarding/Done.tsx`: role-aware CTA — pet parents → "Open my pet's home", buyers → "Browse adoptions", orgs → "Go to my dashboard".
 
-4. Build role-specific onboarding trees inspired by the same logic
-- Buyer:
-  - preferred species
-  - preferred breed
-  - city/location
-  - budget range
-  - adoption vs breeder preference
-  - first-time pet owner or experienced
-- Rescuer:
-  - rescue type
-  - solo or team
-  - city/coverage area
-  - foster capacity
-  - urgent intake needs
-- Breeder:
-  - breeding species
-  - breeds handled
-  - years of experience
-  - facility/individual
-  - city/service area
-  - then verification docs
-- Kennel / Shelter / Sanctuary / Zoo:
-  - org basics first
-  - capacity/facility context
-  - service/donation/public-facing info where relevant
-  - then verification docs
-- Provider:
-  - personal/business basics
-  - service category
-  - area, availability, rates, trust docs
-  - then land on provider dashboard
+## Technical notes
 
-5. Make org verification match your requested journey
-- Keep `/onboarding/org` as the verification step after org-specific questions.
-- Add route alias `/admin/org-review` that points to the existing review page, while keeping `/admin/orgs` working.
-- Keep pending verification state visible on org home/profile/posts.
-- Ensure approved status flips the verified check immediately.
+- No new schema changes needed; all new role data fits in existing `org_profiles` columns or `profiles.looking_for` JSON.
+- Reminder component uses the same `usePets()` hook already in `Health.tsx`, so no extra queries.
+- All new pages follow the existing `WizardSteps` + `container-app` layout pattern for visual consistency.
 
-6. Make home routing truly role-specific and predictable
-- After onboarding:
-  - pet parent -> `/`
-  - buyer -> `/`
-  - breeder -> `/`
-  - kennel -> `/`
-  - shelter -> `/`
-  - sanctuary -> `/`
-  - zoo -> `/`
-  - rescuer -> `/`
-  - provider -> either `/provider` consistently, or move providers into `/` as well
-- I recommend choosing one consistent rule:
-  - either all roles land on `/`
-  - or keep provider special, but then document and wire it cleanly in all gates
-- My preferred implementation: all roles land on `/`, with `Home.tsx` routing to the right dashboard.
+## Out of scope for this pass
 
-7. Add anti-drop-off UX across the whole flow
-- Shorter, logical step order
-- Save progress at each step
-- Proper back/continue behavior
-- Conditional branching instead of overwhelming forms
-- Allow “skip for now” only where it will not break core flow
-- Strong empty states that guide the next action instead of dead ends
+- Admin moderation UI changes (already aliased to `/admin/org-review`)
+- Pet-health onboarding screens themselves (existing Health vault tab already handles it)
 
-Technical details
-- Files likely to update:
-  - `src/pages/Onboarding.tsx`
-  - `src/pages/AccountTypeChooser.tsx`
-  - `src/pages/onboarding/AddFirstPet.tsx`
-  - `src/pages/onboarding/BuyerPrefs.tsx`
-  - `src/pages/onboarding/provider/Picker.tsx`
-  - `src/pages/onboarding/provider/Wizard.tsx`
-  - `src/pages/OrgOnboarding.tsx`
-  - `src/pages/PostAuth.tsx`
-  - `src/components/FirstRunGate.tsx`
-  - `src/pages/Home.tsx`
-  - `src/pages/home/*`
-  - `src/App.tsx`
-- Backend/schema work likely needed:
-  - add `provider` to account type enum
-  - add onboarding progress fields to profile or a dedicated onboarding state table
-  - add pet-parent-specific fields such as parent age / first-time-parent flag
-  - add pet setup fields such as adoption date / health setup status / sequence count support
-- Existing real features to preserve:
-  - org verification badges
-  - provider verification review state
-  - buyer, breeder, shelter, zoo, kennel dashboards already present
-  - health tab vaccination flows already present
-
-Acceptance criteria
-- A new user can go from install -> auth -> role -> tailored onboarding -> correct home without loops or confusion.
-- Pet parent can add 1, 2, or many pets in sequence.
-- Health can be completed now or deferred safely.
-- Buyer, rescuer, breeder, provider, and org roles each get relevant questions instead of generic pet-parent questions.
-- `/admin/org-review` works and points to the org review queue.
-- Verified/pending badges reflect review status correctly.
-- Refreshing mid-onboarding resumes from the correct step.
-
-Implementation order
-1. Fix data model and role/routing consistency.
-2. Rebuild `/onboarding` as the single real flow controller.
-3. Implement pet parent multi-pet + health decision flow.
-4. Implement buyer/rescuer/provider/org role question trees.
-5. Add admin route alias and verification polish.
-6. Final pass on redirects, edge cases, and drop-off prevention.
+Approve and I'll implement all of the above in the next message.
