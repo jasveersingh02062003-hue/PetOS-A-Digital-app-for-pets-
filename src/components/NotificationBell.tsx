@@ -31,7 +31,7 @@ export const NotificationBell = () => {
         {total > 0 && (
           <span
             className={`absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-medium ${
-              pulse ? "animate-ping-once" : ""
+              pulse ? "animate-pulse" : ""
             }`}
           >
             {total > 9 ? "9+" : total}
