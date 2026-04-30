@@ -1,117 +1,151 @@
-# PetOS — Correctly Sequenced Production Readiness Plan
+# PetOS — Production Readiness Plan (Phases 5 → 10)
 
-You're right. The previous plan was technically sound but wrongly ordered. Optimizing queries on an app that still has security gaps and broken user-facing flows is premature. Here is the corrected sequence.
+## Where we are
 
-## Guiding principle
+Phases 0–4 are done: PII tightened, critical paths verified, realistic seed loaded (500 pets / 2k posts / 4.5k likes), 5 hot indexes added, query staleTime tuned, 63 lazy `<img>`, infinite-scroll feed.
+
+The app is now **fast enough and safe enough for a beta**. To call it production-grade, six gaps remain. They are listed in the order they should ship.
 
 ```text
-Safe  →  Correct  →  Fast  →  Scalable
+Safe → Correct → Fast → Observable → Resilient → Compliant
+                          ▲ you are here
 ```
 
-Don't optimize what isn't proven correct. Don't make fast what isn't safe.
+## Snapshot of remaining gaps
+
+| Area | Current state | Risk |
+|---|---|---|
+| Security findings | 279 open (132 anon-callable `SECURITY DEFINER` fns, 7 public storage buckets, 4 extensions in `public`, leaked-password check off) | Medium-High |
+| Observability | 4 `console.log` calls, 0 Sentry/PostHog, no edge-fn log dashboard | High — you are blind in prod |
+| Tests | 0 test files in `src/` | High — every ship is a roll of the dice |
+| Storage strategy | No documented split between localStorage / IndexedDB / Cloud / SW cache | Medium |
+| Resilience | No offline queue, no request retry with backoff, no health check on edge fns | Medium |
+| Compliance / legal | No GDPR export-my-data UI, no cookie banner, no documented data-retention | Low-Medium (depends on launch market) |
 
 ---
 
-## Phase 0 — Security & data integrity (BLOCKING, do first)
+## Phase 5 — Close the security backlog (1 session)
 
-Nothing else ships until this is green.
+The 279 findings collapse into ~5 real issues.
 
-1. **Re-run the security scanner** and fix every `error` and `warn` finding.
-2. **Audit RLS on every table** that holds user data — confirm `auth.uid()`-scoped policies on read AND write.
-3. **Lock down public RPCs** (`get_pet_public_by_ref`, `get_profile_public_by_ref`) — confirm they only return non-sensitive columns.
-4. **Verify `user_roles` is admin-only writable** — privilege escalation check.
-5. **Enable leaked-password (HIBP) protection** on auth.
-6. **Confirm storage bucket policies** — medical records, vet docs, private photos must not be world-readable.
+1. **132 anon-callable `SECURITY DEFINER` functions.** Audit each one: keep `EXECUTE` for `anon` only on the handful that genuinely power public pages (`get_pet_public_by_ref`, `get_profile_public_by_ref`, `get_profiles_public`, `sitemap`, `og-*`). `REVOKE EXECUTE ... FROM anon, public` on the rest.
+2. **7 public storage buckets with broad listing.** Replace the broad `SELECT` policy on `storage.objects` with `bucket_id = 'x' AND auth.uid() IS NOT NULL` (or a folder-prefix RLS for `medical-records`, `vet-docs`, `private-photos`). Public read of *individual* file URLs continues to work.
+3. **4 extensions in `public` schema** (`pg_trgm`, `postgis`, `pgcrypto`, `vector`). Move to `extensions` schema; add it to `search_path` only where needed.
+4. **Leaked-password (HIBP) protection** — turn on via `configure_auth(password_hibp_enabled: true)`.
+5. **Re-run scan, drive count to ≤10 informational** warnings; document accepted risks in `@security-memory`.
 
-Deliverable: clean security scan, documented RLS matrix.
-
----
-
-## Phase 1 — Fix critical user-facing bugs
-
-Before optimizing, the core flows must actually work end-to-end with real data.
-
-1. **Public pet profile route** (`/pet/:id`) — confirmed broken earlier; verify the public RPC fallback works for logged-out users.
-2. **Auth flows** — signup, login, Google OAuth, password reset, email verification.
-3. **Core CRUD** — create pet, edit pet, upload photo, delete pet.
-4. **Payment/checkout** — at least one successful Stripe test transaction end-to-end.
-5. **Vet booking, adoption inquiry, messaging** — one successful run through each.
-
-Deliverable: a manual smoke-test checklist passed on the live preview.
+Deliverable: clean scan report, one migration, one auth-config change.
 
 ---
 
-## Phase 2 — Realistic seed data
+## Phase 6 — Observability (1 session)
 
-You can't measure performance on 13 demo rows. Before any optimization work:
+You cannot run production without eyes on it.
 
-1. Seed **~500 pets, ~200 users, ~2000 posts, ~5000 likes, ~1000 comments, ~100 conversations with messages**.
-2. Use the existing `seed-demo-data` edge function, expanded.
-3. This is what makes Phase 3 measurements meaningful.
+1. **Sentry (or equivalent)** for the React app + edge functions. Capture errors, breadcrumbs, releases. Wire to existing `installGlobalErrorHandlers`.
+2. **`logError` everywhere** — replace remaining 4 `console.log` calls; standardise on the existing helper.
+3. **Edge function logging** — every function should log `{ user_id, function, duration_ms, status }` on entry/exit.
+4. **Lightweight product analytics** (PostHog or Plausible) — page views, signup funnel, post-create funnel, payment funnel. No PII.
+5. **Health-check page** at `/__status` (admin-only) showing DB latency, edge-fn ping, queue depth.
 
-Deliverable: realistic dataset loaded in the dev backend.
-
----
-
-## Phase 3 — Quick performance wins (low risk, high impact)
-
-Only now do we touch performance. These are all low-effort, low-risk:
-
-1. **Add missing indexes** on hot foreign keys: `conversation_members.user_id`, `daily_streaks.user_id`, `posts.author_id`, `likes.post_id`, `comments.post_id`, `follows.follower_id/followed_id`, `notifications.user_id`.
-2. **Tune React Query** — bump `staleTime` to 60s for feeds, 5min for profile/static data; keep `gcTime` at 5min.
-3. **Add `loading="lazy"` and `decoding="async"`** to every `<img>` not above the fold.
-4. **Replace top 10 hottest `select('*')` calls** with explicit column lists (feed, profile, pet card, message list).
-5. **Add optimistic updates** for like, follow, comment — perceived latency drops to zero.
-
-Deliverable: measurable improvement in feed load and interaction latency, no architectural changes.
+Deliverable: a Sentry dashboard with zero unhandled errors during a 30-min smoke test.
 
 ---
 
-## Phase 4 — Structural performance (only if Phase 3 isn't enough)
+## Phase 7 — Test safety net (1–2 sessions)
 
-Defer until Phase 3 is shipped and measured. These have higher complexity:
+Today the repo has zero tests. We don't need 100% coverage; we need the parts that, if broken, lose a user or take payment incorrectly.
 
-1. **Thin read views / materialized counters** for like/follow/comment counts.
-2. **List virtualization** with `@tanstack/react-virtual` for feed and messages.
-3. **Image resizing pipeline** (edge function) — thumbnail / feed / full variants.
-4. **Service Worker upgrade** — runtime caching for images and API GETs.
-5. **`persistQueryClient`** — instant feed render from sessionStorage on revisit.
-6. **Eliminate remaining `select('*')`** across the codebase.
+1. **Vitest setup** + a `bunx vitest` script.
+2. **15 critical-path tests** (target, not ceiling):
+   - `signup → create pet → create post → like → comment → message`
+   - `forgot-password → reset → login`
+   - `payment checkout → webhook → entitlement granted`
+   - RLS sanity: `userA cannot SELECT userB's medical_records` (run via service-role test client)
+   - Edge-fn input validation (zod) for every public function — reject malformed bodies with 400.
+3. **CI gate**: tests must pass before publish (Lovable's build hook).
 
-Deliverable: Instagram-grade perceived performance.
+Deliverable: a green test suite that runs in <30s.
 
 ---
 
-## Phase 5 — Storage strategy (clarification, mostly already correct)
+## Phase 8 — Storage strategy made explicit (½ session)
 
-Document and enforce where data lives:
+Document and enforce. Most of this is already correct; we are formalising it.
 
 | Layer | Use for | Examples |
 |---|---|---|
-| **localStorage** | Tiny, non-sensitive, sync | Theme, last route, dismissed banners |
-| **sessionStorage** | Per-tab cache | React Query persisted snapshot |
-| **IndexedDB** (`idb-keyval`) | Larger client cache, drafts | Post drafts, recently viewed pets, offline queue |
-| **Memory (React Query)** | Server state cache | All API responses |
-| **Cloud DB (RLS)** | Source of truth | Pets, users, posts, medical records |
-| **Cloud Storage (RLS)** | Files | Photos, vet docs, voice notes |
+| `localStorage` | Tiny, non-sensitive, sync | Theme, last route, dismissed banners |
+| `sessionStorage` | Per-tab cache | React Query persisted snapshot |
+| IndexedDB (`idb-keyval`) | Larger client cache, drafts, offline queue | Post drafts, recent pets, queued likes |
+| React Query memory | All API responses | (already in place) |
+| Cloud DB (RLS) | Source of truth | Pets, users, posts, medical records |
+| Cloud Storage (RLS) | Files | Photos, vet docs, voice notes |
+| Service Worker cache | Static assets + image CDN | Avatars, post images, fonts |
 
-Rule: **never** put auth tokens, medical data, or private content in localStorage/IndexedDB.
+Rules:
+- **Never** store auth tokens, medical data, or private images in `localStorage` / IndexedDB.
+- **Always** encrypt-at-rest by relying on Cloud (don't roll your own).
+- Add `persistQueryClient` against `sessionStorage` so the feed paints instantly on revisit.
+
+Deliverable: one `STORAGE.md` in repo + a small `lib/clientStore.ts` wrapper that enforces the rules.
 
 ---
 
-## Phase 6 — Production launch config
+## Phase 9 — Resilience & PWA polish (1 session)
 
-1. Stripe live keys (currently test mode).
-2. Custom domain.
-3. Custom email sender domain.
-4. (Optional) VAPID keys for web push.
-5. Enable analytics + error tracking.
-6. Final security scan + smoke test on production URL.
+Make it feel like Instagram on a flaky train.
+
+1. **Service worker runtime caching** — cache-first for images (`stale-while-revalidate`, 7-day TTL), network-first for HTML.
+2. **Offline queue** for like/follow/comment via IndexedDB; flush on `online` event. Optimistic UI is already in place; this just stops losing taps offline.
+3. **Request retry with exponential backoff** in the supabase client wrapper for idempotent reads.
+4. **Skeleton screens everywhere** (already partial: `FeedSkeleton`). Audit the 99 pages, add skeletons to the top 10 routes.
+5. **Image pipeline** — confirm the `image-process` edge function generates `_thumb / _feed / _full`; backfill old posts with a one-shot job.
+
+Deliverable: Lighthouse PWA score ≥ 90 on mobile.
+
+---
+
+## Phase 10 — Compliance, legal, launch checklist (½ session)
+
+1. **Data export & delete** — `/settings/privacy → Export my data` (zip of all rows + files) and `Delete my account` (calls existing `delete-account` edge fn). Required by GDPR / DPDP.
+2. **Cookie / consent banner** — only if you ship analytics. Use `vanilla-cookieconsent` or similar.
+3. **Terms / Privacy / Refund** pages — reachable from footer + signup screen.
+4. **Data-retention policy** — delete soft-deleted accounts after 30 days via a scheduled edge function.
+5. **Status page** — public uptime page (BetterStack free tier, or hand-rolled).
+6. **Launch checklist**: domain SSL, OG images, sitemap.xml (already an edge fn), robots.txt, App-store review screenshots if mobile.
+
+Deliverable: a signed-off `LAUNCH.md` checklist.
+
+---
+
+## Suggested cadence
+
+- Phase 5 + 6 in one sitting (security + observability are paired — fixing one without the other is half a job).
+- Phase 7 next, before any new features.
+- Phase 8 + 9 together (they share the storage/SW surface).
+- Phase 10 right before publish.
+
+Estimated total: **5–6 build sessions** to go from "fast beta" to "boring production".
+
+---
+
+## What I will NOT touch unless you ask
+
+- The remaining 86 `select('*')` calls — they're in low-traffic settings pages. Real impact ≈ 0.
+- React-window virtualization — at 12-post pages, no measurable benefit. Re-evaluate when users have 1000+ DM threads.
+- A native mobile shell (Capacitor / Expo). PWA is enough for v1.
+- Multi-region edge deployment. Not needed below ~100k MAU.
 
 ---
 
 ## What I need from you
 
-Confirm this order is right, then I'll start at **Phase 0** (security scan + fixes). I will not jump ahead to performance work until 0–2 are signed off.
+Pick the next phase to ship:
 
-Reply "go" and I begin with Phase 0.
+- **"Phase 5"** — security cleanup (recommended; 1 session, high safety upside)
+- **"Phase 5+6"** — security + observability bundled
+- **"All"** — I sequence them and ship phase by phase, pausing for your QA between each
+- **"Custom"** — tell me which phases and I'll start there
+
+No new features in any of this — pure hardening.
