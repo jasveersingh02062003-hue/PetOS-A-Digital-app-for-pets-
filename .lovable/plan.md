@@ -1,111 +1,72 @@
-## Petos Social — Reality Check & Scoped Plan (Social tab ONLY)
 
-**Scope guardrail:** Only files powering the Social experience will be touched. **No changes** to Mate, Health, Discovery, or Profile tabs.
+## Goal
 
-### In-scope files (Social only)
-- `src/pages/home/PetParentHome.tsx` (feed tabs, story rail, daily prompt — the social home)
-- `src/components/PostFeed.tsx`
-- `src/components/CommentSheet.tsx`
-- `src/components/Composer.tsx`
-- `src/components/social/*` (ReactionBar, PawBurst, FollowButton, SaveButton, StoryRail, StoryViewer, StoryComposer, DailyMomentComposer, DailyPromptBanner, CaptionWithTags, CollabPicker, etc.)
-- `src/pages/Notifications.tsx` (only the social rows: reactions, comments, follows, mentions)
-- `src/pages/Messages.tsx` + `src/pages/MessageThread.tsx`
+Remove the email verification step. New users sign up with **email + password only** and are immediately logged in. All their data (pets, posts, profile, etc.) continues to be stored against their `auth.users` ID exactly as today — nothing about data storage changes, only the verification gate is removed.
 
-### Explicitly OUT of scope (will NOT be edited)
-- `src/pages/Health.tsx`, `src/components/health/*`
-- `src/pages/Mates.tsx`, `MatesNew.tsx`, `MatesManage.tsx`, `MateListing.tsx`, mate components
-- `src/pages/Discover.tsx`, `Explore.tsx`, `Hashtag.tsx`, discovery rails
-- `src/pages/PetProfile.tsx`, `OrgProfile.tsx`, profile components
+Email verification can be re-enabled later by flipping one setting; no data migration will be needed.
 
 ---
 
-### Reality checklist (Social only)
+## What changes
 
-**Shell (social-relevant)**
-- [x] BottomNav, NotificationBell with unread dot, global Composer event, route fade-in
+### 1. Turn OFF email confirmation in Lovable Cloud auth
+Use the auth configuration tool to set:
+- `enable_confirmations = false` (auto-confirm signups — no verification email, no "Confirm your email" screen)
 
-**Home feed (`PetParentHome.tsx`)**
-- [x] StoryRail, DailyPromptBanner
-- [x] For you / Following tabs
-- [ ] **Trending tab missing** (PostFeed already supports `scope="trending"`)
+Result: `supabase.auth.signUp()` returns a **session immediately**, so the user is logged in on the first click.
 
-**Post card (`PostFeed.tsx`)**
-- [x] AuthorIdentity, role ring, inline FollowButton
-- [x] Double-tap → PawBurst + haptic
-- [x] ReactionBar (5 emojis, long-press popover)
-- [x] CommentSheet, SaveButton
-- [ ] **Share button missing** (no Web Share API)
-- [ ] **Own-post ⋯ menu missing** (no Edit / Delete / Pin)
+### 2. Simplify `src/pages/Auth.tsx` signup flow
+Current code already has a fallback that signs the user in if no session is returned. With auto-confirm ON, `signUp()` will always return a session, so:
+- Keep the existing `signUp` call but remove the now-unnecessary `signInWithPassword` fallback branch (cleaner, one less network call).
+- Keep the toast "Welcome to Petos" and redirect to `/post-auth`.
+- No UI copy changes needed — there was never a "check your email" screen, so nothing to remove there.
 
-**Composer (`Composer.tsx`)**
-- [x] Photo, pet chips, AI caption, Collab, RescueJourney, moderation
-- [ ] **Format pills (Post / Story / Daily) missing** — single-format dialog
-- [ ] **Multi-image carousel missing**
-- [ ] **Live `#` and `@` autocomplete missing**
-- [ ] **Visibility chip missing** (Public / Followers / Private)
+### 3. Keep everything else as-is
+- **Forgot password / reset password flow** — stays. This still uses email (sends a reset link). The user said *signup* verification should be removed; password reset is a separate feature and is useful to keep. (If the user wants this removed too, we can do it in a follow-up.)
+- **Google sign-in** — stays, unchanged.
+- **Signup rate limiter** edge function — stays (protects against bot signups).
+- **Profiles table + trigger** — stays. Profile row is still auto-created on signup, exactly as today.
+- **All user data tables** (pets, posts, health records, etc.) — no schema changes. Data is already keyed by `auth.uid()` and will continue to be.
 
-**Comments (`CommentSheet.tsx`)**
-- [x] Realtime, comment-as-pet, role rings, delete own
-- [ ] **One-level threaded replies missing**
-- [ ] **Long-press emoji reactions on comments missing**
-- [ ] **`@` / `#` linkification in comment body missing**
-- [ ] **"Author" chip on author replies missing**
-
-**Notifications (social rows only)**
-- [x] Inbox, grouping, filters, mark-read
-- [ ] **Deep-link "flash highlight" on the target post/comment missing**
-- [ ] **Bell entrance pulse on new realtime arrival missing**
-- [ ] Aggregate grouping ("Aanya, Rohit and 3 others reacted") not implemented
-
-**Messages (`Messages.tsx`, `MessageThread.tsx`)**
-- [x] Inbox, presence dots, realtime
-- [ ] **Typing indicator missing**
-- [ ] **Per-message reactions (long-press) missing**
-- [ ] **Swipe actions on inbox rows missing**
-- [ ] **Pet-card share message type missing**
-- [ ] **Vet/org pinned "Book" banner missing**
-
-**Delight**
-- [ ] 7-day streak confetti
-- [~] ContextualFAB doesn't relabel per route
+### 4. Quietly fix the runtime error blocking onboarding
+The current `/onboarding` page is throwing `verifiedOrgs?.has is not a function` (visible in runtime errors). This is unrelated to auth but blocks the signup→onboarding flow we're fixing, so it gets patched in the same pass: ensure `useVerifiedOrgs` returns a `Set` (or guard the `.has()` call) so onboarding renders after signup.
 
 ---
 
-### Phased plan (Social tab only)
+## Technical details
 
-**Phase 1 — Visible feed wins** (PostFeed + PetParentHome + Notifications)
-1. Add **Share button** to post card (Web Share API + clipboard fallback).
-2. Add **Trending tab** as third tab in `PetParentHome.tsx`.
-3. Add **own-post ⋯ menu**: Edit caption, Delete, Pin.
-4. Add **deep-link highlight pulse** — Notifications appends `?focus=<id>`; PostFeed reads it and rings the matching card for 1.5s.
-5. Add **bell entrance pulse** on realtime new-notification.
+**Auth config change (via configure_auth tool):**
+```
+enable_signups: true
+enable_confirmations: false   ← the key change
+```
 
-**Phase 2 — Composer upgrade** (Composer.tsx only)
-6. Convert to **3-tab sheet** (Post / Story / Daily) reusing existing StoryComposer & DailyMomentComposer.
-7. **Multi-image upload** with drag-to-reorder preview strip.
-8. **Live `@` mention + `#` hashtag autocomplete** (debounced search on profiles + hashtags).
-9. **Visibility selector** (Public / Followers / Private) with `posts.visibility` enum + RLS.
+**`src/pages/Auth.tsx` — signup branch becomes:**
+```ts
+const { error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: { data: { full_name: fullName } },
+});
+if (error) throw error;
+toast.success("Welcome to Petos");
+nav(postAuthTarget, { replace: true });
+```
 
-**Phase 3 — Conversation depth** (CommentSheet + small DB)
-10. **One-level threaded replies** (`post_comments.parent_id` + Reply button).
-11. **Comment reactions** (`comment_reactions` table + long-press popover reusing ReactionBar).
-12. **Linkify `@` / `#`** in comment bodies.
-13. **Author chip** on the post-author's own replies.
-
-**Phase 4 — Messaging** (Messages.tsx + MessageThread.tsx)
-14. **Typing indicators** via Realtime broadcast.
-15. **Message reactions** (`message_reactions` table, long-press popover).
-16. **Swipe actions** on inbox rows (mute/delete, mark-unread).
-17. **Pet-card share** message type + **vet/org pinned banner** with Book CTA.
-
-**Phase 5 — Delight**
-18. 7-day streak confetti in `StreakChip.tsx`.
-19. Aggregate notification grouping (SQL view).
-20. ContextualFAB labels per route.
+**`src/hooks/useVerifiedOrgs.ts`** — ensure the hook always returns a `Set<string>` (default `new Set()` while loading / on error) so `verifiedOrgs?.has(...)` never blows up.
 
 ---
 
-### Recommendation
-Ship **Phase 1 + Phase 2** next — biggest visible promises from the journey doc (share, trending, multi-image, autocomplete, visibility). All edits stay within the social file list above; Health/Mate/Discovery/Profile remain untouched.
+## What the user will experience after this change
 
-Tell me which phases to execute — `Phase 1`, `1 and 2`, or `all` — and I'll proceed.
+1. Open app → tap **Create account**
+2. Enter name + email + password → tap **Create account**
+3. **Instantly logged in** → goes straight to onboarding/home
+4. No email sent, no verification link, no "check your inbox" screen
+5. All pets, posts, and profile data save against their account exactly as before
+
+---
+
+## Re-enabling later (for your reference)
+
+When you want verification back, it's a one-line change: set `enable_confirmations = true`. No code or data changes needed at that time.
