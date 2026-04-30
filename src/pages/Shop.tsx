@@ -15,6 +15,8 @@ import { usePets } from "@/hooks/useProfile";
 import { SubjectRating } from "@/components/SubjectRating";
 import { ReorderReminderButton } from "@/components/shop/ReorderReminderButton";
 import type { Database } from "@/integrations/supabase/types";
+import { useNearbyQuery } from "@/hooks/useNearbyQuery";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
 
 type ProductCategory = Database["public"]["Enums"]["product_category"];
 
@@ -27,8 +29,9 @@ const cats: { key: ProductCategory | "all"; label: string }[] = [
   { key: "grooming", label: "Grooming" },
 ];
 
-type SortKey = "newest" | "price_asc" | "price_desc" | "title_asc";
+type SortKey = "nearest" | "newest" | "price_asc" | "price_desc" | "title_asc";
 const sortOptions: { key: SortKey; label: string }[] = [
+  { key: "nearest", label: "Nearest first" },
   { key: "newest", label: "Newest" },
   { key: "price_asc", label: "Price: Low → High" },
   { key: "price_desc", label: "Price: High → Low" },
@@ -93,8 +96,10 @@ const Shop = () => {
     return p?.name as string | undefined;
   }, [myPets]);
 
-  const { data: products, isLoading } = useQuery({
+  // Standard table query (used for sort != nearest)
+  const { data: tableProducts, isLoading: tableLoading } = useQuery({
     queryKey: ["shop_products", cat, debouncedQuery, sort, minPrice, maxPrice, inStock],
+    enabled: sort !== "nearest",
     queryFn: async () => {
       let q = supabase
         .from("shop_products")
@@ -127,6 +132,30 @@ const Shop = () => {
       return data;
     },
   });
+
+  // Nearest-first via composite_score RPC
+  const { data: nearbyProducts, isLoading: nearbyLoading } = useNearbyQuery<any>(
+    "discover_shop_products",
+    {
+      _category: cat === "all" ? null : cat,
+      _query: debouncedQuery.length >= 2 ? debouncedQuery : null,
+      _radius_km: 200,
+      _limit: 120,
+    },
+    { enabled: sort === "nearest" },
+  );
+
+  const products = useMemo(() => {
+    if (sort !== "nearest") return tableProducts as any[] | undefined;
+    let list = (nearbyProducts ?? []) as any[];
+    if (inStock) list = list.filter((p) => (p.stock ?? 0) > 0);
+    const minN = Number(minPrice);
+    if (Number.isFinite(minN) && minN > 0) list = list.filter((p) => (p.price_inr ?? 0) >= minN);
+    const maxN = Number(maxPrice);
+    if (Number.isFinite(maxN) && maxN > 0) list = list.filter((p) => (p.price_inr ?? 0) <= maxN);
+    return list;
+  }, [sort, tableProducts, nearbyProducts, inStock, minPrice, maxPrice]);
+  const isLoading = sort === "nearest" ? nearbyLoading : tableLoading;
 
   const isUnsafe = (p: any) => {
     if (!hideAllergens || allergyTerms.length === 0) return false;
@@ -396,6 +425,9 @@ const Shop = () => {
             <div className="p-3 flex-1 flex flex-col">
               <div className="text-sm font-medium line-clamp-2 leading-tight">{p.title}</div>
               <div className="text-xs text-muted-foreground capitalize mt-0.5">{p.category}</div>
+              {p.distance_km != null && (
+                <DistanceChip distanceKm={Number(p.distance_km)} className="mt-0.5" />
+              )}
               <div className="mt-1"><SubjectRating type="product" id={p.id} size="sm" /></div>
               <div className="mt-auto pt-2 flex items-center justify-between">
                 <div className="font-display text-base">₹{p.price_inr}</div>

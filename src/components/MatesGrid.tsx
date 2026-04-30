@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck, MapPin, Plus, Send } from "lucide-react";
+import { Heart, ShieldCheck, MapPin, Plus, Send, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
@@ -13,13 +13,15 @@ import { GridSkeleton } from "@/components/skeletons/FeedSkeleton";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
+import { useNearbyQuery } from "@/hooks/useNearbyQuery";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
 
-type Filters = { species?: string; intent?: string; city?: string };
+type Filters = { species?: string; intent?: string; city?: string; nearest?: boolean };
 
 export const MatesGrid = () => {
   const nav = useNavigate();
   const { user } = useAuth();
-  const [filters, setFilters] = useState<Filters>({});
+  const [filters, setFilters] = useState<Filters>({ nearest: true });
   const { data: verifiedOrgs } = useVerifiedOrgs();
   const { data: publicProfiles } = usePublicProfiles();
   const profileById = useMemo(
@@ -27,8 +29,10 @@ export const MatesGrid = () => {
     [publicProfiles],
   );
 
-  const { data: listings, isLoading } = useQuery({
+  // Default (newest-first) query
+  const { data: tableListings, isLoading: tableLoading } = useQuery({
     queryKey: ["mating-listings", filters],
+    enabled: !filters.nearest,
     queryFn: async () => {
       let q = supabase
         .from("mating_listings")
@@ -45,6 +49,27 @@ export const MatesGrid = () => {
       return (data ?? []).filter((l: any) => !filters.species || l.pets?.species === filters.species);
     },
   });
+
+  // Nearest-first via composite_score RPC
+  const { data: nearbyRaw, isLoading: nearbyLoading } = useNearbyQuery<any>(
+    "discover_mating_listings",
+    { _species: filters.species ?? null, _city: filters.city ?? null, _radius_km: 100, _limit: 50 },
+    { enabled: !!filters.nearest },
+  );
+  const nearbyListings = useMemo(() => (nearbyRaw ?? []).map((r: any) => ({
+    id: r.id,
+    intent: r.intent,
+    fee_inr: r.fee_inr,
+    city: r.city,
+    description: r.description,
+    owner_id: r.owner_id,
+    pet_id: r.pet_id,
+    pets: { id: r.pet_id, name: r.pet_name, breed: r.pet_breed, avatar_url: r.pet_avatar, vaccination_verified: r.vaccination_verified },
+    _distance_km: r.distance_km,
+  })), [nearbyRaw]);
+
+  const listings = filters.nearest ? nearbyListings : tableListings;
+  const isLoading = filters.nearest ? nearbyLoading : tableLoading;
 
   const sendRequest = async (e: React.MouseEvent, l: any) => {
     e.stopPropagation();
@@ -91,6 +116,11 @@ export const MatesGrid = () => {
         <FilterChip label="Cats" active={filters.species === "cat"} onClick={() => setFilters({ ...filters, species: filters.species === "cat" ? undefined : "cat" })} />
         <FilterChip label="Stud" active={filters.intent === "stud"} onClick={() => setFilters({ ...filters, intent: filters.intent === "stud" ? undefined : "stud" })} />
         <FilterChip label="Dam" active={filters.intent === "dam"} onClick={() => setFilters({ ...filters, intent: filters.intent === "dam" ? undefined : "dam" })} />
+        <FilterChip
+          label={filters.nearest ? "📍 Nearest" : "Nearest first"}
+          active={!!filters.nearest}
+          onClick={() => setFilters({ ...filters, nearest: !filters.nearest })}
+        />
       </div>
 
       <Button onClick={() => nav("/mates/new")} variant="outline" className="w-full rounded-2xl h-12 gap-2 border-dashed border-hairline">
@@ -147,6 +177,9 @@ export const MatesGrid = () => {
                   {l.city ? <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{l.city}</span> : <span />}
                   {l.fee_inr ? <span className="font-medium text-primary">₹{l.fee_inr.toLocaleString("en-IN")}</span> : <span className="text-muted-foreground">Free</span>}
                 </div>
+                {l._distance_km != null && (
+                  <DistanceChip distanceKm={Number(l._distance_km)} className="mt-1" />
+                )}
               </button>
               <Button
                 size="sm"
