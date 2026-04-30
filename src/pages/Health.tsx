@@ -58,15 +58,26 @@ const Health = () => {
       </header>
 
       {alertUnread.length > 0 && (
-        <button
-          onClick={() => nav("/health/alerts")}
-          className="w-full mb-3 flex items-center gap-2 rounded-full bg-primary-soft text-primary px-4 py-2 text-sm font-medium border border-primary/20 hover:bg-primary/15 transition-colors"
-        >
-          <Bell className="h-4 w-4" />
-          <span>{alertUnread.length} new alert{alertUnread.length > 1 ? "s" : ""}</span>
-          <span className="ml-auto text-xs opacity-70">Open</span>
-        </button>
-      )}
+        (() => {
+          const firstPetId = alertUnread[0]?.pet_id;
+          const allSamePet =
+            firstPetId && alertUnread.every((a) => a.pet_id === firstPetId);
+          const petName = allSamePet ? pets?.find((p) => p.id === firstPetId)?.name : null;
+          return (
+            <button
+              onClick={() => nav("/health/alerts")}
+              className="w-full mb-3 flex items-center gap-2 rounded-full bg-primary-soft text-primary px-4 py-2 text-sm font-medium border border-primary/20 hover:bg-primary/15 transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              <span>
+                {alertUnread.length} new alert{alertUnread.length > 1 ? "s" : ""}
+                {petName ? ` · ${petName}` : ""}
+              </span>
+              <span className="ml-auto text-xs opacity-70">Open</span>
+            </button>
+          );
+        })()
+      }
 
       {pets && pets.length > 0 && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 mb-5">
@@ -104,7 +115,12 @@ const Health = () => {
       {!active ? (
         <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
           <div className="font-display text-lg">Add a pet to begin</div>
-          <p className="text-sm text-muted-foreground mt-1">Vault, AI, and consults appear here.</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Your vault, AI assistant, vet share and consults all appear here once your first pet is added.
+          </p>
+          <Button onClick={() => nav("/onboarding/add-pet")} size="lg" className="rounded-xl gap-2">
+            <Plus className="h-4 w-4" /> Add your first pet
+          </Button>
         </Card>
       ) : (
         <>
