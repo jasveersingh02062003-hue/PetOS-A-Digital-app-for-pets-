@@ -131,7 +131,7 @@ const OrgOnboarding = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org-self"] });
       toast.success("Submitted. Our team will review within 24-48h.");
-      nav("/onboarding/done");
+      nav("/onboarding?stage=done", { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not submit"),
   });
