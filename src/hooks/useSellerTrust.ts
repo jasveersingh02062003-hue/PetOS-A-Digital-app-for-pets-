@@ -15,6 +15,7 @@ export type SellerTrust = {
 export function useSellerTrust(userId?: string | null) {
   const [data, setData] = useState<SellerTrust | null>(null);
   const [loading, setLoading] = useState(false);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
@@ -28,6 +29,20 @@ export function useSellerTrust(userId?: string | null) {
       setData((data as SellerTrust) ?? null);
     })();
     return () => { active = false; };
+  }, [userId, version]);
+
+  // Live update: refetch when a new review for this seller is inserted.
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`trust:${userId}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "INSERT", schema: "public", table: "reviews", filter: `subject_id=eq.${userId}` },
+        () => setVersion((v) => v + 1),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [userId]);
 
   return { trust: data, loading };

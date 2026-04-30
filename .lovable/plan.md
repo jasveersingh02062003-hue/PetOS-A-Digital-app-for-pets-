@@ -45,7 +45,18 @@ Make the "1 action → invisible account → resume" loop work everywhere, not j
 
 ---
 
-## Phase H — Push, Email & PWA Activation
+## Phase H — Push, Email & PWA Activation  ✅ shipped (pending user action for VAPID + email domain)
+
+Done in this pass:
+- Branded PWA icons at `/icons/icon-192.png`, `/icons/icon-512.png` (any+maskable), `/icons/apple-touch-icon.png`; `manifest.webmanifest` and `index.html` updated.
+- DB trigger `trg_notifications_send_push` on `public.notifications` → POSTs every new in-app notification to the existing `send-push` edge function via `pg_net`. All 19 notification triggers now deliver real Web Push automatically (graceful no-op if VAPID is unset).
+- Realtime enabled on `public.reviews`; `useSellerTrust` resubscribes per seller and refetches the trust RPC on each new review → live trust counter.
+
+Still requires user action:
+- Add `VITE_PUBLIC_VAPID_KEY` (frontend env) + `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (edge secrets) to actually deliver push payloads.
+- Configure email sender domain → then scaffold transactional + auth email templates (`new-message`, `booking-confirmed`, `walk-summary`, `donation-receipt-80g`, `adoption-application-received`, `sighting-near-you`).
+
+Original spec retained below for reference:
 
 **Backend**
 - Generate VAPID keys, store as secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`); set `VITE_PUBLIC_VAPID_KEY`.
