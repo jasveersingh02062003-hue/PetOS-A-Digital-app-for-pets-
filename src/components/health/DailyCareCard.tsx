@@ -30,7 +30,10 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
       const today = new Date();
       const horizon = new Date(today.getTime() + 14 * 86400_000).toISOString().slice(0, 10);
 
-      const [vax, paras, meds, vital] = await Promise.all([
+      const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+      const endOfDay = new Date(); endOfDay.setHours(23,59,59,999);
+
+      const [vax, paras, doses, meds, vital] = await Promise.all([
         supabase.from("vaccinations")
           .select("id, vaccine_name, next_due_on")
           .eq("pet_id", petId)
@@ -45,8 +48,18 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
           .lte("next_due_on", horizon)
           .order("next_due_on", { ascending: true })
           .limit(5),
+        (supabase as any)
+          .from("medication_doses")
+          .select("id, scheduled_at, taken_at, skipped, medication_logs(name, dose)")
+          .eq("pet_id", petId)
+          .gte("scheduled_at", startOfDay.toISOString())
+          .lte("scheduled_at", endOfDay.toISOString())
+          .is("taken_at", null)
+          .eq("skipped", false)
+          .order("scheduled_at", { ascending: true })
+          .limit(8),
         supabase.from("medication_logs")
-          .select("id, name, dose, frequency, active")
+          .select("id, name, dose, frequency, active, schedule_kind")
           .eq("pet_id", petId)
           .eq("active", true)
           .order("start_on", { ascending: false })
@@ -86,13 +99,31 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         });
       });
 
+      // Prefer today's open doses; fall back to active meds without a schedule.
+      const dosed = new Set<string>();
+      (doses as any)?.data?.forEach((d: any) => {
+        const time = format(new Date(d.scheduled_at), "h:mma").toLowerCase();
+        const name = d.medication_logs?.name ?? "Medication";
+        const dose = d.medication_logs?.dose ? ` · ${d.medication_logs.dose}` : "";
+        const isPast = new Date(d.scheduled_at).getTime() < Date.now();
+        items.push({
+          key: `dose-${d.id}`,
+          icon: Pill,
+          title: `${name}${dose}`,
+          due: `${time}${isPast ? " · missed" : ""}`,
+          tone: isPast ? "overdue" : "due",
+          cta: { label: "Log", onClick: () => nav(`/health`) },
+        });
+        dosed.add(d.id);
+      });
       meds.data?.forEach((m: any) => {
+        if (m.schedule_kind && m.schedule_kind !== "as_needed") return; // covered by doses
         items.push({
           key: `med-${m.id}`,
           icon: Pill,
           title: m.name,
           due: [m.dose, m.frequency].filter(Boolean).join(" · ") || "active",
-          tone: "due",
+          tone: "soon",
           cta: { label: "View", onClick: () => nav(`/health`) },
         });
       });
