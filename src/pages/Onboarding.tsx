@@ -67,6 +67,10 @@ const Onboarding = () => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Step 1 — Role choice (pet_parent default; other roles redirect out)
+  const [role, setRole] = useState<RoleChoice>("pet_parent");
+  const [roleSaving, setRoleSaving] = useState(false);
+
   // Step 1 — About you
   const [fullName, setFullName] = useState("");
   const [city, setCity] = useState("");
