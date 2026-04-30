@@ -17,6 +17,8 @@ import { FirstRunGate } from "./components/FirstRunGate";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { RouteTracker } from "./components/RouteTracker";
 import { RealtimeBridge } from "./components/RealtimeBridge";
+import { NetworkStatus } from "./components/NetworkStatus";
+import { ConsentBanner } from "./components/ConsentBanner";
 
 // Eager — only the entry route the user sees first.
 import Home from "./pages/Home";
@@ -158,6 +160,8 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <RouteTracker />
+        <NetworkStatus />
+        <ConsentBanner />
         <Splash>
         <AuthProvider>
           <PresenceProvider>
