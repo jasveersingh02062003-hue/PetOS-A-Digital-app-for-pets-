@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePets, useProfile } from "@/hooks/useProfile";
@@ -36,6 +36,8 @@ import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
 import { VaxVerifyDialog } from "@/components/health/VaxVerifyDialog";
 import { MultiPetSummary } from "@/components/health/MultiPetSummary";
 import { Scale } from "lucide-react";
+import { useHealthAlerts } from "@/hooks/useHealthAlerts";
+import { Bell } from "lucide-react";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -44,6 +46,9 @@ const Health = () => {
   const nav = useNavigate();
   const [quickWeightOpen, setQuickWeightOpen] = useState(false);
   const [vaxVerifyOpen, setVaxVerifyOpen] = useState(false);
+  const { unread: alertUnread } = useHealthAlerts();
+  const [tab, setTab] = useState<string>("vitals");
+  const [symptomOpenSignal, setSymptomOpenSignal] = useState(0);
 
   return (
     <div className="container-app pad-top-safe">
@@ -51,6 +56,17 @@ const Health = () => {
         <h1 className="font-display text-3xl">Health vault</h1>
         <Heart className="h-5 w-5 text-primary" strokeWidth={1.5} />
       </header>
+
+      {alertUnread.length > 0 && (
+        <button
+          onClick={() => nav("/health/alerts")}
+          className="w-full mb-3 flex items-center gap-2 rounded-full bg-primary-soft text-primary px-4 py-2 text-sm font-medium border border-primary/20 hover:bg-primary/15 transition-colors"
+        >
+          <Bell className="h-4 w-4" />
+          <span>{alertUnread.length} new alert{alertUnread.length > 1 ? "s" : ""}</span>
+          <span className="ml-auto text-xs opacity-70">Open</span>
+        </button>
+      )}
 
       {pets && pets.length > 0 && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 mb-5">
@@ -157,7 +173,7 @@ const Health = () => {
             <Button onClick={() => setQuickWeightOpen(true)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
               <Scale className="h-4 w-4" /> <span className="text-sm">Quick weight</span>
             </Button>
-            <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+            <Button onClick={() => { setTab("symptoms"); setSymptomOpenSignal((n) => n + 1); }} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
               <Activity className="h-4 w-4" /> <span className="text-sm">Log symptom</span>
             </Button>
           </div>
@@ -181,7 +197,7 @@ const Health = () => {
           <QuickWeightSheet open={quickWeightOpen} onOpenChange={setQuickWeightOpen} petId={active.id} />
           <VaxVerifyDialog open={vaxVerifyOpen} onOpenChange={setVaxVerifyOpen} petId={active.id} />
 
-          <Tabs defaultValue="vitals" className="w-full">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
             <div className="relative -mx-5">
               <div
                 className="overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
@@ -209,7 +225,7 @@ const Health = () => {
               <MedicationsTab petId={active.id} />
             </TabsContent>
             <TabsContent value="parasite" className="mt-4"><ParasiteTab petId={active.id} /></TabsContent>
-            <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
+            <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} openSignal={symptomOpenSignal} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
             <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
           </Tabs>
@@ -411,8 +427,11 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
 };
 
 /* ============== SYMPTOMS ============== */
-const SymptomsTab = ({ petId }: { petId: string }) => {
+const SymptomsTab = ({ petId, openSignal = 0 }: { petId: string; openSignal?: number }) => {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
   const { data: profile } = useProfile();
   const emergencyVet = (profile as any)?.emergency_vet ?? null;
   const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;

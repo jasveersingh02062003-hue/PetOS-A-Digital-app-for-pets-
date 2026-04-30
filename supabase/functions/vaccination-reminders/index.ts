@@ -54,6 +54,17 @@ serve(async (req) => {
         _link: "/health",
       });
 
+      await supabase.rpc("enqueue_health_alert", {
+        _owner_id: pet.owner_id,
+        _pet_id: pet.id,
+        _kind: "vaccine_due",
+        _severity: "action",
+        _title: `${pet.name}'s ${row.vaccine_name} is due in 5 days`,
+        _body: "Tap to plan the visit or share the vault with your vet.",
+        _link: "/health",
+        _dedupe_key: `vax-${row.id}`,
+      });
+
       await supabase.from("reminder_log").insert({
         vaccination_id: row.id,
         kind: "vaccine_5d",
