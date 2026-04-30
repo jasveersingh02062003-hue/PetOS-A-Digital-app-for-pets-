@@ -1,81 +1,100 @@
+## Goal
 
-# Final rewire pass — health reminders + deeper role trees
+Make `/onboarding` a unified, Instagram-style flow where every role passes through one **universal identity step** (handle, name, city, language, units), then a **role picker**, then a **role-specific mini-flow**, then a **role-aware Done screen** that lands them on the correct home. The pet-parent wizard stops asking pet-health questions (weight, allergies, conditions, vaccines) — those move to the Health Vault setup.
 
-The previous pass landed schema + pet-parent flow + multi-pet loop. This pass closes the loop on the remaining items from the approved scope.
+---
 
-## 1. Deferred-health reminder cards
+## What's already in place (keep)
 
-Goal: any pet with `health_setup_complete = false` should nudge the parent to finish setup, in two places.
+- DB: `profiles.handle` (unique, case-insensitive index), `language`, `units`, `looking_for`, `account_type`, `onboarded`, `parent_age`, `first_time_parent` — all present.
+- `/onboarding` is already the single URL with `?stage=` state machine.
+- Role-specific pages exist: `BuyerPrefs`, `RescuerProfile`, `BreederProfile`, `OrgOnboarding`, `provider/Picker`, `AddFirstPet`, `AddAnotherPet`, `Done`.
+- Role-aware `Home.tsx` already routes to `PetParentHome | BuyerHome | BreederHome | KennelHome | ShelterHome | GaushalaHome | ZooHome`.
+- `HealthSetupReminder` already nudges for incomplete pets on Home + Health.
 
-- **New shared component** `src/components/health/HealthSetupReminder.tsx`
-  - Queries pets where `health_setup_complete = false`
-  - Renders a dismissible card: "Finish health setup for {name}" → links to `/health` with that pet preselected
-  - Variants: `compact` (Home) and `full` (Health tab)
-  - Dismissal stored in `localStorage` per-pet for the Home variant; the Health-tab variant is non-dismissible
+---
 
-- **`src/pages/home/PetParentHome.tsx`** — mount `<HealthSetupReminder variant="compact" />` near the top welcome block.
+## What changes
 
-- **`src/pages/Health.tsx`** — mount `<HealthSetupReminder variant="full" />` above the existing alerts banner. Clicking "Set up now" opens the existing add-pet/edit flow with `health_setup_complete` set to true on save.
+### 1. New universal stage: `identity` (Chapter 0, everyone)
 
-## 2. Buyer flow — deepen the question tree
+Add a new first stage before role selection. Single screen with:
+- **Full name** (text)
+- **@handle** — auto-suggested from name/email, debounced uniqueness check against `profiles` (case-insensitive), green check when free, inline error if taken. Slug rules: 3–24 chars, `[a-z0-9_.]`, must start with a letter.
+- **City** (text + "Detect" button — reuses existing `detectCity` Nominatim flow)
+- **Language** (en / hi / etc. — Select)
+- **Units** (kg/lb, °C/°F — toggle pair)
 
-`src/pages/onboarding/BuyerPrefs.tsx` currently asks only species/breed/city/price. Add:
+On Continue: upsert `profiles { full_name, handle, city, lat, lng, language, units }` then go to `stage=role`.
 
-- **Living situation** chips: Apartment / House w/ yard / Farm
-- **Experience** chips: First-time / Some / Experienced
-- **Time available daily** chips: < 1h / 1–3h / 3+ h
-- **Purpose** chips: Companion / Guard / Show / Therapy
-- **Budget range slider** (replace single max-price input)
-- All optional, persist into `profiles.looking_for` JSON; keep "Skip" path.
+If the user already has a `handle` saved, this stage auto-skips to `role` (so refreshes / returners don't repeat it).
 
-## 3. Rescuer / Shelter flow
+### 2. Strip pet-health from the parent wizard
 
-New `src/pages/onboarding/RescuerProfile.tsx` (routed `/onboarding/rescuer`):
-- Capacity (pets you can house), service area (city + radius km), species you take, urgent-foster toggle
-- Persist to `org_profiles` (rescuer/shelter use the same table) with `org_type` set automatically
-- Then route to `/onboarding/org` for document verification (existing page)
+In `Onboarding.tsx` parent wizard remove these from the form & submit payload:
+- weight, neutered, activity, diet, allergies, conditions, temperament, social level, discoverable, vaccine file upload.
 
-## 4. Breeder / Kennel flow
+Keep only: pet avatar, name, species, breed, DOB/gotcha, gender. Insert pet with `health_setup_complete: false`. The existing `HealthSetupReminder` on Home + Health Vault will handle the rest (already wired).
 
-New `src/pages/onboarding/BreederProfile.tsx` (routed `/onboarding/breeder`):
-- Breeds specialised in (multi-select), years of experience, KCI member toggle, # of breeding pairs
-- Persist to `org_profiles`; then route to `/onboarding/org`
+After insert, go to `stage=add-another` (existing screen) or `stage=done`.
 
-## 5. Org / Sanctuary / Zoo
+### 3. Role picker becomes simpler
 
-`OrgOnboarding.tsx` already covers the verification step. Add a small intro card explaining what documents are needed and expected review time so users don't drop off.
+Remove the "Welcome cards" intro step (steps 0–1 of the parent wizard). After identity, show role grid directly. Saving role triggers `stage=<role-mini-flow>`.
 
-## 6. Onboarding router glue
+### 4. Role mini-flows — confirm wiring
 
-Update `src/pages/Onboarding.tsx` switch on `account_type`:
-```text
-pet_parent  → existing parent-age + multi-pet loop
-buyer       → /onboarding/buyer-prefs
-breeder/kennel → /onboarding/breeder → /onboarding/org → /onboarding/done
-shelter/rescuer → /onboarding/rescuer → /onboarding/org → /onboarding/done
-sanctuary/zoo  → /onboarding/org → /onboarding/done
-provider    → /provider (skip onboarding wizard, already saved)
-```
+| Role | Stage | Screen | Lands on |
+|---|---|---|---|
+| pet_parent | `parent` (pet-add only) → `add-another` → `done` | inline | `/` (PetParentHome) |
+| buyer | `buyer` | `BuyerPrefs` | `/` (BuyerHome) |
+| provider | `provider` | `provider/Picker` → category wizard | `/provider` |
+| rescuer | `rescuer` | `RescuerProfile` | `/` (ShelterHome rescuer) |
+| breeder / kennel | `breeder` | `BreederProfile` → `org` (verification) | `/` (BreederHome / KennelHome) |
+| shelter | `rescuer` (capacity) → `org` (verification) | sequence | `/` (ShelterHome) |
+| sanctuary / zoo | `org` | `OrgOnboarding` | `/` (Gaushala/Zoo home) |
 
-## 7. Routes
+Each role mini-flow ends by dispatching `window.dispatchEvent(new CustomEvent("onboarding:advance", { detail: { next: "done" } }))` (mechanism already exists in controller). Audit each existing screen to ensure they fire it instead of `nav("/onboarding?stage=done")` so the controller stays the source of truth. (Most already do per recent rewire.)
 
-In `src/App.tsx`, register:
-- `/onboarding/rescuer` → `RescuerProfile`
-- `/onboarding/breeder` → `BreederProfile`
+### 5. `Done.tsx` — already role-aware, just verify CTAs
 
-## 8. Done page polish
+- pet_parent → `/` "Open your pet's home"
+- buyer → `/mates?tab=adopt` "Browse adoptions"
+- provider → `/provider` "Open dashboard"
+- breeder/kennel/shelter/sanctuary/zoo → `/` (with pending-verification badge already shown by org pages)
+- rescuer → `/` "Open dashboard"
 
-`src/pages/onboarding/Done.tsx`: role-aware CTA — pet parents → "Open my pet's home", buyers → "Browse adoptions", orgs → "Go to my dashboard".
+On click: set `profiles.onboarded = true`, then navigate.
 
-## Technical notes
+### 6. PostAuth gate
 
-- No new schema changes needed; all new role data fits in existing `org_profiles` columns or `profiles.looking_for` JSON.
-- Reminder component uses the same `usePets()` hook already in `Health.tsx`, so no extra queries.
-- All new pages follow the existing `WizardSteps` + `container-app` layout pattern for visual consistency.
+`PostAuth.tsx` currently treats missing `full_name` or `onboarded=false` as incomplete → routes to `/onboarding`. Add `handle` to the completeness check so anyone without a handle is forced through the new identity step.
 
-## Out of scope for this pass
+---
 
-- Admin moderation UI changes (already aliased to `/admin/org-review`)
-- Pet-health onboarding screens themselves (existing Health vault tab already handles it)
+## Files
 
-Approve and I'll implement all of the above in the next message.
+**Edit**
+- `src/pages/Onboarding.tsx` — add `identity` stage as new default; remove welcome+role-only intro steps from parent wizard; strip health fields from parent submit; route role-picker → identity → role mini-flow.
+- `src/pages/PostAuth.tsx` — include `handle` in completeness check.
+- `src/pages/onboarding/AddFirstPet.tsx` — strip any health questions still present (weight/allergies/etc.); insert pet with `health_setup_complete: false`.
+- `src/pages/onboarding/AddAnotherPet.tsx` — same, strip health.
+- `src/pages/onboarding/Done.tsx` — set `onboarded=true` on CTA click; verify role-aware copy.
+
+**New**
+- `src/components/onboarding/IdentityStep.tsx` — the Chapter 0 form (name, @handle with live uniqueness check, city + detect, language, units). Encapsulated so the controller stays readable.
+- `src/lib/handle.ts` — `slugifyHandle(input)` + `isHandleAvailable(supabase, handle, currentUserId)` helper using the existing case-insensitive index.
+
+**No DB migration needed** — `handle`, `language`, `units`, all role columns already exist.
+
+---
+
+## Acceptance
+
+1. Brand-new signup → lands on `/onboarding`, sees **identity** step first.
+2. Handle field shows live availability (green check / red error), can't continue if taken or invalid.
+3. After identity → role picker → role mini-flow (no URL change, always `/onboarding`).
+4. Pet parent flow no longer asks weight / vaccines / allergies. Pet is created with `health_setup_complete=false`. Health tab shows the existing setup prompt.
+5. Each role's Done screen lands on the correct home; `onboarded=true` is persisted.
+6. Refreshing mid-flow resumes at the correct stage based on saved profile fields (handle exists → skip identity; account_type exists → skip role picker).
+7. Returning users (handle + onboarded + role-appropriate gate) skip onboarding entirely from `/post-auth`.
