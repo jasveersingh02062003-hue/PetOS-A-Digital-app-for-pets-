@@ -7,6 +7,8 @@ import { jsonLd } from "@/lib/seo";
 import { useGeoCity } from "@/hooks/useGeoCity";
 import { ListingFilters, type ListingFilterValue } from "@/components/marketplace/ListingFilters";
 import { GeoBanner } from "@/components/marketplace/GeoBanner";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BadgeCheck, MapPin, Stethoscope } from "lucide-react";
@@ -27,7 +29,7 @@ const ServiceCategoryCity = () => {
 
   const [filters, setFilters] = useState<ListingFilterValue>({
     city: cityDisplay ?? undefined,
-    sort: "newest",
+    sort: "nearest",
     verifiedOnly: false,
   });
 
@@ -35,8 +37,9 @@ const ServiceCategoryCity = () => {
     setFilters((f) => ({ ...f, city: cityDisplay ?? f.city }));
   }, [cityDisplay]);
 
-  const { data: providers = [], isLoading } = useQuery({
+  const { data: tableProviders = [], isLoading: tableLoading } = useQuery({
     queryKey: ["service-cat", category, filters],
+    enabled: filters.sort !== "nearest",
     queryFn: async () => {
       let q = supabase.from("service_providers").select("*")
         .eq("active", true)
@@ -59,12 +62,23 @@ const ServiceCategoryCity = () => {
       else if (filters.sort === "price_desc") q = q.order("hourly_rate_inr", { ascending: false });
       else if (filters.sort === "soonest_available")
         q = q.order("next_available_at", { ascending: true, nullsFirst: false });
+      else if (filters.sort === "rating")
+        q = q.order("verified", { ascending: false }).order("created_at", { ascending: false });
       else q = q.order("verified", { ascending: false }).order("created_at", { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const { data: nearbyProviders = [], isLoading: nearbyLoading } = useNearbyQuery<any>(
+    "discover_providers",
+    { _category: category ?? null, _city: filters.city ?? null, _radius_km: 50, _limit: 60 },
+    { enabled: filters.sort === "nearest" },
+  );
+
+  const providers = filters.sort === "nearest" ? (nearbyProviders as any[]) : (tableProviders as any[]);
+  const isLoading = filters.sort === "nearest" ? nearbyLoading : tableLoading;
 
   const title = `${meta?.label ?? "Pet services"}${cityDisplay ? ` in ${cityDisplay}` : ""}`;
   useSeo({
@@ -172,6 +186,9 @@ const ServiceCategoryCity = () => {
                   {p.hourly_rate_inr ? (
                     <div className="text-sm font-display text-primary mt-1">₹{p.hourly_rate_inr}/hr</div>
                   ) : null}
+                  {p.distance_km != null && (
+                    <DistanceChip distanceKm={Number(p.distance_km)} className="mt-1" />
+                  )}
                 </div>
               </Card>
             </Link>

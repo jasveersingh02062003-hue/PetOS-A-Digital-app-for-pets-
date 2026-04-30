@@ -7,6 +7,8 @@ import { jsonLd } from "@/lib/seo";
 import { useGeoCity } from "@/hooks/useGeoCity";
 import { ListingFilters, type ListingFilterValue } from "@/components/marketplace/ListingFilters";
 import { GeoBanner } from "@/components/marketplace/GeoBanner";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +33,7 @@ const AdoptCategory = () => {
     species: species ?? undefined,
     breed: breedDisplay,
     city: cityDisplay ?? undefined,
-    sort: "newest",
+    sort: "nearest",
   });
 
   useEffect(() => {
@@ -43,7 +45,8 @@ const AdoptCategory = () => {
     }));
   }, [species, breedDisplay, cityDisplay]);
 
-  const { data: listings = [], isLoading } = useQuery({
+  // Direct table query (used for breed / price / age filters or when no geo)
+  const { data: tableListings = [], isLoading: tableLoading } = useQuery({
     queryKey: ["adopt-cat", filters],
     queryFn: async () => {
       let q = supabase.from("pet_listings").select("*")
@@ -71,7 +74,32 @@ const AdoptCategory = () => {
       if (error) throw error;
       return data ?? [];
     },
+    enabled: filters.sort !== "nearest",
   });
+
+  // Nearby RPC — used when sorting by nearest. Returns pets ranked by composite_score.
+  const { data: nearbyPets = [], isLoading: nearbyLoading } = useNearbyQuery<any>(
+    "discover_pets_for_adoption",
+    { _species: filters.species ?? null, _city: filters.city ?? null, _radius_km: 200, _limit: 60 },
+    { enabled: filters.sort === "nearest" },
+  );
+
+  // Adapt RPC rows to listing shape used below
+  const listings = useMemo(() => {
+    if (filters.sort !== "nearest") return tableListings as any[];
+    return (nearbyPets as any[]).map((p) => ({
+      id: p.id,
+      title: p.name,
+      breed: p.breed,
+      species: p.species,
+      city: p.city,
+      photos: p.avatar_url ? [p.avatar_url] : [],
+      fee_inr: null,
+      listing_type: "adoption",
+      _distance_km: p.distance_km,
+    }));
+  }, [filters.sort, tableListings, nearbyPets]);
+  const isLoading = filters.sort === "nearest" ? nearbyLoading : tableLoading;
 
   const title = [
     breedDisplay ?? cap(species),
@@ -173,6 +201,9 @@ const AdoptCategory = () => {
                     <div className="text-[11px] text-muted-foreground truncate">
                       {[l.breed ?? l.species, l.city].filter(Boolean).join(" · ")}
                     </div>
+                    {l._distance_km != null && (
+                      <DistanceChip distanceKm={Number(l._distance_km)} className="mt-0.5" />
+                    )}
                     <div className="text-sm font-display mt-1">
                       {isFree ? <span className="text-leaf">Free</span> : <span className="text-primary">₹{l.fee_inr.toLocaleString("en-IN")}</span>}
                     </div>
