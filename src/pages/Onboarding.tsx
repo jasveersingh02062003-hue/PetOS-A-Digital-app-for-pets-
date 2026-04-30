@@ -349,6 +349,56 @@ const Onboarding = () => {
   }
 
   if (step === 1) {
+    const roleOpt = ROLE_OPTIONS.find((o) => o.value === role)!;
+    const willRedirect = role !== "pet_parent" && role !== "rescuer";
+    return (
+      <StepShell
+        step={step}
+        total={TOTAL}
+        onBack={back}
+        onNext={handleRoleNext}
+        loading={roleSaving}
+        nextLabel={willRedirect ? "Continue setup" : "Continue"}
+        title="How will you use Petos?"
+        subtitle="This personalises your home screen, dashboards and what we ask next. You can change it later."
+      >
+        <div className="space-y-2">
+          {ROLE_OPTIONS.map((o) => {
+            const Icon = o.Icon;
+            const active = role === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => setRole(o.value)}
+                className={`w-full text-left rounded-2xl border p-4 transition flex items-center gap-3 ${
+                  active ? "border-primary bg-primary/5" : "border-hairline bg-card hover:border-foreground/20"
+                }`}
+              >
+                <div className="h-10 w-10 rounded-xl bg-muted grid place-items-center shrink-0">
+                  <Icon className="h-5 w-5" strokeWidth={1.6} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{o.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
+                </div>
+                {o.needsOrg && (
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">Verify</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {willRedirect && (
+          <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+            We'll take you to the {roleOpt.needsOrg ? "verification" : "setup"} flow tailored for {roleOpt.title.toLowerCase()}.
+          </p>
+        )}
+      </StepShell>
+    );
+  }
+
+  if (step === 2) {
     return (
       <StepShell {...sharedProps} title="Tell us about you" subtitle="So we can greet you and tailor distance, language and units.">
         <div className="space-y-5">
