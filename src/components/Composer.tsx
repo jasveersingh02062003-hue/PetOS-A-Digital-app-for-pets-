@@ -1,13 +1,20 @@
 import { useState, useRef, useEffect, forwardRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-import { Camera, ImagePlus, X, Loader2, Plus, Sparkles } from "lucide-react";
+import {
+  Camera, ImagePlus, X, Loader2, Plus, Sparkles, Globe, Users, Lock,
+  GripVertical, Clock, CalendarDays,
+} from "lucide-react";
 import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
@@ -15,6 +22,7 @@ import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPi
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { getRoleSubmit, getRoleComposerCopy, isOrgRole } from "@/lib/roleTheme";
 import { RescueJourneyPicker } from "@/components/rescue/RescueJourneyPicker";
+import { StoryComposer } from "@/components/social/StoryComposer";
 
 export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
   ({ variant = "icon" }, ref) => {
