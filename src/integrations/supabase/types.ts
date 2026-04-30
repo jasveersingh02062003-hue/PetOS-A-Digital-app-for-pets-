@@ -5137,6 +5137,70 @@ export type Database = {
           },
         ]
       }
+      taxi_bids: {
+        Row: {
+          booking_id: string
+          created_at: string
+          distance_km: number | null
+          driver_provider_id: string
+          driver_user_id: string
+          eta_minutes: number
+          id: string
+          note: string | null
+          price_inr: number
+          status: Database["public"]["Enums"]["taxi_bid_status"]
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          distance_km?: number | null
+          driver_provider_id: string
+          driver_user_id: string
+          eta_minutes: number
+          id?: string
+          note?: string | null
+          price_inr: number
+          status?: Database["public"]["Enums"]["taxi_bid_status"]
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          distance_km?: number | null
+          driver_provider_id?: string
+          driver_user_id?: string
+          eta_minutes?: number
+          id?: string
+          note?: string | null
+          price_inr?: number
+          status?: Database["public"]["Enums"]["taxi_bid_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxi_bids_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxi_bids_driver_provider_id_fkey"
+            columns: ["driver_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxi_bids_driver_provider_id_fkey"
+            columns: ["driver_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transport_bookings: {
         Row: {
           created_at: string
@@ -5145,6 +5209,7 @@ export type Database = {
           driver_lng: number | null
           driver_location_at: string | null
           dropoff_address: string
+          dropoff_arrival_notified_at: string | null
           dropoff_lat: number | null
           dropoff_lng: number | null
           fare_inr: number | null
@@ -5152,6 +5217,7 @@ export type Database = {
           notes: string | null
           pet_id: string | null
           pickup_address: string
+          pickup_arrival_notified_at: string | null
           pickup_lat: number | null
           pickup_lng: number | null
           provider_id: string | null
@@ -5168,6 +5234,7 @@ export type Database = {
           driver_lng?: number | null
           driver_location_at?: string | null
           dropoff_address: string
+          dropoff_arrival_notified_at?: string | null
           dropoff_lat?: number | null
           dropoff_lng?: number | null
           fare_inr?: number | null
@@ -5175,6 +5242,7 @@ export type Database = {
           notes?: string | null
           pet_id?: string | null
           pickup_address: string
+          pickup_arrival_notified_at?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           provider_id?: string | null
@@ -5191,6 +5259,7 @@ export type Database = {
           driver_lng?: number | null
           driver_location_at?: string | null
           dropoff_address?: string
+          dropoff_arrival_notified_at?: string | null
           dropoff_lat?: number | null
           dropoff_lng?: number | null
           fare_inr?: number | null
@@ -5198,6 +5267,7 @@ export type Database = {
           notes?: string | null
           pet_id?: string | null
           pickup_address?: string
+          pickup_arrival_notified_at?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           provider_id?: string | null
@@ -6463,6 +6533,16 @@ export type Database = {
         Returns: undefined
       }
       check_pet_boarding_eligible: { Args: { _pet_id: string }; Returns: Json }
+      composite_score: {
+        Args: {
+          boost: number
+          distance_km: number
+          freshness_days: number
+          rating: number
+          review_count: number
+        }
+        Returns: number
+      }
       create_consult_from_appointment: {
         Args: { _appointment_id: string }
         Returns: string
@@ -6470,6 +6550,115 @@ export type Database = {
       current_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["sub_tier"]
+      }
+      discover_mating_listings: {
+        Args: {
+          _breed?: string
+          _city?: string
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _radius_km?: number
+          _species?: string
+        }
+        Returns: {
+          city: string
+          description: string
+          distance_km: number
+          fee_inr: number
+          id: string
+          intent: string
+          owner_id: string
+          pet_avatar: string
+          pet_breed: string
+          pet_id: string
+          pet_lat: number
+          pet_lng: number
+          pet_name: string
+          rating: number
+          review_count: number
+          score: number
+          vaccination_verified: boolean
+        }[]
+      }
+      discover_pets_for_adoption: {
+        Args: {
+          _city?: string
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _radius_km?: number
+          _species?: string
+        }
+        Returns: {
+          avatar_url: string
+          breed: string
+          city: string
+          distance_km: number
+          id: string
+          is_org: boolean
+          lat: number
+          lng: number
+          name: string
+          owner_id: string
+          score: number
+          species: string
+          vaccination_verified: boolean
+        }[]
+      }
+      discover_providers: {
+        Args: {
+          _category?: string
+          _city?: string
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _radius_km?: number
+        }
+        Returns: {
+          bio: string
+          category: string
+          city: string
+          cover_url: string
+          distance_km: number
+          hourly_rate_inr: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          next_available_at: string
+          owner_id: string
+          rating: number
+          review_count: number
+          score: number
+          verified: boolean
+        }[]
+      }
+      discover_shop_products: {
+        Args: {
+          _category?: string
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _query?: string
+          _radius_km?: number
+        }
+        Returns: {
+          category: string
+          description: string
+          distance_km: number
+          id: string
+          image_url: string
+          price_inr: number
+          rating: number
+          review_count: number
+          score: number
+          seller_id: string
+          seller_lat: number
+          seller_lng: number
+          stock: number
+          title: string
+        }[]
       }
       earth: { Args: never; Returns: number }
       expire_mating_listings: { Args: never; Returns: undefined }
@@ -6592,6 +6781,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
       }
       increment_usage: {
         Args: { _kind: string; _limit: number; _window_days: number }
@@ -6958,6 +7151,7 @@ export type Database = {
       sponsorship_status: "pledged" | "active" | "cancelled"
       sub_status: "active" | "past_due" | "canceled" | "trialing"
       sub_tier: "free" | "plus"
+      taxi_bid_status: "open" | "accepted" | "rejected" | "withdrawn"
       transfer_status: "pending" | "accepted" | "declined" | "cancelled"
       transport_status:
         | "requested"
@@ -7290,6 +7484,7 @@ export const Constants = {
       sponsorship_status: ["pledged", "active", "cancelled"],
       sub_status: ["active", "past_due", "canceled", "trialing"],
       sub_tier: ["free", "plus"],
+      taxi_bid_status: ["open", "accepted", "rejected", "withdrawn"],
       transfer_status: ["pending", "accepted", "declined", "cancelled"],
       transport_status: [
         "requested",

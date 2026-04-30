@@ -1,175 +1,147 @@
-# Petos — Gap-Closure Plan (Phases F → L)
 
-Goal: take every 🟡 PARTIAL and ❌ MISSING item from the reality check and ship them in **7 self-contained phases**. Each phase is fully wired front-end + back-end + RLS + edge functions before moving on. No re-visits.
+# Phase J — Live everywhere + Bidding (Zomato/Swiggy feel)
 
----
-
-## Phase F — Universal OTP & Intent-Replay (the funnel backbone)
-
-Make the "1 action → invisible account → resume" loop work everywhere, not just contact-seller.
-
-**Backend**
-- Migration: extend `intent_replays` enum to cover `book_service`, `donate`, `apply_to_adopt`, `taxi_post`, `subscribe_missing_alert`, `shop_checkout`, `vet_book`, `report_sighting`.
-- RLS: allow anonymous INSERT into `missing_pet_sightings` with rate-limit trigger (mirror `anon_reports`).
-- Edge function `otp-send-sms` (uses Supabase phone OTP via `signInWithOtp({ phone })`) — provider: Twilio connector if user adds, else inform.
-
-**Frontend**
-- `ContactSellerSheet.tsx` → add **email/phone toggle**, call `signInWithOtp` accordingly.
-- New `<OtpGate>` wrapper component re-used by:
-  - `AdoptionApplicationSheet` (apply-to-adopt anon)
-  - `DonationCheckout` (anon donate)
-  - `BookingSheet` (vet/walker/kennel anon book)
-  - `TaxiPostSheet` (anon post taxi need)
-  - `MissingAlertSubscribe` (anon alert opt-in)
-  - `ShopCheckout` (anon buy)
-  - `SightingReportSheet` (anon "I saw this pet")
-- `useIntentReplay`: add handlers for each new intent type; auto-seed first chat message where applicable.
-- Post-verify redirect wired into all 8 flows above.
-
-**Acceptance**: anonymous user can complete every action with email OR phone, lands back on the exact same screen authed, nothing re-typed.
+Two parallel workstreams. Both ship in this phase. Both are real, end-to-end.
 
 ---
 
-## Phase G — Hub Filters, Geo & Sort (discovery polish)
+## Part 1 — Pet Taxi: real driver bidding + live ETA
 
-**Backend**
-- Add `is_open_now(provider_id)` SQL function reading `provider_hours` table (create if missing: `provider_id, weekday, open_time, close_time`).
-- Add `service_area_radius_km` + `service_area_geom` (PostGIS point) to `providers`.
+The current taxi flow only supports one assigned driver. We'll let any nearby driver place a bid; the customer picks the best one.
 
-**Frontend**
-- `<GeoBanner>` on `AdoptCategory` and `ServiceCategoryCity`: "Showing Pune · Change" → city sheet (uses existing `useGeoCity`).
-- `ListingFilters.tsx`: add **Open Now** toggle, **Mating only** toggle (adopt hub), **Soonest available** sort (walker/vet hubs using `next_available_at`).
-- `ProviderWizard`: add **map draw** for service area (Leaflet circle on city center, radius slider).
+### What the user feels
 
-**Acceptance**: every story-doc filter exists and changes results live.
+```text
+Customer posts trip ──► broadcasts to drivers within 15 km
+   │
+   ▼
+Customer screen (live):              Driver screen (live):
+┌─────────────────────────┐          ┌────────────────────┐
+│ 3 drivers bidding…      │          │ New trip near you  │
+│ ─────────────────────── │          │ Pickup: Koregaon   │
+│ Ramesh · ★4.8 · 1.2 km  │          │ Drop: Kothrud      │
+│ ₹280 · ETA 6 min  [✓]   │          │ Distance: 1.2 km   │
+│ Suresh · ★4.5 · 2.1 km  │          │ [Bid ₹___ ETA __m] │
+│ ₹250 · ETA 9 min  [✓]   │          └────────────────────┘
+└─────────────────────────┘
+```
 
----
+When the customer accepts a bid, that driver becomes the assigned `provider_id` on the existing `transport_bookings` row and the existing live-tracking flow takes over. No duplication.
 
-## Phase H — Push, Email & PWA Activation  ✅ shipped (pending user action for VAPID + email domain)
+### Data
 
-Done in this pass:
-- Branded PWA icons at `/icons/icon-192.png`, `/icons/icon-512.png` (any+maskable), `/icons/apple-touch-icon.png`; `manifest.webmanifest` and `index.html` updated.
-- DB trigger `trg_notifications_send_push` on `public.notifications` → POSTs every new in-app notification to the existing `send-push` edge function via `pg_net`. All 19 notification triggers now deliver real Web Push automatically (graceful no-op if VAPID is unset).
-- Realtime enabled on `public.reviews`; `useSellerTrust` resubscribes per seller and refetches the trust RPC on each new review → live trust counter.
+- New `taxi_bids` table: `booking_id, driver_provider_id, driver_user_id, price_inr, eta_minutes, distance_km, status (open/accepted/rejected/withdrawn), created_at`.
+- RLS:
+  - Drivers can `INSERT` for trips in `requested` state, only as themselves.
+  - Drivers can `SELECT/UPDATE` their own bids.
+  - Customer can `SELECT` all bids on their own trip + `UPDATE` to accept (which triggers).
+- Realtime publication enabled on `taxi_bids`.
+- Trigger on accept: sets the chosen `provider_id` on `transport_bookings`, marks status `accepted`, marks all other bids `rejected`, fires notifications to chosen + losing drivers.
 
-Still requires user action:
-- Add `VITE_PUBLIC_VAPID_KEY` (frontend env) + `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (edge secrets) to actually deliver push payloads.
-- Configure email sender domain → then scaffold transactional + auth email templates (`new-message`, `booking-confirmed`, `walk-summary`, `donation-receipt-80g`, `adoption-application-received`, `sighting-near-you`).
+### Geofencing & arrival push
 
-Original spec retained below for reference:
+- New SQL function `transport_arrival_check()`: when `driver_lat/lng` updates and the driver is within 200 m of pickup or drop-off, insert a `notifications` row with appropriate copy. The Phase H bridge auto-pushes it. No new edge function needed.
+- Wire this into the existing `update_driver_location` RPC.
 
-**Backend**
-- Generate VAPID keys, store as secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`); set `VITE_PUBLIC_VAPID_KEY`.
-- Wire `send-push` to triggers via DB hooks: new message, walk update, booking status change, missing-pet sighting, taxi bid received.
-- Run `email_domain--setup_email_infra` + `scaffold_transactional_email` + `scaffold_auth_email_templates`.
-- Templates: `new-message`, `booking-confirmed`, `walk-summary`, `donation-receipt-80g`, `adoption-application-received`, `sighting-near-you`.
+### UI
 
-**Frontend**
-- Replace `placeholder.svg` PWA icons with real branded 192/512/maskable icons.
-- Push opt-in chip in `InstallNudgeSheet`; permission flow + token stored to `push_subscriptions`.
-- Trust counter: subscribe to `seller_trust` realtime channel (broadcast on review insert) for live update.
-
-**Acceptance**: real push lands on installed PWA; auth + transactional emails branded; install banner not broken.
-
----
-
-## Phase I — Cross-Actor Workflows (Walker→Vet, Rx→Shop, Sitter→Owner)  ✅ shipped
-
-Done in this pass:
-- New table `walk_events` (`booking_id, author_id, kind, payload jsonb`) with RLS: walker inserts, walker + customer read.
-- New table `booking_suggestions` (`owner_id, pet_id, kind, reason, source_walk_event_id, source_booking_id, deep_link, status`) — unified owner-side "next action" inbox.
-- DB trigger `tg_walk_event_to_suggestion`: a `health_flag` walk event auto-creates a `vet_followup` suggestion AND inserts a `notifications` row → which auto-pushes via the Phase H bridge. End-to-end: walker taps flag → owner gets push + Book Vet card.
-- Added optional `wellness_score` (1-5) to `kennel_daily_reports` for at-a-glance caretaker stay health.
-- Frontend: `<WalkHealthFlagSheet>` (6 quick tags + free note) wired into `WalkSession` for the assigned walker; `<BookingSuggestionsCard>` on `PetParentHome` shows open suggestions with one-tap Book Vet / Dismiss.
-
-Reused existing infrastructure (no parallel tables created):
-- Vet → Shop refill: `pharmacy_suggestions` already covers this end-to-end.
-- Caretaker → Owner notify: `trg_kdr_notify` already pushes daily reports.
-- Shop reorder cron: `shop_reminders` + `shop-reorder-scan` already wired.
-
-**Backend**
-- New table `walk_events` (`walk_id, type ENUM(health_flag, behavior_note, photo, geo_ping), payload jsonb`).
-- Trigger: `health_flag` insert → notification + suggested vet booking row in `booking_suggestions`.
-- New table `prescription_reorders` linked to `prescriptions`; cron edge function `rx-reorder-scan` (daily) inserts shop reminders 7 days before refill.
-- New table `wellness_checks` for caretakers (5-question daily form).
-- Trigger: caretaker daily-report insert → push to owner.
-
-**Frontend**
-- WalkSession: "Flag health issue" button → opens `walk_events` flag sheet → owner gets push + 1-tap "Book vet".
-- Owner home: **Booking Suggestions** card.
-- Caretaker dashboard: **Daily Wellness** form + auto-prompt at 9am local.
-- Rx page: shows next reorder date + "Order again" CTA pre-filled in shop cart.
-
-**Acceptance**: limp during walk → vet appointment in 3 taps. Rx → cart with right item next refill cycle.
+- `TaxiDetail.tsx` (customer view, status `requested`): live `<BidsList>` subscribing to `taxi_bids` for this booking — sorted by composite score (price + ETA + driver rating). Each row has Accept.
+- New `<DriverInbox>` screen at `/driver/taxi`: realtime list of nearby `requested` trips for any provider whose category includes `pet_taxi`. Card shows distance from driver to pickup; tap → `<PlaceBidSheet>` with price + ETA inputs. Uses driver's last known geolocation.
+- A `pet_taxi` quick-link on provider home if the provider has that category.
 
 ---
 
-## Phase J — Taxi Bidding, Geofencing & Live Tracking
+## Part 2 — App-wide "nearest + most relevant first" (the Zomato/Swiggy feel)
 
-**Backend**
-- Migration: `taxi_bids` (`post_id, driver_id, price, eta_min, status, created_at`); RLS allows drivers to bid, post owner to accept.
-- Migration: `taxi_locations` (`trip_id, driver_id, geom, recorded_at`) — realtime publication enabled.
-- Edge function `taxi-geofence-check` (cron 30s) → push when driver enters dest city polygon.
+Today, most lists fetch by `created_at desc` or `city` text-equality. We make every discovery surface return results sorted by a **relevance score** that combines:
 
-**Frontend**
-- `TaxiDetail` rebuild: bid list, accept-bid CTA, live Leaflet map subscribing to `taxi_locations`, ETA chip.
-- Driver app screen: incoming requests list + **bid sheet**.
-- Kennel pickup: same live-map component re-used for driver tracking.
+1. **Distance** from the user's current location (haversine, km).
+2. **Quality** (rating, review count, verified flag).
+3. **Recency / freshness** (decays older listings).
+4. **Availability** (open-now boost where applicable).
 
-**Acceptance**: post taxi → multiple driver bids → accept → live tracking + arrival push.
+### Where it ships
 
----
+| Surface | Sort by |
+|---|---|
+| Service category (vet/walker/groomer/sitter/trainer/pet-taxi) | distance · rating · open-now · response time |
+| Adopt listings | distance · recency · verified org boost |
+| Mate listings | distance · breed-match · rating |
+| Breeders | distance · verified · litters published |
+| Shop products | distance to seller · rating · in-stock |
+| Search "Near me" tab | unified distance-first across all entities |
 
-## Phase K — Trust, Tips, Escrow & Receipts
+### Mechanism (one place, reused everywhere)
 
-**Backend**
-- Trust tiers: extend `seller_trust` RPC to compute tier (`new`, `rising`, `top_sitter` ≥50 visits, `verified_pro`).
-- New columns on `providers`: `background_check_verified_at`, `insurance_verified_at`.
-- `tips` table (`booking_id, payer, amount, currency`).
-- Escrow: `provider_payouts.status` flow (`held → released_at`); cron `payout-release-scan` weekly releases held funds older than 7 days post-completion.
-- Donations: edge function `generate-80g-pdf` (Deno + pdf-lib) → stores in `donation_receipts` bucket → emails via transactional pipeline.
+- Migration: add `composite_score(distance_km, rating, review_count, freshness_days, boost)` SQL function (immutable, simple weighted formula).
+- Migration: one RPC per discovery surface that already filters server-side, e.g. `discover_providers(_lat, _lng, _category, _radius_km, _open_now, _limit)` — uses `earthdistance` (already installed) for the distance calc, then sorts by `composite_score`.
+- Same pattern applied to: `discover_adopt_listings`, `discover_mates`, `discover_breeders`, `discover_shop`, `discover_anything_near` (search).
+- Frontend: a single `useNearbyQuery(rpc, params)` hook reads the user's coords from `useUserLocation`, calls the RPC, and gracefully falls back to city-only sort when location is denied.
+- A small `<DistanceChip distanceKm={…} />` UI primitive renders "1.2 km" / "350 m" / "12 km" on every card so the user always sees how close things are. Used on every listing card across all hubs (one component, many screens).
+- An "Auto · Distance · Rating · Newest" sort dropdown is added to `<ListingFilters>` so the user can override the default.
 
-**Frontend**
-- Trust badges on `<TrustSignals>`: "Top sitter", "Background-check verified", "Insurance verified".
-- WalkLive end-screen: **Tip $2 / $5 / Custom** chips.
-- Donation flow: success page shows "Receipt emailed" + download link.
-- Provider settings: upload background-check + insurance docs (admin verifies in dashboard).
+### Fallback chain (no location? still works)
 
-**Acceptance**: badges render; tips post; weekly auto-payout works in test mode; 80G PDF arrives by email.
+```text
+1. Browser geolocation (if granted)
+2. Saved profile lat/lng
+3. Selected city via existing GeoBanner
+4. India-wide (last resort)
+```
 
----
-
-## Phase L — Org/Shelter Tooling & Onboarding Polish
-
-**Backend**
-- CSV import edge function `org-bulk-import-listings` (parses CSV → inserts adopt listings under org).
-- `success_stories` table (`org_id, listing_id, adopter_name, story, photo_url, created_at`).
-- Org stats RPC: animals_in_care, adopted_this_month, donations_this_month.
-- Trigger: first photo upload on a pet-less account → forces pet-creation modal.
-
-**Frontend**
-- `OrgProfile`: stats banner, success-story feed, bulk-import CTA on org dashboard.
-- New `<PetCreationGuard>` wrapping photo-post screens.
-- `RecurringBookings`: add **"Make this recurring (6 weeks)"** chip on booking-success screen.
-- Mating-match alert chip on `MateListing` opt-in for buyers.
-- `AdoptListingDetail`: "Apply to adopt" sheet now supports anon via OtpGate (Phase F dependency).
-
-**Acceptance**: shelter uploads 30 dogs via CSV; success stories appear; first-photo flow forces pet creation; recurring 2-tap upgrade works.
+The composite score still works at every fallback level — distance contribution drops to 0 for level 4, so quality + freshness rank.
 
 ---
 
-## Cross-Phase Technical Notes
+## Notifications & live updates (the "real" part)
 
-- All new tables ship with RLS + policies in the same migration.
-- All new edge functions get CORS + zod input validation + JWT check where needed.
-- All new client features get loading/empty/error states + mobile-first 393px layout.
-- Each phase ends with a smoke-test checklist run by me (anon → action → resume → notify).
+These continue to use the Phase H push bridge (no new edge functions needed):
 
-## Suggested Execution Order
+- New bid received → notification to customer (push + in-app).
+- Bid accepted → push to chosen driver, push to losing drivers ("Trip taken by another driver").
+- Driver within 200 m of pickup → push to customer ("Driver is here").
+- Driver within 200 m of drop-off → push to customer ("Almost at drop-off").
+- Mating request received → already wired; we add a "Distance: 4.2 km" line in the push body.
+- Walker booked, vet booked, etc. — distance shown on confirmation card.
 
-F → G → H run in parallel-ready order (F unblocks J, K, L). Recommended sequence:
-**F → H → G → I → J → K → L** (funnel first, then notifications so later phases can fire pushes/emails as they're built).
+---
 
-## Approval
+## Technical details (for the engineer / agent)
 
-Reply **"Go"** and I'll start at Phase F and ship straight through to L without stopping for confirmation between phases.
+### Tables / functions added
+- `taxi_bids` (RLS, realtime).
+- Triggers: `tg_taxi_bid_notify_customer` (insert), `tg_taxi_bid_accepted` (update → rewires booking + closes losers).
+- SQL: `composite_score(...)`, `discover_providers(...)`, `discover_adopt_listings(...)`, `discover_mates(...)`, `discover_breeders(...)`, `discover_shop(...)`.
+- Geofence: extend `update_driver_location` RPC to call internal `transport_arrival_check`.
+
+### Reused, NOT duplicated
+- `transport_bookings` — bidding writes to existing row, doesn't fork.
+- `service_providers` — driver entity = provider with `category = pet_taxi`.
+- `notifications` table + Phase H push bridge — no new push wiring.
+- `useUserLocation`, `useGeoCity`, `<GeoBanner>`, `<ListingFilters>` — extended, not replaced.
+- `LeafletMap` — same component for taxi, kennel pickup, walker live view.
+
+### Frontend new files
+- `src/components/taxi/BidsList.tsx`
+- `src/components/taxi/PlaceBidSheet.tsx`
+- `src/pages/driver/TaxiInbox.tsx` + route
+- `src/components/marketplace/DistanceChip.tsx`
+- `src/hooks/useNearbyQuery.ts`
+
+### Frontend touched
+- `src/pages/TaxiDetail.tsx` — render `<BidsList>` while `requested`.
+- `src/pages/Taxi.tsx` — link to driver inbox if provider has `pet_taxi`.
+- `src/pages/discover/ServiceCategoryCity.tsx` — switch to `discover_providers` RPC + `<DistanceChip>` on cards.
+- `src/pages/discover/AdoptCategory.tsx` — switch to `discover_adopt_listings`.
+- `src/pages/Mates.tsx`, `Breeders.tsx`, `Shop.tsx`, `Search.tsx` — switch to their respective `discover_*` RPCs.
+- `src/components/marketplace/ListingFilters.tsx` — add Sort dropdown (`auto / distance / rating / newest`).
+
+### Acceptance (tested manually after ship)
+1. Post a taxi from account A. Account B (provider with `pet_taxi`) sees it instantly in `/driver/taxi`, bids ₹280 / 6 min. Account A sees the bid card appear without refresh, accepts. Account B becomes the assigned driver. Live map starts. When B's GPS is within 200 m of pickup, A gets a push.
+2. Open `/services/walker/pune` from a Pune location → results are now ordered nearest-first; each card shows "1.2 km · ★4.8". Toggle "Open now" → list re-orders.
+3. Open `/adopt/dogs/pune` from Mumbai → still shows Pune dogs but distance shown is from Mumbai, ordered nearest-first within Pune.
+4. Deny browser location, set city = Bangalore → results fall back gracefully, distance chips hidden, sorted by rating + recency.
+
+---
+
+## Reply with **"Go"** to ship Phase J.
