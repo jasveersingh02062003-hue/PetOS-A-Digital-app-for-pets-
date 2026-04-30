@@ -1,11 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from "recharts";
 import { format } from "date-fns";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Target } from "lucide-react";
 
 export const WeightChart = ({ petId }: { petId: string }) => {
+  const { data: pet } = useQuery({
+    queryKey: ["pet-target-weight", petId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pets")
+        .select("target_weight_kg")
+        .eq("id", petId)
+        .maybeSingle();
+      return data as { target_weight_kg: number | null } | null;
+    },
+  });
+  const target = pet?.target_weight_kg ? Number(pet.target_weight_kg) : null;
+
   const { data } = useQuery({
     queryKey: ["weight-trend", petId],
     queryFn: async () => {
@@ -26,11 +39,35 @@ export const WeightChart = ({ petId }: { petId: string }) => {
 
   if (!data || data.length < 2) return null;
 
+  const latest = data[data.length - 1].weight;
+  const delta = target ? latest - target : null;
+  const deltaLabel =
+    delta == null
+      ? null
+      : Math.abs(delta) < 0.05
+      ? "On target"
+      : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg vs target`;
+  const deltaTone =
+    delta == null
+      ? ""
+      : Math.abs(delta) < 0.3
+      ? "text-leaf"
+      : Math.abs(delta) < 1
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-destructive";
+
   return (
     <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 mb-3">
-      <div className="flex items-center gap-2 mb-3">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        <span className="text-sm font-medium">Weight trend</span>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Weight trend</span>
+        </div>
+        {deltaLabel && (
+          <span className={`text-xs font-medium ${deltaTone} flex items-center gap-1`}>
+            <Target className="h-3 w-3" /> {deltaLabel}
+          </span>
+        )}
       </div>
       <ResponsiveContainer width="100%" height={140}>
         <LineChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
@@ -40,9 +77,23 @@ export const WeightChart = ({ petId }: { petId: string }) => {
             contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
             formatter={(v: any) => [`${v} kg`, "Weight"]}
           />
+          {target && (
+            <ReferenceLine
+              y={target}
+              stroke="hsl(var(--leaf, var(--primary)))"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{ value: `Target ${target} kg`, fontSize: 10, fill: "hsl(var(--muted-foreground))", position: "insideTopRight" }}
+            />
+          )}
           <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
         </LineChart>
       </ResponsiveContainer>
+      {!target && (
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Set a target weight in pet settings to see goal tracking.
+        </p>
+      )}
     </Card>
   );
 };
