@@ -266,7 +266,7 @@ const PostCard = ({ post, onComment, highlight }: {
     qc.invalidateQueries({ queryKey: ["feed"] });
   };
 
-  const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
+  const authorVerified = !!(post.author_id && verifiedOrgs instanceof Set && verifiedOrgs.has(post.author_id));
   const authorPending = !!(post.author_id && pendingOrgs?.has(post.author_id));
   const accountType = post.author?.account_type ?? "pet_parent";
   const orgPost = isOrgRole(accountType) && !post.pet_id;

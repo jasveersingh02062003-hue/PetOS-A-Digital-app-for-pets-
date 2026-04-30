@@ -88,17 +88,12 @@ const Auth = () => {
           }
         } catch { /* fail-open */ }
 
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { full_name: fullName } },
         });
         if (error) throw error;
-        if (!data.session) {
-          // auto-confirm is on; if no session was returned, sign in immediately
-          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInErr) throw signInErr;
-        }
         toast.success("Welcome to Petos");
         nav(postAuthTarget, { replace: true });
       } else {

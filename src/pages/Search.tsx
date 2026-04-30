@@ -547,7 +547,7 @@ const PeopleList = ({ items }: { items: any[] }) => {
             {p.account_type && p.account_type !== "pet_parent" && (
               <SellerBadge
                 type={p.account_type}
-                verified={verifiedOrgs?.has(p.id) ?? false}
+                verified={verifiedOrgs instanceof Set ? verifiedOrgs.has(p.id) : false}
                 className="text-[9px] py-0 px-1.5 h-4"
               />
             )}
