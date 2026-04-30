@@ -197,6 +197,11 @@ const Onboarding = () => {
       setRoleSaving(false);
     }
   };
+
+  const next = () => {
+    const err = validate(step);
+    if (err) return toast.error(err);
+    if (step < TOTAL - 1) setStep(step + 1);
     else submit();
   };
 
