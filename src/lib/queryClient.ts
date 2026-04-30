@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { get, set, del } from "idb-keyval";
+import { get, set, del, clear } from "idb-keyval";
 import { logError } from "./logError";
 
 /**
@@ -20,6 +20,25 @@ const SCHEMA_REV = "v1";
 const BUILD_ID = (import.meta.env.VITE_BUILD_ID as string | undefined) ?? "dev";
 export const PERSIST_BUSTER = `${SCHEMA_REV}:${BUILD_ID}`;
 const IDB_KEY = "rq-cache";
+
+/**
+ * Stale-time presets — pick one when calling useQuery to align with how often
+ * the underlying data realistically changes. Keep call sites readable.
+ */
+export const STALE = {
+  /** Volatile data (chat threads, presence). Always refetch on remount. */
+  realtime: 0,
+  /** Lists that change frequently (feed, notifications). 30s. */
+  short: 30_000,
+  /** Default — most reads. 1 min. */
+  default: 60_000,
+  /** Profile, pet card, services list. 5 min. */
+  medium: 5 * 60_000,
+  /** Catalog, breeds, static config. 1 hour. */
+  long: 60 * 60_000,
+  /** Truly immutable (e.g., a finalized order). */
+  immutable: Number.POSITIVE_INFINITY,
+} as const;
 
 /** Keys we never want to persist (volatile / large / sensitive). */
 const NON_PERSISTED_PREFIXES = [
@@ -98,4 +117,20 @@ export function shouldPersistQuery(query: Query): boolean {
     }
   }
   return true;
+}
+
+/**
+ * Wipe the persisted cache. Call this on sign-out so the next user on the
+ * same device doesn't see the previous user's hydrated data flash on screen
+ * before the new fetch resolves.
+ */
+export async function clearPersistedCache(): Promise<void> {
+  try {
+    queryClient.clear();
+    await del(IDB_KEY);
+    // Also clear any orphaned legacy keys.
+    await clear().catch(() => {});
+  } catch (e) {
+    logError(e, { source: "persister:clearPersistedCache" });
+  }
 }
