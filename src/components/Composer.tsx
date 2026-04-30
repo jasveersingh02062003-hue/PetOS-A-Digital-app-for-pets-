@@ -306,25 +306,97 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {/* IMAGE FIRST — big drop zone or preview */}
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
-      {preview ? (
-        <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square">
-          <img src={preview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          <button
-            type="button"
-            onClick={() => { setFile(null); setPreview(null); }}
-            className="absolute top-2 right-2 h-9 w-9 rounded-full bg-background/95 flex items-center justify-center shadow-md"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="absolute bottom-2 left-2 px-3 h-8 rounded-full bg-background/95 text-xs font-semibold flex items-center gap-1.5 shadow-md"
-          >
-            <ImagePlus className="h-3.5 w-3.5" /> Replace
-          </button>
+      {/* FORMAT PILLS — Post / Story / Daily */}
+      <div className="flex items-center gap-1 p-1 rounded-full bg-muted text-xs font-semibold">
+        <button
+          type="button"
+          className="flex-1 h-8 rounded-full bg-background shadow-sm flex items-center justify-center gap-1.5"
+        >
+          <Camera className="h-3.5 w-3.5" /> Post
+        </button>
+        <button
+          type="button"
+          onClick={() => { onDone(); setStoryOpen(true); }}
+          className="flex-1 h-8 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
+        >
+          <Clock className="h-3.5 w-3.5" /> Story
+        </button>
+        <button
+          type="button"
+          onClick={() => { onDone(); nav("/daily"); }}
+          className="flex-1 h-8 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
+        >
+          <CalendarDays className="h-3.5 w-3.5" /> Daily
+        </button>
+      </div>
+
+      <StoryComposer open={storyOpen} onOpenChange={setStoryOpen} />
+
+      {/* IMAGE FIRST — big drop zone or carousel of previews */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => onFiles(e.target.files)}
+      />
+      {previews.length > 0 ? (
+        <div className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+            {previews.map((src, idx) => (
+              <div
+                key={src}
+                className="relative shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-muted border border-hairline"
+              >
+                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                {idx === 0 && (
+                  <span className="absolute top-1 left-1 text-[10px] font-semibold bg-background/95 text-foreground rounded-full px-1.5 py-0.5">
+                    Cover
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeFileAt(idx)}
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow"
+                  aria-label="Remove"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <div className="absolute bottom-1 right-1 flex gap-1">
+                  {idx > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => moveFile(idx, -1)}
+                      className="h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow text-[10px] font-bold"
+                      aria-label="Move left"
+                    >‹</button>
+                  )}
+                  {idx < previews.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => moveFile(idx, 1)}
+                      className="h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow text-[10px] font-bold"
+                      aria-label="Move right"
+                    >›</button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {previews.length < 6 && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="shrink-0 w-32 h-32 rounded-xl border-2 border-dashed border-hairline flex flex-col items-center justify-center text-muted-foreground hover:border-coral/40 hover:text-coral transition"
+              >
+                <ImagePlus className="h-5 w-5" />
+                <span className="text-[11px] mt-1">Add more</span>
+              </button>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground px-1">
+            {previews.length} photo{previews.length === 1 ? "" : "s"} · drag chevrons to reorder
+          </div>
         </div>
       ) : (
         <button
@@ -336,24 +408,55 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
             <Camera className="h-7 w-7 text-coral" strokeWidth={2} />
           </div>
           <div className="text-center">
-            <div className="font-semibold text-base">Add a photo</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Tap to pick from your gallery</div>
+            <div className="font-semibold text-base">Add photos</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Tap to pick — up to 6 per post</div>
           </div>
         </button>
       )}
 
       {/* CAPTION — secondary, below image */}
-      <Textarea
-        value={caption}
-        onChange={(e) => setCaption(e.target.value)}
-        placeholder={
-          showPetTag && pets?.[0]
-            ? `What's ${pets[0].name} up to?`
-            : copy.placeholder
-        }
-        className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
-        maxLength={500}
-      />
+      <div className="relative">
+        <Textarea
+          ref={captionRef}
+          value={caption}
+          onChange={(e) => onCaptionChange(e.target.value)}
+          placeholder={
+            showPetTag && pets?.[0]
+              ? `What's ${pets[0].name} up to?  Try @ to mention or # for a tag`
+              : copy.placeholder
+          }
+          className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
+          maxLength={500}
+        />
+        {(mentionResults.length > 0 || hashSuggestions.length > 0) && (
+          <div className="absolute left-0 right-0 -bottom-1 translate-y-full z-20 rounded-xl border border-hairline bg-card shadow-lg overflow-hidden">
+            {mentionResults.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => insertAtToken(`@${(p.full_name ?? "user").replace(/\s+/g, "")}`)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center gap-2"
+              >
+                <span className="h-6 w-6 rounded-full bg-primary-soft text-primary text-[10px] grid place-items-center font-semibold">
+                  {(p.full_name?.[0] ?? "P").toUpperCase()}
+                </span>
+                <span className="truncate">{p.full_name ?? "Pet parent"}</span>
+              </button>
+            ))}
+            {hashSuggestions.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => insertAtToken(`#${h}`)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center gap-2"
+              >
+                <span className="h-6 w-6 rounded-full bg-lilac/15 text-lilac text-[12px] grid place-items-center font-bold">#</span>
+                <span className="truncate">{h}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-between gap-2 -mt-2">
         <button
