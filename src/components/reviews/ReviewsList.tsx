@@ -61,7 +61,7 @@ export function ReviewsList({ subjectType, subjectId }: { subjectType: SubjectTy
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-full bg-muted overflow-hidden flex items-center justify-center text-xs font-display">
                 {r.reviewer?.avatar_url ? (
-                  <img src={r.reviewer.avatar_url} alt="" className="w-full h-full object-cover" />
+                  <img src={r.reviewer.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   (r.reviewer?.full_name ?? "?")[0]
                 )}

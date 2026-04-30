@@ -148,7 +148,7 @@ const BookAppointment = () => {
             {vets?.map((v) => (
               <Card key={v.user_id} className="rounded-2xl border-hairline p-4 flex items-center gap-3">
                 <div className="h-12 w-12 rounded-2xl bg-primary-soft overflow-hidden flex items-center justify-center">
-                  {v.photo_url ? <img src={v.photo_url} alt={v.display_name} className="h-full w-full object-cover" /> : <span className="text-sm font-display">{v.display_name?.[0]}</span>}
+                  {v.photo_url ? <img src={v.photo_url} alt={v.display_name} className="h-full w-full object-cover" loading="lazy" decoding="async" /> : <span className="text-sm font-display">{v.display_name?.[0]}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-base truncate">{v.display_name}</div>

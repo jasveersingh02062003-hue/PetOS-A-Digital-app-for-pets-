@@ -61,8 +61,7 @@ const ServiceDetail = () => {
           <img
             src={provider.cover_url}
             alt={provider.name}
-            className="h-full w-full object-cover"
-          />
+            className="h-full w-full object-cover" loading="lazy" decoding="async" />
         </div>
       )}
 

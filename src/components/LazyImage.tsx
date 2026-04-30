@@ -8,7 +8,7 @@ type Props = ImgHTMLAttributes<HTMLImageElement> & {
 };
 
 /**
- * LazyImage — drop-in <img> with sensible defaults for performance:
+ * LazyImage — drop-in <img loading="lazy" decoding="async"> with sensible defaults for performance:
  *  - lazy loading + async decode by default
  *  - reserves aspect-ratio so layout doesn't jump
  *  - graceful fallback on error (transparent placeholder)

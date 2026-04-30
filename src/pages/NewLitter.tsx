@@ -200,7 +200,7 @@ const NewLitter = () => {
                   >
                     <div className="h-10 w-10 rounded-full bg-muted overflow-hidden">
                       {p.avatar_url ? (
-                        <img src={p.avatar_url} alt={p.name ?? ""} className="w-full h-full object-cover" />
+                        <img src={p.avatar_url} alt={p.name ?? ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-full h-full grid place-items-center text-coral">{p.name?.[0] ?? "?"}</div>
                       )}
@@ -245,7 +245,7 @@ const NewLitter = () => {
                     >
                       <div className="h-10 w-10 rounded-full bg-muted overflow-hidden">
                         {p.avatar_url ? (
-                          <img src={p.avatar_url} alt={p.name ?? ""} className="w-full h-full object-cover" />
+                          <img src={p.avatar_url} alt={p.name ?? ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full grid place-items-center text-sky">{p.name?.[0] ?? "?"}</div>
                         )}
@@ -307,7 +307,7 @@ const NewLitter = () => {
                       />
                       <div className="h-12 w-12 rounded-full bg-background border border-hairline overflow-hidden grid place-items-center">
                         {p.avatar_url ? (
-                          <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                          <img src={p.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <PawPrint className="h-4 w-4 text-muted-foreground" />
                         )}
@@ -370,7 +370,7 @@ const NewLitter = () => {
                 {pups.map((p) => (
                   <div key={p.tempId} className="flex items-center gap-2 text-sm">
                     <div className="h-7 w-7 rounded-full bg-muted overflow-hidden grid place-items-center">
-                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : <PawPrint className="h-3 w-3" />}
+                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <PawPrint className="h-3 w-3" />}
                     </div>
                     <span className="font-medium">{p.name || "Unnamed"}</span>
                     <span className="text-xs text-muted-foreground">· {p.gender}</span>

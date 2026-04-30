@@ -121,7 +121,7 @@ const VetConsult = () => {
           <Card className="rounded-2xl border-hairline bg-card shadow-none p-4">
             <div className="flex items-center gap-3">
               {pet.avatar_url ? (
-                <img src={pet.avatar_url} alt={pet.name} className="h-12 w-12 rounded-full object-cover" />
+                <img src={pet.avatar_url} alt={pet.name} className="h-12 w-12 rounded-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="h-12 w-12 rounded-full bg-primary-soft text-primary grid place-items-center font-display">
                   {pet.name?.[0] ?? "?"}

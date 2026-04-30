@@ -321,7 +321,7 @@ const Onboarding = () => {
             <label className="relative h-20 w-20 rounded-2xl bg-muted overflow-hidden cursor-pointer flex items-center justify-center shrink-0 border border-dashed border-hairline">
               <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickAvatar(e.target.files?.[0] ?? null)} />
               {petAvatarPreview ? (
-                <img src={petAvatarPreview} alt="" className="w-full h-full object-cover" />
+                <img src={petAvatarPreview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <Camera className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
               )}

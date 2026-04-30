@@ -152,7 +152,7 @@ export const MissingPoster = ({
             <div className="p-3">
               <div className="aspect-[16/10] rounded-xl overflow-hidden bg-muted mb-3">
                 {photoUrl ? (
-                  <img src={photoUrl} alt={petName} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                  <img src={photoUrl} alt={petName} className="w-full h-full object-cover" crossOrigin="anonymous" loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">No photo</div>
                 )}

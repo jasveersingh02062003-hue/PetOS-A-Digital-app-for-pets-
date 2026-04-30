@@ -57,7 +57,7 @@ const PetCell = ({ pet, label }: { pet: PetNode | null | undefined; label: strin
     >
       <div className="h-8 w-8 mx-auto rounded-full bg-muted overflow-hidden mb-1">
         {pet.avatar_url ? (
-          <img src={pet.avatar_url} alt={pet.name ?? ""} className="w-full h-full object-cover" />
+          <img src={pet.avatar_url} alt={pet.name ?? ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full grid place-items-center text-coral font-display">{pet.name?.[0] ?? "?"}</div>
         )}

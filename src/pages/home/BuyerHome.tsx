@@ -208,7 +208,7 @@ const BuyerHome = () => {
               >
                 <div className="aspect-square bg-muted">
                   {l.photos?.[0] ? (
-                    <img src={l.photos[0]} alt={l.title} className="w-full h-full object-cover" />
+                    <img src={l.photos[0]} alt={l.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : null}
                 </div>
                 <div className="p-2">

@@ -186,7 +186,7 @@ const Vet = () => {
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-2xl bg-primary-soft overflow-hidden flex items-center justify-center">
                   {v.pets?.avatar_url ? (
-                    <img src={v.pets.avatar_url} alt={v.pets.name} className="h-full w-full object-cover" />
+                    <img src={v.pets.avatar_url} alt={v.pets.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <ShieldCheck className="h-5 w-5 text-primary" />
                   )}

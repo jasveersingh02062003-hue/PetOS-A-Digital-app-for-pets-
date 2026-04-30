@@ -68,7 +68,7 @@ const OrgProfile = () => {
 
       <div className={`aspect-[16/9] rounded-2xl overflow-hidden mb-4 relative ${roleBanner}`}>
         {cover ? (
-          <img src={cover} alt={org.org_name} className="w-full h-full object-cover" />
+          <img src={cover} alt={org.org_name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full" aria-hidden />
         )}
@@ -213,7 +213,7 @@ const OrgProfile = () => {
               const photo = Array.isArray(l.photos) && l.photos.length ? l.photos[0] : null;
               return (
                 <button key={l.id} onClick={() => nav(`/mates/adopt/${l.id}`)} className="text-left rounded-2xl border border-hairline overflow-hidden bg-card">
-                  <div className="aspect-square bg-muted">{photo && <img src={photo} alt="" className="w-full h-full object-cover" />}</div>
+                  <div className="aspect-square bg-muted">{photo && <img src={photo} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />}</div>
                   <div className="p-2 text-sm truncate">{l.title}</div>
                 </button>
               );

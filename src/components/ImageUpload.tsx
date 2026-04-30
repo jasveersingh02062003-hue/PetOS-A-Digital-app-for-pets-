@@ -61,7 +61,7 @@ export const ImageUpload = ({
       />
       {value ? (
         <div className={`relative rounded-2xl overflow-hidden border border-hairline ${aspectClass[aspect]}`}>
-          <img src={value} alt="" className="h-full w-full object-cover" />
+          <img src={value} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
           <Button
             type="button"
             variant="secondary"

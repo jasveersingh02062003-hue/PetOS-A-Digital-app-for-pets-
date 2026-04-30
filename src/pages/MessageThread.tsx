@@ -317,7 +317,7 @@ export default function MessageThread() {
         <div className="container-app py-3 space-y-2">
           {pendingImage && (
             <div className="relative inline-block">
-              <img src={pendingImage} alt="" className="h-20 w-20 rounded-xl object-cover border border-hairline" />
+              <img src={pendingImage} alt="" className="h-20 w-20 rounded-xl object-cover border border-hairline" loading="lazy" decoding="async" />
               <button
                 onClick={() => setPendingImage(null)}
                 className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-foreground text-background grid place-items-center shadow"

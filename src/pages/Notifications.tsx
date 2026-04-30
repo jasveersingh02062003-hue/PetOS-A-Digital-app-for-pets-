@@ -133,7 +133,7 @@ const Notifications = () => {
             <Card key={inv.post_id} className="rounded-2xl border-primary/30 bg-primary/5 p-3">
               <div className="flex items-center gap-3">
                 {inv.posts?.image_url && (
-                  <img src={inv.posts.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                  <img src={inv.posts.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" decoding="async" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">You've been tagged in a post</div>

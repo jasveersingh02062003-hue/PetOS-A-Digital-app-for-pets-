@@ -152,7 +152,7 @@ export default function PhotoVet() {
         <Card className="rounded-2xl border-hairline overflow-hidden">
           {preview ? (
             <div className="relative bg-muted">
-              <img src={preview} alt="preview" className="w-full max-h-80 object-contain" />
+              <img src={preview} alt="preview" className="w-full max-h-80 object-contain" loading="lazy" decoding="async" />
               <button
                 onClick={() => { setFile(null); setPreview(null); setAnalysis(null); }}
                 className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-background/90 text-xs"

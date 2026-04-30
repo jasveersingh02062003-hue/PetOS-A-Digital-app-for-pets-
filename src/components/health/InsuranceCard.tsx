@@ -77,7 +77,7 @@ export function InsuranceCard({ petId, currentProvider }: { petId: string; curre
         {partners.map((p) => (
           <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-hairline">
             <div className="h-10 w-10 rounded-lg bg-muted overflow-hidden grid place-items-center shrink-0">
-              {p.logo_url ? <img src={p.logo_url} alt={p.name} className="h-full w-full object-cover" /> : <Shield className="h-5 w-5 text-muted-foreground" />}
+              {p.logo_url ? <img src={p.logo_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" decoding="async" /> : <Shield className="h-5 w-5 text-muted-foreground" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium truncate">{p.name}</div>

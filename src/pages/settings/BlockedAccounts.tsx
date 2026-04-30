@@ -54,7 +54,7 @@ export default function BlockedAccounts() {
         {data?.map((b) => (
           <div key={b.id} className="flex items-center gap-3 bg-card border border-hairline rounded-2xl p-3">
             {b.profile?.avatar_url ? (
-              <img src={b.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <img src={b.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" loading="lazy" decoding="async" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-muted" />
             )}

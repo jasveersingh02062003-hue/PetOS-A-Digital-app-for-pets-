@@ -212,7 +212,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
       {preview ? (
         <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square">
-          <img src={preview} alt="" className="w-full h-full object-cover" />
+          <img src={preview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           <button
             type="button"
             onClick={() => { setFile(null); setPreview(null); }}
@@ -329,7 +329,7 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
               }`}
             >
               <span className="h-6 w-6 rounded-full overflow-hidden bg-muted grid place-items-center text-[10px]">
-                {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : p.name[0]}
+                {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" /> : p.name[0]}
               </span>
               {p.name}
             </button>

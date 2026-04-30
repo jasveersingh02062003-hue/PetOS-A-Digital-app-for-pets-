@@ -129,7 +129,7 @@ const Profile = () => {
           <div className="relative -mx-4 sm:-mx-6 mb-0">
             <div className="aspect-[16/6] w-full bg-muted relative overflow-hidden">
               {coverUrl ? (
-                <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                <img src={coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/30 via-coral/20 to-amber/20" />
               )}

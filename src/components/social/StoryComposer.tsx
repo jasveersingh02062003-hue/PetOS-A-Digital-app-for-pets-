@@ -49,7 +49,7 @@ export const StoryComposer = ({ open, onOpenChange }: { open: boolean; onOpenCha
         <div className="space-y-3">
           {preview ? (
             <div className="relative rounded-xl overflow-hidden bg-muted">
-              <img src={preview} alt="" className="w-full max-h-80 object-cover" />
+              <img src={preview} alt="" className="w-full max-h-80 object-cover" loading="lazy" decoding="async" />
               <button onClick={() => { setFile(null); setPreview(null); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/90 flex items-center justify-center">
                 <X className="h-4 w-4" />
               </button>
