@@ -76,6 +76,12 @@ const Onboarding = () => {
   const [city, setCity] = useState("");
   const [language, setLanguage] = useState("en");
   const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>({ weight: "kg", temp: "c" });
+  const [parentAge, setParentAge] = useState("");
+  const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
+  // "Set up health now" controls whether we collect vaccine/emergency in Step 7.
+  // If false, the pet is saved with health_setup_complete=false and the
+  // Health tab + Home both surface a "Set up health for {pet}" reminder.
+  const [setupHealthNow, setupHealthNowSet] = useState<boolean>(true);
 
   // Step 2 — Meet your pet
   const [petAvatar, setPetAvatar] = useState<File | null>(null);
