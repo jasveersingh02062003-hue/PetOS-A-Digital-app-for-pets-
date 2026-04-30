@@ -28,6 +28,7 @@ import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton
 import { InsuranceCard } from "@/components/health/InsuranceCard";
 import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
 import { DailyCareCard } from "@/components/health/DailyCareCard";
+import { PhotoUploadField, PhotoThumbs } from "@/components/health/PhotoUploadField";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -397,6 +398,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
               </div>
               <div className="text-xs text-muted-foreground mt-1">{format(new Date(s.logged_at), "d MMM, h:mm a")}</div>
               {s.notes && <p className="text-sm mt-2 text-ink-soft">{s.notes}</p>}
+              <PhotoThumbs paths={(s as any).photo_paths} />
               {(s as any).ai_reason && (s as any).ai_flag && (s as any).ai_flag !== "watch" && (
                 <p className="text-xs text-muted-foreground mt-1.5 italic">AI: {(s as any).ai_reason}</p>
               )}
@@ -412,7 +414,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
 
 const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChange: (b: boolean) => void; petId: string }) => {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ symptom: "", severity: 2, notes: "" });
+  const [form, setForm] = useState({ symptom: "", severity: 2, notes: "", photo_paths: [] as string[] });
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -424,7 +426,8 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
       symptom: form.symptom.trim(),
       severity: form.severity,
       notes: form.notes.trim() || null,
-    }).select("id").single();
+      photo_paths: form.photo_paths.length ? form.photo_paths : null,
+    } as any).select("id").single();
     if (error) { setSaving(false); return toast.error(error.message); }
     toast.success("Symptom logged");
     try {
