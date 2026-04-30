@@ -267,6 +267,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
               </div>
               <div className="text-xs text-muted-foreground mt-1">{format(new Date(r.occurred_on), "d MMM yyyy")}</div>
               {r.notes && <p className="text-sm mt-2 text-ink-soft">{r.notes}</p>}
+              <PhotoThumbs paths={(r as any).photo_paths} />
             </div>
             <DeleteBtn table="health_records" id={r.id} invalidate={["records", petId]} />
           </div>
@@ -279,7 +280,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
 
 const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChange: (b: boolean) => void; petId: string }) => {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "" });
+  const [form, setForm] = useState({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "", photo_paths: [] as string[] });
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -292,13 +293,14 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
       record_type: form.record_type as any,
       occurred_on: form.occurred_on,
       notes: form.notes.trim() || null,
-    });
+      photo_paths: form.photo_paths.length ? form.photo_paths : null,
+    } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Record added");
     qc.invalidateQueries({ queryKey: ["records", petId] });
     onOpenChange(false);
-    setForm({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "" });
+    setForm({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "", photo_paths: [] });
   };
 
   return (
@@ -322,6 +324,10 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Notes</Label>
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border-hairline min-h-[80px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Photos / scans (optional)</Label>
+            <PhotoUploadField value={form.photo_paths} onChange={(p) => setForm({ ...form, photo_paths: p })} />
           </div>
           <Button type="submit" disabled={saving} size="lg" className="w-full rounded-xl mt-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
