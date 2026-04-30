@@ -13,11 +13,17 @@ import { LeafletMap } from "@/components/maps/LeafletMap";
 import { pawIcon } from "@/components/maps/PawMarker";
 import { TrustBadge } from "@/components/services/TrustBadge";
 import { SocialProofBadge } from "@/components/trust/SocialProofBadge";
+import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
+import { ContactSellerSheet } from "@/components/ContactSellerSheet";
+import { useAuth } from "@/hooks/useAuth";
 
 const ServiceDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const { user } = useAuth();
 
   const { data: provider, isLoading } = useQuery({
     queryKey: ["service_provider", id],
@@ -31,6 +37,27 @@ const ServiceDetail = () => {
       return data;
     },
     enabled: !!id,
+  });
+
+  useSeo({
+    title: provider ? `${provider.name} — ${provider.category}${provider.city ? ` in ${provider.city}` : ""}` : "Service provider",
+    description: provider?.bio?.slice(0, 150) ?? `Book ${provider?.category ?? "pet services"}${provider?.city ? ` in ${provider.city}` : ""} on Petos.`,
+    image: provider?.cover_url ?? undefined,
+    type: "profile",
+    jsonLd: provider
+      ? jsonLd.localBusiness({
+          name: provider.name,
+          description: provider.bio ?? undefined,
+          image: provider.cover_url ?? undefined,
+          url: typeof window !== "undefined" ? window.location.href : "",
+          city: provider.city ?? undefined,
+          phone: provider.contact_phone ?? undefined,
+          lat: provider.lat ? Number(provider.lat) : undefined,
+          lng: provider.lng ? Number(provider.lng) : undefined,
+          priceRange: provider.hourly_rate_inr ? `₹${provider.hourly_rate_inr}/hr` : undefined,
+          category: provider.category ?? undefined,
+        })
+      : undefined,
   });
 
   if (isLoading) {
@@ -147,7 +174,7 @@ const ServiceDetail = () => {
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-hairline">
         <div className="container-app">
-          <Button className="w-full rounded-full h-12" onClick={() => setOpen(true)}>
+          <Button className="w-full rounded-full h-12" onClick={() => (user ? setOpen(true) : setContactOpen(true))}>
             Request booking
           </Button>
         </div>
@@ -158,6 +185,17 @@ const ServiceDetail = () => {
         onOpenChange={setOpen}
         providerId={provider.id}
         providerName={provider.name}
+      />
+
+      <ContactSellerSheet
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        intent={{
+          kind: "book_service",
+          providerId: provider.id,
+          redirect: `/services/${provider.id}`,
+        }}
+        title="Sign in to book this provider"
       />
     </div>
   );
