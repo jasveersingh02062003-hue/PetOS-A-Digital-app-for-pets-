@@ -128,7 +128,13 @@ const Meetups = () => {
             description={useNearby ? "No meetups within this radius. Try expanding it." : "Be the first to host a playdate in your area."}
             ctaLabel="Host a meetup"
             onCta={() => nav("/meetups/new")}
-            onExpandRadius={useNearby && radiusKm !== "all" ? () => setRadiusKm(radiusKm === 5 ? 10 : radiusKm === 10 ? 25 : radiusKm === 25 ? 50 : "all") : undefined}
+            {...(useNearby && typeof radiusKm === "number"
+              ? {
+                  secondaryLabel: "Expand radius",
+                  onSecondary: () =>
+                    setRadiusKm(radiusKm === 5 ? 10 : radiusKm === 10 ? 25 : radiusKm === 25 ? 50 : "all"),
+                }
+              : {})}
           />
         )}
         </>
