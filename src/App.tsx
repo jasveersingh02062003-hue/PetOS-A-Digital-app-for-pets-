@@ -141,6 +141,8 @@ const JobsFeed = lazy(() => import("./pages/jobs/JobsFeed"));
 const JobNew = lazy(() => import("./pages/jobs/JobNew"));
 const JobDetail = lazy(() => import("./pages/jobs/JobDetail"));
 const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
+const AdoptCategory = lazy(() => import("./pages/discover/AdoptCategory"));
+const ServiceCategoryCity = lazy(() => import("./pages/discover/ServiceCategoryCity"));
 
 const App = () => (
   <ErrorBoundary>
@@ -255,6 +257,12 @@ const App = () => (
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />
+              {/* Phase B — public, geo-targeted category hubs */}
+              <Route path="/adopt" element={<AdoptCategory />} />
+              <Route path="/adopt/:species" element={<AdoptCategory />} />
+              <Route path="/adopt/:species/:breed" element={<AdoptCategory />} />
+              <Route path="/adopt/:species/:breed/:city" element={<AdoptCategory />} />
+              <Route path="/services/:category/:city" element={<ServiceCategoryCity />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/shop/new" element={<ShopNew />} />
