@@ -7,13 +7,16 @@ export function StatusProgress<T extends string>({
   status,
   labels,
   className = "",
+  liveStatuses,
 }: {
   flow: readonly T[];
   status: T;
   labels?: Partial<Record<T, string>>;
   className?: string;
+  liveStatuses?: readonly T[];
 }) {
   const idx = Math.max(0, flow.indexOf(status));
+  const isLive = liveStatuses?.includes(status) ?? false;
   return (
     <div className={`w-full ${className}`} aria-label={`Status: ${labels?.[status] ?? status}`}>
       <div className="flex items-center gap-1">
@@ -42,8 +45,14 @@ export function StatusProgress<T extends string>({
           );
         })}
       </div>
-      <div className="mt-1.5 text-[11px] text-muted-foreground capitalize">
-        {labels?.[status] ?? String(status).replace(/_/g, " ")}
+      <div className="mt-1.5 text-[11px] text-muted-foreground capitalize flex items-center gap-1.5">
+        {isLive && (
+          <span className="relative inline-flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+        )}
+        <span>{labels?.[status] ?? String(status).replace(/_/g, " ")}</span>
       </div>
     </div>
   );
