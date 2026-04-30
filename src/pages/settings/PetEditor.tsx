@@ -39,6 +39,7 @@ const PetEditor = () => {
     const { error } = await supabase.from("pets").update({
       name: pet.name, breed: pet.breed, date_of_birth: pet.date_of_birth || null,
       gender: pet.gender, weight_kg: pet.weight_kg ? Number(pet.weight_kg) : null,
+      target_weight_kg: pet.target_weight_kg ? Number(pet.target_weight_kg) : null,
       neutered: pet.neutered,
       activity_level: pet.activity_level, diet_type: pet.diet_type,
       social_level: pet.social_level,
@@ -101,7 +102,11 @@ const PetEditor = () => {
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Weight (kg)" type="number" value={pet.weight_kg?.toString() ?? ""} onChange={(v) => update({ weight_kg: v })} />
-        <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px] mt-[22px]">
+        <Field label="Target weight (kg)" type="number" value={pet.target_weight_kg?.toString() ?? ""} onChange={(v) => update({ target_weight_kg: v })} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px]">
           <div className="text-sm font-medium">Neutered</div>
           <Switch checked={!!pet.neutered} onCheckedChange={onNeuteredChange} />
         </label>
