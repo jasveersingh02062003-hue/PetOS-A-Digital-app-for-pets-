@@ -231,6 +231,7 @@ const App = () => (
               <Route path="/settings/blocked" element={<BlockedAccounts />} />
               <Route path="/admin/moderation" element={<ModerationQueue />} />
               <Route path="/admin/orgs" element={<OrgReview />} />
+              <Route path="/admin/org-review" element={<OrgReview />} />
               <Route path="/admin/providers" element={<ProviderReview />} />
               <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
               <Route path="/onboarding/org" element={<OrgOnboarding />} />
