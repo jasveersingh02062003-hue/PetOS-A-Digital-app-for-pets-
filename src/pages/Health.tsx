@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePets, useProfile } from "@/hooks/useProfile";
@@ -429,10 +429,9 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
 /* ============== SYMPTOMS ============== */
 const SymptomsTab = ({ petId, openSignal = 0 }: { petId: string; openSignal?: number }) => {
   const [open, setOpen] = useState(false);
-  // External open trigger from the "Log symptom" quick action
-  // (signal increments → open dialog)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // useEffect intentionally outside import block to keep diff small
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
   const { data: profile } = useProfile();
   const emergencyVet = (profile as any)?.emergency_vet ?? null;
   const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;
