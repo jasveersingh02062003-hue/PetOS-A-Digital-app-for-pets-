@@ -200,7 +200,7 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
           <Plus className="h-4 w-4" /> Add manually
         </Button>
       </div>
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" /> : data.map((v) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" hint="Scan the vaccine card or add the most recent shot — we'll remind you when boosters are due." /> : data.map((v) => (
         <Card key={v.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -282,7 +282,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
   return (
     <div className="space-y-3">
       <AddButton label="Add record" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No records yet" /> : data.map((r) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No records yet" hint="Upload visit summaries, lab reports or prescriptions so they're one tap away at the next consult." /> : data.map((r) => (
         <Card key={r.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -418,7 +418,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
         </Card>
       )}
       <AddButton label="Log symptom" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No symptoms logged" /> : data.map((s) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No symptoms logged" hint="Log anything unusual — vomiting, limping, lethargy. AI flags signs that may need a vet." /> : data.map((s) => (
         <Card key={s.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -551,7 +551,7 @@ const NutritionTab = ({ petId }: { petId: string }) => {
   return (
     <div className="space-y-3">
       <AddButton label="Log meal" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No meals logged" /> : data.map((n) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No meals logged" hint="A few entries help spot diet-related patterns and allergies in your AI insights." /> : data.map((n) => (
         <Card key={n.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
