@@ -8,7 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Heart, Sparkles, Camera, Loader2, PawPrint, Building2,
-  Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase,
+  Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase, Stethoscope,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,16 +41,17 @@ import { IdentityStep } from "@/components/onboarding/IdentityStep";
 
 type RoleChoice =
   | "pet_parent" | "buyer" | "provider" | "breeder"
-  | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo";
+  | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo" | "vet";
 
 type Stage =
   | "identity" | "role" | "parent" | "buyer" | "rescuer" | "breeder"
-  | "org" | "provider" | "add-pet" | "add-another" | "done";
+  | "org" | "provider" | "vet" | "add-pet" | "add-another" | "done";
 
 const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; nextStage: Stage }[] = [
   { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint, nextStage: "parent" },
   { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders", Icon: SearchIcon, nextStage: "buyer" },
   { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, driver…", Icon: Briefcase, nextStage: "provider" },
+  { value: "vet", title: "Veterinarian", sub: "I treat pets professionally", Icon: Stethoscope, nextStage: "vet" },
   { value: "rescuer", title: "Independent rescuer", sub: "I rescue animals on my own", Icon: Heart, nextStage: "rescuer" },
   { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, nextStage: "breeder" },
   { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, nextStage: "breeder" },
@@ -255,6 +256,9 @@ const Onboarding = () => {
   }
   if (stage === "breeder") {
     return <Suspense fallback={<StageLoader />}><BreederProfile /></Suspense>;
+  }
+  if (stage === "vet") {
+    return <VetRedirect />;
   }
   if (stage === "org") {
     return <Suspense fallback={<StageLoader />}><OrgOnboarding /></Suspense>;
@@ -476,5 +480,11 @@ const StageLoader = () => (
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
   </div>
 );
+
+const VetRedirect = () => {
+  const nav = useNavigate();
+  useEffect(() => { nav("/vet/onboarding", { replace: true }); }, [nav]);
+  return <StageLoader />;
+};
 
 export default Onboarding;

@@ -75,8 +75,16 @@ const VetOnboarding = () => {
       price_clinic_inr: feeClinic ? parseInt(feeClinic) : 0,
       onboarded: true,
     }, { onConflict: "user_id" });
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
+    const { error: profErr } = await supabase
+      .from("profiles")
+      .update({ onboarded: true } as any)
+      .eq("id", user.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (profErr) toast.error(profErr.message);
     toast.success("Vet profile saved");
     refetch();
     nav("/vet");

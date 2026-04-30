@@ -116,6 +116,11 @@ const ProviderWizard = () => {
         });
         if (ins.error) throw ins.error;
       }
+      const { error: profErr } = await supabase
+        .from("profiles")
+        .update({ onboarded: true } as any)
+        .eq("id", user.id);
+      if (profErr) throw profErr;
       return providerId;
     },
     onSuccess: () => {
