@@ -35,7 +35,7 @@ export function AvailabilityPicker({ vetId, mode, date, onChange, slotMinutes = 
         .eq("vet_id", vetId)
         .eq("weekday", weekday)
         .eq("mode", mode);
-      return (data ?? []) as Array<{ start_time: string; end_time: string }>;
+      return (data ?? []) as unknown as Array<{ start_time: string; end_time: string }>;
     },
   });
 
