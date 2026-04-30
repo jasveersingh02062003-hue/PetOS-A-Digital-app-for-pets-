@@ -11,6 +11,8 @@ import { LeafletMap } from "@/components/maps/LeafletMap";
 import { WalkHealthFlagSheet } from "@/components/walker/WalkHealthFlagSheet";
 import { pawIcon } from "@/components/maps/PawMarker";
 import { totalDistanceKm, formatDuration, paceMinPerKm, formatPace, type LatLng } from "@/lib/walkStats";
+import { StatusProgress } from "@/components/booking/StatusProgress";
+import { WALK_FLOW, WALK_LABELS } from "@/lib/bookingFlows";
 
 type Track = { id: string; lat: number; lng: number; recorded_at: string };
 type Summary = {
@@ -226,6 +228,28 @@ const WalkSession = () => {
       </header>
 
       <div className="container-app pt-4 space-y-3">
+        {(() => {
+          const bs = (booking as any)?.status as string | undefined;
+          if (!bs || bs === "cancelled" || bs === "declined") return null;
+          // Derive walk-specific step from booking.status + tracking signals.
+          const hasRecent = !!last && Date.now() - new Date(last.recorded_at).getTime() < 5 * 60 * 1000;
+          let step: (typeof WALK_FLOW)[number];
+          if (bs === "completed") step = "completed";
+          else if (tracking || hasRecent) step = "in_progress";
+          else if (bs === "confirmed" && (tracks?.length ?? 0) > 0) step = "on_the_way";
+          else step = "confirmed";
+          return (
+            <Card className="rounded-2xl border-hairline p-3">
+              <StatusProgress
+                flow={WALK_FLOW}
+                status={step}
+                labels={WALK_LABELS}
+                liveStatuses={["on_the_way", "in_progress"] as const}
+              />
+            </Card>
+          );
+        })()}
+
         <Card className="rounded-2xl border-hairline overflow-hidden p-0">
           {last ? (
             <LeafletMap
