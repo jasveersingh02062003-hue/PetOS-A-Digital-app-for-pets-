@@ -2,7 +2,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X, MapPin, ShieldCheck } from "lucide-react";
+import { Filter, X, MapPin, ShieldCheck, Clock, Heart } from "lucide-react";
 import { POPULAR_CITIES } from "@/hooks/useGeoCity";
 import { BREEDS } from "@/lib/breeds";
 
@@ -15,7 +15,9 @@ export type ListingFilterValue = {
   priceMax?: number;
   ageMonths?: string;        // "0-3" | "3-6" | "6-12" | "12+"
   verifiedOnly?: boolean;
-  sort?: "newest" | "price_asc" | "price_desc";
+  openNow?: boolean;
+  matingOnly?: boolean;
+  sort?: "newest" | "price_asc" | "price_desc" | "soonest_available";
 };
 
 type Props = {
@@ -28,6 +30,12 @@ type Props = {
   showPrice?: boolean;
   showVerified?: boolean;
   showSort?: boolean;
+  /** show "Open now" pill (service hubs) */
+  showOpenNow?: boolean;
+  /** show "Mating only" pill (adopt hub) */
+  showMatingOnly?: boolean;
+  /** include "Soonest available" sort option */
+  showSoonestAvailable?: boolean;
 };
 
 const SPECIES = ["dog", "cat", "bird", "rabbit", "other"];
@@ -48,6 +56,9 @@ export const ListingFilters = ({
   showPrice = true,
   showVerified = true,
   showSort = true,
+  showOpenNow = false,
+  showMatingOnly = false,
+  showSoonestAvailable = false,
 }: Props) => {
   const set = <K extends keyof ListingFilterValue>(k: K, v: ListingFilterValue[K]) =>
     onChange({ ...value, [k]: v });
@@ -129,12 +140,48 @@ export const ListingFilters = ({
             <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="newest">Newest</SelectItem>
+              {showSoonestAvailable && <SelectItem value="soonest_available">Soonest available</SelectItem>}
               <SelectItem value="price_asc">Price ↑</SelectItem>
               <SelectItem value="price_desc">Price ↓</SelectItem>
             </SelectContent>
           </Select>
         )}
       </div>
+
+      {(showOpenNow || showMatingOnly || showVerified) && (
+        <div className="flex flex-wrap gap-2">
+          {showOpenNow && (
+            <Button
+              variant={value.openNow ? "default" : "outline"}
+              size="sm"
+              onClick={() => set("openNow", !value.openNow ? true : undefined)}
+              className="h-8 rounded-full text-xs gap-1.5"
+            >
+              <Clock className="h-3 w-3" /> Open now
+            </Button>
+          )}
+          {showMatingOnly && (
+            <Button
+              variant={value.matingOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => set("matingOnly", !value.matingOnly ? true : undefined)}
+              className="h-8 rounded-full text-xs gap-1.5"
+            >
+              <Heart className="h-3 w-3" /> Mating only
+            </Button>
+          )}
+          {showVerified && (
+            <Button
+              variant={value.verifiedOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => set("verifiedOnly", !value.verifiedOnly ? true : undefined)}
+              className="h-8 rounded-full text-xs gap-1.5"
+            >
+              <ShieldCheck className="h-3 w-3" /> Verified only
+            </Button>
+          )}
+        </div>
+      )}
 
       {showPrice && (
         <div className="grid grid-cols-2 gap-2">
@@ -151,17 +198,6 @@ export const ListingFilters = ({
             onChange={(e) => set("priceMax", e.target.value ? Number(e.target.value) : undefined)}
           />
         </div>
-      )}
-
-      {showVerified && (
-        <Button
-          variant={value.verifiedOnly ? "default" : "outline"}
-          size="sm"
-          onClick={() => set("verifiedOnly", !value.verifiedOnly)}
-          className="rounded-full gap-1.5 h-8"
-        >
-          <ShieldCheck className="h-3.5 w-3.5" /> Verified only
-        </Button>
       )}
     </div>
   );

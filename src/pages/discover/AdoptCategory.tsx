@@ -6,6 +6,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { useGeoCity } from "@/hooks/useGeoCity";
 import { ListingFilters, type ListingFilterValue } from "@/components/marketplace/ListingFilters";
+import { GeoBanner } from "@/components/marketplace/GeoBanner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +128,21 @@ const AdoptCategory = () => {
         )}
       </p>
 
+      <GeoBanner onCityChange={(slug) => {
+        if (slug) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}/${slug}`);
+        else if (city) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}`);
+      }} />
       <ListingFilters value={filters} onChange={onFilterChange} />
+      <div className="mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-full text-xs gap-1.5"
+          onClick={() => nav("/mates")}
+        >
+          🤝 Looking for a mate? Browse mating listings
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>

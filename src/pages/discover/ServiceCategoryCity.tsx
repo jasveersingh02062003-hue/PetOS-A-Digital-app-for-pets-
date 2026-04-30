@@ -6,6 +6,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { useGeoCity } from "@/hooks/useGeoCity";
 import { ListingFilters, type ListingFilterValue } from "@/components/marketplace/ListingFilters";
+import { GeoBanner } from "@/components/marketplace/GeoBanner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BadgeCheck, MapPin, Stethoscope } from "lucide-react";
@@ -45,8 +46,19 @@ const ServiceCategoryCity = () => {
       if (filters.verifiedOnly) q = q.eq("verified", true);
       if (filters.priceMin != null) q = q.gte("hourly_rate_inr", filters.priceMin);
       if (filters.priceMax != null) q = q.lte("hourly_rate_inr", filters.priceMax);
+      // "Open now" — fetch the open-now provider id list and intersect
+      let openIds: string[] | null = null;
+      if (filters.openNow) {
+        const { data: openRows } = await supabase
+          .rpc("providers_open_now", { _category: category ?? null, _city: filters.city ?? null });
+        openIds = (openRows ?? []).map((r: any) => r.provider_id);
+        if (openIds.length === 0) return [];
+        q = q.in("id", openIds);
+      }
       if (filters.sort === "price_asc") q = q.order("hourly_rate_inr", { ascending: true, nullsFirst: true });
       else if (filters.sort === "price_desc") q = q.order("hourly_rate_inr", { ascending: false });
+      else if (filters.sort === "soonest_available")
+        q = q.order("next_available_at", { ascending: true, nullsFirst: false });
       else q = q.order("verified", { ascending: false }).order("created_at", { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
@@ -110,6 +122,10 @@ const ServiceCategoryCity = () => {
         )}
       </p>
 
+      <GeoBanner onCityChange={(slug) => {
+        if (slug && category) nav(`/services/${category}/${slug}`);
+        else if (!slug && category && city) nav(`/services/${category}`);
+      }} />
       <ListingFilters
         value={filters}
         onChange={(next) => {
@@ -120,6 +136,8 @@ const ServiceCategoryCity = () => {
         showBreed={false}
         showAge={false}
         showGender={false}
+        showOpenNow
+        showSoonestAvailable
       />
 
       {isLoading ? (
