@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const { data: pet, error: petErr } = await supabase
       .from("pets")
-      .select("id, public_id, owner_id, name, species, breed, gender, date_of_birth, vaccination_verified, bio")
+      .select("id, public_id, owner_id, name, species, breed, gender, date_of_birth, vaccination_verified, bio, allergies, conditions, microchip_id, target_weight_kg, insurance_provider, insurance_policy_number")
       .eq("id", petId)
       .maybeSingle();
     if (petErr || !pet) {
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         return q;
       })(),
       supabase.from("vaccinations").select("*").eq("pet_id", petId).order("administered_on", { ascending: false }).limit(50),
-      supabase.from("weights").select("*").eq("pet_id", petId).order("measured_on", { ascending: true }).limit(60),
+      supabase.from("vital_logs").select("recorded_at, weight_kg, temperature_c").eq("pet_id", petId).not("weight_kg", "is", null).order("recorded_at", { ascending: true }).limit(60),
       supabase.from("nutrition_logs").select("*").eq("pet_id", petId).order("logged_at", { ascending: false }).limit(60),
       supabase.from("symptom_logs").select("*").eq("pet_id", petId).order("logged_at", { ascending: false }).limit(60),
       supabase.rpc("current_tier", { _user_id: user.id }),
@@ -166,7 +166,13 @@ Deno.serve(async (req) => {
     if (pet.breed) kv("Breed", String(pet.breed));
     if (pet.gender) kv("Sex", String(pet.gender));
     if (pet.date_of_birth) kv("Born", fmt(pet.date_of_birth));
+    if ((pet as any).microchip_id) kv("Microchip", String((pet as any).microchip_id));
+    if ((pet as any).target_weight_kg) kv("Target weight", `${Number((pet as any).target_weight_kg).toFixed(1)} kg (${(Number((pet as any).target_weight_kg) * 2.2046).toFixed(1)} lb)`);
     kv("Vaccination verified", pet.vaccination_verified ? "Yes ✓" : "No");
+    if ((pet as any).insurance_provider) {
+      const polNum = (pet as any).insurance_policy_number ? ` · #${(pet as any).insurance_policy_number}` : "";
+      kv("Insurance", `${(pet as any).insurance_provider}${polNum}`);
+    }
     if (includeOwner && ownerProfile.data) {
       kv("Owner", ownerProfile.data.full_name ?? "—");
       if (ownerProfile.data.city) kv("City", ownerProfile.data.city);
@@ -174,6 +180,15 @@ Deno.serve(async (req) => {
     }
     kv("Generated", new Date().toISOString().slice(0, 16).replace("T", " "));
     if (range !== "all") kv("Range", range === "12m" ? "Last 12 months" : "Last 6 months");
+
+    // Allergies & conditions — important for any vet reading the passport
+    const allergies = ((pet as any).allergies ?? []) as string[];
+    const conditions = ((pet as any).conditions ?? []) as string[];
+    if (allergies.length || conditions.length) {
+      heading("Allergies & conditions");
+      if (allergies.length) text(`Allergies: ${allergies.join(", ")}`, { bold: true, color: [0.7, 0.45, 0.05] });
+      if (conditions.length) text(`Conditions: ${conditions.join(", ")}`, { bold: true, color: [0.75, 0.15, 0.3] });
+    }
 
     // Vaccinations
     heading("Vaccinations");
@@ -188,12 +203,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Weights — sparkline
+    // Weights — sparkline (kg, parenthesised lb for non-metric vets)
     heading("Weight history");
     if (!weights.data || weights.data.length === 0) {
       text("No weight measurements.", { color: [0.5, 0.5, 0.55] });
     } else {
-      const w = weights.data as Array<{ measured_on: string; weight_kg: number }>;
+      const w = (weights.data as Array<{ recorded_at: string; weight_kg: number }>).map((r) => ({
+        measured_on: r.recorded_at,
+        weight_kg: Number(r.weight_kg),
+      }));
       const min = Math.min(...w.map((p) => Number(p.weight_kg)));
       const max = Math.max(...w.map((p) => Number(p.weight_kg)));
       const span = Math.max(0.1, max - min);
@@ -209,6 +227,12 @@ Deno.serve(async (req) => {
         borderColor: rgb(0.88, 0.88, 0.92),
         borderWidth: 0.5,
       });
+      // target line if known
+      const target = (pet as any).target_weight_kg ? Number((pet as any).target_weight_kg) : null;
+      if (target && target >= min && target <= max) {
+        const ty = baseY + ((target - min) / span) * (chartH - 8) + 4;
+        page.drawLine({ start: { x: margin, y: ty }, end: { x: margin + chartW, y: ty }, thickness: 0.5, color: rgb(0.85, 0.4, 0.4) });
+      }
       for (let i = 0; i < w.length - 1; i++) {
         const x1 = margin + (i / (w.length - 1)) * chartW;
         const x2 = margin + ((i + 1) / (w.length - 1)) * chartW;
@@ -217,10 +241,13 @@ Deno.serve(async (req) => {
         page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 1.2, color: rgb(0.2, 0.4, 0.9) });
       }
       y = baseY - 6;
-      text(`Range: ${min.toFixed(1)}kg – ${max.toFixed(1)}kg over ${w.length} measurements (${fmt(w[0].measured_on)} → ${fmt(w[w.length - 1].measured_on)})`, {
+      const minLb = (min * 2.2046).toFixed(1);
+      const maxLb = (max * 2.2046).toFixed(1);
+      text(`Range: ${min.toFixed(1)} kg (${minLb} lb) – ${max.toFixed(1)} kg (${maxLb} lb) · ${w.length} measurements · ${fmt(w[0].measured_on)} → ${fmt(w[w.length - 1].measured_on)}`, {
         size: 9,
         color: [0.4, 0.4, 0.45],
       });
+      if (target) text(`Target: ${target.toFixed(1)} kg (${(target * 2.2046).toFixed(1)} lb)`, { size: 9, color: [0.7, 0.3, 0.3] });
     }
 
     // Health records
