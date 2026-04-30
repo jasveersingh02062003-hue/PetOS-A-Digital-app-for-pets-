@@ -38,7 +38,7 @@ export function useSellerTrust(userId?: string | null) {
       .channel(`trust:${userId}`)
       .on(
         "postgres_changes" as any,
-        { event: "INSERT", schema: "public", table: "reviews", filter: `subject_user_id=eq.${userId}` },
+        { event: "INSERT", schema: "public", table: "reviews", filter: `subject_id=eq.${userId}` },
         () => setVersion((v) => v + 1),
       )
       .subscribe();
