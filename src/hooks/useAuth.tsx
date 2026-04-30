@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPersistedCache } from "@/lib/queryClient";
 
 type AuthCtx = {
   user: User | null;
@@ -33,6 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Phase 8 — wipe persisted React Query cache so the next user on this
+    // device doesn't see the previous user's hydrated data flash on screen.
+    await clearPersistedCache();
   };
 
   return <Ctx.Provider value={{ user, session, loading, signOut }}>{children}</Ctx.Provider>;
