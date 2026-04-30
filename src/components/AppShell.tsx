@@ -10,6 +10,7 @@ import { ContextualFab } from "./ContextualFab";
 import { OfflineBanner } from "./OfflineBanner";
 import { SkipToContent } from "./SkipToContent";
 import { InstallAppBanner } from "./InstallAppBanner";
+import { EmergencyBanner } from "./EmergencyBanner";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -37,6 +38,7 @@ export const AppShell = () => {
       <SkipToContent />
       <OfflineBanner />
       <InstallAppBanner />
+      {user && <EmergencyBanner />}
       {user && (
         <div className="fixed top-3 right-3 z-40 pad-top-safe">
           <NotificationBell />

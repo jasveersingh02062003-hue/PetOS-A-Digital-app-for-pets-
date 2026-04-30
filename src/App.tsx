@@ -33,6 +33,7 @@ import PostAuth from "./pages/PostAuth";
 const Discover = lazy(() => import("./pages/Discover"));
 const Mates = lazy(() => import("./pages/Mates"));
 const Health = lazy(() => import("./pages/Health"));
+const HealthAlerts = lazy(() => import("./pages/HealthAlerts"));
 const Services = lazy(() => import("./pages/Services"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Explore = lazy(() => import("./pages/Explore"));
@@ -307,6 +308,7 @@ const App = () => (
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/mates" element={<Mates />} />
                 <Route path="/health" element={<Health />} />
+                <Route path="/health/alerts" element={<HealthAlerts />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/profile" element={<Profile />} />
               </Route>
