@@ -1,100 +1,116 @@
-# Sprint M — Close the "Nearest + Live" Gaps
+# Sprint UX1 — "E-commerce ease, pet-first soul"
 
-Goal: turn the audit's ⚠️/❌ items into ✅, organized into 4 small, shippable phases. Each phase is independently deployable so the app stays working between phases.
+Goal: every listing in Petos (Adopt, Mate, Services, Shop, Vets, Shelters) reads at a glance like an Amazon/Flipkart product tile — same hierarchy, same scan-in-1-second mental model — but uses **trust + identity badges** instead of discount stickers. One responsive UI serves both the public website and the installed PWA; visibility of CTAs adapts to auth state.
 
----
-
-## Phase M1 — Booking lifecycle feels alive (1 deploy)
-
-The `<StatusProgress />` component already exists but is unused. Wire it into every booking surface so users see the same Zomato/Swiggy-style animated progress everywhere.
-
-Work:
-- Add `<StatusProgress />` to:
-  - `TaxiDetail.tsx` — steps: requested → accepted → arriving → in_progress → completed (driven by `transport_bookings.status` + `transport_legs`).
-  - `AppointmentRoom.tsx` (vet) — steps: scheduled → checked_in → in_progress → completed (driven by `appointments.status`).
-  - `WalkSession.tsx` — steps: confirmed → on_the_way → in_progress → completed (driven by booking + presence of recent `walk_tracks`).
-  - New booking detail page `BookingDetail.tsx` for generic `service_bookings` rows (route `/bookings/:id`), reachable from `MyAppointments.tsx` and the walker accepted-job push deep link.
-- Make all four use a single `useBookingStatus(bookingId)` hook subscribing to the relevant `postgres_changes` channel so the progress bar animates without refresh.
-- Add a "Live" pulsing dot beside the progress when in-progress.
-
-User-visible result: every booking now shows an animated 4-5 step progress bar that updates in real time without reloading.
+This sprint focuses on the **card system + supporting primitives** so all downstream pages inherit the same look automatically. Detail-page, checkout, and "recently viewed / wishlist rail" upgrades are queued as Sprint UX2.
 
 ---
 
-## Phase M2 — Nearby fanout + Vet directory + Mates live (1 deploy)
+## What we're shipping
 
-Make new local listings push to nearby users and give vets a proper directory.
+### Phase UX1.A — The universal Listing Card
 
-Backend (one migration):
-- Generic helper: `public.fanout_nearby(_actor uuid, _lat double precision, _lng double precision, _radius_km int, _kind text, _payload jsonb)` — finds users within radius (using `profiles.lat/lng` + `haversine_km`) and inserts into `notification_jobs` so the existing `tg_notifications_send_push` + `send-push` edge function delivers them.
-- Triggers wiring:
-  - `tg_mate_listing_nearby` AFTER INSERT on `mate_listings` (status='active') → fanout 25 km.
-  - `tg_pet_listing_nearby` AFTER INSERT on `pet_listings` (purpose='adopt') → fanout 25 km.
-  - `tg_provider_nearby` AFTER INSERT on `service_providers` (active=true) → fanout 15 km.
-- `ALTER PUBLICATION supabase_realtime ADD TABLE public.mate_listings;` so clients can listen live.
+A single component `<ListingCard />` in `src/components/marketplace/ListingCard.tsx` that all four marketplaces reuse. Slot-based so each domain (puppy, stud, vet, product) can fill the badge row with its own facts.
 
-Frontend:
-- `RealtimeBridge.tsx`: add a second `mate_listings` listener that toasts "New {breed} {sex} {distance}km away" when within 25 km of `useUserLocation`.
-- `MatesGrid.tsx`: invalidate `discover_mating_listings` query on `mate_listings` postgres_changes for instant grid refresh.
-- New `src/pages/Vets.tsx` (route `/vets`):
-  - Uses `nearby_vets` RPC.
-  - Filters: specialty chips (general/dermatology/surgery/etc.), "Open 24/7" toggle, "Open now" toggle (from `clinic_hours` if present, else hide), `<NearbyToggle />`.
-  - Each row: avatar, name, specialty, distance chip, "Book" + "Directions" buttons.
-  - Add nav entry in `Discover.tsx` and a "See all vets" link inside `<NearestVetCta />`.
-- `Breeders.tsx`: surface `last_sign_in_at`-derived "Active 2h ago" and computed `response_rate_pct` (accepted_requests / total_requests) — both already inferable from existing tables; add a tiny SQL view `breeder_stats` to keep the query cheap.
+Card anatomy (top → bottom):
 
-User-visible result: open the app in Mumbai, someone lists a Lab stud 4 km away → instant toast + the mates grid updates without refresh. Tap "Vets" to see the closest clinics with 24/7 and specialty filters.
+```text
+┌─────────────────────────────────┐
+│  [16:9 hero · LazyImage]        │
+│  ♡ wishlist (top-right)         │
+│  🎗 Bred on PetOS (top-left)    │
+├─────────────────────────────────┤
+│  Title · 1 line, semibold       │
+│  ₹ price  ·  📍 city · 3.2 km   │
+│  ⭐ 4.9 (22)  🟢 Verified ✓     │
+│  💉 Vaccinated  · 💊 Dewormed   │
+│  [primary CTA pill, full-width] │
+└─────────────────────────────────┘
+```
+
+Props:
+- `image`, `title`, `price` (or `priceLabel`), `city`, `distanceKm`
+- `rating?: { score, count }`
+- `trustBadges: TrustBadge[]` (verified, bred-on-petos, vaccinated, KYC, etc.)
+- `healthChips: string[]` (vaccinated, dewormed, microchipped, hip-tested…)
+- `roleRing?: 'breeder'|'shelter'|'vet'|'walker'|'groomer'|'kennel'` (color-codes the avatar)
+- `cta: { label, onClick, requiresAuth?: boolean }`
+- `onWishlist?`, `wishlisted?`
+- `density?: 'comfortable' | 'compact'` (compact = 2-up grid mobile; comfortable = 1-up rail/hero)
+
+Behavior:
+- If `requiresAuth` and user is logged out → CTA becomes "Sign in to contact" and routes via `<ContactSellerSheet>`.
+- Wishlist heart hidden for logged-out visitors (replaced by "Save for later — sign in").
+- Loading state uses an existing skeleton from `src/components/skeletons/`.
+- Fully keyboard accessible; whole card is a link, CTA stops propagation.
+
+### Phase UX1.B — Pet-first identity & trust primitives
+
+Three small components (or refactors of existing ones) so every surface speaks the same visual language:
+
+1. `<RoleRing avatar role="breeder" size="md" />` — wraps `<Avatar>` with a 2px color ring per role (breeder=amber, shelter=lilac, vet=emerald, walker=sky, groomer=rose, kennel=indigo). Reuses tokens already in `index.css`.
+2. `<TrustChip kind="verified|bred-on-petos|kyc|health-tested" />` — single-line pill with icon + label, same shape across all cards. Refactors fragmented `BredOnPetosRibbon.tsx`, `PetVerifyBadge.tsx`, `SellerBadge.tsx`, `marketplace/HealthTestChip.tsx` under one visual API while keeping their existing imports working.
+3. `<PriceTag value={35000} currency="INR" suffix="/visit" />` — Flipkart-style large numeral + small suffix, INR-aware formatting.
+
+### Phase UX1.C — E-commerce browsing primitives
+
+Plug these into the listing pages so the *browse* experience matches Amazon/Flipkart:
+
+1. `<CategoryPills />` — horizontal scrolling pill row (already partially exists in `Shop.tsx`); promote to a shared component used by Shop, Services, Adopt, Mates.
+2. `<FilterSheet />` — bottom sheet on mobile / right rail on desktop, with collapsible groups (Species, Breed, City + radius, Price range, Verification status, "Bred on PetOS only" toggle, Seller type, Vaccination). Reuses `ListingFilters.tsx` as a starting point.
+3. `<SortMenu />` — dropdown with: Nearest, Newest, Top rated, Price low→high / high→low. Defaults to "Nearest" once `useUserLocation()` resolves.
+4. `<ResultsHeader count={324} city="Mumbai" />` — Amazon-style "324 results in Mumbai · Delivers to 400001" line.
+
+### Phase UX1.D — Apply the system
+
+Swap legacy card markup → `<ListingCard />` on:
+- `src/pages/Adopt.tsx` (and `AdoptGrid.tsx`)
+- `src/pages/Mates.tsx` (`MatesGrid.tsx`)
+- `src/pages/Services.tsx`
+- `src/pages/Shop.tsx`
+- `src/pages/Vets.tsx`
+- `src/pages/Shelters.tsx`
+
+Each page also gets the `<CategoryPills>` + `<SortMenu>` + `<ResultsHeader>` row so the browsing chrome is consistent.
+
+### Phase UX1.E — Public vs. signed-in adaptation
+
+One UI, two modes (no separate website codebase):
+
+- Add a `useViewerMode()` hook returning `'guest' | 'member'`.
+- `<BottomNav>` already hides for guests on a few routes — extend so guest mode hides composer, wishlist heart, and "Add to cart"; CTAs become "Sign in to continue".
+- Add a slim top "Install app for the full experience" banner via the existing `InstallNudgeSheet`, shown only on guest web sessions (suppressed inside the installed PWA via `display-mode: standalone` media query).
+- SEO meta on each public listing page already handled by `useSeo`; no change.
 
 ---
 
-## Phase M3 — Provider richness + Shop ETA + Order tracking (1 deploy)
+## Out of scope (queued for Sprint UX2)
 
-Backend:
-- `service_providers.service_radius_km` column (int, default 10) — already nullable-safe.
-- `orders.shipment_status` enum (`pending|packed|shipped|out_for_delivery|delivered`), `orders.tracking_url`, `orders.shipped_at`. Add `ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;`.
-- Tiny RPC `estimate_delivery(_pincode text, _seller_lat numeric, _seller_lng numeric)` returning `{eta_days_min, eta_days_max, distance_km}` using a pincode→lat/lng lookup table (`pincodes(pincode pk, lat, lng, city, state)`); seed for India top-50 cities to start, gracefully fallback to "3-5 days" when unknown.
-
-Frontend:
-- `ServiceDetail.tsx`:
-  - Draw a translucent radius circle on the `<LeafletMap>` using `service_radius_km`.
-  - Compact 7-day availability strip pulled from `provider_slots` (already exists). Empty days greyed; tap a day to see slot times.
-- `Shop.tsx` product card: "Delivers to {pincode} in 2-3 days" once the user enters a pincode (stored in `localStorage` + on profile).
-- `Checkout.tsx`: pincode field with live ETA pill above "Place Order".
-- `Orders.tsx`: realtime subscription to `orders`; show `<StatusProgress />` for shipments using the new enum.
-
-User-visible result: provider page shows the area they cover; checkout shows real ETA based on your pincode; orders page updates the moment the seller marks it shipped.
+- Detail-page redesign (hero carousel + "Seller's other listings" rail + reviews-with-verified-purchase tag).
+- Checkout/booking 3-step wizard polish.
+- Wishlist storage + "Recently viewed" horizontal rail on Home.
+- Breeder/Vet/Kennel professional dashboard variant of Home.
+- Any new database tables (this sprint is purely presentation; data already exists).
 
 ---
 
-## Phase M4 — Smarter pushes (1 deploy)
+## Technical notes
 
-Backend:
-- `appointment_reminders` cron via `pg_cron` + `pg_net` calling a new edge function `appointment-reminders` every 5 min that finds `appointments` starting in 25-35 min and inserts `notification_jobs` rows. (Insert SQL via the insert tool, not migration, because it embeds the project URL + anon key.)
-- New edge function `supabase/functions/appointment-reminders/index.ts` (CORS, JWT-validated via service role).
-
-Frontend:
-- `RealtimeBridge.tsx`: when a `notifications` row of kind `job_accepted` arrives, deep-link the toast action to `/bookings/:id` (the new detail page from M1) so "Walker accepted" pushes go straight to the live map.
-
-User-visible result: 30 minutes before a vet visit, the user gets a push reminder; tapping a "Walker accepted" notification jumps directly into the live tracking map.
+- All colors via existing semantic tokens in `index.css` (`--primary`, `--muted`, role-ring tokens). No raw hex in components.
+- Card uses `aspect-[16/9]` for hero, `LazyImage`, and respects `prefers-reduced-motion` for hover lift.
+- Distance + city already provided by `useNearbyQuery` / `DistanceChip`; `<ListingCard>` just renders them.
+- Wishlist hookup uses existing `marketplace/WishlistButton.tsx` — wired but its persistence layer is unchanged.
+- No PWA / service-worker changes — install nudge is UI-only and gated by `matchMedia('(display-mode: standalone)')`.
+- Backwards-compat: legacy components (`BredOnPetosRibbon`, `PetVerifyBadge`, etc.) keep their exports so unrelated screens don't break; internally they render `<TrustChip>`.
 
 ---
 
-## Out of scope for this sprint (audit items 8-10)
+## Order of implementation
 
-- Local breed-club suggestions in `Groups.tsx` — small, can ship in a follow-up.
-- Geofence + family sharing for GPS tracker — needs hardware roadmap call.
-- Playdate planner — needs UX design first.
+1. UX1.B primitives (RoleRing, TrustChip, PriceTag) — low risk, unblocks the rest.
+2. UX1.A `<ListingCard>` + Storybook-style preview on a single page first (Shop) for visual sign-off.
+3. UX1.C browsing chrome shared components.
+4. UX1.D rollout across all six listing pages.
+5. UX1.E guest-mode polish + install nudge.
 
-These stay queued; everything else from the audit moves to ✅ after M1-M4.
-
----
-
-## Technical notes (for reviewers)
-
-- All new SQL goes through one migration per phase except the cron job (insert tool).
-- No edits to `src/integrations/supabase/{client,types}.ts` — types regenerate after each migration.
-- Reuse existing primitives: `useNearbyQuery`, `useUserLocation`, `<DistanceChip />`, `<NearbyToggle />`, `<StatusProgress />`, `notify_user`, `notification_jobs`, `send-push`. No new infra concepts.
-- Risk: nearby fanout could be noisy. Throttle by capping each `fanout_nearby` call to 500 recipients and dedupe via a `notification_jobs.dedupe_key` so the same listing can't fan out twice.
-- All RLS policies on new columns/tables follow the existing pattern (owner read/write, public read where the parent row is public).
-
-Reply **"go M1"** (or "go all" to ship M1-M4 back-to-back).
+After each phase I'll report a short progress note before moving on.
