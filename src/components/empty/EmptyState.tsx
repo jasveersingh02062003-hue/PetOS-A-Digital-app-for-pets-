@@ -10,6 +10,9 @@ type Props = {
   onCta?: () => void;
   children?: ReactNode;
   className?: string;
+  /** Optional secondary action — typical use: "Expand radius" on geo-filtered lists */
+  onExpandRadius?: () => void;
+  expandRadiusLabel?: string;
 };
 
 export const EmptyState = ({
@@ -20,6 +23,8 @@ export const EmptyState = ({
   onCta,
   children,
   className = "",
+  onExpandRadius,
+  expandRadiusLabel = "Expand radius",
 }: Props) => {
   return (
     <div
@@ -34,11 +39,18 @@ export const EmptyState = ({
       {description && (
         <p className="text-sm text-muted-foreground max-w-xs mb-4">{description}</p>
       )}
-      {ctaLabel && onCta && (
-        <Button onClick={onCta} className="rounded-full">
-          {ctaLabel}
-        </Button>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {ctaLabel && onCta && (
+          <Button onClick={onCta} className="rounded-full">
+            {ctaLabel}
+          </Button>
+        )}
+        {onExpandRadius && (
+          <Button onClick={onExpandRadius} variant="outline" className="rounded-full">
+            {expandRadiusLabel}
+          </Button>
+        )}
+      </div>
       {children}
     </div>
   );

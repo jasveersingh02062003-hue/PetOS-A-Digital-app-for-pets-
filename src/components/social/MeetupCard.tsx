@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, Users } from "lucide-react";
 import type { Meetup } from "@/hooks/useMeetups";
 import { AuthorIdentity } from "@/components/AuthorIdentity";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
 
 const fmt = (iso: string) => {
   const d = new Date(iso);
@@ -10,7 +11,7 @@ const fmt = (iso: string) => {
     d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 };
 
-export const MeetupCard = ({ meetup }: { meetup: Meetup }) => {
+export const MeetupCard = ({ meetup, distanceKm }: { meetup: Meetup; distanceKm?: number | null }) => {
   return (
     <Link
       to={`/meetups/${meetup.id}`}
@@ -26,6 +27,9 @@ export const MeetupCard = ({ meetup }: { meetup: Meetup }) => {
             <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
               <MapPin className="h-3 w-3 shrink-0" /> {meetup.venue}{meetup.city ? `, ${meetup.city}` : ""}
             </div>
+          )}
+          {distanceKm != null && (
+            <DistanceChip distanceKm={distanceKm} className="mt-1" />
           )}
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
