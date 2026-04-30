@@ -127,6 +127,9 @@ const OrgOnboarding = () => {
       };
       const { error } = await supabase.from("org_profiles").upsert(payload, { onConflict: "user_id" });
       if (error) throw error;
+      // Mark onboarding complete so PostAuth doesn't trap the user back here
+      // if they close the tab before clicking the final Done button.
+      await supabase.from("profiles").update({ onboarded: true } as any).eq("id", u.user.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org-self"] });
