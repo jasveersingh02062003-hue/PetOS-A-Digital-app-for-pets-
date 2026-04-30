@@ -381,12 +381,12 @@ const Shop = () => {
         </div>
       )}
 
-      {/* Result count */}
+      {/* Result count — Amazon-style header */}
       {!isLoading && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-          <span>{visible.length} {visible.length === 1 ? "product" : "products"}</span>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <ResultsHeader count={visible.length} />
           {hasActiveFilters && (
-            <button onClick={resetFilters} className="text-primary font-medium">Clear all</button>
+            <button onClick={resetFilters} className="text-xs text-primary font-medium">Clear all</button>
           )}
         </div>
       )}
