@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export type Coords = { lat: number; lng: number; source: "browser" | "profile" };
 
@@ -14,6 +15,14 @@ export function useUserLocation() {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastToastRef = useRef<number>(0);
+
+  const announce = () => {
+    const now = Date.now();
+    if (now - lastToastRef.current < 5 * 60 * 1000) return;
+    lastToastRef.current = now;
+    toast("Location updated", { duration: 1500 });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +56,7 @@ export function useUserLocation() {
       if (browser) {
         setCoords(browser);
         setLoading(false);
+        announce();
         return;
       }
       const profile = await fromProfile();
@@ -70,6 +80,7 @@ export function useUserLocation() {
         setCoords({ lat: p.coords.latitude, lng: p.coords.longitude, source: "browser" });
         setError(null);
         setLoading(false);
+        announce();
       },
       (e) => { setError(e.message); setLoading(false); },
       { timeout: 10_000 }
