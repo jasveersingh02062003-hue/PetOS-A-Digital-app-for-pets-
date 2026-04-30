@@ -139,6 +139,7 @@ const OrgProfile = lazy(() => import("./pages/OrgProfile"));
 const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
+const AddAnotherPet = lazy(() => import("./pages/onboarding/AddAnotherPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
