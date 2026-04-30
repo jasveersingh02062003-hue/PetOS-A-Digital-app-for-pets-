@@ -188,12 +188,10 @@ const Onboarding = () => {
         const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
-      // Persist parent-only metadata and mark onboarding complete once the
-      // first pet exists, so the user is not sent back into the same flow.
+      // Persist parent-only metadata first.
       const { error: profileErr } = await supabase.from("profiles").upsert({
         id: user.id,
         first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
-        onboarded: true,
       } as any, { onConflict: "id" });
       if (profileErr) throw profileErr;
 
@@ -211,6 +209,12 @@ const Onboarding = () => {
         health_setup_complete: false,
       } as any);
       if (petErr) throw petErr;
+
+      const { error: onboardErr } = await supabase
+        .from("profiles")
+        .update({ onboarded: true } as any)
+        .eq("id", user.id);
+      if (onboardErr) throw onboardErr;
 
       qc.invalidateQueries();
       setDone(true);
