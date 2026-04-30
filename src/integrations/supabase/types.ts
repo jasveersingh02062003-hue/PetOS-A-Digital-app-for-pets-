@@ -397,7 +397,22 @@ export type Database = {
           created_at?: string
           reason?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blocked_users_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       boarding_services: {
         Row: {
@@ -598,7 +613,15 @@ export type Database = {
           source?: string
           verdict?: Database["public"]["Enums"]["mod_verdict"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_moderation_log_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       conversation_members: {
         Row: {
@@ -913,7 +936,15 @@ export type Database = {
           updated_at?: string
           zoo_user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exhibits_zoo_user_id_fkey"
+            columns: ["zoo_user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {
@@ -1405,6 +1436,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pets"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1913,6 +1951,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "mating_listings_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "mating_listings_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: true
@@ -1978,6 +2023,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mating_payments_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "mating_payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "mating_payments_request_id_fkey"
             columns: ["request_id"]
@@ -2284,6 +2343,13 @@ export type Database = {
             referencedRelation: "missing_pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "missing_pet_sightings_reporter_id_fkey_cascade"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       missing_pets: {
@@ -2351,6 +2417,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "missing_pets_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "missing_pets_reward_payment_intent_id_fkey"
             columns: ["reward_payment_intent_id"]
@@ -2454,7 +2527,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       nutrition_logs: {
         Row: {
@@ -2730,7 +2811,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       pedigree_certificates: {
         Row: {
@@ -2782,6 +2871,13 @@ export type Database = {
           verified?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "pedigree_certificates_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "pedigree_certificates_pet_id_fkey"
             columns: ["pet_id"]
@@ -3024,6 +3120,13 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pet_skills_taught_by_fkey"
+            columns: ["taught_by"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       pets: {
@@ -3155,6 +3258,13 @@ export type Database = {
             referencedRelation: "litter_groups"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pets_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       pharmacy_suggestions: {
@@ -3267,6 +3377,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "post_comments_author_id_fkey_cascade"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "post_comments_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
@@ -3316,6 +3433,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_likes_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3423,6 +3547,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey_cascade"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "posts_pet_id_fkey"
             columns: ["pet_id"]
@@ -3646,6 +3777,13 @@ export type Database = {
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "proactive_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       profiles: {
@@ -3736,7 +3874,15 @@ export type Database = {
           units?: Json
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey_cascade"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       provider_documents: {
         Row: {
@@ -3933,6 +4079,13 @@ export type Database = {
             referencedRelation: "service_providers_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "provider_quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       push_subscriptions: {
@@ -3966,7 +4119,15 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       recurring_bookings: {
         Row: {
@@ -4015,6 +4176,13 @@ export type Database = {
           weekdays?: number[]
         }
         Relationships: [
+          {
+            foreignKeyName: "recurring_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "recurring_bookings_pet_id_fkey"
             columns: ["pet_id"]
@@ -4112,7 +4280,15 @@ export type Database = {
           subject_type?: Database["public"]["Enums"]["report_subject"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey_cascade"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       repro_logs: {
         Row: {
@@ -4228,6 +4404,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "rescue_journeys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "rescue_journeys_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
@@ -4277,7 +4460,15 @@ export type Database = {
           updated_at?: string
           verified_purchase?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey_cascade"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       reward_accounts: {
         Row: {
@@ -4460,7 +4651,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_searches_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       service_bookings: {
         Row: {
@@ -4503,6 +4702,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "service_bookings_customer_id_fkey_cascade"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "service_bookings_parent_recurring_id_fkey"
             columns: ["parent_recurring_id"]
@@ -4612,7 +4818,15 @@ export type Database = {
           verified?: boolean
           years_experience?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_providers_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       shop_order_items: {
         Row: {
@@ -4681,7 +4895,15 @@ export type Database = {
           total_inr?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_customer_id_fkey_cascade"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       shop_products: {
         Row: {
@@ -4726,7 +4948,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shop_products_seller_id_fkey_cascade"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       shop_reminders: {
         Row: {
@@ -4786,6 +5016,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shop_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5081,7 +5318,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       symptom_logs: {
         Row: {
@@ -5279,6 +5524,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "transport_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "transport_bookings_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
@@ -5354,6 +5606,13 @@ export type Database = {
             referencedRelation: "transport_bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transport_legs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       typing_indicators: {
@@ -5396,7 +5655,15 @@ export type Database = {
           user_id?: string
           window_start?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "usage_counters_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -5417,7 +5684,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       vaccinations: {
         Row: {
@@ -5718,7 +5993,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vet_applications_user_id_fkey_cascade"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       vet_availability: {
         Row: {
@@ -6238,6 +6521,16 @@ export type Database = {
       }
     }
     Views: {
+      breeder_stats: {
+        Row: {
+          accepted_requests: number | null
+          last_active_at: string | null
+          response_rate_pct: number | null
+          total_requests: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       donations_for_org: {
         Row: {
           amount_inr: number | null
@@ -6368,7 +6661,15 @@ export type Database = {
           vaccination_verified?: boolean | null
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pets_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       pets_public: {
         Row: {
@@ -6488,7 +6789,15 @@ export type Database = {
           verified?: boolean | null
           years_experience?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_providers_owner_id_fkey_cascade"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "breeder_stats"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       subject_ratings: {
         Row: {
@@ -6660,10 +6969,51 @@ export type Database = {
           title: string
         }[]
       }
+      discover_vets: {
+        Args: {
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _open_24_7?: boolean
+          _radius_km?: number
+          _specialty?: string
+        }
+        Returns: {
+          address: string
+          bio: string
+          city: string
+          clinic_name: string
+          display_name: string
+          distance_km: number
+          lat: number
+          lng: number
+          phone: string
+          photo_url: string
+          price_clinic_inr: number
+          price_video_inr: number
+          rating_avg: number
+          rating_count: number
+          specialisations: string[]
+          user_id: string
+        }[]
+      }
       earth: { Args: never; Returns: number }
       expire_mating_listings: { Args: never; Returns: undefined }
       expire_missing_pet_boosts: { Args: never; Returns: number }
       expire_paid_mating_listings: { Args: never; Returns: number }
+      fanout_nearby: {
+        Args: {
+          _actor: string
+          _body: string
+          _kind: string
+          _lat: number
+          _link: string
+          _lng: number
+          _radius_km: number
+          _title: string
+        }
+        Returns: number
+      }
       find_users_within_radius_km: {
         Args: {
           _exclude_user?: string
@@ -6677,6 +7027,16 @@ export type Database = {
         }[]
       }
       generate_pet_public_id: { Args: never; Returns: string }
+      get_breeder_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          accepted_requests: number
+          last_active_at: string
+          response_rate_pct: number
+          total_requests: number
+          user_id: string
+        }[]
+      }
       get_my_donation_pan: { Args: { _donation_id: string }; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_org_profile_phone: { Args: { _org_user_id: string }; Returns: string }
