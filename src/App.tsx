@@ -243,6 +243,7 @@ const App = () => (
               <Route path="/jobs/new" element={<JobNew />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/onboarding/add-pet" element={<AddFirstPet />} />
+              <Route path="/onboarding/add-another-pet" element={<AddAnotherPet />} />
               <Route path="/onboarding/done" element={<OnboardingDone />} />
               <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
