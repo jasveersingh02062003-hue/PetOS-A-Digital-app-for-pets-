@@ -180,13 +180,11 @@ const Onboarding = () => {
     // Other roles: persist + redirect to dedicated flow.
     setRoleSaving(true);
     try {
-      // "provider" is a wizard branch only — not stored on profiles.
-      if (role !== "provider") {
-        const { error } = await supabase
-          .from("profiles")
-          .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
-        if (error) throw error;
-      }
+      // Provider is now a real enum value — persist it like every other role.
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
+      if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
       if (opt.routeAfter) nav(opt.routeAfter);
       else if (opt.needsOrg) nav("/onboarding/org");
