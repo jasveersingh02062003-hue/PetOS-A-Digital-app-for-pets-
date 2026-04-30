@@ -92,7 +92,7 @@ export default function BuyerPrefs() {
     },
     onSuccess: () => {
       toast.success("Preferences saved");
-      nav("/mates?tab=adopt");
+      nav("/onboarding?stage=done", { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not save"),
   });

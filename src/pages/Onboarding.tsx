@@ -63,7 +63,7 @@ const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; 
 const BuyerPrefs = lazy(() => import("./onboarding/BuyerPrefs"));
 const RescuerProfile = lazy(() => import("./onboarding/RescuerProfile"));
 const BreederProfile = lazy(() => import("./onboarding/BreederProfile"));
-const AddFirstPet = lazy(() => import("./onboarding/AddFirstPet"));
+const QuickAddPet = lazy(() => import("./onboarding/QuickAddPet"));
 const AddAnotherPet = lazy(() => import("./onboarding/AddAnotherPet"));
 const Done = lazy(() => import("./onboarding/Done"));
 const OrgOnboarding = lazy(() => import("./OrgOnboarding"));
@@ -263,7 +263,7 @@ const Onboarding = () => {
     return <Suspense fallback={<StageLoader />}><ProviderPicker /></Suspense>;
   }
   if (stage === "add-pet") {
-    return <Suspense fallback={<StageLoader />}><AddFirstPet /></Suspense>;
+    return <Suspense fallback={<StageLoader />}><QuickAddPet /></Suspense>;
   }
   if (stage === "add-another") {
     return <Suspense fallback={<StageLoader />}><AddAnotherPet /></Suspense>;

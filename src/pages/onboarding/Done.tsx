@@ -56,9 +56,16 @@ export default function OnboardingDone() {
       ? { label: "Go to my dashboard", to: "/" }
       : { label: "Open my pet's home", to: "/" };
 
+  // Role-aware middle wizard label so buyers/providers don't see "Add a pet".
+  const middleLabel =
+    role === "buyer" ? "Preferences"
+    : role === "provider" ? "Your service"
+    : isOrg ? "Verification"
+    : "Add a pet";
+
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
-      <WizardSteps current={3} labels={["Account type", isOrg ? "Verification" : "Add a pet", "All set"]} />
+      <WizardSteps current={3} labels={["Account type", middleLabel, "All set"]} />
 
       <div className="text-center py-6">
         <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 grid place-items-center mb-4">
