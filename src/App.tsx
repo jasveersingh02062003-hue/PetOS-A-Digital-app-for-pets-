@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { queryClient, idbPersister, PERSIST_BUSTER, shouldPersistQuery } from "@/lib/queryClient";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -139,27 +140,19 @@ const JobNew = lazy(() => import("./pages/jobs/JobNew"));
 const JobDetail = lazy(() => import("./pages/jobs/JobDetail"));
 const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Phase 3 perf: most reads are not edited from other tabs in real time
-      // (we use realtime channels for the few that are: messages, notifications).
-      // Bumping staleTime cuts redundant network round-trips when navigating back to a screen.
-      staleTime: 60_000,
-      gcTime: 10 * 60_000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 1,
-    },
-    mutations: {
-      onError: (err) => logError(err, { source: "client:mutation" }),
-    },
-  },
-});
-
 const App = () => (
   <ErrorBoundary>
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister: idbPersister,
+      maxAge: 24 * 60 * 60 * 1000,
+      buster: PERSIST_BUSTER,
+      dehydrateOptions: {
+        shouldDehydrateQuery: shouldPersistQuery,
+      },
+    }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" />
@@ -302,7 +295,7 @@ const App = () => (
         </Splash>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
   </ErrorBoundary>
 );
 
