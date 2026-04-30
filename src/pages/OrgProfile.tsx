@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart, Inbox, PawPrint, Sparkles } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
+import { TrustSignals } from "@/components/trust/TrustSignals";
+import { AnonReportButton } from "@/components/AnonReportButton";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { toast } from "sonner";
@@ -103,6 +105,13 @@ const OrgProfile = () => {
         {org.phone && <a href={`tel:${org.phone}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{org.phone}</a>}
         {userId && <RatingChip subjectType="provider" subjectId={userId} />}
       </div>
+
+      {userId && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <TrustSignals userId={userId} />
+          <AnonReportButton subjectType="org" subjectId={userId} />
+        </div>
+      )}
 
       {org.description && (
         <Card className="rounded-2xl border-hairline p-4 mb-3">

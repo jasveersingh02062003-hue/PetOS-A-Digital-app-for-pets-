@@ -211,6 +211,42 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_session: string | null
+          status: string
+          subject_id: string
+          subject_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_session?: string | null
+          status?: string
+          subject_id: string
+          subject_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_session?: string | null
+          status?: string
+          subject_id?: string
+          subject_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       appointment_messages: {
         Row: {
           appointment_id: string
@@ -6522,6 +6558,7 @@ export type Database = {
           title: string
         }[]
       }
+      seller_trust: { Args: { _user_id: string }; Returns: Json }
       send_broadcast: {
         Args: {
           _body: string

@@ -12,6 +12,8 @@ import { MatingRequestSheet } from "@/components/MatingRequestSheet";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { ContactSellerSheet } from "@/components/ContactSellerSheet";
+import { TrustSignals } from "@/components/trust/TrustSignals";
+import { AnonReportButton } from "@/components/AnonReportButton";
 
 const MateListing = () => {
   const { id } = useParams();
@@ -133,6 +135,9 @@ const MateListing = () => {
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               {profile?.city && <><MapPin className="h-3 w-3" />{profile.city}</>}
             </div>
+            <div className="mt-1.5">
+              <TrustSignals userId={listing.owner_id} compact />
+            </div>
           </div>
         </Card>
 
@@ -153,6 +158,12 @@ const MateListing = () => {
           <Button variant="link" onClick={() => nav("/mates/new")} className="w-full">
             <Stethoscope className="h-4 w-4 mr-1" /> List your pet first
           </Button>
+        )}
+
+        {!isOwn && (
+          <div className="flex justify-end pt-1">
+            <AnonReportButton subjectType="mate_listing" subjectId={listing.id} />
+          </div>
         )}
       </div>
 
