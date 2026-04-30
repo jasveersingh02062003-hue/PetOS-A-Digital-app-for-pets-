@@ -52,6 +52,7 @@ const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
 const RecurringBookings = lazy(() => import("./pages/RecurringBookings"));
+const BookingDetail = lazy(() => import("./pages/BookingDetail"));
 const Pregnancies = lazy(() => import("./pages/Pregnancies"));
 const OrgDonations = lazy(() => import("./pages/OrgDonations"));
 const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
