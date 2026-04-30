@@ -7,6 +7,7 @@ import { Heart, Users, Flame } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { EmergencyButton } from "@/components/home/EmergencyButton";
+import { HealthSetupReminder } from "@/components/health/HealthSetupReminder";
 
 // Below-fold / heavy: lazy-load so first paint isn't blocked
 const PostFeed = lazy(() => import("@/components/PostFeed").then((m) => ({ default: m.PostFeed })));
@@ -45,6 +46,7 @@ const PetParentHome = () => {
       </header>
 
       <PetHeroCard />
+      <HealthSetupReminder variant="compact" />
       <EmergencyButton />
       <Suspense fallback={null}>
         <BookingSuggestionsCard />

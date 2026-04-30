@@ -38,6 +38,7 @@ import { MultiPetSummary } from "@/components/health/MultiPetSummary";
 import { Scale } from "lucide-react";
 import { useHealthAlerts } from "@/hooks/useHealthAlerts";
 import { Bell } from "lucide-react";
+import { HealthSetupReminder } from "@/components/health/HealthSetupReminder";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -56,6 +57,8 @@ const Health = () => {
         <h1 className="font-display text-3xl">Health vault</h1>
         <Heart className="h-5 w-5 text-primary" strokeWidth={1.5} />
       </header>
+
+      <HealthSetupReminder variant="full" />
 
       {alertUnread.length > 0 && (
         (() => {
