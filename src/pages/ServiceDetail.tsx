@@ -17,6 +17,8 @@ import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { ContactSellerSheet } from "@/components/ContactSellerSheet";
 import { useAuth } from "@/hooks/useAuth";
+import { TrustSignals } from "@/components/trust/TrustSignals";
+import { AnonReportButton } from "@/components/AnonReportButton";
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -120,6 +122,9 @@ const ServiceDetail = () => {
             <div className="mt-2">
               <SocialProofBadge providerId={provider.id} city={provider.city} />
             </div>
+            <div className="mt-2">
+              <TrustSignals userId={(provider as any).owner_id} />
+            </div>
           </div>
           {provider.hourly_rate_inr ? (
             <div className="text-right">
@@ -170,6 +175,10 @@ const ServiceDetail = () => {
       <div className="mt-6">
         <h3 className="font-display text-lg mb-3">Reviews</h3>
         <ReviewList subjectType="provider" subjectId={provider.id} subjectName={provider.name} />
+      </div>
+
+      <div className="mt-3 flex justify-end">
+        <AnonReportButton subjectType="provider" subjectId={provider.id} />
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-hairline">
