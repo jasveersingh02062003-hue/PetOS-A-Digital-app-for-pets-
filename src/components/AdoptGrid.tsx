@@ -222,7 +222,7 @@ export const AdoptGrid = () => {
                   <div className="mt-1.5">
                     <SellerBadge
                       type={l.seller_type ?? "pet_parent"}
-                      verified={(verifiedOrgs instanceof Set && verifiedOrgs.has(l.owner_id) ?? false}
+                      verified={verifiedOrgs instanceof Set ? verifiedOrgs.has(l.owner_id) : false}
                     />
                   </div>
                   {isRepeatSeller && (
