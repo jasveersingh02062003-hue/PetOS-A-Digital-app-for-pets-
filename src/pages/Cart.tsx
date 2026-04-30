@@ -10,6 +10,8 @@ import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PincodeEta } from "@/components/shop/PincodeEta";
+import { savedPincode, useDeliveryEta } from "@/hooks/useDeliveryEta";
 
 const Cart = () => {
   const nav = useNavigate();
@@ -19,11 +21,14 @@ const Cart = () => {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [pincode, setPincode] = useState<string>(savedPincode());
+  const { data: eta } = useDeliveryEta(pincode);
 
   const checkout = async () => {
     if (!user) return toast.error("Please sign in first");
     if (!items.length) return;
     if (!address) return toast.error("Add a shipping address");
+    if (!/^\d{6}$/.test(pincode)) return toast.error("Enter a valid 6-digit pincode");
     setPlacing(true);
 
     const { data: order, error } = await supabase
@@ -34,6 +39,8 @@ const Cart = () => {
         shipping_address: address,
         contact_phone: phone || null,
         notes: notes || null,
+        pincode,
+        eta_at: eta ? new Date(Date.now() + eta.max_days * 86400_000).toISOString() : null,
       })
       .select()
       .single();
@@ -117,6 +124,10 @@ const Cart = () => {
           </div>
 
           <div className="space-y-3 mt-6">
+            <div className="space-y-1.5">
+              <Label>Delivery pincode</Label>
+              <PincodeEta onPincodeChange={setPincode} />
+            </div>
             <div className="space-y-1.5">
               <Label>Shipping address</Label>
               <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />

@@ -1,13 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ShoppingBag, FileText, Calendar, Heart, Car } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileText, Calendar, Heart, Car, Truck, PackageCheck, Package as PackageIcon, Clock } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
 import { RefundButton } from "@/components/payments/RefundButton";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 /**
  * Unified order & booking history.
@@ -61,8 +63,61 @@ const StatusPill = ({ status, paid }: { status: string; paid?: boolean }) => (
   </div>
 );
 
+const SHIPMENT_STEPS = ["pending", "paid", "shipped", "delivered"] as const;
+const ShipmentProgress = ({ status }: { status: string }) => {
+  const idx = SHIPMENT_STEPS.indexOf(status as any);
+  const active = idx < 0 ? 0 : idx;
+  const labels: Record<string, { icon: any; label: string }> = {
+    pending: { icon: Clock, label: "Placed" },
+    paid: { icon: PackageIcon, label: "Confirmed" },
+    shipped: { icon: Truck, label: "Shipped" },
+    delivered: { icon: PackageCheck, label: "Delivered" },
+  };
+  if (status === "cancelled") {
+    return <div className="text-xs text-destructive font-medium">Order cancelled</div>;
+  }
+  return (
+    <div className="flex items-center gap-1">
+      {SHIPMENT_STEPS.map((s, i) => {
+        const Icon = labels[s].icon;
+        const reached = i <= active;
+        const isCurrent = i === active && status !== "delivered";
+        return (
+          <div key={s} className="flex-1 flex flex-col items-center gap-1">
+            <div className={`flex items-center w-full`}>
+              <div className={`h-0.5 flex-1 ${i === 0 ? "opacity-0" : reached ? "bg-primary" : "bg-muted"}`} />
+              <div
+                className={`h-6 w-6 rounded-full grid place-items-center shrink-0 ${
+                  reached ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                } ${isCurrent ? "ring-2 ring-primary/30 animate-pulse" : ""}`}
+              >
+                <Icon className="h-3 w-3" />
+              </div>
+              <div className={`h-0.5 flex-1 ${i === SHIPMENT_STEPS.length - 1 ? "opacity-0" : i < active ? "bg-primary" : "bg-muted"}`} />
+            </div>
+            <span className={`text-[10px] ${reached ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+              {labels[s].label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const formatEta = (etaIso: string | null, status: string) => {
+  if (status === "delivered") return "Delivered";
+  if (!etaIso) return null;
+  const eta = new Date(etaIso);
+  const days = Math.max(0, Math.ceil((eta.getTime() - Date.now()) / 86400_000));
+  if (days === 0) return "Arriving today";
+  if (days === 1) return "Arriving tomorrow";
+  return `Arriving in ${days} days`;
+};
+
 const ShopOrdersTab = ({ userId }: { userId: string }) => {
   const nav = useNavigate();
+  const qc = useQueryClient();
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["my-orders", userId],
     queryFn: async () => {
@@ -75,6 +130,30 @@ const ShopOrdersTab = ({ userId }: { userId: string }) => {
       return data ?? [];
     },
   });
+
+  // Realtime: react instantly to status / tracking changes
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`shop-orders-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "shop_orders", filter: `customer_id=eq.${userId}` },
+        (payload) => {
+          const next = payload.new as any;
+          const prev = payload.old as any;
+          if (next?.status && prev?.status && next.status !== prev.status) {
+            if (next.status === "shipped") toast.success("📦 Your order has shipped!");
+            else if (next.status === "delivered") toast.success("✅ Your order was delivered");
+            else if (next.status === "cancelled") toast.error("Order cancelled");
+          }
+          qc.invalidateQueries({ queryKey: ["my-orders", userId] });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, qc]);
+
   if (isLoading) return <Skeleton />;
   if (!orders.length) return <EmptyState icon={ShoppingBag} title="No orders yet" description="Things you buy from the shop will appear here." ctaLabel="Browse shop" onCta={() => nav("/shop")} />;
   return (
@@ -93,6 +172,30 @@ const ShopOrdersTab = ({ userId }: { userId: string }) => {
               </div>
             ))}
           </div>
+
+          {/* Live shipment tracker */}
+          <div className="mt-4 pt-3 border-t border-hairline">
+            <ShipmentProgress status={o.status} />
+            {(o.eta_at || o.tracking_number) && (
+              <div className="mt-3 flex items-center justify-between text-xs gap-2 flex-wrap">
+                {formatEta(o.eta_at, o.status) && (
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <Truck className="h-3.5 w-3.5" />
+                    {formatEta(o.eta_at, o.status)}
+                  </span>
+                )}
+                {o.tracking_number && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted px-2 py-0.5 rounded">
+                    {o.courier ? `${o.courier} · ` : ""}{o.tracking_number}
+                  </span>
+                )}
+              </div>
+            )}
+            {o.pincode && (
+              <div className="mt-1 text-[11px] text-muted-foreground">Delivering to {o.pincode}</div>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-hairline">
             <span className="text-sm text-muted-foreground">Total</span>
             <span className="font-display text-lg">₹{o.total_inr}</span>

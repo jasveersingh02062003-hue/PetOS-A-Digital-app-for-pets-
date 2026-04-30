@@ -168,7 +168,22 @@ const ServiceDetail = () => {
               title: provider.name,
               description: provider.city ?? undefined,
             }]}
+            circle={
+              provider.service_radius_km
+                ? {
+                    center: [Number(provider.lat), Number(provider.lng)],
+                    radiusMeters: Number(provider.service_radius_km) * 1000,
+                    color: "#3b82f6",
+                  }
+                : undefined
+            }
           />
+          {provider.service_radius_km ? (
+            <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              Serves up to {provider.service_radius_km} km from here
+            </p>
+          ) : null}
         </div>
       )}
 

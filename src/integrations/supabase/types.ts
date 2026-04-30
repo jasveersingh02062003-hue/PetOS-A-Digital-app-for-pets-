@@ -4650,35 +4650,53 @@ export type Database = {
       shop_orders: {
         Row: {
           contact_phone: string | null
+          courier: string | null
           created_at: string
           customer_id: string
+          delivered_at: string | null
+          eta_at: string | null
           id: string
           notes: string | null
+          pincode: string | null
+          shipped_at: string | null
           shipping_address: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_inr: number
+          tracking_number: string | null
           updated_at: string
         }
         Insert: {
           contact_phone?: string | null
+          courier?: string | null
           created_at?: string
           customer_id: string
+          delivered_at?: string | null
+          eta_at?: string | null
           id?: string
           notes?: string | null
+          pincode?: string | null
+          shipped_at?: string | null
           shipping_address?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_inr?: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Update: {
           contact_phone?: string | null
+          courier?: string | null
           created_at?: string
           customer_id?: string
+          delivered_at?: string | null
+          eta_at?: string | null
           id?: string
           notes?: string | null
+          pincode?: string | null
+          shipped_at?: string | null
           shipping_address?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_inr?: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -6689,6 +6707,14 @@ export type Database = {
         }[]
       }
       earth: { Args: never; Returns: number }
+      estimate_delivery_days: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          max_days: number
+          min_days: number
+          zone: string
+        }[]
+      }
       expire_mating_listings: { Args: never; Returns: undefined }
       expire_missing_pet_boosts: { Args: never; Returns: number }
       expire_paid_mating_listings: { Args: never; Returns: number }

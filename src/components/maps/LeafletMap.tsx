@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -36,6 +36,7 @@ type Props = {
   onMarkerClick?: (id: string) => void;
   followLast?: boolean;
   scrollWheelZoom?: boolean;
+  circle?: { center: [number, number]; radiusMeters: number; color?: string };
 };
 
 const colorMap: Record<NonNullable<MapMarker["color"]>, string> = {
@@ -71,6 +72,7 @@ export const LeafletMap = ({
   onMarkerClick,
   followLast = false,
   scrollWheelZoom = true,
+  circle,
 }: Props) => {
   return (
     <div className={`overflow-hidden rounded-lg border border-hairline ${className}`} style={{ height }}>
@@ -96,6 +98,18 @@ export const LeafletMap = ({
         ))}
         {polyline && polyline.length > 1 && (
           <Polyline positions={polyline} pathOptions={{ color: "#3b82f6", weight: 4, opacity: 0.8 }} />
+        )}
+        {circle && (
+          <Circle
+            center={circle.center}
+            radius={circle.radiusMeters}
+            pathOptions={{
+              color: circle.color ?? "#3b82f6",
+              weight: 1.5,
+              fillColor: circle.color ?? "#3b82f6",
+              fillOpacity: 0.08,
+            }}
+          />
         )}
         {followLast && <Recenter center={center} />}
       </MapContainer>
