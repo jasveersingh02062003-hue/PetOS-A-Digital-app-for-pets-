@@ -77,7 +77,7 @@ const Health = () => {
             </button>
           );
         })()
-      }
+      )}
 
       {pets && pets.length > 0 && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 mb-5">
