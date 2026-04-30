@@ -14,6 +14,8 @@ import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
 import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
 import { BidsList } from "@/components/taxi/BidsList";
+import { StatusProgress } from "@/components/booking/StatusProgress";
+import { TAXI_FLOW, TAXI_LABELS } from "@/lib/bookingFlows";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
@@ -152,6 +154,14 @@ const TaxiDetail = () => {
             </Badge>
             <div className="text-xs text-muted-foreground">{new Date(trip.scheduled_at).toLocaleString()}</div>
           </div>
+          {status !== "cancelled" && (
+            <StatusProgress
+              flow={TAXI_FLOW}
+              status={status as any}
+              labels={TAXI_LABELS as any}
+              liveStatuses={["en_route_pickup", "picked_up", "en_route_drop"] as const}
+            />
+          )}
           <div className="space-y-2 text-sm">
             <div className="flex gap-2"><MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" /><span>{trip.pickup_address}</span></div>
             <div className="flex gap-2"><MapPin className="h-4 w-4 text-destructive shrink-0 mt-0.5" /><span>{trip.dropoff_address}</span></div>
