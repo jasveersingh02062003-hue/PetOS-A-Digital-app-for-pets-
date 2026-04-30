@@ -108,7 +108,7 @@ const MissingDetail = () => {
   };
 
   const submitSighting = async () => {
-    if (!user || !id) return;
+    if (!id) return;
     let lat: number | null = null;
     let lng: number | null = null;
     try {
@@ -120,15 +120,23 @@ const MissingDetail = () => {
       // optional — owner still gets the note
     }
     setSubmitting(true);
-    const { error } = await supabase.from("missing_pet_sightings").insert({
+    const { getAnonSessionId } = await import("@/lib/anonSession");
+    const payload: any = {
       missing_pet_id: id,
-      reporter_id: user.id,
       photo_url: sightingPhoto,
       lat, lng,
       note: sightingNote.trim() || null,
-    });
+    };
+    if (user) payload.reporter_id = user.id;
+    else payload.anon_session_id = getAnonSessionId();
+    const { error } = await supabase.from("missing_pet_sightings").insert(payload);
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (error.message.includes("rate_limit_exceeded")) {
+        return toast.error("You've reported too many sightings recently. Try again in an hour.");
+      }
+      return toast.error(error.message);
+    }
     setSightingOpen(false);
     setSightingPhoto(null);
     setSightingNote("");
