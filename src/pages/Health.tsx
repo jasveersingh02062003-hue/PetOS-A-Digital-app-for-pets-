@@ -443,7 +443,7 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
     setSaving(false);
     qc.invalidateQueries({ queryKey: ["symptoms", petId] });
     onOpenChange(false);
-    setForm({ symptom: "", severity: 2, notes: "" });
+    setForm({ symptom: "", severity: 2, notes: "", photo_paths: [] });
   };
 
   return (
@@ -462,6 +462,10 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Notes</Label>
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border-hairline min-h-[70px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Photos (optional)</Label>
+            <PhotoUploadField value={form.photo_paths} onChange={(p) => setForm({ ...form, photo_paths: p })} />
           </div>
           <Button type="submit" disabled={saving} size="lg" className="w-full rounded-xl">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
