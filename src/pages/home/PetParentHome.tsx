@@ -1,17 +1,18 @@
 import { lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile, usePets } from "@/hooks/useProfile";
-import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart, Users, Flame } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { PetHeroCard } from "@/components/home/PetHeroCard";
-import { QuickAccessRail } from "@/components/QuickAccessRail";
 import { EmergencyButton } from "@/components/home/EmergencyButton";
-import { ProactiveAlertsCard } from "@/components/home/ProactiveAlertsCard";
-import { BookingSuggestionsCard } from "@/components/home/BookingSuggestionsCard";
 
+// Below-fold / heavy: lazy-load so first paint isn't blocked
+const PostFeed = lazy(() => import("@/components/PostFeed").then((m) => ({ default: m.PostFeed })));
+const QuickAccessRail = lazy(() => import("@/components/QuickAccessRail").then((m) => ({ default: m.QuickAccessRail })));
+const ProactiveAlertsCard = lazy(() => import("@/components/home/ProactiveAlertsCard").then((m) => ({ default: m.ProactiveAlertsCard })));
+const BookingSuggestionsCard = lazy(() => import("@/components/home/BookingSuggestionsCard").then((m) => ({ default: m.BookingSuggestionsCard })));
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
 const DailyPromptBanner = lazy(() => import("@/components/social/DailyPromptBanner").then((m) => ({ default: m.DailyPromptBanner })));
 const MissingStrip = lazy(() => import("@/components/MissingStrip").then((m) => ({ default: m.MissingStrip })));
@@ -45,14 +46,18 @@ const PetParentHome = () => {
 
       <PetHeroCard />
       <EmergencyButton />
-      <BookingSuggestionsCard />
-      <ProactiveAlertsCard />
+      <Suspense fallback={null}>
+        <BookingSuggestionsCard />
+        <ProactiveAlertsCard />
+      </Suspense>
 
       <Suspense fallback={<div className="h-[88px]" />}>
         <StoryRail />
       </Suspense>
 
-      <QuickAccessRail />
+      <Suspense fallback={<div className="h-20" />}>
+        <QuickAccessRail />
+      </Suspense>
 
       <Suspense fallback={null}>
         <div className="-mx-4 mt-1"><DailyPromptBanner /></div>
@@ -73,6 +78,7 @@ const PetParentHome = () => {
           </TabsList>
           <TabsContent value="for-you">
             {tab === "for-you" && (
+              <Suspense fallback={<div className="h-72 rounded-2xl bg-muted/40 animate-pulse" />}>
               <PostFeed
                 scope="all"
                 emptyState={
@@ -93,10 +99,12 @@ const PetParentHome = () => {
                   />
                 }
               />
+              </Suspense>
             )}
           </TabsContent>
           <TabsContent value="following">
             {tab === "following" && (
+              <Suspense fallback={<div className="h-72 rounded-2xl bg-muted/40 animate-pulse" />}>
               <PostFeed
                 scope="following"
                 emptyState={
@@ -109,10 +117,12 @@ const PetParentHome = () => {
                   />
                 }
               />
+              </Suspense>
             )}
           </TabsContent>
           <TabsContent value="trending">
             {tab === "trending" && (
+              <Suspense fallback={<div className="h-72 rounded-2xl bg-muted/40 animate-pulse" />}>
               <PostFeed
                 scope="trending"
                 emptyState={
@@ -125,6 +135,7 @@ const PetParentHome = () => {
                   />
                 }
               />
+              </Suspense>
             )}
           </TabsContent>
         </Tabs>
