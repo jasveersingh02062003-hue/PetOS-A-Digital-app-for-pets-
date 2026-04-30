@@ -164,6 +164,7 @@ const App = () => (
       <Toaster />
       <Sonner position="top-center" />
       <BrowserRouter>
+        <RouteTracker />
         <Splash>
         <AuthProvider>
           <PresenceProvider>
