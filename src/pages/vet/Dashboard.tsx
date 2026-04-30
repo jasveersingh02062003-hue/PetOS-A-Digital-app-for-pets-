@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Users, Search, Video, MessageSquare, MapPin, Stethoscope, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Search, Video, MessageSquare, MapPin, Stethoscope, ShieldCheck, Pill } from "lucide-react";
 import { toast } from "sonner";
 import { EarningsCard } from "@/components/payments/EarningsCard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PrescriptionBuilder } from "@/components/vet/PrescriptionBuilder";
 
 const modeIcon: Record<string, JSX.Element> = {
   chat: <MessageSquare className="h-3.5 w-3.5" />,
@@ -22,6 +24,7 @@ const VetDashboard = () => {
   const { user } = useAuth();
   const [lookup, setLookup] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
+  const [rxFor, setRxFor] = useState<{ petId: string; ownerId: string; petName: string } | null>(null);
 
   const { data: isVet, isLoading: roleLoading } = useQuery({
     queryKey: ["is-vet-d", user?.id],
@@ -242,9 +245,19 @@ const VetDashboard = () => {
                   {p.pets?.species} · {p.pets?.public_id}
                 </div>
               </div>
-              <Button asChild size="sm" variant="outline" className="rounded-full">
-                <Link to={`/health/${p.pet_id}/timeline`}>Open</Link>
-              </Button>
+              <div className="flex flex-col gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-8 gap-1"
+                  onClick={() => setRxFor({ petId: p.pet_id, ownerId: p.pets?.owner_id, petName: p.pets?.name })}
+                >
+                  <Pill className="h-3.5 w-3.5" /> Prescribe
+                </Button>
+                <Button asChild size="sm" variant="ghost" className="rounded-full h-8">
+                  <Link to={`/health/${p.pet_id}/timeline`}>Open</Link>
+                </Button>
+              </div>
             </Card>
           ))}
         </TabsContent>
@@ -307,6 +320,24 @@ const VetDashboard = () => {
           <EarningsCard />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!rxFor} onOpenChange={(o) => !o && setRxFor(null)}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Prescribe for {rxFor?.petName}
+            </DialogTitle>
+          </DialogHeader>
+          {rxFor && (
+            <PrescriptionBuilder
+              petId={rxFor.petId}
+              ownerId={rxFor.ownerId}
+              embedded
+              onSaved={() => setRxFor(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
