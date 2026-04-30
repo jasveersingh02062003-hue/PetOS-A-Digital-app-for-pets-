@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, MapPin, Search } from "lucide-react";
+import { ShieldCheck, MapPin, Search, Navigation } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { RatingSummary } from "@/components/trust/RatingSummary";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
 
 type Breeder = {
   id: string;
@@ -17,6 +19,8 @@ type Breeder = {
   bio: string | null;
   account_type: string | null;
   handle: string | null;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export default function Breeders() {
@@ -24,12 +28,14 @@ export default function Breeders() {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
   const [loading, setLoading] = useState(true);
+  const [nearest, setNearest] = useState(true);
+  const { coords } = useUserLocation();
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, city, bio, account_type, handle")
+        .select("id, full_name, avatar_url, city, bio, account_type, handle, lat, lng")
         .eq("breeder_verified", true)
         .order("updated_at", { ascending: false })
         .limit(200);
@@ -43,6 +49,17 @@ export default function Breeders() {
     [list],
   );
 
+  const distanceFor = (b: Breeder): number | null => {
+    if (!coords || b.lat == null || b.lng == null) return null;
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(Number(b.lat) - coords.lat);
+    const dLng = toRad(Number(b.lng) - coords.lng);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(coords.lat)) * Math.cos(toRad(Number(b.lat))) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  };
+
   const filtered = list.filter((b) => {
     if (city && b.city !== city) return false;
     if (q) {
@@ -51,6 +68,16 @@ export default function Breeders() {
     }
     return true;
   });
+
+  const ordered = useMemo(() => {
+    if (!nearest || !coords) return filtered;
+    return [...filtered].sort((a, b) => {
+      const da = distanceFor(a) ?? Infinity;
+      const db = distanceFor(b) ?? Infinity;
+      return da - db;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, nearest, coords?.lat, coords?.lng]);
 
   useSeo({
     title: "Verified Breeders & Kennels in India",
@@ -87,7 +114,7 @@ export default function Breeders() {
         </p>
       </header>
 
-      <div className="flex gap-2 sticky top-0 bg-background/95 backdrop-blur py-2 z-10">
+      <div className="flex gap-2 sticky top-0 bg-background/95 backdrop-blur py-2 z-10 flex-wrap">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -109,17 +136,32 @@ export default function Breeders() {
             ))}
           </select>
         )}
+        <button
+          onClick={() => setNearest((v) => !v)}
+          className={`shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-md border text-xs font-medium transition ${
+            nearest && coords
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card border-hairline text-muted-foreground"
+          }`}
+          aria-pressed={nearest}
+          title={coords ? "Sort nearest first" : "Enable location to sort nearest first"}
+        >
+          <Navigation className="h-3.5 w-3.5" />
+          Nearest
+        </button>
       </div>
 
       {loading && <div className="text-sm text-muted-foreground p-4">Loading…</div>}
-      {!loading && filtered.length === 0 && (
+      {!loading && ordered.length === 0 && (
         <Card className="p-8 text-center text-sm text-muted-foreground">
           No verified breeders match your filters yet.
         </Card>
       )}
 
       <div className="grid sm:grid-cols-2 gap-3">
-        {filtered.map((b) => (
+        {ordered.map((b) => {
+          const dist = distanceFor(b);
+          return (
           <Link key={b.id} to={`/org/${b.id}`}>
             <Card className="p-4 hover:shadow-md transition flex gap-3 items-start">
               <div className="w-14 h-14 rounded-full bg-muted overflow-hidden grid place-items-center shrink-0">
@@ -140,6 +182,7 @@ export default function Breeders() {
                     <MapPin className="h-3 w-3" /> {b.city}
                   </div>
                 )}
+                {dist != null && <DistanceChip distanceKm={dist} className="mt-0.5" />}
                 {b.bio && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{b.bio}</p>}
                 <Badge variant="secondary" className="mt-2 text-[10px]">
                   {b.account_type || "breeder"}
@@ -150,7 +193,8 @@ export default function Breeders() {
               </div>
             </Card>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
