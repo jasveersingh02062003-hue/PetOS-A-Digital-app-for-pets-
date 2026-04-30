@@ -14,6 +14,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { HealthTestRail } from "@/components/marketplace/HealthTestChip";
 import { WishlistButton } from "@/components/marketplace/WishlistButton";
+import { TrustChip } from "@/components/marketplace/TrustChip";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
 
 type SellerType = "pet_parent" | "breeder" | "kennel" | "shelter" | "sanctuary" | "rescuer";
 type Filters = {
@@ -180,6 +182,7 @@ export const AdoptGrid = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2"><ResultsHeader count={listings.length} /></div>
           {listings.map((l: any) => {
             const photo = Array.isArray(l.photos) && l.photos.length ? l.photos[0] : null;
             const isFreeShelter = l.seller_type === "shelter" || l.seller_type === "sanctuary" || l.seller_type === "rescuer" || l.listing_type === "adoption";
