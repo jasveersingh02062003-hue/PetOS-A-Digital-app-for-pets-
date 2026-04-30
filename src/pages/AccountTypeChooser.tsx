@@ -41,11 +41,9 @@ const AccountTypeChooser = () => {
     mutationFn: async (t: AccountType) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      // "provider" is a wizard branch only — not stored on profiles.
-      if (t !== "provider") {
-        const { error } = await supabase.from("profiles").update({ account_type: t as any }).eq("id", u.user.id);
-        if (error) throw error;
-      }
+      // Provider is now a real enum value — persist it like every other role.
+      const { error } = await supabase.from("profiles").update({ account_type: t as any }).eq("id", u.user.id);
+      if (error) throw error;
       return t;
     },
     onSuccess: (t) => {

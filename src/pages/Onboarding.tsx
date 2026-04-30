@@ -76,6 +76,12 @@ const Onboarding = () => {
   const [city, setCity] = useState("");
   const [language, setLanguage] = useState("en");
   const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>({ weight: "kg", temp: "c" });
+  const [parentAge, setParentAge] = useState("");
+  const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
+  // "Set up health now" controls whether we collect vaccine/emergency in Step 7.
+  // If false, the pet is saved with health_setup_complete=false and the
+  // Health tab + Home both surface a "Set up health for {pet}" reminder.
+  const [setupHealthNow, setupHealthNowSet] = useState<boolean>(true);
 
   // Step 2 — Meet your pet
   const [petAvatar, setPetAvatar] = useState<File | null>(null);
@@ -180,13 +186,11 @@ const Onboarding = () => {
     // Other roles: persist + redirect to dedicated flow.
     setRoleSaving(true);
     try {
-      // "provider" is a wizard branch only — not stored on profiles.
-      if (role !== "provider") {
-        const { error } = await supabase
-          .from("profiles")
-          .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
-        if (error) throw error;
-      }
+      // Provider is now a real enum value — persist it like every other role.
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
+      if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
       if (opt.routeAfter) nav(opt.routeAfter);
       else if (opt.needsOrg) nav("/onboarding/org");
@@ -249,10 +253,14 @@ const Onboarding = () => {
         emergency_vet: emergencyVet,
         notif_prefs: { push: notifPush, email: notifEmail, sms: notifSms },
         onboarded: true,
-      }, { onConflict: "id" });
+        parent_age: parentAge ? Number(parentAge) : null,
+        first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
+      } as any, { onConflict: "id" });
       if (pErr) throw pErr;
 
-      // Pet
+      // Pet — health_setup_complete reflects whether the user actually
+      // provided vaccine/emergency info (or explicitly chose "set up later").
+      const healthComplete = setupHealthNow && !!vaccinePath;
       const { data: petRow, error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
         name: petName,
@@ -274,7 +282,8 @@ const Onboarding = () => {
         temperament,
         discoverable_for_mating: neutered ? false : discoverable,
         vaccination_verified: !!vaccinePath,
-      }).select("id").single();
+        health_setup_complete: healthComplete,
+      } as any).select("id").single();
       if (petErr) throw petErr;
 
       // Vault entry
@@ -307,7 +316,7 @@ const Onboarding = () => {
         city={city}
         avatar={petAvatarPreview}
         verified={!!vaccineFile}
-        onContinue={() => nav("/", { replace: true })}
+        onContinue={() => nav("/onboarding/add-another-pet", { replace: true })}
       />
     );
   }
@@ -423,6 +432,21 @@ const Onboarding = () => {
             ]} />
           </div>
           <p className="text-[11px] text-muted-foreground -mt-2">AI vet replies in your language; charts use your units.</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Your age" value={parentAge} onChange={setParentAge} type="number" placeholder="e.g. 28" />
+            <SelectField
+              label="First-time pet parent?"
+              value={firstTimeParent}
+              onChange={(v: any) => setFirstTimeParent(v)}
+              options={[
+                { v: "", l: "Choose…" },
+                { v: "yes", l: "Yes — I'm new" },
+                { v: "no", l: "No — I've had pets before" },
+              ]}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-2">Helps us tune tips, reminders and AI replies for your experience level.</p>
         </div>
       </StepShell>
     );

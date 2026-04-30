@@ -31,18 +31,25 @@ export default function PostAuth() {
         supabase.from("pets").select("id").eq("owner_id", userId).limit(1),
       ]);
 
-      const isPetParent = (profile?.account_type ?? "pet_parent") === "pet_parent";
+      const accountType = (profile?.account_type ?? "pet_parent") as string;
+      const isPetParent = accountType === "pet_parent";
       const profileMissing = !profile?.full_name?.trim() || !profile?.onboarded;
       const petGateFailed = isPetParent && (!pets || pets.length === 0);
       const incomplete = profileMissing || petGateFailed;
       if (import.meta.env.DEV) {
-        console.info("[PostAuth] decision", { incomplete, hasProfile: !!profile, pets: pets?.length });
+        console.info("[PostAuth] decision", { incomplete, hasProfile: !!profile, pets: pets?.length, accountType });
       }
 
       const redirect = params.get("redirect");
       if (cancelled) return;
-      if (incomplete) nav("/onboarding", { replace: true });
-      else nav(redirect || "/", { replace: true });
+      if (incomplete) {
+        nav("/onboarding", { replace: true });
+        return;
+      }
+      // Returning users: providers go to their dedicated dashboard, everyone else to home.
+      if (redirect) nav(redirect, { replace: true });
+      else if (accountType === "provider") nav("/provider", { replace: true });
+      else nav("/", { replace: true });
     })();
     return () => {
       cancelled = true;

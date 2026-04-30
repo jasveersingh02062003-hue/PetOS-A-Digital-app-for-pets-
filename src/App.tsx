@@ -139,6 +139,7 @@ const OrgProfile = lazy(() => import("./pages/OrgProfile"));
 const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
+const AddAnotherPet = lazy(() => import("./pages/onboarding/AddAnotherPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
@@ -231,6 +232,7 @@ const App = () => (
               <Route path="/settings/blocked" element={<BlockedAccounts />} />
               <Route path="/admin/moderation" element={<ModerationQueue />} />
               <Route path="/admin/orgs" element={<OrgReview />} />
+              <Route path="/admin/org-review" element={<OrgReview />} />
               <Route path="/admin/providers" element={<ProviderReview />} />
               <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
               <Route path="/onboarding/org" element={<OrgOnboarding />} />
@@ -241,6 +243,7 @@ const App = () => (
               <Route path="/jobs/new" element={<JobNew />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/onboarding/add-pet" element={<AddFirstPet />} />
+              <Route path="/onboarding/add-another-pet" element={<AddAnotherPet />} />
               <Route path="/onboarding/done" element={<OnboardingDone />} />
               <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
