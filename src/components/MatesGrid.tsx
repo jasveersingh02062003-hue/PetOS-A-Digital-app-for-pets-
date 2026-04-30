@@ -15,6 +15,7 @@ import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
 
 type Filters = { species?: string; intent?: string; city?: string; nearest?: boolean };
 
