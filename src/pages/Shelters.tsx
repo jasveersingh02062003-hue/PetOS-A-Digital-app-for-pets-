@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useSeo } from "@/hooks/useSeo";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,6 +22,8 @@ type Org = {
   donation_upi: string | null;
   donation_url: string | null;
   website: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 type Sort = "nearby" | "name" | "urgent";
@@ -27,6 +31,8 @@ type Sort = "nearby" | "name" | "urgent";
 const Shelters = () => {
   const nav = useNavigate();
   const { data: profile } = useProfile();
+  const { coords } = useUserLocation();
+  const qc = useQueryClient();
   const myCity = profile?.city ?? null;
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("nearby");
@@ -45,7 +51,7 @@ const Shelters = () => {
         : ([type] as const));
       const { data } = await supabase
         .from("org_profiles")
-        .select("user_id, org_name, org_type, city, description, facility_photos, donation_upi, donation_url, website")
+        .select("user_id, org_name, org_type, city, description, facility_photos, donation_upi, donation_url, website, lat, lng")
         .eq("status", "approved")
         .in("org_type", types)
         .limit(200);
@@ -74,6 +80,28 @@ const Shelters = () => {
     },
   });
 
+  // Realtime: as adoption listings come/go, the "X available" counter updates
+  useEffect(() => {
+    if (ids.length === 0) return;
+    const ch = supabase
+      .channel("shelters-listings-rt")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "pet_listings" }, () => {
+        qc.invalidateQueries({ queryKey: ["shelter-listing-counts", ids] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ids, qc]);
+
+  const haversine = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const h = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+
   const filtered = useMemo(() => {
     let list = orgs ?? [];
     const term = q.trim().toLowerCase();
@@ -85,13 +113,25 @@ const Shelters = () => {
           o.description?.toLowerCase().includes(term),
       );
     }
-    const withMeta = list.map((o) => ({ ...o, available: counts?.[o.user_id] ?? 0 }));
+    const withMeta = list.map((o) => ({
+      ...o,
+      available: counts?.[o.user_id] ?? 0,
+      distance_km: coords && o.lat != null && o.lng != null
+        ? haversine(coords, { lat: Number(o.lat), lng: Number(o.lng) })
+        : null,
+    }));
     if (sort === "name") {
       withMeta.sort((a, b) => a.org_name.localeCompare(b.org_name));
     } else if (sort === "urgent") {
       withMeta.sort((a, b) => b.available - a.available);
     } else {
+      // "nearby" — true distance when we have coords + org coords; otherwise city-match then available count
       withMeta.sort((a, b) => {
+        if (coords) {
+          const da = a.distance_km ?? Infinity;
+          const db = b.distance_km ?? Infinity;
+          if (da !== db) return da - db;
+        }
         const sa = myCity && a.city?.toLowerCase() === myCity.toLowerCase() ? 0 : 1;
         const sb = myCity && b.city?.toLowerCase() === myCity.toLowerCase() ? 0 : 1;
         if (sa !== sb) return sa - sb;
@@ -99,7 +139,7 @@ const Shelters = () => {
       });
     }
     return withMeta;
-  }, [orgs, counts, q, sort, myCity]);
+  }, [orgs, counts, q, sort, myCity, coords]);
 
   const copyUpi = (upi: string) => {
     navigator.clipboard.writeText(upi);
@@ -220,6 +260,7 @@ const Shelters = () => {
                     {s.available > 0 && (
                       <span className="text-coral font-semibold">· {s.available} available</span>
                     )}
+                    {s.distance_km != null && <DistanceChip distanceKm={s.distance_km} />}
                   </div>
                   {s.description && (
                     <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2">{s.description}</p>

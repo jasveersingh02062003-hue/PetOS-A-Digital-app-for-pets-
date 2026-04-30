@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
 import { useSeo } from "@/hooks/useSeo";
+import { NearestVetCta } from "@/components/vet/NearestVetCta";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Severity = "mild" | "moderate" | "severe";
@@ -334,6 +335,11 @@ const TriageVerdict = ({
           {escalating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Stethoscope className="h-4 w-4 mr-2" />}
           Talk to a vet now
         </Button>
+      )}
+      {(triage.severity === "moderate" || triage.severity === "severe") && (
+        <div className="mt-4">
+          <NearestVetCta />
+        </div>
       )}
     </Card>
   );
