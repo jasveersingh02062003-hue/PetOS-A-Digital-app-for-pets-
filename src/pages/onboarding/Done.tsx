@@ -43,6 +43,18 @@ export default function OnboardingDone() {
 
   const isOrg = ORG_TYPES.includes(profile?.account_type ?? "");
   const orgPending = isOrg && org?.status === "pending";
+  const role = profile?.account_type ?? "pet_parent";
+
+  // Role-aware primary CTA. Drives the user to the most useful first action
+  // for their journey (parents → home, buyers → adoption, providers → jobs).
+  const primary =
+    role === "buyer"
+      ? { label: "Browse adoptions", to: "/mates?tab=adopt" }
+      : role === "provider"
+      ? { label: "Open provider dashboard", to: "/provider" }
+      : isOrg
+      ? { label: "Go to my dashboard", to: "/" }
+      : { label: "Open my pet's home", to: "/" };
 
   return (
     <div className="container-app pt-4 pb-24 max-w-lg">
@@ -79,8 +91,8 @@ export default function OnboardingDone() {
         <NextLink to="/how-it-works" Icon={ArrowRight} title="How PetOS works" desc="Quick visual tour of the platform" />
       </div>
 
-      <Button className="w-full mt-6" onClick={() => nav("/")}>
-        Go to home
+      <Button className="w-full mt-6" onClick={() => nav(primary.to)}>
+        {primary.label}
       </Button>
     </div>
   );
