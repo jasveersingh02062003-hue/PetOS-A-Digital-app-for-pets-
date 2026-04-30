@@ -29,6 +29,12 @@ serve(async (req) => {
     }
     const body = await req.json().catch(() => ({}));
     const petId = String(body?.petId ?? "");
+    const expiryMinutesRaw = Number(body?.expiry_minutes);
+    const allowedExpiries = [60, 1440, 10080]; // 1h, 24h, 7d
+    const expiryMinutes = allowedExpiries.includes(expiryMinutesRaw) ? expiryMinutesRaw : 1440;
+    const scopeIn = Array.isArray(body?.scope) ? body.scope : [];
+    const ALLOWED_SCOPE = ["vitals", "vax", "meds", "records", "symptoms", "insurance"];
+    const scope = scopeIn.filter((s: unknown) => typeof s === "string" && ALLOWED_SCOPE.includes(s));
     if (!UUID_RE.test(petId)) return json({ error: "invalid petId" }, 400);
 
     const supabase = createClient(
@@ -46,13 +52,13 @@ serve(async (req) => {
     if (pErr || !pet) return json({ error: "pet not found" }, 404);
     if (pet.owner_id !== uid) return json({ error: "forbidden" }, 403);
 
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const expires = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
     // Try a few times in the (vanishingly rare) event of a code collision.
     for (let attempt = 0; attempt < 4; attempt++) {
       const code = code8();
       const { data, error } = await supabase
         .from("vet_access_grants")
-        .insert({ pet_id: petId, code, expires_at: expires, created_by: uid })
+        .insert({ pet_id: petId, code, expires_at: expires, created_by: uid, scope })
         .select("code, expires_at").single();
       if (!error && data) return json({ code: data.code, expires_at: data.expires_at });
       if (error && !`${error.message}`.toLowerCase().includes("duplicate")) {
