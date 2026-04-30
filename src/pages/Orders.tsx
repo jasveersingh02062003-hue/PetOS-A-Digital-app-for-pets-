@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ShoppingBag, FileText, Calendar, Heart, Car, Truck, PackageCheck, Package as PackageIcon, Clock, Star } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
-import { RefundButton } from "@/components/payments/RefundButton";
+import { RequestRefundButton } from "@/components/payments/RequestRefundButton";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LeaveReviewSheet } from "@/components/reviews/LeaveReviewSheet";
@@ -206,7 +206,7 @@ const ShopOrdersTab = ({ userId }: { userId: string }) => {
               <Button asChild size="sm" variant="outline" className="flex-1">
                 <Link to={`/receipt/${o.payment_intent_id}`}><FileText className="h-3.5 w-3.5 mr-1.5" /> Receipt</Link>
               </Button>
-              <RefundButton intentId={o.payment_intent_id} amountInr={o.total_inr} />
+              <RequestRefundButton sourceKind="order" sourceId={o.id} amountInr={o.total_inr} />
             </div>
           )}
           {o.status === "delivered" && o.shop_order_items?.[0]?.product_id && (
