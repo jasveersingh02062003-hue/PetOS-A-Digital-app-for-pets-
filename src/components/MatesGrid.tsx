@@ -15,6 +15,7 @@ import { useVerifiedOrgs } from "@/hooks/useVerifiedOrgs";
 import { usePublicProfiles } from "@/hooks/usePublicProfiles";
 import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
 
 type Filters = { species?: string; intent?: string; city?: string; nearest?: boolean };
 
@@ -144,6 +145,7 @@ export const MatesGrid = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2"><ResultsHeader count={listings.length} /></div>
           {listings.map((l: any) => (
             <div
               key={l.id}

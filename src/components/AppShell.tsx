@@ -9,6 +9,7 @@ import { ComposerButton } from "./Composer";
 import { ContextualFab } from "./ContextualFab";
 import { OfflineBanner } from "./OfflineBanner";
 import { SkipToContent } from "./SkipToContent";
+import { InstallAppBanner } from "./InstallAppBanner";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -35,6 +36,7 @@ export const AppShell = () => {
     <div className="min-h-screen bg-background">
       <SkipToContent />
       <OfflineBanner />
+      <InstallAppBanner />
       {user && (
         <div className="fixed top-3 right-3 z-40 pad-top-safe">
           <NotificationBell />
