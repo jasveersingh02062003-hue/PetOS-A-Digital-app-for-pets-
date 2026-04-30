@@ -32,16 +32,41 @@ const MissingFeed = () => {
     );
   }, []);
 
+  const useServerRadius = !!coords && radiusKm !== "all";
+
   const { data: items, isLoading } = useQuery({
-    queryKey: ["missing-pets", "feed", userCity],
+    queryKey: ["missing-pets", "feed", userCity, useServerRadius ? { lat: coords?.lat, lng: coords?.lng, r: radiusKm } : "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("missing_pets")
-        .select("id, pet_id, photo_url, last_seen_city, last_seen_at, last_seen_lat, last_seen_lng, reward_inr, note, created_at, boosted_until")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      // Path A — radius + location: use `nearby_missing` RPC for true server-side filtering.
+      // Path B — "Anywhere" or no location: pull most recent active reports.
+      let data: any[] | null = null;
+      if (useServerRadius) {
+        const { data: near, error } = await supabase.rpc("nearby_missing" as any, {
+          _lat: coords!.lat, _lng: coords!.lng, _radius_km: typeof radiusKm === "number" ? radiusKm : 50,
+        });
+        if (error) throw error;
+        // hydrate full rows for the cards
+        const ids = (near ?? []).map((r: any) => r.id);
+        if (ids.length === 0) { data = []; }
+        else {
+          const { data: full, error: e2 } = await supabase
+            .from("missing_pets")
+            .select("id, pet_id, photo_url, last_seen_city, last_seen_at, last_seen_lat, last_seen_lng, reward_inr, note, created_at, boosted_until")
+            .in("id", ids)
+            .eq("status", "active");
+          if (e2) throw e2;
+          data = full ?? [];
+        }
+      } else {
+        const { data: rec, error } = await supabase
+          .from("missing_pets")
+          .select("id, pet_id, photo_url, last_seen_city, last_seen_at, last_seen_lat, last_seen_lng, reward_inr, note, created_at, boosted_until")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (error) throw error;
+        data = rec ?? [];
+      }
       const ids = (data ?? []).map((m: any) => m.pet_id);
       let petsMap: Record<string, any> = {};
       if (ids.length) {
