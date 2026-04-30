@@ -52,6 +52,7 @@ const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const ServiceNew = lazy(() => import("./pages/ServiceNew"));
 const ServicesManage = lazy(() => import("./pages/ServicesManage"));
 const RecurringBookings = lazy(() => import("./pages/RecurringBookings"));
+const BookingDetail = lazy(() => import("./pages/BookingDetail"));
 const Pregnancies = lazy(() => import("./pages/Pregnancies"));
 const OrgDonations = lazy(() => import("./pages/OrgDonations"));
 const ProviderTrust = lazy(() => import("./pages/ProviderTrust"));
@@ -136,6 +137,7 @@ const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
 const DiscoverServices = lazy(() => import("./pages/DiscoverServices"));
 const ServiceCategoryPage = lazy(() => import("./pages/ServiceCategory"));
 const VetTriage = lazy(() => import("./pages/VetTriage"));
+const Vets = lazy(() => import("./pages/Vets"));
 const ProviderPicker = lazy(() => import("./pages/onboarding/provider/Picker"));
 const ProviderWizard = lazy(() => import("./pages/onboarding/provider/Wizard"));
 const ProviderDashboard = lazy(() => import("./pages/provider/Dashboard"));
@@ -189,6 +191,7 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/vet-triage" element={<VetTriage />} />
+              <Route path="/vets" element={<Vets />} />
               <Route path="/photo-vet" element={<PhotoVet />} />
               <Route path="/install" element={<Install />} />
               <Route path="/search" element={<Search />} />

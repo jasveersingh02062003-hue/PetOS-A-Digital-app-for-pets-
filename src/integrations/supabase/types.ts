@@ -6660,10 +6660,51 @@ export type Database = {
           title: string
         }[]
       }
+      discover_vets: {
+        Args: {
+          _lat?: number
+          _limit?: number
+          _lng?: number
+          _open_24_7?: boolean
+          _radius_km?: number
+          _specialty?: string
+        }
+        Returns: {
+          address: string
+          bio: string
+          city: string
+          clinic_name: string
+          display_name: string
+          distance_km: number
+          lat: number
+          lng: number
+          phone: string
+          photo_url: string
+          price_clinic_inr: number
+          price_video_inr: number
+          rating_avg: number
+          rating_count: number
+          specialisations: string[]
+          user_id: string
+        }[]
+      }
       earth: { Args: never; Returns: number }
       expire_mating_listings: { Args: never; Returns: undefined }
       expire_missing_pet_boosts: { Args: never; Returns: number }
       expire_paid_mating_listings: { Args: never; Returns: number }
+      fanout_nearby: {
+        Args: {
+          _actor: string
+          _body: string
+          _kind: string
+          _lat: number
+          _link: string
+          _lng: number
+          _radius_km: number
+          _title: string
+        }
+        Returns: number
+      }
       find_users_within_radius_km: {
         Args: {
           _exclude_user?: string
@@ -6677,6 +6718,16 @@ export type Database = {
         }[]
       }
       generate_pet_public_id: { Args: never; Returns: string }
+      get_breeder_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          accepted_requests: number
+          last_active_at: string
+          response_rate_pct: number
+          total_requests: number
+          user_id: string
+        }[]
+      }
       get_my_donation_pan: { Args: { _donation_id: string }; Returns: string }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_org_profile_phone: { Args: { _org_user_id: string }; Returns: string }

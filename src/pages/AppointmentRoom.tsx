@@ -14,6 +14,8 @@ import { ShieldAlert, AlertCircle, CheckCircle2 } from "lucide-react";
 import { PreCallCheck } from "@/components/vet/PreCallCheck";
 import { VisitNotesPanel } from "@/components/vet/VisitNotesPanel";
 import { SharedVaultPanel } from "@/components/vet/SharedVaultPanel";
+import { StatusProgress } from "@/components/booking/StatusProgress";
+import { APPOINTMENT_FLOW, APPOINTMENT_LABELS } from "@/lib/bookingFlows";
 import {
   Dialog,
   DialogContent,
@@ -248,6 +250,17 @@ export default function AppointmentRoom() {
         </div>
         <Badge variant="secondary">{appt.status}</Badge>
       </header>
+
+      {appt.status !== "cancelled" && appt.status !== "no_show" && (
+        <div className="px-4 pt-3">
+          <StatusProgress
+            flow={APPOINTMENT_FLOW}
+            status={appt.status as any}
+            labels={APPOINTMENT_LABELS as any}
+            liveStatuses={["in_progress"] as const}
+          />
+        </div>
+      )}
 
       {appt.mode === "video" && (
         <div className="px-4 pt-3">
