@@ -73,10 +73,7 @@ export default function BreederProfile() {
       >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
-      <WizardSteps
-        current={2}
-        labels={["Account type", "Your programme", "Verification", "All set"]}
-      />
+      <WizardSteps current={2} labels={["Account type", "Your programme", "Verification"]} />
 
       <div className="flex items-center gap-2 mb-1">
         <PawPrint className="h-5 w-5 text-primary" />

@@ -76,10 +76,7 @@ export default function RescuerProfile() {
       >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
-      <WizardSteps
-        current={2}
-        labels={["Account type", "Your work", "Verification", "All set"]}
-      />
+      <WizardSteps current={2} labels={["Account type", "Your work", "Verification"]} />
 
       <div className="flex items-center gap-2 mb-1">
         <Heart className="h-5 w-5 text-primary" />
