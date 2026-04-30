@@ -305,6 +305,7 @@ export type Database = {
           owner_id: string
           pet_id: string
           prescription: string | null
+          reminder_sent_at: string | null
           scheduled_at: string
           started_at: string | null
           status: Database["public"]["Enums"]["appointment_status"]
@@ -330,6 +331,7 @@ export type Database = {
           owner_id: string
           pet_id: string
           prescription?: string | null
+          reminder_sent_at?: string | null
           scheduled_at: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -355,6 +357,7 @@ export type Database = {
           owner_id?: string
           pet_id?: string
           prescription?: string | null
+          reminder_sent_at?: string | null
           scheduled_at?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -4472,6 +4475,7 @@ export type Database = {
           pet_id: string | null
           provider_id: string
           public_share_token: string | null
+          reminder_sent_at: string | null
           scheduled_at: string
           status: Database["public"]["Enums"]["booking_status"]
           updated_at: string
@@ -4485,6 +4489,7 @@ export type Database = {
           pet_id?: string | null
           provider_id: string
           public_share_token?: string | null
+          reminder_sent_at?: string | null
           scheduled_at: string
           status?: Database["public"]["Enums"]["booking_status"]
           updated_at?: string
@@ -4498,6 +4503,7 @@ export type Database = {
           pet_id?: string | null
           provider_id?: string
           public_share_token?: string | null
+          reminder_sent_at?: string | null
           scheduled_at?: string
           status?: Database["public"]["Enums"]["booking_status"]
           updated_at?: string
@@ -5240,6 +5246,7 @@ export type Database = {
           pickup_lng: number | null
           provider_id: string | null
           public_share_token: string
+          reminder_sent_at: string | null
           scheduled_at: string
           service_booking_id: string | null
           status: Database["public"]["Enums"]["transport_status"]
@@ -5265,6 +5272,7 @@ export type Database = {
           pickup_lng?: number | null
           provider_id?: string | null
           public_share_token?: string
+          reminder_sent_at?: string | null
           scheduled_at: string
           service_booking_id?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
@@ -5290,6 +5298,7 @@ export type Database = {
           pickup_lng?: number | null
           provider_id?: string | null
           public_share_token?: string
+          reminder_sent_at?: string | null
           scheduled_at?: string
           service_booking_id?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
