@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Mail, KeyRound } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email").max(255);
 
 /**
  * Pending intent — replayed after OTP verifies.
@@ -45,16 +48,26 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
   const [busy, setBusy] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const resendTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    resendTimer.current = window.setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => { if (resendTimer.current) window.clearTimeout(resendTimer.current); };
+  }, [resendIn]);
 
   const sendCode = async () => {
-    if (!email || !email.includes("@")) {
-      toast.error("Enter a valid email");
+    const parsed = emailSchema.safeParse(email);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Enter a valid email");
       return;
     }
+    const cleanEmail = parsed.data;
     setBusy(true);
     savePendingIntent(intent);
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: cleanEmail,
       options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + intent.redirect },
     });
     setBusy(false);
@@ -62,8 +75,10 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
       toast.error(error.message);
       return;
     }
+    setEmail(cleanEmail);
     track("otp_sent", { intent: intent.kind });
     setStep("code");
+    setResendIn(45);
     toast.success("Code sent. Check your inbox.");
   };
 
@@ -80,10 +95,11 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
       return;
     }
     track("otp_verified", { intent: intent.kind });
-    toast.success("Signed in. Continuing…");
+    toast.success("Account ready. Continuing…");
     onOpenChange(false);
-    // Reload current page so auth-gated UI re-renders and intent replay logic runs
-    window.location.assign(intent.redirect);
+    // Stay in-page so the in-memory `beforeinstallprompt` event survives.
+    // <IntentReplay /> picks up the pending intent from localStorage and
+    // navigates the user to the seller chat, then triggers the install nudge.
   };
 
   return (
@@ -134,9 +150,19 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
               <Button onClick={verifyCode} disabled={busy} className="w-full rounded-xl h-12">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & continue"}
               </Button>
-              <Button variant="link" onClick={() => setStep("email")} className="w-full">
-                Use a different email
-              </Button>
+              <div className="flex items-center justify-between">
+                <Button variant="link" onClick={() => setStep("email")} className="px-0">
+                  Use a different email
+                </Button>
+                <Button
+                  variant="link"
+                  className="px-0"
+                  disabled={resendIn > 0 || busy}
+                  onClick={sendCode}
+                >
+                  {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                </Button>
+              </div>
             </>
           )}
           <p className="text-[11px] text-muted-foreground text-center">
