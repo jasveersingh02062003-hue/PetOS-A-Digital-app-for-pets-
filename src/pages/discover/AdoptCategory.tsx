@@ -6,6 +6,7 @@ import { useSeo } from "@/hooks/useSeo";
 import { jsonLd } from "@/lib/seo";
 import { useGeoCity } from "@/hooks/useGeoCity";
 import { ListingFilters, type ListingFilterValue } from "@/components/marketplace/ListingFilters";
+import { GeoBanner } from "@/components/marketplace/GeoBanner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ const AdoptCategory = () => {
       if (filters.gender) q = q.eq("gender", filters.gender);
       if (filters.priceMin != null) q = q.gte("fee_inr", filters.priceMin);
       if (filters.priceMax != null) q = q.lte("fee_inr", filters.priceMax);
+      if (filters.matingOnly) q = q.eq("listing_type", "mate");
       if (filters.ageMonths) {
         const map: Record<string, [number, number | null]> = {
           "0-3": [0, 12], "3-6": [12, 24], "6-12": [24, 52], "12+": [52, null],
@@ -127,7 +129,15 @@ const AdoptCategory = () => {
         )}
       </p>
 
-      <ListingFilters value={filters} onChange={onFilterChange} />
+      <GeoBanner onCityChange={(slug) => {
+        if (slug) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}/${slug}`);
+        else if (city) nav(`/adopt${species ? `/${species}` : ""}${breed ? `/${breed}` : ""}`);
+      }} />
+      <ListingFilters
+        value={filters}
+        onChange={onFilterChange}
+        showMatingOnly
+      />
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>
