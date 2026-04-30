@@ -67,6 +67,8 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const { data: blocked } = useBlockedIds();
   const { data: publicProfiles } = usePublicProfiles();
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get("focus");
 
   const PAGE_SIZE = 12;
   const {
@@ -177,6 +179,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
             key={post.id}
             post={post}
             onComment={() => setCommentsFor(post.id)}
+            highlight={focusId === post.id}
           />
         ))}
         {hasNextPage && (
