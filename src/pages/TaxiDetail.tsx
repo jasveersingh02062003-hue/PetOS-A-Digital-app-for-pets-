@@ -13,6 +13,7 @@ import { RefundButton } from "@/components/payments/RefundButton";
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
 import { LeafletMap, type MapMarker } from "@/components/maps/LeafletMap";
+import { BidsList } from "@/components/taxi/BidsList";
 
 type Status = "requested"|"accepted"|"en_route_pickup"|"picked_up"|"en_route_drop"|"dropped_off"|"cancelled";
 
@@ -173,6 +174,11 @@ const TaxiDetail = () => {
               <Button asChild size="icon" variant="ghost"><a href={`tel:${trip.service_providers.contact_phone}`}><Phone className="h-4 w-4" /></a></Button>
             )}
           </Card>
+        )}
+
+        {/* Live driver bids — only while trip is still requested */}
+        {isCustomer && status === "requested" && (
+          <BidsList bookingId={trip.id} />
         )}
 
         {/* Live driver map */}

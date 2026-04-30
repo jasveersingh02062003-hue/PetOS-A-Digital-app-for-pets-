@@ -145,6 +145,7 @@ const JobDetail = lazy(() => import("./pages/jobs/JobDetail"));
 const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 const AdoptCategory = lazy(() => import("./pages/discover/AdoptCategory"));
 const ServiceCategoryCity = lazy(() => import("./pages/discover/ServiceCategoryCity"));
+const DriverTaxiInbox = lazy(() => import("./pages/driver/TaxiInbox"));
 
 const App = () => (
   <ErrorBoundary>
@@ -258,6 +259,7 @@ const App = () => (
               <Route path="/taxi" element={<Taxi />} />
               <Route path="/taxi/new" element={<TaxiNew />} />
               <Route path="/taxi/:id" element={<TaxiDetail />} />
+              <Route path="/driver/taxi" element={<DriverTaxiInbox />} />
               <Route path="/services/trust/:providerId" element={<ProviderTrust />} />
               <Route path="/services/category/:category" element={<ServiceCategoryPage />} />
               <Route path="/discover/services" element={<DiscoverServices />} />
