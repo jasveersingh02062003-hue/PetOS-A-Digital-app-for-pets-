@@ -43,11 +43,11 @@ async function flush() {
   try {
     await supabase.from("analytics_events").insert(
       batch.map((e) => ({
-        user_id: e.user_id,
+        user_id: e.user_id ?? undefined,
         session_id: sid,
         event: e.event,
-        route: e.route,
-        props: e.props,
+        route: e.route ?? undefined,
+        props: (e.props ?? null) as any,
       })),
     );
   } catch {
