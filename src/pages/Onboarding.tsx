@@ -88,11 +88,17 @@ const Onboarding = () => {
   // Resume mid-flow on refresh: identity → role → role-flow.
   useEffect(() => {
     if (profileLoading || petsLoading) return;
-    if (stageParam) return; // user is explicitly at a stage; respect it
 
     const hasIdentity = !!profile?.handle && !!profile?.full_name;
     const accountType = profile?.account_type as RoleChoice | undefined;
     const hasPets = (pets?.length ?? 0) > 0;
+
+    if (stageParam === "parent" && accountType === "pet_parent" && hasPets) {
+      setStage("done");
+      return;
+    }
+
+    if (stageParam) return; // user is explicitly at a stage; respect it
 
     if (!hasIdentity) return; // stay on identity
     if (!accountType) {
