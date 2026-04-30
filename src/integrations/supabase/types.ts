@@ -1239,6 +1239,51 @@ export type Database = {
         }
         Relationships: []
       }
+      health_alerts: {
+        Row: {
+          body: string | null
+          created_at: string
+          dedupe_key: string | null
+          dismissed_at: string | null
+          id: string
+          kind: string
+          link: string | null
+          owner_id: string
+          pet_id: string | null
+          read_at: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          dismissed_at?: string | null
+          id?: string
+          kind: string
+          link?: string | null
+          owner_id: string
+          pet_id?: string | null
+          read_at?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          dismissed_at?: string | null
+          id?: string
+          kind?: string
+          link?: string | null
+          owner_id?: string
+          pet_id?: string | null
+          read_at?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
       health_insights: {
         Row: {
           data_signature: string | null
@@ -5371,6 +5416,7 @@ export type Database = {
           pet_id: string
           photo_paths: string[] | null
           photo_url: string | null
+          resolved_at: string | null
           severity: number
           symptom: string
         }
@@ -5384,6 +5430,7 @@ export type Database = {
           pet_id: string
           photo_paths?: string[] | null
           photo_url?: string | null
+          resolved_at?: string | null
           severity?: number
           symptom: string
         }
@@ -5397,6 +5444,7 @@ export type Database = {
           pet_id?: string
           photo_paths?: string[] | null
           photo_url?: string | null
+          resolved_at?: string | null
           severity?: number
           symptom?: string
         }
@@ -5913,6 +5961,7 @@ export type Database = {
           id: string
           pet_id: string
           revoked: boolean
+          scope: string[]
           vet_name: string | null
         }
         Insert: {
@@ -5924,6 +5973,7 @@ export type Database = {
           id?: string
           pet_id: string
           revoked?: boolean
+          scope?: string[]
           vet_name?: string | null
         }
         Update: {
@@ -5935,6 +5985,7 @@ export type Database = {
           id?: string
           pet_id?: string
           revoked?: boolean
+          scope?: string[]
           vet_name?: string | null
         }
         Relationships: [
@@ -5950,6 +6001,38 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vet_access_views: {
+        Row: {
+          grant_id: string
+          id: string
+          ip_hash: string | null
+          section: string | null
+          viewed_at: string
+        }
+        Insert: {
+          grant_id: string
+          id?: string
+          ip_hash?: string | null
+          section?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          grant_id?: string
+          id?: string
+          ip_hash?: string | null
+          section?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_access_views_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "vet_access_grants"
             referencedColumns: ["id"]
           },
         ]
@@ -7084,6 +7167,19 @@ export type Database = {
         }[]
       }
       earth: { Args: never; Returns: number }
+      enqueue_health_alert: {
+        Args: {
+          _body: string
+          _dedupe_key: string
+          _kind: string
+          _link: string
+          _owner_id: string
+          _pet_id: string
+          _severity: string
+          _title: string
+        }
+        Returns: string
+      }
       estimate_delivery_days: {
         Args: { p_from: string; p_to: string }
         Returns: {
