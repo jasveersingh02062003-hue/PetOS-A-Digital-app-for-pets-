@@ -14,6 +14,7 @@ import { RouteFallback } from "./components/RouteFallback";
 import { logError } from "./lib/logError";
 import { FirstRunGate } from "./components/FirstRunGate";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
+import { RouteTracker } from "./components/RouteTracker";
 import { RealtimeBridge } from "./components/RealtimeBridge";
 
 // Eager — only the entry route the user sees first.
@@ -88,6 +89,7 @@ const LegalPrivacy = lazy(() => import("./pages/legal/Privacy"));
 const Refunds = lazy(() => import("./pages/legal/Refunds"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const AdminErrors = lazy(() => import("./pages/admin/Errors"));
+const AdminStatus = lazy(() => import("./pages/admin/Status"));
 const Timeline = lazy(() => import("./pages/health/Timeline"));
 const VetOnboarding = lazy(() => import("./pages/vet/Onboarding"));
 const VetDashboard = lazy(() => import("./pages/vet/Dashboard"));
@@ -162,6 +164,7 @@ const App = () => (
       <Toaster />
       <Sonner position="top-center" />
       <BrowserRouter>
+        <RouteTracker />
         <Splash>
         <AuthProvider>
           <PresenceProvider>
@@ -262,6 +265,7 @@ const App = () => (
               <Route path="/orders" element={<Orders />} />
               <Route path="/account/delete" element={<DeleteAccount />} />
               <Route path="/admin/errors" element={<AdminErrors />} />
+              <Route path="/admin/status" element={<AdminStatus />} />
               <Route path="/health/:petId/timeline" element={<Timeline />} />
               <Route path="/v/:code" element={<VaultView />} />
               <Route path="/rescue/:id" element={<RescueJourneyDetail />} />

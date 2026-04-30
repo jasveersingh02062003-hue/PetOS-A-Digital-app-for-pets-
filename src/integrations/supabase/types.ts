@@ -181,6 +181,36 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          props: Json | null
+          route: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          props?: Json | null
+          route?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          props?: Json | null
+          route?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       appointment_messages: {
         Row: {
           appointment_id: string
