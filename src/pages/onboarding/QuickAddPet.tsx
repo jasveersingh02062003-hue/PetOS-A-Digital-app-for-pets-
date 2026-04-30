@@ -16,7 +16,7 @@ import { WizardSteps } from "@/components/onboarding/WizardSteps";
  * Captures species, breed, birthday OR adoption date, plus a health-now-or-later
  * decision. Health setup is deferred to the Health tab when the user chooses later.
  */
-export default function AddFirstPet() {
+export default function QuickAddPet() {
   const nav = useNavigate();
   const qc = useQueryClient();
   useSeo({ title: "Add a pet", description: "Tell PetOS about your pet." });
