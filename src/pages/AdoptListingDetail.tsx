@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, BadgeCheck, ShieldCheck, FileText, AlertTriangle, ArrowRightLeft, Lock, Heart } from "lucide-react";
 import { ReportButton } from "@/components/ReportButton";
 import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
+import { ContactSellerSheet, savePendingIntent } from "@/components/ContactSellerSheet";
 import { SellerBadge } from "@/components/SellerBadge";
 import { BredOnPetosRibbon } from "@/components/BredOnPetosRibbon";
 import { PhotoGallery } from "@/components/PhotoGallery";
@@ -40,6 +42,7 @@ const AdoptListingDetail = () => {
   const [applyOpen, setApplyOpen] = useState(false);
   const [depositOpen, setDepositOpen] = useState(false);
   const [sponsorOpen, setSponsorOpen] = useState(false);
+  const [contactSheetOpen, setContactSheetOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["pet-listing", id],
@@ -98,7 +101,31 @@ const AdoptListingDetail = () => {
 
   useSeo({
     title: listing?.title ?? "Pet listing",
-    description: listing?.description?.slice(0, 150) ?? "Adopt or rehome a pet.",
+    description:
+      listing?.description?.slice(0, 150) ??
+      `${listing?.breed ?? listing?.species ?? "Pet"}${listing?.city ? ` in ${listing.city}` : ""} — available on Petos.`,
+    image: Array.isArray(listing?.photos) && listing!.photos[0] ? (listing!.photos[0] as string) : undefined,
+    type: "article",
+    jsonLd: listing
+      ? [
+          jsonLd.pet({
+            name: listing.title ?? "Pet",
+            species: listing.species ?? undefined,
+            breed: listing.breed ?? undefined,
+            image: Array.isArray(listing.photos) && listing.photos[0] ? (listing.photos[0] as string) : undefined,
+            description: listing.description ?? undefined,
+            url: typeof window !== "undefined" ? window.location.href : "",
+            priceInr: listing.fee_inr ?? 0,
+            city: listing.city ?? undefined,
+            sellerName: sellerInfo?.org?.org_name ?? sellerInfo?.profile?.full_name ?? undefined,
+          }),
+          jsonLd.breadcrumb([
+            { name: "Home", url: typeof window !== "undefined" ? window.location.origin : "" },
+            { name: "Adopt", url: typeof window !== "undefined" ? `${window.location.origin}/mates` : "" },
+            { name: listing.title ?? "Listing", url: typeof window !== "undefined" ? window.location.href : "" },
+          ]),
+        ]
+      : undefined,
   });
 
   if (isLoading) return <div className="container-app pt-10 text-center text-muted-foreground">Loading…</div>;
@@ -114,7 +141,11 @@ const AdoptListingDetail = () => {
 
   const contact = async () => {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) { nav("/auth"); return; }
+    if (!u.user) {
+      setConfirmOpen(false);
+      setContactSheetOpen(true);
+      return;
+    }
     if (u.user.id === listing.owner_id) return;
     // Find or create a 1:1 conversation
     const { data: existing } = await supabase
@@ -368,6 +399,22 @@ const AdoptListingDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {listing && (
+        <ContactSellerSheet
+          open={contactSheetOpen}
+          onOpenChange={setContactSheetOpen}
+          intent={{
+            kind: "contact_seller",
+            listingId: listing.id,
+            listingType: "adopt",
+            ownerId: listing.owner_id,
+            redirect: `/mates/adopt/${listing.id}`,
+          }}
+          title="Sign in to contact the seller"
+          description="We'll send a 6-digit code to your email — no password needed. Your account will be created automatically."
+        />
+      )}
     </div>
   );
 };
