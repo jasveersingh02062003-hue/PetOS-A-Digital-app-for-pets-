@@ -140,9 +140,13 @@ const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      // Phase 3 perf: most reads are not edited from other tabs in real time
+      // (we use realtime channels for the few that are: messages, notifications).
+      // Bumping staleTime cuts redundant network round-trips when navigating back to a screen.
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       retry: 1,
     },
     mutations: {
