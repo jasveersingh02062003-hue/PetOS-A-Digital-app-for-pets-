@@ -1,116 +1,80 @@
-# Sprint UX1 — "E-commerce ease, pet-first soul"
+# Audit Result: What's broken & how to fix it
 
-Goal: every listing in Petos (Adopt, Mate, Services, Shop, Vets, Shelters) reads at a glance like an Amazon/Flipkart product tile — same hierarchy, same scan-in-1-second mental model — but uses **trust + identity badges** instead of discount stickers. One responsive UI serves both the public website and the installed PWA; visibility of CTAs adapts to auth state.
-
-This sprint focuses on the **card system + supporting primitives** so all downstream pages inherit the same look automatically. Detail-page, checkout, and "recently viewed / wishlist rail" upgrades are queued as Sprint UX2.
+I audited the recent M4 + UX1 work against the live database and runtime logs. The frontend pages and components are wired up correctly, but **three real bugs are blocking the backend reminder pipeline and producing a UI warning**. Here's the targeted fix plan.
 
 ---
 
-## What we're shipping
+## Bugs found
 
-### Phase UX1.A — The universal Listing Card
+### Backend (cron-driven reminders are silently failing)
 
-A single component `<ListingCard />` in `src/components/marketplace/ListingCard.tsx` that all four marketplaces reuse. Slot-based so each domain (puppy, stud, vet, product) can fill the badge row with its own facts.
+From `appointment-reminders` edge function logs:
 
-Card anatomy (top → bottom):
+1. **`service_bookings` → `service_providers` join fails**
+   `PGRST200: Could not find a relationship between 'service_bookings' and 'service_providers'`.
+   The `service_providers` table exists, but `service_bookings.provider_id` has **no foreign-key constraint** pointing at it, so PostgREST refuses to embed it. Result: zero service-booking reminders ever go out.
 
-```text
-┌─────────────────────────────────┐
-│  [16:9 hero · LazyImage]        │
-│  ♡ wishlist (top-right)         │
-│  🎗 Bred on PetOS (top-left)    │
-├─────────────────────────────────┤
-│  Title · 1 line, semibold       │
-│  ₹ price  ·  📍 city · 3.2 km   │
-│  ⭐ 4.9 (22)  🟢 Verified ✓     │
-│  💉 Vaccinated  · 💊 Dewormed   │
-│  [primary CTA pill, full-width] │
-└─────────────────────────────────┘
+2. **`transport_bookings` status filter uses non-existent enum value**
+   `invalid input value for enum transport_status: "confirmed"`.
+   The actual `transport_status` enum is: `requested, accepted, en_route_pickup, picked_up, en_route_drop, dropped_off, cancelled`. There is no `confirmed` or `pending`. Result: zero pet-taxi reminders ever go out.
+
+### Frontend (console warning, harmless but real)
+
+3. **`Splash` component triggers a React forwardRef warning** because `AnimatePresence` tries to attach a ref to it. Visible in console on every cold start.
+
+Everything else I spot-checked is wired correctly: `ListingCard` is in use across Shop / Services / Vets, `useViewerMode` is consumed, the `appointment-reminders` cron is scheduled, deep-links route to `/bookings/:id`, RLS is in place.
+
+---
+
+## Fix plan
+
+### Fix 1 — Add the missing FK (migration)
+
+```sql
+ALTER TABLE public.service_bookings
+  ADD CONSTRAINT service_bookings_provider_id_fkey
+  FOREIGN KEY (provider_id)
+  REFERENCES public.service_providers(id)
+  ON DELETE CASCADE;
+
+NOTIFY pgrst, 'reload schema';
 ```
 
-Props:
-- `image`, `title`, `price` (or `priceLabel`), `city`, `distanceKm`
-- `rating?: { score, count }`
-- `trustBadges: TrustBadge[]` (verified, bred-on-petos, vaccinated, KYC, etc.)
-- `healthChips: string[]` (vaccinated, dewormed, microchipped, hip-tested…)
-- `roleRing?: 'breeder'|'shelter'|'vet'|'walker'|'groomer'|'kennel'` (color-codes the avatar)
-- `cta: { label, onClick, requiresAuth?: boolean }`
-- `onWishlist?`, `wishlisted?`
-- `density?: 'comfortable' | 'compact'` (compact = 2-up grid mobile; comfortable = 1-up rail/hero)
+This makes the `service_providers(name, category)` embed in the reminder function resolve, and also unlocks the same join everywhere else in the app.
 
-Behavior:
-- If `requiresAuth` and user is logged out → CTA becomes "Sign in to contact" and routes via `<ContactSellerSheet>`.
-- Wishlist heart hidden for logged-out visitors (replaced by "Save for later — sign in").
-- Loading state uses an existing skeleton from `src/components/skeletons/`.
-- Fully keyboard accessible; whole card is a link, CTA stops propagation.
+### Fix 2 — Use the correct transport enum values
 
-### Phase UX1.B — Pet-first identity & trust primitives
+In `supabase/functions/appointment-reminders/index.ts`, change the transport query from:
 
-Three small components (or refactors of existing ones) so every surface speaks the same visual language:
+```ts
+.in("status", ["confirmed", "accepted", "pending"])
+```
 
-1. `<RoleRing avatar role="breeder" size="md" />` — wraps `<Avatar>` with a 2px color ring per role (breeder=amber, shelter=lilac, vet=emerald, walker=sky, groomer=rose, kennel=indigo). Reuses tokens already in `index.css`.
-2. `<TrustChip kind="verified|bred-on-petos|kyc|health-tested" />` — single-line pill with icon + label, same shape across all cards. Refactors fragmented `BredOnPetosRibbon.tsx`, `PetVerifyBadge.tsx`, `SellerBadge.tsx`, `marketplace/HealthTestChip.tsx` under one visual API while keeping their existing imports working.
-3. `<PriceTag value={35000} currency="INR" suffix="/visit" />` — Flipkart-style large numeral + small suffix, INR-aware formatting.
+to:
 
-### Phase UX1.C — E-commerce browsing primitives
+```ts
+.in("status", ["requested", "accepted", "en_route_pickup"])
+```
 
-Plug these into the listing pages so the *browse* experience matches Amazon/Flipkart:
+That covers every state where a 30-minute pre-pickup reminder still makes sense.
 
-1. `<CategoryPills />` — horizontal scrolling pill row (already partially exists in `Shop.tsx`); promote to a shared component used by Shop, Services, Adopt, Mates.
-2. `<FilterSheet />` — bottom sheet on mobile / right rail on desktop, with collapsible groups (Species, Breed, City + radius, Price range, Verification status, "Bred on PetOS only" toggle, Seller type, Vaccination). Reuses `ListingFilters.tsx` as a starting point.
-3. `<SortMenu />` — dropdown with: Nearest, Newest, Top rated, Price low→high / high→low. Defaults to "Nearest" once `useUserLocation()` resolves.
-4. `<ResultsHeader count={324} city="Mumbai" />` — Amazon-style "324 results in Mumbai · Delivers to 400001" line.
+### Fix 3 — Wrap Splash so AnimatePresence can attach its ref
 
-### Phase UX1.D — Apply the system
+Convert `src/components/Splash.tsx` to a `React.forwardRef` component (or just attach the ref to the outer wrapper). Smallest change: forward the ref to a fragment-replacing wrapper `<div ref={ref}>` around the existing tree. Removes the dev warning, no behavior change.
 
-Swap legacy card markup → `<ListingCard />` on:
-- `src/pages/Adopt.tsx` (and `AdoptGrid.tsx`)
-- `src/pages/Mates.tsx` (`MatesGrid.tsx`)
-- `src/pages/Services.tsx`
-- `src/pages/Shop.tsx`
-- `src/pages/Vets.tsx`
-- `src/pages/Shelters.tsx`
+### Verification
 
-Each page also gets the `<CategoryPills>` + `<SortMenu>` + `<ResultsHeader>` row so the browsing chrome is consistent.
-
-### Phase UX1.E — Public vs. signed-in adaptation
-
-One UI, two modes (no separate website codebase):
-
-- Add a `useViewerMode()` hook returning `'guest' | 'member'`.
-- `<BottomNav>` already hides for guests on a few routes — extend so guest mode hides composer, wishlist heart, and "Add to cart"; CTAs become "Sign in to continue".
-- Add a slim top "Install app for the full experience" banner via the existing `InstallNudgeSheet`, shown only on guest web sessions (suppressed inside the installed PWA via `display-mode: standalone` media query).
-- SEO meta on each public listing page already handled by `useSeo`; no change.
+After applying:
+- Re-invoke `appointment-reminders` manually and confirm logs show `queued: N` with **no** PGRST200 / 22P02 errors.
+- Insert a test `service_booking` ~30 min in the future and confirm a `notifications` row appears for the customer with `link='/bookings/:id'`.
+- Reload the preview, confirm the React forwardRef warning is gone.
 
 ---
 
-## Out of scope (queued for Sprint UX2)
+## Out of scope (already working, no change needed)
 
-- Detail-page redesign (hero carousel + "Seller's other listings" rail + reviews-with-verified-purchase tag).
-- Checkout/booking 3-step wizard polish.
-- Wishlist storage + "Recently viewed" horizontal rail on Home.
-- Breeder/Vet/Kennel professional dashboard variant of Home.
-- Any new database tables (this sprint is purely presentation; data already exists).
+- M1–M4 booking flows, live tracking page, push trigger.
+- UX1 marketplace primitives and rollout to Shop/Services/Vets/Adopt/Mates.
+- RLS policies, auth, install banner, viewer mode hook.
 
----
-
-## Technical notes
-
-- All colors via existing semantic tokens in `index.css` (`--primary`, `--muted`, role-ring tokens). No raw hex in components.
-- Card uses `aspect-[16/9]` for hero, `LazyImage`, and respects `prefers-reduced-motion` for hover lift.
-- Distance + city already provided by `useNearbyQuery` / `DistanceChip`; `<ListingCard>` just renders them.
-- Wishlist hookup uses existing `marketplace/WishlistButton.tsx` — wired but its persistence layer is unchanged.
-- No PWA / service-worker changes — install nudge is UI-only and gated by `matchMedia('(display-mode: standalone)')`.
-- Backwards-compat: legacy components (`BredOnPetosRibbon`, `PetVerifyBadge`, etc.) keep their exports so unrelated screens don't break; internally they render `<TrustChip>`.
-
----
-
-## Order of implementation
-
-1. UX1.B primitives (RoleRing, TrustChip, PriceTag) — low risk, unblocks the rest.
-2. UX1.A `<ListingCard>` + Storybook-style preview on a single page first (Shop) for visual sign-off.
-3. UX1.C browsing chrome shared components.
-4. UX1.D rollout across all six listing pages.
-5. UX1.E guest-mode polish + install nudge.
-
-After each phase I'll report a short progress note before moving on.
+Reply **approve** and I'll ship the migration, the edge-function patch, and the Splash fix in one pass.
