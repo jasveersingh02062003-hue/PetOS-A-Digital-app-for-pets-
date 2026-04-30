@@ -193,13 +193,79 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   );
 };
 
-const PostCard = ({ post, onComment }: {
-  post: FeedPost; onComment: () => void;
+const PostCard = ({ post, onComment, highlight }: {
+  post: FeedPost; onComment: () => void; highlight?: boolean;
 }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: verifiedOrgs } = useVerifiedOrgs();
   const { data: pendingOrgs } = usePendingOrgs();
+  const isOwner = !!user && user.id === post.author_id;
+  const [editOpen, setEditOpen] = useState(false);
+  const [editCaption, setEditCaption] = useState(post.caption ?? "");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  // Deep-link highlight pulse.
+  useEffect(() => {
+    if (!highlight) return;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlight]);
+
+  const handleShare = async () => {
+    haptic(8);
+    const url = `${window.location.origin}/?focus=${post.id}`;
+    const shareData = {
+      title: post.author?.full_name ? `${post.author.full_name} on Petos` : "A post on Petos",
+      text: post.caption ?? "Check out this Petos post",
+      url,
+    };
+    try {
+      if (navigator.share && navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch { /* user cancelled or failed — fall through */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) return toast.error(error.message);
+    toast.success("Post deleted");
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
+  const handlePin = async () => {
+    // Pin = bump updated_at so it sorts to top of profile grid.
+    const { error } = await supabase
+      .from("posts")
+      .update({ updated_at: new Date().toISOString() } as any)
+      .eq("id", post.id);
+    if (error) return toast.error(error.message);
+    toast.success("Pinned to your profile");
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("posts")
+      .update({ caption: editCaption.trim() || null } as any)
+      .eq("id", post.id);
+    setSavingEdit(false);
+    if (error) return toast.error(error.message);
+    toast.success("Caption updated");
+    setEditOpen(false);
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
   const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
   const authorPending = !!(post.author_id && pendingOrgs?.has(post.author_id));
   const accountType = post.author?.account_type ?? "pet_parent";
