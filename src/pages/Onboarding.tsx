@@ -253,10 +253,14 @@ const Onboarding = () => {
         emergency_vet: emergencyVet,
         notif_prefs: { push: notifPush, email: notifEmail, sms: notifSms },
         onboarded: true,
-      }, { onConflict: "id" });
+        parent_age: parentAge ? Number(parentAge) : null,
+        first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
+      } as any, { onConflict: "id" });
       if (pErr) throw pErr;
 
-      // Pet
+      // Pet — health_setup_complete reflects whether the user actually
+      // provided vaccine/emergency info (or explicitly chose "set up later").
+      const healthComplete = setupHealthNow && !!vaccinePath;
       const { data: petRow, error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
         name: petName,
@@ -278,7 +282,8 @@ const Onboarding = () => {
         temperament,
         discoverable_for_mating: neutered ? false : discoverable,
         vaccination_verified: !!vaccinePath,
-      }).select("id").single();
+        health_setup_complete: healthComplete,
+      } as any).select("id").single();
       if (petErr) throw petErr;
 
       // Vault entry
