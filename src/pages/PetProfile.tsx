@@ -354,6 +354,11 @@ const PetProfile = () => {
           </TabsContent>
 
           <TabsContent value="health" className="mt-3">
+            {isOwner && (
+              <div className="mb-3">
+                <CareTeamCard petId={pet.id} />
+              </div>
+            )}
             {health?.length ? (
               <div className="space-y-2">
                 {health.map((r: any) => (
