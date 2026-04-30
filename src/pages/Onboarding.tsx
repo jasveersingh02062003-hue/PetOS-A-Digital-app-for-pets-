@@ -51,16 +51,18 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Role guard: this wizard handles pet_parent + rescuer end-to-end.
-  // If the profile already has an org/buyer/provider role set (e.g. coming
-  // back to /onboarding via deep link), bounce to the proper flow.
+  // Role guard: this wizard handles pet_parent end-to-end (multi-pet loop +
+  // health vault deferral). Every other role has its own dedicated flow that
+  // we redirect into the moment we detect the role on the profile.
   useEffect(() => {
     if (profileLoading) return;
     const accountType = profile?.account_type;
     if (!accountType) return; // first-timer — let them pick in step 1
-    if (accountType !== "pet_parent" && accountType !== "rescuer") {
-      nav("/onboarding/account-type", { replace: true });
-    }
+    if (accountType === "pet_parent") return;
+    const opt = ROLE_OPTIONS.find((o) => o.value === accountType);
+    if (opt?.routeAfter) nav(opt.routeAfter, { replace: true });
+    else if (opt?.needsOrg) nav("/onboarding/org", { replace: true });
+    else nav("/onboarding/account-type", { replace: true });
   }, [profile, profileLoading, nav]);
 
   const [step, setStep] = useState(0);
@@ -162,39 +164,27 @@ const Onboarding = () => {
   };
 
   // When the user picks a role on step 1, save it and either continue the
-  // pet-parent/rescuer wizard inline, or redirect to the proper sub-flow.
+  // pet-parent wizard inline, or redirect to the proper dedicated flow.
   const handleRoleNext = async () => {
     if (!user) return;
     const opt = ROLE_OPTIONS.find((o) => o.value === role)!;
-    // pet_parent & rescuer continue the inline wizard — save role and advance.
-    if (role === "pet_parent" || role === "rescuer") {
-      setRoleSaving(true);
-      try {
-        const { error } = await supabase
-          .from("profiles")
-          .upsert({ id: user.id, account_type: role }, { onConflict: "id" });
-        if (error) throw error;
-        qc.invalidateQueries({ queryKey: ["profile", user.id] });
-        setStep(2);
-      } catch (e: any) {
-        toast.error(e?.message ?? "Could not save");
-      } finally {
-        setRoleSaving(false);
-      }
-      return;
-    }
-    // Other roles: persist + redirect to dedicated flow.
     setRoleSaving(true);
     try {
-      // Provider is now a real enum value — persist it like every other role.
       const { error } = await supabase
         .from("profiles")
         .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
-      if (opt.routeAfter) nav(opt.routeAfter);
-      else if (opt.needsOrg) nav("/onboarding/org");
-      else nav("/onboarding/account-type");
+      // pet_parent continues the inline wizard; everyone else hands off.
+      if (role === "pet_parent") {
+        setStep(2);
+      } else if (opt.routeAfter) {
+        nav(opt.routeAfter);
+      } else if (opt.needsOrg) {
+        nav("/onboarding/org");
+      } else {
+        nav("/onboarding/account-type");
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
     } finally {
