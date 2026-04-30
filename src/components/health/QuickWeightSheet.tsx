@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Scale } from "lucide-react";
 import { toast } from "sonner";
+import { useUnits } from "@/hooks/useUnits";
 
 /**
  * QuickWeightSheet — one-tap weight entry that writes to vital_logs.
@@ -23,16 +24,17 @@ export function QuickWeightSheet({
   petId: string;
 }) {
   const qc = useQueryClient();
+  const { weightUnit, parseWeightToKg } = useUnits();
   const [weight, setWeight] = useState("");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    const w = parseFloat(weight);
-    if (!w || w <= 0 || w > 200) return toast.error("Enter a valid weight (kg)");
+    const kg = parseWeightToKg(weight);
+    if (!kg || kg <= 0 || kg > 200) return toast.error(`Enter a valid weight (${weightUnit})`);
     setSaving(true);
     const { error } = await supabase.from("vital_logs").insert({
       pet_id: petId,
-      weight_kg: w,
+      weight_kg: kg,
       recorded_at: new Date().toISOString(),
     });
     setSaving(false);
@@ -55,7 +57,7 @@ export function QuickWeightSheet({
         </SheetHeader>
         <div className="space-y-4 mt-4 pb-6">
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Weight (kg)</Label>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Weight ({weightUnit})</Label>
             <Input
               type="number"
               step="0.01"
@@ -63,7 +65,7 @@ export function QuickWeightSheet({
               autoFocus
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              placeholder="e.g. 12.4"
+              placeholder={weightUnit === "lb" ? "e.g. 27.3" : "e.g. 12.4"}
               className="h-14 rounded-xl border-hairline text-2xl font-display"
             />
           </div>
