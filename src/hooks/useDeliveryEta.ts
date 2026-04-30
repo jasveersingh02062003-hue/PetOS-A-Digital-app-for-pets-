@@ -22,13 +22,13 @@ export function useDeliveryEta(toPincode: string | null | undefined, fromPincode
     enabled,
     staleTime: 1000 * 60 * 60,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("estimate_delivery_days", {
+      const { data, error } = await supabase.rpc("estimate_delivery_days", {
         p_from: from,
         p_to: to,
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      return row ?? null;
+      return (row as DeliveryEta) ?? null;
     },
   });
 }
