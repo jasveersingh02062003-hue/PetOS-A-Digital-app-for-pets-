@@ -711,9 +711,10 @@ const AddButton = ({ label, onClick }: { label: string; onClick: () => void }) =
   </Button>
 );
 
-const EmptyState = ({ text }: { text: string }) => (
-  <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center text-sm text-muted-foreground">
-    {text}
+const EmptyState = ({ text, hint }: { text: string; hint?: string }) => (
+  <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
+    <div className="text-sm text-muted-foreground">{text}</div>
+    {hint && <div className="text-xs text-muted-foreground/80 mt-2 leading-relaxed">{hint}</div>}
   </Card>
 );
 
