@@ -10,11 +10,15 @@ import {
   Scissors,
 } from "lucide-react";
 import { EmptyState } from "@/components/empty/EmptyState";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SubjectRating } from "@/components/SubjectRating";
 import { SERVICE_CATEGORIES, type ServiceCategory } from "@/lib/serviceCategories";
+import { NearbyToggle } from "@/components/marketplace/NearbyToggle";
+import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { useNearbyQuery } from "@/hooks/useNearbyQuery";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 const categories: { key: ServiceCategory | "all"; label: string; icon: any }[] = [
   { key: "all", label: "All", icon: ShoppingBag },
@@ -23,8 +27,18 @@ const categories: { key: ServiceCategory | "all"; label: string; icon: any }[] =
 
 const Services = () => {
   const [cat, setCat] = useState<ServiceCategory | "all">("all");
+  const [nearest, setNearest] = useState(true);
+  const { coords } = useUserLocation();
+  const hasLocation = !!coords;
+  const qc = useQueryClient();
 
-  const { data: providers, isLoading } = useQuery({
+  const nearby = useNearbyQuery<any>(
+    "discover_providers",
+    { _category: cat === "all" ? null : cat, _radius_km: 50, _limit: 50 },
+    { enabled: nearest && hasLocation }
+  );
+
+  const fallback = useQuery({
     queryKey: ["service_providers", cat],
     queryFn: async () => {
       let q = supabase
@@ -38,7 +52,23 @@ const Services = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !nearest || !hasLocation,
   });
+
+  const providers = (nearest && hasLocation ? nearby.data : fallback.data) ?? [];
+  const isLoading = nearest && hasLocation ? nearby.isLoading : fallback.isLoading;
+
+  // Live: invalidate when providers change
+  useEffect(() => {
+    const ch = supabase
+      .channel("services-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_providers" }, () => {
+        qc.invalidateQueries({ queryKey: ["service_providers"] });
+        qc.invalidateQueries({ queryKey: ["discover_providers"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   return (
     <div className="container-app pad-top-safe pb-24">
@@ -64,7 +94,8 @@ const Services = () => {
         </div>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1 no-scrollbar items-center">
+        <NearbyToggle active={nearest} onChange={setNearest} hasLocation={hasLocation} />
         {categories.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -106,7 +137,7 @@ const Services = () => {
             description="Try a different category, or check back soon — new pros join Petos every week."
           />
         )}
-        {providers?.map((p) => (
+        {providers?.map((p: any) => (
           <Link key={p.id} to={`/services/${p.id}`}>
             <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4 hover:bg-muted/40 transition-colors">
               <div className="bg-primary-soft rounded-2xl h-14 w-14 flex items-center justify-center overflow-hidden">
@@ -130,8 +161,9 @@ const Services = () => {
                 <div className="text-xs text-muted-foreground capitalize">
                   {p.category} · {p.city || "—"}
                 </div>
-                <div className="mt-0.5">
+                <div className="mt-0.5 flex items-center gap-2">
                   <SubjectRating type="provider" id={p.id} size="sm" />
+                  <DistanceChip distanceKm={p.distance_km} />
                 </div>
               </div>
               {p.hourly_rate_inr ? (
