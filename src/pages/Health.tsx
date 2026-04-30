@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ import { ScanVaccinationsDialog } from "@/components/health/ScanVaccinationsDial
 import { ExportHealthPdfButton } from "@/components/health/ExportHealthPdfButton";
 import { InsuranceCard } from "@/components/health/InsuranceCard";
 import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
+import { DailyCareCard } from "@/components/health/DailyCareCard";
+import { PhotoUploadField, PhotoThumbs } from "@/components/health/PhotoUploadField";
 
 const Health = () => {
   const { data: pets } = usePets();
@@ -106,6 +108,8 @@ const Health = () => {
               <div className="text-xs opacity-80">Personalised to {active.name}</div>
             </div>
           </Button>
+
+          <DailyCareCard petId={active.id} petName={active.name} />
 
           <InsuranceCard petId={active.id} currentProvider={(active as any).insurance_provider} />
 
@@ -263,6 +267,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
               </div>
               <div className="text-xs text-muted-foreground mt-1">{format(new Date(r.occurred_on), "d MMM yyyy")}</div>
               {r.notes && <p className="text-sm mt-2 text-ink-soft">{r.notes}</p>}
+              <PhotoThumbs paths={(r as any).photo_paths} />
             </div>
             <DeleteBtn table="health_records" id={r.id} invalidate={["records", petId]} />
           </div>
@@ -275,7 +280,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
 
 const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChange: (b: boolean) => void; petId: string }) => {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "" });
+  const [form, setForm] = useState({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "", photo_paths: [] as string[] });
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -288,13 +293,14 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
       record_type: form.record_type as any,
       occurred_on: form.occurred_on,
       notes: form.notes.trim() || null,
-    });
+      photo_paths: form.photo_paths.length ? form.photo_paths : null,
+    } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Record added");
     qc.invalidateQueries({ queryKey: ["records", petId] });
     onOpenChange(false);
-    setForm({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "" });
+    setForm({ title: "", record_type: "visit", occurred_on: new Date().toISOString().slice(0, 10), notes: "", photo_paths: [] });
   };
 
   return (
@@ -319,6 +325,10 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Notes</Label>
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border-hairline min-h-[80px]" />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Photos / scans (optional)</Label>
+            <PhotoUploadField value={form.photo_paths} onChange={(p) => setForm({ ...form, photo_paths: p })} />
+          </div>
           <Button type="submit" disabled={saving} size="lg" className="w-full rounded-xl mt-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
           </Button>
@@ -331,6 +341,10 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
 /* ============== SYMPTOMS ============== */
 const SymptomsTab = ({ petId }: { petId: string }) => {
   const [open, setOpen] = useState(false);
+  const { data: profile } = useProfile();
+  const emergencyVet = (profile as any)?.emergency_vet ?? null;
+  const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;
+  const vetLabel = emergencyVet?.name || emergencyVet?.clinic || "vet";
   const { data, isLoading } = useQuery({
     queryKey: ["symptoms", petId],
     queryFn: async () => {
@@ -361,9 +375,15 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{emergency.ai_reason}</p>
               )}
               <div className="flex gap-2 mt-3">
-                <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
-                  <a href="tel:"><PhoneCall className="h-3.5 w-3.5" /> Call vet</a>
-                </Button>
+                {vetPhone ? (
+                  <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
+                    <a href={`tel:${vetPhone}`}><PhoneCall className="h-3.5 w-3.5" /> Call {vetLabel}</a>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
+                    <a href="/settings/emergency-vet"><PhoneCall className="h-3.5 w-3.5" /> Add emergency vet</a>
+                  </Button>
+                )}
                 <Button asChild size="sm" variant="outline" className="rounded-full gap-1.5 h-8 border-destructive/30">
                   <a href="/askvet/new"><Stethoscope className="h-3.5 w-3.5" /> Ask vet now</a>
                 </Button>
@@ -384,6 +404,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
               </div>
               <div className="text-xs text-muted-foreground mt-1">{format(new Date(s.logged_at), "d MMM, h:mm a")}</div>
               {s.notes && <p className="text-sm mt-2 text-ink-soft">{s.notes}</p>}
+              <PhotoThumbs paths={(s as any).photo_paths} />
               {(s as any).ai_reason && (s as any).ai_flag && (s as any).ai_flag !== "watch" && (
                 <p className="text-xs text-muted-foreground mt-1.5 italic">AI: {(s as any).ai_reason}</p>
               )}
@@ -399,7 +420,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
 
 const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChange: (b: boolean) => void; petId: string }) => {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ symptom: "", severity: 2, notes: "" });
+  const [form, setForm] = useState({ symptom: "", severity: 2, notes: "", photo_paths: [] as string[] });
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -411,7 +432,8 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
       symptom: form.symptom.trim(),
       severity: form.severity,
       notes: form.notes.trim() || null,
-    }).select("id").single();
+      photo_paths: form.photo_paths.length ? form.photo_paths : null,
+    } as any).select("id").single();
     if (error) { setSaving(false); return toast.error(error.message); }
     toast.success("Symptom logged");
     try {
@@ -427,7 +449,7 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
     setSaving(false);
     qc.invalidateQueries({ queryKey: ["symptoms", petId] });
     onOpenChange(false);
-    setForm({ symptom: "", severity: 2, notes: "" });
+    setForm({ symptom: "", severity: 2, notes: "", photo_paths: [] });
   };
 
   return (
@@ -446,6 +468,10 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Notes</Label>
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border-hairline min-h-[70px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Photos (optional)</Label>
+            <PhotoUploadField value={form.photo_paths} onChange={(p) => setForm({ ...form, photo_paths: p })} />
           </div>
           <Button type="submit" disabled={saving} size="lg" className="w-full rounded-xl">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}

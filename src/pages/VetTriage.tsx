@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import {
-  ArrowLeft, Send, Loader2, ChevronDown, Stethoscope, Siren, ShieldAlert, AlertCircle, CheckCircle2,
+  ArrowLeft, Send, Loader2, ChevronDown, Stethoscope, Siren, ShieldAlert, AlertCircle, CheckCircle2, Phone,
 } from "lucide-react";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -309,6 +309,11 @@ const TriageVerdict = ({
 }) => {
   const tone = SEVERITY_TONE[triage.severity];
   const Icon = tone.icon;
+  const { data: profile } = useProfile();
+  const emergencyVet = (profile as any)?.emergency_vet ?? null;
+  const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;
+  const vetLabel = emergencyVet?.name || emergencyVet?.clinic || "your vet";
+  const showCall = vetPhone && (triage.severity === "severe" || (triage.severity === "moderate" && triage.recommend_vet));
   return (
     <Card className={`rounded-2xl border-hairline p-4 ring-1 ${tone.ring} ${tone.bg} mt-4`}>
       <div className={`flex items-center gap-2 ${tone.text} font-semibold text-sm`}>
@@ -326,11 +331,17 @@ const TriageVerdict = ({
           ))}
         </ul>
       )}
+      {showCall && (
+        <Button asChild className="w-full mt-4 rounded-full h-11 bg-emergency text-emergency-foreground hover:bg-emergency/90">
+          <a href={`tel:${vetPhone}`}><Phone className="h-4 w-4 mr-2" /> Call {vetLabel}</a>
+        </Button>
+      )}
       {triage.recommend_vet && (
         <Button
           onClick={async () => { setEscalating(true); try { await onEscalate(); } finally { setEscalating(false); } }}
           disabled={escalating}
-          className="w-full mt-4 rounded-full h-11 bg-emergency text-emergency-foreground hover:bg-emergency/90"
+          className="w-full mt-3 rounded-full h-11"
+          variant={showCall ? "outline" : "default"}
         >
           {escalating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Stethoscope className="h-4 w-4 mr-2" />}
           Talk to a vet now
