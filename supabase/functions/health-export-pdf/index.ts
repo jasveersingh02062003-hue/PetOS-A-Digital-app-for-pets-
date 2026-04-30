@@ -156,11 +156,43 @@ Deno.serve(async (req) => {
 
     drawWatermark();
 
-    // Cover
+    // Cover — title + QR of Pet ID (if any) on the right
+    let qrImage: Awaited<ReturnType<typeof pdf.embedPng>> | null = null;
+    if (pet.public_id) {
+      try {
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(`PET:${pet.public_id}`)}&format=png`;
+        const qrRes = await fetch(qrUrl);
+        if (qrRes.ok) {
+          const qrBytes = new Uint8Array(await qrRes.arrayBuffer());
+          qrImage = await pdf.embedPng(qrBytes);
+        }
+      } catch (e) {
+        console.warn("qr fetch failed", e);
+      }
+    }
+
     page.drawText("Health Passport", { x: margin, y, size: 24, font: fontBold, color: rgb(0.1, 0.1, 0.12) });
     y -= 30;
     page.drawText(pet.name ?? "Pet", { x: margin, y, size: 18, font: fontBold, color: rgb(0.2, 0.4, 0.9) });
     y -= 24;
+
+    if (qrImage) {
+      const qrSize = 96;
+      page.drawImage(qrImage, {
+        x: A4[0] - margin - qrSize,
+        y: A4[1] - margin - qrSize - 6,
+        width: qrSize,
+        height: qrSize,
+      });
+      page.drawText("Scan to add to care team", {
+        x: A4[0] - margin - qrSize,
+        y: A4[1] - margin - qrSize - 18,
+        size: 7,
+        font,
+        color: rgb(0.45, 0.45, 0.5),
+      });
+    }
+
     if (pet.public_id) kv("Pet ID", String(pet.public_id));
     kv("Species", String(pet.species ?? "—"));
     if (pet.breed) kv("Breed", String(pet.breed));
