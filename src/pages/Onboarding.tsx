@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone } from "lucide-react";
+import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone, PawPrint, Building2, Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
