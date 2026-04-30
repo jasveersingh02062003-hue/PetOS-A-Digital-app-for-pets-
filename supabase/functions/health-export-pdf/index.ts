@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const { data: pet, error: petErr } = await supabase
       .from("pets")
-      .select("id, public_id, owner_id, name, species, breed, gender, date_of_birth, vaccination_verified, bio, allergies, conditions, microchip_id, target_weight_kg, insurance_provider, insurance_policy_number")
+      .select("id, public_id, owner_id, name, species, breed, gender, date_of_birth, vaccination_verified, bio, allergies, conditions, microchip_id, target_weight_kg, insurance_provider")
       .eq("id", petId)
       .maybeSingle();
     if (petErr || !pet) {
@@ -170,8 +170,7 @@ Deno.serve(async (req) => {
     if ((pet as any).target_weight_kg) kv("Target weight", `${Number((pet as any).target_weight_kg).toFixed(1)} kg (${(Number((pet as any).target_weight_kg) * 2.2046).toFixed(1)} lb)`);
     kv("Vaccination verified", pet.vaccination_verified ? "Yes ✓" : "No");
     if ((pet as any).insurance_provider) {
-      const polNum = (pet as any).insurance_policy_number ? ` · #${(pet as any).insurance_policy_number}` : "";
-      kv("Insurance", `${(pet as any).insurance_provider}${polNum}`);
+      kv("Insurance", String((pet as any).insurance_provider));
     }
     if (includeOwner && ownerProfile.data) {
       kv("Owner", ownerProfile.data.full_name ?? "—");
