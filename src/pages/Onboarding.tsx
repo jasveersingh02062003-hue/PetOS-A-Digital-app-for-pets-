@@ -481,4 +481,10 @@ const StageLoader = () => (
   </div>
 );
 
+const VetRedirect = () => {
+  const nav = useNavigate();
+  useEffect(() => { nav("/vet/onboarding", { replace: true }); }, [nav]);
+  return <StageLoader />;
+};
+
 export default Onboarding;
