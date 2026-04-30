@@ -171,4 +171,71 @@ export const jsonLd = {
       acceptedAnswer: { "@type": "Answer", text: it.answer },
     })),
   }),
+  pet: (p: {
+    name: string;
+    species?: string;
+    breed?: string;
+    image?: string;
+    description?: string;
+    url: string;
+    priceInr?: number;
+    city?: string;
+    sellerName?: string;
+  }) => ({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.name,
+    category: "Pets",
+    description: p.description,
+    image: p.image,
+    brand: p.breed ? { "@type": "Brand", name: p.breed } : undefined,
+    additionalProperty: [
+      p.species ? { "@type": "PropertyValue", name: "Species", value: p.species } : null,
+      p.breed ? { "@type": "PropertyValue", name: "Breed", value: p.breed } : null,
+    ].filter(Boolean),
+    offers: {
+      "@type": "Offer",
+      price: p.priceInr ?? 0,
+      priceCurrency: "INR",
+      url: p.url,
+      availability: "https://schema.org/InStock",
+      areaServed: p.city,
+      seller: p.sellerName ? { "@type": "Organization", name: p.sellerName } : undefined,
+    },
+  }),
+  localBusiness: (b: {
+    name: string;
+    description?: string;
+    image?: string;
+    url: string;
+    city?: string;
+    phone?: string;
+    lat?: number;
+    lng?: number;
+    priceRange?: string;
+    category?: string;
+  }) => ({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: b.name,
+    description: b.description,
+    image: b.image,
+    url: b.url,
+    telephone: b.phone,
+    address: b.city ? { "@type": "PostalAddress", addressLocality: b.city, addressCountry: "IN" } : undefined,
+    geo: b.lat != null && b.lng != null ? { "@type": "GeoCoordinates", latitude: b.lat, longitude: b.lng } : undefined,
+    priceRange: b.priceRange,
+    additionalType: b.category,
+  }),
+  itemList: (items: { name: string; url: string; image?: string }[]) => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      url: it.url,
+      image: it.image,
+    })),
+  }),
 };
