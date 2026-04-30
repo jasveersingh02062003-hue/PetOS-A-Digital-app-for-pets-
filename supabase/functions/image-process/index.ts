@@ -35,9 +35,9 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: authErr } = await supabase.auth.getClaims(token);
-    if (authErr || !claims?.claims) return json({ error: "Unauthorized" }, 401);
-    const userId = claims.claims.sub as string;
+    const { data: userData, error: authErr } = await supabase.auth.getUser(token);
+    if (authErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    const userId = userData.user.id;
 
     const form = await req.formData();
     const file = form.get("file");
