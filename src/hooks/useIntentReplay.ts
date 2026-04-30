@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { readPendingIntent, clearPendingIntent } from "@/components/ContactSellerSheet";
+import { readPendingIntent, clearPendingIntent, type PendingIntent } from "@/components/ContactSellerSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
@@ -23,6 +23,15 @@ export function useIntentReplay() {
 
     (async () => {
       try {
+        // Mark any open intent_events row for this anon session as completed
+        try {
+          await supabase
+            .from("intent_events")
+            .update({ user_id: user.id, completed_at: new Date().toISOString() })
+            .is("completed_at", null)
+            .eq("kind", intent.kind);
+        } catch {}
+
         if (intent.kind === "contact_seller") {
           if (intent.ownerId === user.id) { clearPendingIntent(); return; }
           // Find or create 1:1 conversation with the seller
@@ -55,17 +64,36 @@ export function useIntentReplay() {
                 { conversation_id: convId, user_id: user.id },
                 { conversation_id: convId, user_id: intent.ownerId },
               ]);
+              // Auto-seed friendly first message so the conversation isn't empty
+              await supabase.from("messages").insert({
+                conversation_id: convId,
+                sender_id: user.id,
+                body: "Hi! I'm interested in your listing.",
+              });
             }
           }
           if (convId) {
             track("intent_replayed", { kind: "contact_seller" });
             toast.success("Opening chat with seller…");
             nav(`/messages/${convId}`);
-            // Phase D nudge — invite install + push so they don't miss the reply
             setTimeout(() => requestInstallNudge("after_contact_seller"), 1200);
           }
+          return;
         }
-        // book_service / follow_org → just land on redirect, the page handles it
+
+        // For all other kinds, just land back on the original page authed.
+        // Each page reads its own ?resume= param / pending intent and continues.
+        track("intent_replayed", { kind: intent.kind });
+        if (intent.redirect && location.pathname !== intent.redirect) {
+          nav(intent.redirect + (intent.redirect.includes("?") ? "&" : "?") + "resume=" + intent.kind);
+        } else {
+          // Same page — drop a query string so listeners can react
+          const url = new URL(window.location.href);
+          url.searchParams.set("resume", intent.kind);
+          window.history.replaceState({}, "", url.toString());
+          window.dispatchEvent(new CustomEvent("petos:intent-resume", { detail: intent satisfies PendingIntent }));
+        }
+        setTimeout(() => requestInstallNudge(`after_${intent.kind}`), 1500);
       } finally {
         clearPendingIntent();
       }
