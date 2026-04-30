@@ -11,15 +11,18 @@ import { Pill, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {
-  appointmentId: string;
+  appointmentId?: string | null;
   petId: string;
   ownerId: string;
+  /** Hide the surrounding Card chrome when embedding inside a Dialog */
+  embedded?: boolean;
+  onSaved?: () => void;
 };
 
-export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) => {
+export const PrescriptionBuilder = ({ appointmentId, petId, ownerId, embedded, onSaved }: Props) => {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!embedded);
   const [name, setName] = useState("");
   const [dose, setDose] = useState("");
   const [frequency, setFrequency] = useState("");
@@ -27,13 +30,17 @@ export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) =>
   const [notes, setNotes] = useState("");
 
   const { data: existing } = useQuery({
-    queryKey: ["rx-for-appt", appointmentId],
+    queryKey: ["rx-for-appt", appointmentId ?? `pet:${petId}`],
+    enabled: !!appointmentId || embedded === true,
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("pharmacy_suggestions" as any)
         .select("id, med_name, dose, frequency, duration, status, created_at")
-        .eq("appointment_id", appointmentId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (appointmentId) q = q.eq("appointment_id", appointmentId);
+      else q = q.eq("pet_id", petId);
+      const { data } = await q;
       return (data ?? []) as any[];
     },
   });
@@ -50,7 +57,7 @@ export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) =>
           name: name.trim(),
           dose: dose || null,
           frequency: frequency || null,
-          appointment_id: appointmentId,
+          appointment_id: appointmentId ?? null,
           prescribed_by_vet_id: user.id,
           reason: notes || null,
         })
@@ -62,7 +69,7 @@ export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) =>
         owner_id: ownerId,
         pet_id: petId,
         vet_id: user.id,
-        appointment_id: appointmentId,
+        appointment_id: appointmentId ?? null,
         medication_log_id: (med as any).id,
         med_name: name.trim(),
         dose: dose || null,
@@ -75,21 +82,24 @@ export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) =>
     onSuccess: () => {
       toast.success("Prescription saved");
       setName(""); setDose(""); setFrequency(""); setDuration(""); setNotes("");
-      setOpen(false);
-      qc.invalidateQueries({ queryKey: ["rx-for-appt", appointmentId] });
+      if (!embedded) setOpen(false);
+      qc.invalidateQueries({ queryKey: ["rx-for-appt", appointmentId ?? `pet:${petId}`] });
       qc.invalidateQueries({ queryKey: ["pharmacy-suggestions"] });
+      onSaved?.();
     },
     onError: (e: any) => toast.error(e.message ?? "Could not save"),
   });
 
-  return (
-    <Card className="mx-4 mt-3 rounded-2xl border-hairline p-4">
+  const body = (
+    <>
       <div className="flex items-center gap-2 mb-2">
         <Pill className="h-4 w-4 text-primary" />
         <div className="font-medium text-sm">Prescriptions</div>
-        <Button size="sm" variant="ghost" className="ml-auto h-7 rounded-full text-xs" onClick={() => setOpen((v) => !v)}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> {open ? "Close" : "Add"}
-        </Button>
+        {!embedded && (
+          <Button size="sm" variant="ghost" className="ml-auto h-7 rounded-full text-xs" onClick={() => setOpen((v) => !v)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> {open ? "Close" : "Add"}
+          </Button>
+        )}
       </div>
 
       {existing && existing.length > 0 && (
@@ -120,6 +130,9 @@ export const PrescriptionBuilder = ({ appointmentId, petId, ownerId }: Props) =>
           </Button>
         </div>
       )}
-    </Card>
+    </>
   );
+
+  if (embedded) return <div className="space-y-2">{body}</div>;
+  return <Card className="mx-4 mt-3 rounded-2xl border-hairline p-4">{body}</Card>;
 };
