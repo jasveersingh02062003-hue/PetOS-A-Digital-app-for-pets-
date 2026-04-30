@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { ContactSellerSheet, savePendingIntent } from "@/components/ContactSellerSheet";
 
 type Props = {
   open: boolean;
@@ -20,8 +20,8 @@ type Props = {
 
 export const AdoptionApplicationSheet = ({ open, onOpenChange, shelterId, listingId, isVolunteer = false }: Props) => {
   const { user } = useAuth();
-  const nav = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [otpOpen, setOtpOpen] = useState(false);
   const [form, setForm] = useState({
     home_description: "",
     prior_experience: "",
@@ -34,7 +34,15 @@ export const AdoptionApplicationSheet = ({ open, onOpenChange, shelterId, listin
 
   const submit = async () => {
     if (!user) {
-      nav("/auth");
+      // Persist the form so we can finish after OTP verifies
+      try { localStorage.setItem("petos_adopt_app_draft", JSON.stringify({ shelterId, listingId, isVolunteer, form })); } catch {}
+      savePendingIntent({
+        kind: "apply_to_adopt",
+        listingId: listingId ?? "",
+        ownerId: shelterId,
+        redirect: window.location.pathname,
+      });
+      setOtpOpen(true);
       return;
     }
     if (!isVolunteer && !form.home_description.trim()) {
@@ -65,6 +73,7 @@ export const AdoptionApplicationSheet = ({ open, onOpenChange, shelterId, listin
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-3xl max-h-[92vh] overflow-y-auto">
         <SheetHeader className="text-left">
@@ -140,5 +149,18 @@ export const AdoptionApplicationSheet = ({ open, onOpenChange, shelterId, listin
         </div>
       </SheetContent>
     </Sheet>
+    <ContactSellerSheet
+      open={otpOpen}
+      onOpenChange={setOtpOpen}
+      intent={{
+        kind: "apply_to_adopt",
+        listingId: listingId ?? "",
+        ownerId: shelterId,
+        redirect: window.location.pathname,
+      }}
+      title="Sign in to apply"
+      description="A 6-digit code is all we need. Your form is saved."
+    />
+    </>
   );
 };
