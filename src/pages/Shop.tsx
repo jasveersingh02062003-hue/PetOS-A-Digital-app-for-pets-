@@ -17,6 +17,7 @@ import { ReorderReminderButton } from "@/components/shop/ReorderReminderButton";
 import type { Database } from "@/integrations/supabase/types";
 import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
+import { PincodeEta } from "@/components/shop/PincodeEta";
 
 type ProductCategory = Database["public"]["Enums"]["product_category"];
 
@@ -256,6 +257,11 @@ const Shop = () => {
             <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
           )}
         </Button>
+      </div>
+
+      {/* Delivery ETA — Zomato/Swiggy style "Deliver to" chip */}
+      <div className="mb-3">
+        <PincodeEta />
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1 no-scrollbar">
