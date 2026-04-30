@@ -20,7 +20,7 @@ import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPick
 import { PetCardShare } from "@/components/onboarding/PetCardShare";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS, GOALS } from "@/lib/breeds";
 
-const TOTAL = 7;
+const TOTAL = 8;
 
 type WelcomeCard = { icon: typeof Heart; title: string; copy: string };
 const WELCOME: WelcomeCard[] = [
@@ -29,18 +29,35 @@ const WELCOME: WelcomeCard[] = [
   { icon: Shield, title: "Your data, your rules", copy: "Mating discoverability is off by default. You're always in control." },
 ];
 
+type RoleChoice =
+  | "pet_parent" | "buyer" | "provider" | "breeder"
+  | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo";
+
+const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; needsOrg?: boolean; routeAfter?: string }[] = [
+  { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint },
+  { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders", Icon: SearchIcon, routeAfter: "/onboarding/buyer-prefs" },
+  { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, driver…", Icon: Briefcase, routeAfter: "/onboarding/provider" },
+  { value: "rescuer", title: "Independent rescuer", sub: "I rescue animals on my own", Icon: Heart },
+  { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, needsOrg: true },
+  { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, needsOrg: true },
+  { value: "shelter", title: "Shelter / Rescue NGO", sub: "We rescue and rehome animals", Icon: HomeIcon, needsOrg: true },
+  { value: "sanctuary", title: "Sanctuary / Gaushala", sub: "Lifelong care for animals", Icon: ShieldHalf, needsOrg: true },
+  { value: "zoo", title: "Zoo / Wildlife centre", sub: "Education and donations", Icon: ShieldAlert, needsOrg: true },
+];
+
 const Onboarding = () => {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Role guard: this 7-step wizard is pet_parent-only. Any other role that
-  // lands here (deep link, refresh after picking a role) gets bounced to the
-  // proper chooser/wizard so we never try to insert a pet for a shelter, etc.
+  // Role guard: this wizard handles pet_parent + rescuer end-to-end.
+  // If the profile already has an org/buyer/provider role set (e.g. coming
+  // back to /onboarding via deep link), bounce to the proper flow.
   useEffect(() => {
     if (profileLoading) return;
-    const accountType = profile?.account_type ?? "pet_parent";
+    const accountType = profile?.account_type;
+    if (!accountType) return; // first-timer — let them pick in step 1
     if (accountType !== "pet_parent" && accountType !== "rescuer") {
       nav("/onboarding/account-type", { replace: true });
     }
