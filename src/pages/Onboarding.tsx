@@ -316,7 +316,7 @@ const Onboarding = () => {
         city={city}
         avatar={petAvatarPreview}
         verified={!!vaccineFile}
-        onContinue={() => nav("/", { replace: true })}
+        onContinue={() => nav("/onboarding/add-another-pet", { replace: true })}
       />
     );
   }
