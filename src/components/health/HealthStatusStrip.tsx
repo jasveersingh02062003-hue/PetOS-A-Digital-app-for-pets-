@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Activity, Syringe, Flame } from "lucide-react";
+import { ShieldCheck, Activity, Syringe, Flame, Phone } from "lucide-react";
 import { differenceInCalendarDays } from "date-fns";
+import { useProfile } from "@/hooks/useProfile";
 
 type Status = {
   pet_id: string;
@@ -14,6 +15,8 @@ type Status = {
 };
 
 export const HealthStatusStrip = ({ petId }: { petId?: string }) => {
+  const { data: profile } = useProfile();
+  const hasEmergencyVet = !!((profile as any)?.emergency_vet?.phone?.trim());
   const { data } = useQuery({
     queryKey: ["pet-health-status", petId ?? null],
     enabled: !!petId,
@@ -37,16 +40,17 @@ export const HealthStatusStrip = ({ petId }: { petId?: string }) => {
     ? differenceInCalendarDays(new Date(data.next_parasite_due), new Date())
     : null;
 
-  // Score: 100 base; -20 if vaccine not verified, -15 per overdue, -10 if no activity in 3+ days
+  // Score: 100 base; -20 if vaccine not verified, -15 per overdue.
+  // Activity penalty removed — re-add when WalkLive feeds last_activity_on reliably.
   let score = 100;
   if (!data.vaccination_verified) score -= 20;
   if (daysToParasite != null && daysToParasite < 0) score -= 15;
-  if (daysSinceActivity != null && daysSinceActivity > 2) score -= 10;
   score = Math.max(0, score);
 
   const dot = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-amber-500" : "bg-rose-500";
 
   return (
+    <>
     <Link
       to="/health"
       className="block rounded-2xl border border-hairline bg-card p-3 mb-3 hover:bg-muted/30 transition-colors"
@@ -66,7 +70,7 @@ export const HealthStatusStrip = ({ petId }: { petId?: string }) => {
               {daysToParasite < 0 ? `Parasite overdue` : `${daysToParasite}d to parasite`}
             </span>
           )}
-          {daysSinceActivity != null && (
+          {daysSinceActivity != null && daysSinceActivity <= 7 && (
             <span className="inline-flex items-center gap-1">
               <Activity className="h-3 w-3" />
               {daysSinceActivity === 0 ? "active today" : `${daysSinceActivity}d ago`}
@@ -75,5 +79,17 @@ export const HealthStatusStrip = ({ petId }: { petId?: string }) => {
         </div>
       </div>
     </Link>
+    {!hasEmergencyVet && (
+      <Link
+        to="/settings/emergency-vet"
+        className="block rounded-2xl border border-dashed border-hairline bg-card/50 p-2.5 mb-3 hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <Phone className="h-3.5 w-3.5 text-emergency" />
+          <span>Add an emergency vet number — used by SOS &amp; alerts</span>
+        </div>
+      </Link>
+    )}
+    </>
   );
 };
