@@ -87,7 +87,7 @@ const ProductDetail = () => {
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">{p.category}</div>
         <h2 className="font-display text-2xl leading-tight">{p.title}</h2>
         <div className="flex items-center gap-3">
-          <PriceTag amount={p.price_inr} />
+          <PriceTag value={p.price_inr} size="lg" />
           <RatingChip subjectType="product" subjectId={p.id} />
         </div>
         {p.description && (
