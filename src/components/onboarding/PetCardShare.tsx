@@ -39,7 +39,7 @@ export const PetCardShare = ({
       >
         <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
           {avatar ? (
-            <img src={avatar} alt={petName} className="w-full h-full object-cover" />
+            <img src={avatar} alt={petName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="font-display text-7xl text-primary/40">{petName[0]?.toUpperCase()}</div>
           )}

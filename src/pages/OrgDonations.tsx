@@ -96,8 +96,7 @@ import { ArrowLeft, Heart, Loader2, FileText } from "lucide-react";
                  <img
                    src={d.donor.avatar_url}
                    alt=""
-                   className="h-full w-full object-cover"
-                 />
+                   className="h-full w-full object-cover" loading="lazy" decoding="async" />
                ) : (
                  (d.donor?.full_name || "U").slice(0, 1).toUpperCase()
                )}

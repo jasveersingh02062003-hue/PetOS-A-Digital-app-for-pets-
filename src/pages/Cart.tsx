@@ -93,7 +93,7 @@ const Cart = () => {
               <Card key={i.product_id} className="rounded-2xl border-hairline p-3 flex gap-3 items-center">
                 <div className="h-16 w-16 rounded-xl bg-muted overflow-hidden flex-shrink-0">
                   {i.image_url && (
-                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" />
+                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

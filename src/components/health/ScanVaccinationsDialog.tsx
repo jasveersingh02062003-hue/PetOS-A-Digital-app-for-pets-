@@ -141,7 +141,7 @@ export const ScanVaccinationsDialog = ({
         {drafts && (
           <>
             {previewUrl && (
-              <img src={previewUrl} alt="Card preview" className="rounded-xl max-h-32 object-contain mx-auto border border-hairline" />
+              <img src={previewUrl} alt="Card preview" className="rounded-xl max-h-32 object-contain mx-auto border border-hairline" loading="lazy" decoding="async" />
             )}
             <div className="text-xs text-muted-foreground">
               Review and edit each entry, then save. {drafts.length === 0 && "Nothing detected — try again with a clearer photo."}

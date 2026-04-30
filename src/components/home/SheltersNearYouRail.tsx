@@ -46,7 +46,7 @@ export const SheltersNearYouRail = () => {
               className="shrink-0 w-[160px] rounded-2xl border border-hairline bg-card overflow-hidden hover:shadow-sm transition-shadow"
             >
               <div className="aspect-[4/3] bg-muted">
-                {cover && <img src={cover} alt={s.org_name} className="w-full h-full object-cover" />}
+                {cover && <img src={cover} alt={s.org_name} className="w-full h-full object-cover" loading="lazy" decoding="async" />}
               </div>
               <div className="p-2.5">
                 <div className="text-sm font-medium truncate">{s.org_name}</div>

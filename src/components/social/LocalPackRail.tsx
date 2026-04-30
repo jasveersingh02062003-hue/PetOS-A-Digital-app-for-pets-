@@ -28,7 +28,7 @@ export const LocalPackRail = () => {
           >
             <div className="h-20 w-20 rounded-2xl bg-muted overflow-hidden ring-1 ring-border">
               {p.avatar_url ? (
-                <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" />
+                <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center font-display text-2xl text-ink-soft">
                   {p.name?.[0]}

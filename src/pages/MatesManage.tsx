@@ -198,7 +198,7 @@ const MatesManage = () => {
               <Card key={l.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
                 <div className="flex items-center gap-3">
                   {l.pets?.avatar_url ? (
-                    <img src={l.pets.avatar_url} alt={l.pets.name} className="h-12 w-12 rounded-xl object-cover" />
+                    <img src={l.pets.avatar_url} alt={l.pets.name} className="h-12 w-12 rounded-xl object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="h-12 w-12 rounded-xl bg-primary-soft text-primary grid place-items-center font-display">{l.pets?.name?.[0]}</div>
                   )}
@@ -281,7 +281,7 @@ const RequestCard = ({ title, subtitle, avatar, message, status, createdAt, acti
   <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 space-y-3">
     <div className="flex items-start gap-3">
       {avatar ? (
-        <img src={avatar} alt={title} className="h-12 w-12 rounded-xl object-cover" />
+        <img src={avatar} alt={title} className="h-12 w-12 rounded-xl object-cover" loading="lazy" decoding="async" />
       ) : (
         <div className="h-12 w-12 rounded-xl bg-primary-soft text-primary grid place-items-center font-display">{title?.[0]}</div>
       )}

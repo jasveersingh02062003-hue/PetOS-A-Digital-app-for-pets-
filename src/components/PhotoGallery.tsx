@@ -14,7 +14,7 @@ export const PhotoGallery = ({ photos, alt }: { photos: string[]; alt: string })
   const next = () => setIdx((i) => (i === photos.length - 1 ? 0 : i + 1));
   return (
     <div className="relative aspect-[4/3] rounded-2xl bg-muted overflow-hidden mb-4">
-      <img src={photos[idx]} alt={alt} className="w-full h-full object-cover" />
+      <img src={photos[idx]} alt={alt} className="w-full h-full object-cover" loading="lazy" decoding="async" />
       {photos.length > 1 && (
         <>
           <button

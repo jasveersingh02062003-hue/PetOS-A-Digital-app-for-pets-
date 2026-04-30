@@ -271,7 +271,7 @@ const AdoptListingNew = () => {
             }} />
             <button onClick={() => photoRef.current?.click()} className="mt-2 w-full rounded-xl border border-dashed border-hairline h-32 flex items-center justify-center bg-muted/30 overflow-hidden">
               {uploading === "photo" ? <Loader2 className="h-5 w-5 animate-spin" /> :
-                photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> :
+                photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" /> :
                 <span className="flex items-center gap-2 text-sm text-muted-foreground"><Upload className="h-4 w-4" /> Add photo</span>}
             </button>
           </div>

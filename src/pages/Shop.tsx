@@ -388,7 +388,7 @@ const Shop = () => {
           <Card key={p.id} className="rounded-2xl border-hairline overflow-hidden p-0 flex flex-col">
             <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
               {p.image_url ? (
-                <img src={p.image_url} alt={p.title} className="h-full w-full object-cover" />
+                <img src={p.image_url} alt={p.title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <Package className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
               )}

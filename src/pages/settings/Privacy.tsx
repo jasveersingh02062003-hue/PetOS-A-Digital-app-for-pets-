@@ -31,7 +31,7 @@ const Privacy = () => {
             <label className={`flex items-center justify-between gap-4 ${isNeutered ? "opacity-80" : ""}`}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                  {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="font-display">{p.name[0]}</span>}
+                  {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <span className="font-display">{p.name[0]}</span>}
                 </div>
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">{p.name}</div>

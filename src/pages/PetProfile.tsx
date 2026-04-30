@@ -182,7 +182,7 @@ const PetProfile = () => {
       {/* Cover */}
       <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary-soft to-muted overflow-hidden">
         {cover && (
-          <img src={cover} alt={pet.name} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={cover} alt={pet.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background/60" />
         <div className="absolute top-0 inset-x-0 pad-top-safe">

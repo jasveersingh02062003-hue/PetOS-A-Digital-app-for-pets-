@@ -109,7 +109,7 @@ const DiscoverServices = () => {
             {topRated.map((p: any) => (
               <button key={p.id} onClick={() => nav(`/services/${p.id}`)} className="shrink-0 w-44 text-left rounded-2xl border border-hairline bg-card overflow-hidden">
                 <div className="aspect-square bg-muted">
-                  {p.cover_url && <img src={p.cover_url} alt={p.name} className="w-full h-full object-cover" />}
+                  {p.cover_url && <img src={p.cover_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />}
                 </div>
                 <div className="p-2.5">
                   <div className="text-sm font-medium truncate">{p.name}</div>
@@ -146,7 +146,7 @@ const CategoryTile = ({ meta, onClick }: { meta: ServiceCategoryMeta; onClick: (
 const ProviderRow = ({ provider, onClick }: { provider: any; onClick: () => void }) => (
   <Card onClick={onClick} className="rounded-2xl border-hairline p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/40">
     <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden grid place-items-center shrink-0">
-      {provider.cover_url && <img src={provider.cover_url} alt={provider.name} className="w-full h-full object-cover" />}
+      {provider.cover_url && <img src={provider.cover_url} alt={provider.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />}
     </div>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-1.5">

@@ -115,7 +115,7 @@ const AboutYou = () => {
         <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Cover photo</Label>
         <div className="aspect-[16/6] w-full rounded-2xl bg-muted overflow-hidden relative border border-hairline">
           {coverUrl ? (
-            <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+            <img src={coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/30 via-coral/20 to-amber/20" />
           )}

@@ -63,7 +63,7 @@ export const ReviewList = ({ subjectType, subjectId, subjectName }: Props) => {
           <div className="flex items-center gap-3 mb-2">
             <div className="h-8 w-8 rounded-full bg-muted overflow-hidden">
               {r.profiles?.avatar_url && (
-                <img src={r.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                <img src={r.profiles.avatar_url} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
               )}
             </div>
             <div className="flex-1 min-w-0">

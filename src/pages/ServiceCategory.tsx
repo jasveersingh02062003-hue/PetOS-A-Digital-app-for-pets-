@@ -119,7 +119,7 @@ const ServiceCategoryPage = () => {
         {sorted.map((p: any) => (
           <Card key={p.id} onClick={() => nav(`/services/${p.id}`)} className="rounded-2xl border-hairline p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/40">
             <div className="h-14 w-14 rounded-xl bg-muted overflow-hidden grid place-items-center shrink-0">
-              {p.cover_url ? <img src={p.cover_url} alt={p.name} className="w-full h-full object-cover" /> : <Icon className="h-5 w-5 text-muted-foreground" />}
+              {p.cover_url ? <img src={p.cover_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <Icon className="h-5 w-5 text-muted-foreground" />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">

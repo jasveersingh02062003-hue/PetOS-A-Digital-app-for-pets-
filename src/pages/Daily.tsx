@@ -96,7 +96,7 @@ export default function Daily() {
               {(moments ?? []).map((m: any) => (
                 <div key={m.id} className="aspect-square bg-muted relative overflow-hidden rounded-md">
                   {m.posts?.image_url ? (
-                    <img src={m.posts.image_url} alt="" className="w-full h-full object-cover" />
+                    <img src={m.posts.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full h-full grid place-items-center text-xs text-muted-foreground p-2">
                       {m.posts?.caption?.slice(0, 80) ?? "—"}

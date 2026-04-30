@@ -55,7 +55,7 @@ const MateListing = () => {
 
       <div className="aspect-square bg-muted relative">
         {pet?.avatar_url ? (
-          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full grid place-items-center font-display text-6xl text-primary">{pet?.name?.[0]}</div>
         )}

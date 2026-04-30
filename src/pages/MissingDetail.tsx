@@ -191,7 +191,7 @@ const MissingDetail = () => {
       <main className="container-app py-6 space-y-5">
         {missing.photo_url && (
           <div className="aspect-square rounded-3xl overflow-hidden border border-hairline">
-            <img src={missing.photo_url} alt={missing.pet?.name} className="w-full h-full object-cover" />
+            <img src={missing.photo_url} alt={missing.pet?.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
         )}
 
@@ -377,7 +377,7 @@ const MissingDetail = () => {
                   <div className="flex gap-3">
                     {s.photo_url ? (
                       <div className="h-16 w-16 rounded-xl bg-muted overflow-hidden shrink-0">
-                        <img src={s.photo_url} alt="sighting" className="w-full h-full object-cover" />
+                        <img src={s.photo_url} alt="sighting" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       </div>
                     ) : null}
                     <div className="flex-1 min-w-0">

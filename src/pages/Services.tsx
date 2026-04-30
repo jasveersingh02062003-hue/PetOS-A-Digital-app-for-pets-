@@ -111,7 +111,7 @@ const Services = () => {
             <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4 hover:bg-muted/40 transition-colors">
               <div className="bg-primary-soft rounded-2xl h-14 w-14 flex items-center justify-center overflow-hidden">
                 {p.cover_url ? (
-                  <img src={p.cover_url} alt={p.name} className="h-full w-full object-cover" />
+                  <img src={p.cover_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <Scissors className="h-5 w-5 text-primary" strokeWidth={1.5} />
                 )}

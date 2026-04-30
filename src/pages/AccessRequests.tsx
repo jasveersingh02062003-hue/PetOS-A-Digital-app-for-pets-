@@ -56,7 +56,7 @@ const AccessRequests = () => {
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-2xl bg-primary-soft overflow-hidden flex items-center justify-center">
                 {r.pets?.avatar_url ? (
-                  <img src={r.pets.avatar_url} alt={r.pets.name} className="h-full w-full object-cover" />
+                  <img src={r.pets.avatar_url} alt={r.pets.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <ShieldCheck className="h-5 w-5 text-primary" />
                 )}

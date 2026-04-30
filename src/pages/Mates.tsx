@@ -179,7 +179,7 @@ const MatingPane = ({ myPet, nav, isBuyer }: { myPet: any; nav: any; isBuyer: bo
           <div className="flex items-center gap-3">
             <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted shrink-0 ring-2 ring-coral/30">
               {myPet.avatar_url ? (
-                <img src={myPet.avatar_url} alt={myPet.name} className="w-full h-full object-cover" />
+                <img src={myPet.avatar_url} alt={myPet.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full h-full grid place-items-center font-display text-xl text-coral">{myPet.name?.[0]}</div>
               )}

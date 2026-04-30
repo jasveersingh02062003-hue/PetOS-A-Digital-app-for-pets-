@@ -222,7 +222,7 @@ const VetDashboard = () => {
             <Card key={p.pet_id} className="rounded-2xl border-hairline p-4 flex items-center gap-3">
               <div className="h-12 w-12 rounded-2xl bg-primary-soft overflow-hidden flex items-center justify-center">
                 {p.pets?.avatar_url ? (
-                  <img src={p.pets.avatar_url} alt={p.pets.name} className="h-full w-full object-cover" />
+                  <img src={p.pets.avatar_url} alt={p.pets.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <Stethoscope className="h-5 w-5 text-primary" />
                 )}
@@ -262,7 +262,7 @@ const VetDashboard = () => {
             <Card className="rounded-2xl border-hairline p-4 flex items-center gap-3">
               <div className="h-12 w-12 rounded-2xl bg-primary-soft overflow-hidden flex items-center justify-center">
                 {lookupResult.avatar_url ? (
-                  <img src={lookupResult.avatar_url} alt={lookupResult.name} className="h-full w-full object-cover" />
+                  <img src={lookupResult.avatar_url} alt={lookupResult.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <Stethoscope className="h-5 w-5 text-primary" />
                 )}

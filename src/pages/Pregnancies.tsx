@@ -251,7 +251,7 @@
                <div className="flex items-start gap-3">
                  <div className="h-12 w-12 rounded-full bg-primary-soft flex items-center justify-center overflow-hidden">
                    {p.dam?.avatar_url ? (
-                     <img src={p.dam.avatar_url} alt="" className="h-full w-full object-cover" />
+                     <img src={p.dam.avatar_url} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
                    ) : (
                      <Heart className="h-6 w-6 text-primary" />
                    )}

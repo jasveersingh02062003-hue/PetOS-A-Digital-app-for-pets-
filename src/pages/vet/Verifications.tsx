@@ -81,7 +81,7 @@ const Verifications = () => {
           <Card key={it.id} className="rounded-2xl border-hairline p-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-muted overflow-hidden">
-                {it.pets?.avatar_url && <img src={it.pets.avatar_url} alt="" className="h-full w-full object-cover" />}
+                {it.pets?.avatar_url && <img src={it.pets.avatar_url} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-sm">{it.pets?.name}</div>

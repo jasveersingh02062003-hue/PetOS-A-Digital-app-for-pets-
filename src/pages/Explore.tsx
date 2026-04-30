@@ -66,7 +66,7 @@ const Explore = () => {
                 <Link key={p.id} to="/auth" className="group rounded-xl overflow-hidden border border-hairline bg-card">
                   <div className="aspect-square bg-muted overflow-hidden">
                     {p.avatar_url ? (
-                      <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
                     )}

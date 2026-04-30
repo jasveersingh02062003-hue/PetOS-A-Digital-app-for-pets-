@@ -124,7 +124,7 @@ export default function Breeders() {
             <Card className="p-4 hover:shadow-md transition flex gap-3 items-start">
               <div className="w-14 h-14 rounded-full bg-muted overflow-hidden grid place-items-center shrink-0">
                 {b.avatar_url ? (
-                  <img src={b.avatar_url} alt="" className="w-full h-full object-cover" />
+                  <img src={b.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <span className="text-lg font-semibold">{b.full_name?.[0]?.toUpperCase() ?? "B"}</span>
                 )}

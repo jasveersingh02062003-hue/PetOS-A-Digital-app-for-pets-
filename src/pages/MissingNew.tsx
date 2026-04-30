@@ -29,7 +29,7 @@ const MissingNew = () => {
             className="rounded-2xl border-hairline shadow-none p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/40 transition-colors"
           >
             <div className="h-12 w-12 rounded-full bg-muted overflow-hidden flex items-center justify-center font-display">
-              {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="h-full w-full object-cover" /> : p.name[0]}
+              {p.avatar_url ? <img src={p.avatar_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" decoding="async" /> : p.name[0]}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-medium">{p.name}</div>

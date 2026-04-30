@@ -180,7 +180,7 @@ const MissingCard = ({ m }: { m: any }) => {
       )}
       <div className="flex gap-3 p-3">
         <div className="h-20 w-20 rounded-xl bg-muted overflow-hidden shrink-0">
-          {m.photo_url ? <img src={m.photo_url} alt={m.pet?.name ?? "missing pet"} className="h-full w-full object-cover" /> : null}
+          {m.photo_url ? <img src={m.photo_url} alt={m.pet?.name ?? "missing pet"} className="h-full w-full object-cover" loading="lazy" decoding="async" /> : null}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2">
