@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Globe, Phone, Heart, Copy, HandHeart, Inbox, PawPrint, Sparkles } from "lucide-react";
 import { SellerBadge } from "@/components/SellerBadge";
 import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { LittersList } from "@/components/profile/LittersList";
@@ -44,7 +45,24 @@ const OrgProfile = () => {
     },
   });
 
-  useSeo({ title: org?.org_name ?? "Organisation", description: org?.description?.slice(0, 150) });
+  useSeo({
+    title: org?.org_name ?? "Organisation",
+    description: org?.description?.slice(0, 150),
+    image: org?.facility_photos?.[0] ?? undefined,
+    type: "profile",
+    jsonLd: org
+      ? jsonLd.localBusiness({
+          name: org.org_name,
+          description: org.description ?? undefined,
+          image: org.facility_photos?.[0] ?? undefined,
+          url: typeof window !== "undefined" ? window.location.href : "",
+          city: org.city ?? undefined,
+          lat: org.lat ? Number(org.lat) : undefined,
+          lng: org.lng ? Number(org.lng) : undefined,
+          category: org.org_type ?? undefined,
+        })
+      : undefined,
+  });
 
   if (isLoading) return <div className="container-app pt-10 text-center text-muted-foreground">Loading…</div>;
   if (!org || org.status !== "approved")
