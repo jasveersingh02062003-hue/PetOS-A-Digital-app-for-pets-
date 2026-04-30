@@ -4,13 +4,20 @@ import { usePets } from "@/hooks/useProfile";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { SettingsLayout } from "./SettingsLayout";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Download, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { logError } from "@/lib/logError";
+import { getStoredConsent, setAnalyticsConsent } from "@/lib/analytics";
 
 const Privacy = () => {
   useAuth();
   const { data: pets } = usePets();
   const qc = useQueryClient();
+  const [exporting, setExporting] = useState(false);
+  const [consent, setConsent] = useState<"granted" | "denied" | null>(getStoredConsent());
 
   const toggleDiscoverable = async (id: string, v: boolean, verified: boolean) => {
     if (v && !verified) {
@@ -20,6 +27,35 @@ const Privacy = () => {
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["pets"] });
     toast.success("Updated");
+  };
+
+  const downloadMyData = async () => {
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("data-export");
+      if (error) throw error;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `petos-data-export-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Your data has been downloaded.");
+    } catch (e) {
+      logError(e, { source: "client:data-export" });
+      toast.error("Could not export your data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const updateConsent = (granted: boolean) => {
+    setAnalyticsConsent(granted);
+    setConsent(granted ? "granted" : "denied");
+    toast.success(granted ? "Analytics enabled" : "Analytics disabled");
   };
 
   return (
@@ -55,6 +91,38 @@ const Privacy = () => {
         );
       })}
       {(!pets || pets.length === 0) && <p className="text-sm text-muted-foreground text-center py-8">No pets yet.</p>}
+
+      <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3 mt-6">
+        <div className="text-sm font-medium">Analytics</div>
+        <p className="text-xs text-muted-foreground leading-snug">
+          First-party usage analytics only. No third-party trackers.
+        </p>
+        <div className="flex items-center justify-between">
+          <span className="text-sm">Allow analytics</span>
+          <Switch
+            checked={consent === "granted"}
+            onCheckedChange={updateConsent}
+          />
+        </div>
+      </div>
+
+      <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3 mt-4">
+        <div className="text-sm font-medium">Your data</div>
+        <p className="text-xs text-muted-foreground leading-snug">
+          Download a copy of everything we have about you, or permanently
+          delete your account.
+        </p>
+        <Button variant="outline" className="w-full" onClick={downloadMyData} disabled={exporting}>
+          <Download className="h-4 w-4 mr-2" />
+          {exporting ? "Preparing…" : "Download my data"}
+        </Button>
+        <Button variant="ghost" className="w-full text-destructive hover:text-destructive" asChild>
+          <Link to="/account/delete">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete my account
+          </Link>
+        </Button>
+      </div>
     </SettingsLayout>
   );
 };
