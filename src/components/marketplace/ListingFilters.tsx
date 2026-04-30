@@ -17,7 +17,7 @@ export type ListingFilterValue = {
   verifiedOnly?: boolean;
   openNow?: boolean;
   matingOnly?: boolean;
-  sort?: "newest" | "price_asc" | "price_desc" | "soonest_available";
+  sort?: "nearest" | "newest" | "price_asc" | "price_desc" | "soonest_available" | "rating";
 };
 
 type Props = {
@@ -139,7 +139,9 @@ export const ListingFilters = ({
           <Select value={value.sort ?? "newest"} onValueChange={(v) => set("sort", v as any)}>
             <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="nearest">Nearest first</SelectItem>
               <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="rating">Top rated</SelectItem>
               {showSoonestAvailable && <SelectItem value="soonest_available">Soonest available</SelectItem>}
               <SelectItem value="price_asc">Price ↑</SelectItem>
               <SelectItem value="price_desc">Price ↓</SelectItem>
