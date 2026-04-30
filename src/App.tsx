@@ -180,9 +180,13 @@ const App = () => (
         <AuthProvider>
           <PresenceProvider>
           <CartProvider>
-            <RealtimeBridge />
-            <IntentReplay />
-            <InstallNudgeSheet />
+            <DeferredMount>
+              <Suspense fallback={null}>
+                <RealtimeBridge />
+                <IntentReplay />
+                <InstallNudgeSheet />
+              </Suspense>
+            </DeferredMount>
             <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
             <Routes>
