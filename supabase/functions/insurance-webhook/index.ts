@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { lead_id, partner_ref, premium_inr, status, notes } = body ?? {};
+  const { lead_id, partner_ref, premium_inr, status, notes, policy_number, expires_on } = body ?? {};
   if (!lead_id && !partner_ref) {
     return new Response(JSON.stringify({ error: "missing_lead_id_or_partner_ref" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -47,15 +47,40 @@ Deno.serve(async (req) => {
   if (premium_inr != null) patch.premium_inr = Number(premium_inr);
   if (partner_ref) patch.partner_ref = String(partner_ref);
   if (notes) patch.notes = String(notes);
+  if (policy_number) patch.policy_number = String(policy_number);
+  if (expires_on) patch.expires_on = String(expires_on);
 
   let q = supabase.from("insurance_leads").update(patch);
   q = lead_id ? q.eq("id", lead_id) : q.eq("partner_ref", partner_ref);
-  const { data, error } = await q.select("id,status,premium_inr,commission_inr").maybeSingle();
+  const { data, error } = await q
+    .select("id,status,premium_inr,commission_inr,pet_id,policy_number,partner_id")
+    .maybeSingle();
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // If the policy was bound, write the active policy back onto the pet so the
+  // UI can switch from "lead pending" to "active" and unlock claim filing.
+  if (data && status === "bound" && data.pet_id) {
+    let providerName: string | null = null;
+    if (data.partner_id) {
+      const { data: partner } = await supabase
+        .from("insurance_partners")
+        .select("name")
+        .eq("id", data.partner_id)
+        .maybeSingle();
+      providerName = partner?.name ?? null;
+    }
+    await supabase
+      .from("pets")
+      .update({
+        insurance_provider: providerName,
+        insurance_policy: policy_number ?? data.policy_number ?? null,
+      })
+      .eq("id", data.pet_id);
   }
 
   return new Response(JSON.stringify({ ok: true, lead: data }), {

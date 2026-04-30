@@ -1392,10 +1392,75 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          amount_inr: number
+          claim_ref: string | null
+          description: string | null
+          id: string
+          lead_id: string | null
+          owner_id: string
+          pet_id: string
+          photo_paths: string[] | null
+          status: Database["public"]["Enums"]["insurance_claim_status"]
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount_inr: number
+          claim_ref?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          owner_id: string
+          pet_id: string
+          photo_paths?: string[] | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_inr?: number
+          claim_ref?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          owner_id?: string
+          pet_id?: string
+          photo_paths?: string[] | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_leads: {
         Row: {
           commission_inr: number | null
           created_at: string
+          expires_on: string | null
           id: string
           notes: string | null
           partner_id: string
@@ -1403,6 +1468,7 @@ export type Database = {
           pet_age_months_snapshot: number | null
           pet_breed_snapshot: string | null
           pet_id: string
+          policy_number: string | null
           premium_inr: number | null
           status: Database["public"]["Enums"]["insurance_lead_status"]
           updated_at: string
@@ -1411,6 +1477,7 @@ export type Database = {
         Insert: {
           commission_inr?: number | null
           created_at?: string
+          expires_on?: string | null
           id?: string
           notes?: string | null
           partner_id: string
@@ -1418,6 +1485,7 @@ export type Database = {
           pet_age_months_snapshot?: number | null
           pet_breed_snapshot?: string | null
           pet_id: string
+          policy_number?: string | null
           premium_inr?: number | null
           status?: Database["public"]["Enums"]["insurance_lead_status"]
           updated_at?: string
@@ -1426,6 +1494,7 @@ export type Database = {
         Update: {
           commission_inr?: number | null
           created_at?: string
+          expires_on?: string | null
           id?: string
           notes?: string | null
           partner_id?: string
@@ -1433,6 +1502,7 @@ export type Database = {
           pet_age_months_snapshot?: number | null
           pet_breed_snapshot?: string | null
           pet_id?: string
+          policy_number?: string | null
           premium_inr?: number | null
           status?: Database["public"]["Enums"]["insurance_lead_status"]
           updated_at?: string
@@ -5629,6 +5699,63 @@ export type Database = {
         }
         Relationships: []
       }
+      vaccination_verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          pet_id: string
+          photo_paths: string[] | null
+          reviewed_at: string | null
+          reviewer_note: string | null
+          reviewer_vet_id: string | null
+          status: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pet_id: string
+          photo_paths?: string[] | null
+          reviewed_at?: string | null
+          reviewer_note?: string | null
+          reviewer_vet_id?: string | null
+          status?: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pet_id?: string
+          photo_paths?: string[] | null
+          reviewed_at?: string | null
+          reviewer_note?: string | null
+          reviewer_vet_id?: string | null
+          status?: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_verification_requests_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "vaccination_verification_requests_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vaccinations: {
         Row: {
           administered_on: string
@@ -7386,6 +7513,12 @@ export type Database = {
         | "surgery"
         | "allergy"
         | "other"
+      insurance_claim_status:
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "paid"
+        | "rejected"
       insurance_lead_status:
         | "new"
         | "contacted"
@@ -7498,6 +7631,7 @@ export type Database = {
         | "dropped_off"
         | "cancelled"
       triage_severity: "mild" | "moderate" | "severe"
+      vax_verification_status: "pending" | "approved" | "rejected"
       verification_status: "pending" | "approved" | "rejected"
       vet_q_category:
         | "behavior"
@@ -7707,6 +7841,13 @@ export const Constants = {
         "allergy",
         "other",
       ],
+      insurance_claim_status: [
+        "submitted",
+        "under_review",
+        "approved",
+        "paid",
+        "rejected",
+      ],
       insurance_lead_status: [
         "new",
         "contacted",
@@ -7832,6 +7973,7 @@ export const Constants = {
         "cancelled",
       ],
       triage_severity: ["mild", "moderate", "severe"],
+      vax_verification_status: ["pending", "approved", "rejected"],
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
       vet_q_status: ["open", "answered", "closed"],

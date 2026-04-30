@@ -1,139 +1,90 @@
-# Health System — Single Implementation Plan
+# Close-the-gaps plan (final, no overlap)
 
-One plan. No overlap. Ordered so each slice ships independently and the cheapest, highest-impact fixes land first. No new AI calls are added — we reuse `ai-symptom-classify`, `chat`, and `ai-health-insights`.
+A real check first — several "missing" items already have backend or partial code. I'll reuse what exists and only build the missing layers. Five tightly-scoped slices, ordered by impact-per-credit.
 
----
+## Reality check before building
 
-## Slice 1 — Emergency wiring (cheap, highest impact)
+| Gap | What already exists | What's truly missing |
+|---|---|---|
+| vaccination_verified earn-path | `pets.vaccination_verified bool` column, `health-export-pdf` & `vault-view` fns | Submit-for-review flow + admin approval UI |
+| Insurance round-trip | `insurance_leads` (incl. partner_ref, premium_inr), `pets.insurance_provider/policy`, `insurance-webhook` edge fn | Webhook payload mapping + UI to show active policy + claim button |
+| Activity tracking | nothing | **Excluded — user said leave it** |
+| Weight goals | `pets.target_weight_kg`, chart goal line, delta badge | **Already shipped last turn** |
+| Vet UI to push pharmacy Rx | `PrescriptionBuilder` exists in `AppointmentRoom`, `pharmacy_suggestions` table, customer card | Make it reachable from vet patient view; mark-as-filled status |
+| Allergies / chronic as first-class | `pets.allergies[]`, `pets.conditions[]` arrays + ChipGroup picker in PetEditor | Surface them on `/health` (not just settings); pass to AI insights & symptom triage |
+| Microchip number | `pets.microchip_id` column | UI field + display on Pet ID card |
+| Unit toggles (kg ↔ lb, °C ↔ °F) | `profiles.language` text col | `profiles.unit_system` pref + tiny `useUnits()` hook + format helper |
+| Multi-pet aggregate home | per-pet `pet_health_status` view | One "All pets" summary card |
+| Tab swipe affordance | horizontal scroll only | Edge fade + scroll-snap |
 
-**Goal:** the emergency vet number we already collect actually gets dialled, everywhere it matters.
-
-- `src/pages/Health.tsx` Symptoms tab emergency banner: replace dead `<a href="tel:">` with the real number from `profiles.emergency_vet.phone`. If empty → button becomes "Add emergency vet" → links to `/settings/emergency-vet`.
-- `src/pages/VetTriage.tsx`: when verdict is `severe` (or `moderate` + recommend_vet), render a primary "Call {clinic name}" button using the saved number above the existing "Talk to a vet" button.
-- `src/components/EmergencySheet.tsx`: already wired — no change.
-- `src/components/health/HealthStatusStrip.tsx`: if no emergency vet saved, show a tiny one-time "Add emergency contact" hint chip.
-
-No DB changes. No new edge functions.
-
----
-
-## Slice 2 — "Today / This week" daily care card
-
-**Goal:** turn the vault from passive vault → active daily loop.
-
-- New component `src/components/health/DailyCareCard.tsx` mounted at the top of `/health` (above tabs).
-- Pure client query that unions, for the active pet:
-  - vaccinations with `next_due_on` ≤ today+14
-  - parasite preventatives with `next_due_on` ≤ today+14
-  - active medication doses due today (after Slice 3 lands; until then show active meds list)
-  - last `vital_logs.weight_kg` older than 30 days → "Log weight" CTA
-- Each row has a one-tap action ("Mark given", "Log now", "Snooze 1 day").
-- Empty state: "All caught up for {pet}".
-
-No DB changes for this slice itself.
+So only **5 slices of real work** remain.
 
 ---
 
-## Slice 3 — Structured medication schedule + dose tick-off
+## Slice A — Vaccination verification flow
 
-**Goal:** "frequency = free text" becomes a real schedule with adherence.
+**Backend**
+- New table `vaccination_verification_requests` (pet_id, submitted_by, status enum `pending|approved|rejected`, vet_id reviewer, reviewer_note, photo_paths[], submitted_at, reviewed_at).
+- RLS: owner can insert/read own requests; care-team vets can read & update requests for pets they're on; `super_admin` role can review any.
+- Trigger: when status flips to `approved`, set `pets.vaccination_verified = true`.
 
-DB migration:
-- Add to `medication_logs`: `schedule_kind text` (`once_daily | twice_daily | thrice_daily | every_n_hours | as_needed`), `times_of_day text[]` (e.g. `['08:00','20:00']`), `every_n_hours int`.
-- New table `medication_doses` (`id, medication_id, pet_id, owner_id, scheduled_at timestamptz, taken_at timestamptz, skipped bool, notes`). RLS: owner of pet can CRUD; care-team vets read.
-- Trigger or daily cron `medication-dose-spawn` (new edge fn, scheduled via existing pg_cron pattern) that materialises the next 7 days of doses for every active medication.
+**Frontend**
+- "Get verified" button on the Vaccinations tab when `!vaccination_verified` → opens dialog: pick a vet from care-team OR submit for admin review, attach card photos (reuse `PhotoUploadField`).
+- New page `/vet/verifications` (vet portal tab) listing pending requests for pets on care team, with Approve / Reject + note.
+- Pet header badge becomes the entry point if not yet verified ("Tap to verify").
 
-UI:
-- `MedicationsTab.tsx` add-form: structured schedule picker.
-- New `src/components/health/DoseTicker.tsx` inside the med card → today's doses with circular tick / skip.
-- DailyCareCard (Slice 2) reads from `medication_doses` for "due today".
+## Slice B — Insurance round-trip
 
-`pet-care-reminders` cron updated to push 30-min-before reminders for the next undone dose.
+**Backend**
+- Extend `insurance_leads` reads via `insurance-webhook`: on receipt of `{partner_ref, status:"bound", policy_number, premium_inr, expires_on}` → update lead row + write `pets.insurance_provider` and `pets.insurance_policy`.
+- New table `insurance_claims` (pet_id, owner_id, lead_id, claim_ref, amount_inr, status, submitted_at, photo_paths[]).
 
----
+**Frontend**
+- `InsuranceCard` shows three states: **none** (current "Get a quote") → **lead pending** (greyed "Quote in progress, partner will email you") → **active** (provider + policy number + "File a claim" button).
+- "File a claim" → dialog: amount, description, photo upload → inserts into `insurance_claims`, shows status timeline.
 
-## Slice 4 — Photos on symptoms and records
+## Slice C — Vet pharmacy Rx workflow
 
-**Goal:** vets can finally see what owners describe.
+**Backend** — none. `pharmacy_suggestions` already supports it.
 
-DB migration:
-- Add `photo_paths text[]` to `symptom_logs` and `health_records`.
-- Storage: reuse existing `pet-media` bucket (or create `health-media`, private, RLS = owner + care-team vets).
+**Frontend**
+- In `vet/Dashboard.tsx` Patients list: "Open" button currently goes to timeline; add a second action **"Prescribe"** → reuses `PrescriptionBuilder` in a dialog (pass `petId`, `ownerId`, no `appointmentId`).
+- Update `PrescriptionBuilder` to accept optional `appointmentId`.
+- Customer-side `PharmacySuggestionsCard` already shows them — add a "Mark filled" button that updates `pharmacy_suggestions.status` to `filled` so vet sees confirmation.
 
-UI:
-- New shared `src/components/health/PhotoUploadField.tsx` (multi, max 4, ≤3 MB each, downscaled client-side via existing `uploadImage` lib).
-- Wire into `SymptomDialog` and `RecordDialog`.
-- Timeline + Vault view render thumbnails inline; click → lightbox.
-- `ai-symptom-classify` payload extended to include the first photo URL (model already vision-capable in gateway).
+## Slice D — First-class allergies, conditions, microchip + multi-pet home
 
----
+**Backend** — none (columns exist).
 
-## Slice 5 — Vet visit-note write-back + Care Team on /health
+**Frontend**
+- Pet header card on `/health`: render allergy & condition chips inline under the breed line (read-only). Empty state nudge "Add allergies in pet settings" appears once.
+- Add **Microchip ID** field to `PetEditor`; display on the Pet ID dialog and the exported PDF passport.
+- Pass `allergies` + `conditions` into `ai-symptom-classify` and `ai-health-insights` prompts so the AI sees them.
+- New `/health` "All pets" header strip when user has 2+ pets: one row per pet showing avatar, name, score from `pet_health_status` view, and one urgent-task chip ("Vax due in 3d", "Med dose now"). Tap → switches active pet.
 
-**Goal:** care-team vets can append a structured visit note that lands on the timeline; care team is discoverable from /health.
+## Slice E — Unit preferences + tab UX polish
 
-DB migration:
-- New table `vet_visit_notes` (`id, pet_id, vet_id, occurred_on, summary, diagnosis, treatment, follow_up_on, attachments text[], created_at`). RLS: vet must be on `pet_care_team`; owner reads.
+**Backend**
+- Add `profiles.unit_system text default 'metric'` (`metric` | `imperial`).
 
-UI:
-- Move `CareTeamCard` to also render on `/health` (collapsed) in addition to `/pet/:id`.
-- New page `src/pages/vet/PatientNote.tsx` + entry from vet's care-team patient list → "Add visit note".
-- `Timeline.tsx` includes `vet_visit_notes` with a verified "vet" badge.
-- DailyCareCard (Slice 2) surfaces follow-ups when `follow_up_on` is near.
-
----
-
-## Slice 6 — Heat / oestrus cycle (unspayed females) + one-tap weight log
-
-**Goal:** fill the two missing first-class trackers; collapse vitals friction.
-
-DB migration:
-- New table `heat_cycle_logs` (`id, pet_id, owner_id, started_on, ended_on, intensity 1-3, notes`). RLS owner-only.
-
-UI:
-- New tab "Heat cycle" inside `/health`, only shown when `pet.species='dog'/'cat'` AND `sex='female'` AND `neutered=false`. Mini-form: start date, end date, notes; predicts next cycle as `started_on + avg_interval` (default 180 days, recomputed from history).
-- Replace `VitalsTab` add-button menu with: **Quick weight** (number-only sheet, 1 field) + **Full vitals** (existing dialog).
+**Frontend**
+- New `src/hooks/useUnits.ts` returning `{ system, formatWeight(kg), formatTemp(c), parseWeight(input)→kg }`.
+- Replace hard-coded `kg` / `°C` strings in `WeightChart`, `VitalsTab`, `QuickWeightSheet`, `DailyCareCard`, `PetEditor`, `HealthStatusStrip` with the helper.
+- New row in `Settings → Account`: Units (Metric / Imperial) toggle.
+- Tabs strip on `/health`: add left/right gradient fade overlays + `scroll-snap-x` so the next tab "peeks", giving a clear swipe affordance without redesigning navigation.
 
 ---
 
-## Slice 7 — Score fix, empty-state coaching, badge path, UX polish
+## Out of scope (confirmed)
 
-**Goal:** kill the silent bugs and the seven empty boxes.
+- **Activity / wearable integration** — explicitly skipped per user.
+- Live partner integrations beyond the existing webhook contract (we ship the contract; partners plug in).
 
-- `HealthStatusStrip.tsx`: drop the `-10 no activity in 3d` penalty until WalkLive feeds `last_activity_on`. Show `Walk` chip only when data exists.
-- Each tab in `Health.tsx`: replace "No X recorded" with `EmptyHealthState` component (icon + 1-line tip + primary CTA).
-- `vaccination_verified` badge: add an "Earn this" CTA on the pet header → opens dialog explaining "ask a care-team vet to verify"; vet-side `PatientNote` (Slice 5) gets a "Mark vaccinations verified" toggle.
-- Tabs strip: add fade-edge gradient + scroll-snap so users see there's more to the right on a 393 px viewport.
-- AI Health Insights card: add the same medical disclaimer that lives in chat.
-- Insights `cta_link` validated against an allow-list of in-app routes before rendering.
+## Order of work & credit posture
 
----
+A → B → C → D → E. Each slice is independently shippable so you can stop at any point. No two slices touch the same file in conflicting ways:
 
-## Order, dependencies, what NOT to touch
+- DB migrations: A (verification table+trigger), B (claims table), E (profiles col). C & D need no migration.
+- Shared util: only Slice E adds `useUnits` and refactors call-sites.
 
-```text
-Slice 1 ── Slice 2 ── Slice 3 ─┐
-                               ├─ Slice 5 ─ Slice 7
-Slice 4 ───────────────────────┘
-Slice 6 (independent)
-```
-
-- Slice 2 ships a partial DailyCareCard before Slice 3; it self-upgrades when `medication_doses` exists.
-- No changes to: `chat`, `ai-symptom-classify` core logic (only payload extended in Slice 4), `ai-proactive-scan`, `payments-*`, `vault-view`, `health-export-pdf`.
-- Reuses existing storage, existing notification pipeline, existing cron infra. No new third-party APIs. No new Lovable AI model spend beyond current per-symptom call.
-
----
-
-## Technical reference (for the implementer)
-
-| Slice | Tables touched | Edge fns | Files (high-level) |
-|---|---|---|---|
-| 1 | — | — | Health.tsx, VetTriage.tsx, HealthStatusStrip.tsx |
-| 2 | — (read-only) | — | DailyCareCard.tsx, Health.tsx |
-| 3 | medication_logs (alter), medication_doses (new) | medication-dose-spawn (new), pet-care-reminders (edit) | MedicationsTab.tsx, DoseTicker.tsx |
-| 4 | symptom_logs (alter), health_records (alter), storage policy | ai-symptom-classify (payload only) | PhotoUploadField.tsx, SymptomDialog, RecordDialog, Timeline.tsx |
-| 5 | vet_visit_notes (new) | — | CareTeamCard.tsx, vet/PatientNote.tsx, Timeline.tsx |
-| 6 | heat_cycle_logs (new) | — | HeatCycleTab.tsx, VitalsTab.tsx |
-| 7 | — | — | HealthStatusStrip.tsx, EmptyHealthState.tsx, Health.tsx, HealthInsightsCard.tsx |
-
-Approve this and I'll start at Slice 1.
+Total: **3 small migrations, ~8 new components, ~6 edits to existing files.**

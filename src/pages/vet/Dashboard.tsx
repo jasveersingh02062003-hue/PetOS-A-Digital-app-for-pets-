@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Users, Search, Video, MessageSquare, MapPin, Stethoscope } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Search, Video, MessageSquare, MapPin, Stethoscope, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { EarningsCard } from "@/components/payments/EarningsCard";
 
@@ -172,6 +172,15 @@ const VetDashboard = () => {
           Profile
         </Button>
       </header>
+
+      <Button
+        variant="outline"
+        className="w-full rounded-xl mb-3 justify-start gap-2 border-hairline"
+        onClick={() => nav("/vet/verifications")}
+      >
+        <ShieldCheck className="h-4 w-4 text-primary" />
+        <span className="text-sm">Vaccination verification queue</span>
+      </Button>
 
       <Tabs defaultValue="today">
         <TabsList className="grid grid-cols-5 w-full">

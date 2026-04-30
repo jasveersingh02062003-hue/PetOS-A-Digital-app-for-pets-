@@ -33,6 +33,7 @@ import { CareTeamCard } from "@/components/health/CareTeamCard";
 import { VetVisitNotesCard } from "@/components/health/VetVisitNotesCard";
 import { HeatCycleCard } from "@/components/health/HeatCycleCard";
 import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
+import { VaxVerifyDialog } from "@/components/health/VaxVerifyDialog";
 import { Scale } from "lucide-react";
 
 const Health = () => {
@@ -41,6 +42,7 @@ const Health = () => {
   const active = pets?.[activeIdx];
   const nav = useNavigate();
   const [quickWeightOpen, setQuickWeightOpen] = useState(false);
+  const [vaxVerifyOpen, setVaxVerifyOpen] = useState(false);
 
   return (
     <div className="container-app pad-top-safe">
@@ -75,10 +77,17 @@ const Health = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <div className="font-display text-2xl">{active.name}</div>
-                  {active.vaccination_verified && (
+                  {active.vaccination_verified ? (
                     <Badge variant="secondary" className="bg-primary-soft text-primary border-0 gap-1">
                       <ShieldCheck className="h-3 w-3" /> Verified
                     </Badge>
+                  ) : (
+                    <button
+                      onClick={() => setVaxVerifyOpen(true)}
+                      className="text-[11px] rounded-full px-2 py-0.5 border border-dashed border-hairline text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+                    >
+                      Get verified
+                    </button>
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -141,6 +150,7 @@ const Health = () => {
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
 
           <QuickWeightSheet open={quickWeightOpen} onOpenChange={setQuickWeightOpen} petId={active.id} />
+          <VaxVerifyDialog open={vaxVerifyOpen} onOpenChange={setVaxVerifyOpen} petId={active.id} />
 
           <Tabs defaultValue="vitals" className="w-full">
             <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
