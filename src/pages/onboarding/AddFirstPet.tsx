@@ -56,7 +56,7 @@ export default function AddFirstPet() {
       // If they want to set up health now, jump straight into Health tab; the
       // missing-health card there opens the proper editor.
       if (form.healthNow) nav("/health");
-      else nav("/onboarding/add-another-pet");
+      else nav("/onboarding?stage=add-another", { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not add pet"),
   });
@@ -173,7 +173,7 @@ export default function AddFirstPet() {
         <Button onClick={() => create.mutate()} disabled={create.isPending} className="flex-1">
           {create.isPending ? "Saving…" : "Add pet & continue"}
         </Button>
-        <Button variant="outline" onClick={() => nav("/onboarding/done")}>
+        <Button variant="outline" onClick={() => nav("/onboarding?stage=done", { replace: true })}>
           Skip
         </Button>
       </div>
