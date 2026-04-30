@@ -1,11 +1,21 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
@@ -57,6 +67,8 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const { data: blocked } = useBlockedIds();
   const { data: publicProfiles } = usePublicProfiles();
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get("focus");
 
   const PAGE_SIZE = 12;
   const {
@@ -167,6 +179,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
             key={post.id}
             post={post}
             onComment={() => setCommentsFor(post.id)}
+            highlight={focusId === post.id}
           />
         ))}
         {hasNextPage && (
@@ -180,13 +193,79 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   );
 };
 
-const PostCard = ({ post, onComment }: {
-  post: FeedPost; onComment: () => void;
+const PostCard = ({ post, onComment, highlight }: {
+  post: FeedPost; onComment: () => void; highlight?: boolean;
 }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: verifiedOrgs } = useVerifiedOrgs();
   const { data: pendingOrgs } = usePendingOrgs();
+  const isOwner = !!user && user.id === post.author_id;
+  const [editOpen, setEditOpen] = useState(false);
+  const [editCaption, setEditCaption] = useState(post.caption ?? "");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  // Deep-link highlight pulse.
+  useEffect(() => {
+    if (!highlight) return;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlight]);
+
+  const handleShare = async () => {
+    haptic(8);
+    const url = `${window.location.origin}/?focus=${post.id}`;
+    const shareData = {
+      title: post.author?.full_name ? `${post.author.full_name} on Petos` : "A post on Petos",
+      text: post.caption ?? "Check out this Petos post",
+      url,
+    };
+    try {
+      if (navigator.share && navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch { /* user cancelled or failed — fall through */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) return toast.error(error.message);
+    toast.success("Post deleted");
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
+  const handlePin = async () => {
+    // Pin = bump updated_at so it sorts to top of profile grid.
+    const { error } = await supabase
+      .from("posts")
+      .update({ updated_at: new Date().toISOString() } as any)
+      .eq("id", post.id);
+    if (error) return toast.error(error.message);
+    toast.success("Pinned to your profile");
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("posts")
+      .update({ caption: editCaption.trim() || null } as any)
+      .eq("id", post.id);
+    setSavingEdit(false);
+    if (error) return toast.error(error.message);
+    toast.success("Caption updated");
+    setEditOpen(false);
+    qc.invalidateQueries({ queryKey: ["feed"] });
+  };
+
   const authorVerified = !!(post.author_id && verifiedOrgs?.has(post.author_id));
   const authorPending = !!(post.author_id && pendingOrgs?.has(post.author_id));
   const accountType = post.author?.account_type ?? "pet_parent";
@@ -249,7 +328,12 @@ const PostCard = ({ post, onComment }: {
   };
 
   return (
-    <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
+    <Card
+      ref={cardRef}
+      className={`rounded-2xl border-hairline bg-card shadow-none overflow-hidden transition-shadow ${
+        highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
+      }`}
+    >
       <div className="flex items-center gap-3 p-4">
         {orgPost ? (
           <div className="flex-1 min-w-0">
@@ -350,10 +434,61 @@ const PostCard = ({ post, onComment }: {
           <span className="text-sm tabular-nums">{post.comment_count}</span>
         </button>
         <SaveButton postId={post.id} />
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-110"
+          aria-label="Share"
+        >
+          <Share2 className="h-5 w-5" strokeWidth={1.6} />
+        </button>
         <div className="ml-auto pr-1">
-          <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+          {isOwner ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="More">
+                  <MoreHorizontal className="h-5 w-5" strokeWidth={1.6} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuItem onClick={() => { setEditCaption(post.caption ?? ""); setEditOpen(true); }}>
+                  <Pencil className="h-4 w-4 mr-2" /> Edit caption
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePin}>
+                  <Pin className="h-4 w-4 mr-2" /> Pin to profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+          )}
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit caption</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editCaption}
+            onChange={(e) => setEditCaption(e.target.value)}
+            className="rounded-xl border-hairline min-h-[120px] resize-none"
+            maxLength={500}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={saveEdit} disabled={savingEdit} className="rounded-xl">
+              {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-1" /> Save</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

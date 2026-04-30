@@ -1,13 +1,20 @@
 import { useState, useRef, useEffect, forwardRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-import { Camera, ImagePlus, X, Loader2, Plus, Sparkles } from "lucide-react";
+import {
+  Camera, ImagePlus, X, Loader2, Plus, Sparkles, Globe, Users, Lock,
+  GripVertical, Clock, CalendarDays,
+} from "lucide-react";
 import { toast } from "sonner";
 import { CollabPicker, type CollabUser } from "@/components/social/CollabPicker";
 import { useInviteCollaborators } from "@/hooks/useCollabs";
@@ -15,6 +22,7 @@ import { HealthTagPicker, type HealthTag } from "@/components/health/HealthTagPi
 import { uploadImageWithVariants } from "@/lib/uploadImage";
 import { getRoleSubmit, getRoleComposerCopy, isOrgRole } from "@/lib/roleTheme";
 import { RescueJourneyPicker } from "@/components/rescue/RescueJourneyPicker";
+import { StoryComposer } from "@/components/social/StoryComposer";
 
 export const ComposerButton = forwardRef<HTMLButtonElement, { variant?: "icon" | "fab" | "inline" | "global" }>(
   ({ variant = "icon" }, ref) => {
@@ -66,6 +74,7 @@ ComposerButton.displayName = "ComposerButton";
 
 const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
+  const nav = useNavigate();
   const { data: pets } = usePets();
   const { data: profile } = useProfile();
   const accountType = profile?.account_type ?? "pet_parent";
@@ -79,8 +88,10 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
   const [petId, setPetId] = useState<string>("none");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<"public" | "followers" | "private">("public");
+  const [storyOpen, setStoryOpen] = useState(false);
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
   const [rescueJourneyId, setRescueJourneyId] = useState<string | null>(null);
@@ -88,6 +99,64 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<{ captions: string[]; hashtags: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
+
+  // ---- @mention / #hashtag autocomplete ----
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [hashQuery, setHashQuery] = useState<string | null>(null);
+  const [mentionResults, setMentionResults] = useState<{ id: string; full_name: string | null }[]>([]);
+
+  useEffect(() => {
+    if (mentionQuery == null) { setMentionResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await supabase.rpc("get_profiles_public");
+        const q = mentionQuery.toLowerCase();
+        const matches = ((data ?? []) as any[])
+          .filter((p) => (p.full_name ?? "").toLowerCase().includes(q))
+          .slice(0, 6);
+        setMentionResults(matches);
+      } catch { setMentionResults([]); }
+    }, 180);
+    return () => clearTimeout(t);
+  }, [mentionQuery]);
+
+  const onCaptionChange = (val: string) => {
+    setCaption(val);
+    const ta = captionRef.current;
+    const cursor = ta ? ta.selectionStart : val.length;
+    const upTo = val.slice(0, cursor);
+    const mMatch = upTo.match(/(?:^|\s)@([\w.]{1,30})$/);
+    const hMatch = upTo.match(/(?:^|\s)#([\w]{1,30})$/);
+    setMentionQuery(mMatch ? mMatch[1] : null);
+    setHashQuery(hMatch ? hMatch[1] : null);
+  };
+
+  const insertAtToken = (replacement: string) => {
+    const ta = captionRef.current;
+    if (!ta) return;
+    const cursor = ta.selectionStart;
+    const before = caption.slice(0, cursor);
+    const after = caption.slice(cursor);
+    // Strip the in-progress token (e.g. "@bru" or "#lab")
+    const stripped = before.replace(/(@|#)[\w.]*$/, "");
+    const next = `${stripped}${replacement} ${after}`;
+    setCaption(next);
+    setMentionQuery(null);
+    setHashQuery(null);
+    requestAnimationFrame(() => {
+      const pos = stripped.length + replacement.length + 1;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  };
+
+  const TRENDING_HASHTAGS = [
+    "petsofpetos", "morningwalk", "labradorlife", "catsofinstagram",
+    "rescuepup", "trainingday", "vetvisit", "happypets",
+  ];
+  const hashSuggestions = hashQuery == null ? [] :
+    TRENDING_HASHTAGS.filter((h) => h.includes(hashQuery.toLowerCase())).slice(0, 6);
 
   const suggestCaptions = async () => {
     setSuggesting(true);
@@ -117,8 +186,8 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const onFile = (f: File | null) => {
     if (!f) return;
     if (f.size > 8 * 1024 * 1024) return toast.error("Image must be under 8 MB");
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setFiles((prev) => [...prev, f].slice(0, 6));
+    setPreviews((prev) => [...prev, URL.createObjectURL(f)].slice(0, 6));
     // Smart auto-detect: prompt to log as health if no tag yet
     if (!healthTag && pets && pets.length > 0) {
       const hour = new Date().getHours();
@@ -138,10 +207,29 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
     }
   };
 
+  const onFiles = (list: FileList | null) => {
+    if (!list) return;
+    Array.from(list).slice(0, 6 - files.length).forEach((f) => onFile(f));
+  };
+
+  const removeFileAt = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveFile = (from: number, dir: -1 | 1) => {
+    const to = from + dir;
+    if (to < 0 || to >= files.length) return;
+    const nf = [...files]; const np = [...previews];
+    [nf[from], nf[to]] = [nf[to], nf[from]];
+    [np[from], np[to]] = [np[to], np[from]];
+    setFiles(nf); setPreviews(np);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error("Please sign in");
-    if (!caption.trim() && !file) return toast.error("Add a caption or photo");
+    if (!caption.trim() && files.length === 0) return toast.error("Add a caption or photo");
     setUploading(true);
     try {
       // Auto-moderation (best-effort; never blocks on backend errors)
@@ -163,12 +251,18 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       let image_url_thumb: string | null = null;
       let image_url_feed: string | null = null;
       let image_url_full: string | null = null;
-      if (file) {
-        const v = await uploadImageWithVariants(file, "posts");
+      let image_urls: { thumb: string; feed: string; full: string }[] | null = null;
+      if (files.length > 0) {
+        const uploaded = [];
+        for (const f of files) {
+          uploaded.push(await uploadImageWithVariants(f, "posts"));
+        }
+        const v = uploaded[0];
         image_url_thumb = v.thumb;
         image_url_feed = v.feed;
         image_url_full = v.full;
         image_url = v.feed; // keep legacy column populated for backwards compat
+        if (uploaded.length > 1) image_urls = uploaded;
       }
       // Zoo accounts: every post is auto-tagged #educational so PetOS can flag
       // wildlife content as informational, not commercial.
@@ -186,6 +280,8 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         image_url_thumb,
         image_url_feed,
         image_url_full,
+        image_urls: image_urls as any,
+        visibility,
         health_kind: healthTag?.kind ?? null,
         health_pet_id: healthTag?.pet_id ?? null,
         health_value: healthTag?.value ?? null,
@@ -197,7 +293,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       }
       toast.success(healthTag ? "Posted & logged to health" : "Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]); setHealthTag(null); setRescueJourneyId(null);
+      setCaption(""); setFiles([]); setPreviews([]); setPetId("none");
+      setCollabs([]); setHealthTag(null); setRescueJourneyId(null);
+      setVisibility("public");
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
@@ -208,25 +306,97 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {/* IMAGE FIRST — big drop zone or preview */}
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
-      {preview ? (
-        <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square">
-          <img src={preview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          <button
-            type="button"
-            onClick={() => { setFile(null); setPreview(null); }}
-            className="absolute top-2 right-2 h-9 w-9 rounded-full bg-background/95 flex items-center justify-center shadow-md"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="absolute bottom-2 left-2 px-3 h-8 rounded-full bg-background/95 text-xs font-semibold flex items-center gap-1.5 shadow-md"
-          >
-            <ImagePlus className="h-3.5 w-3.5" /> Replace
-          </button>
+      {/* FORMAT PILLS — Post / Story / Daily */}
+      <div className="flex items-center gap-1 p-1 rounded-full bg-muted text-xs font-semibold">
+        <button
+          type="button"
+          className="flex-1 h-8 rounded-full bg-background shadow-sm flex items-center justify-center gap-1.5"
+        >
+          <Camera className="h-3.5 w-3.5" /> Post
+        </button>
+        <button
+          type="button"
+          onClick={() => { onDone(); setStoryOpen(true); }}
+          className="flex-1 h-8 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
+        >
+          <Clock className="h-3.5 w-3.5" /> Story
+        </button>
+        <button
+          type="button"
+          onClick={() => { onDone(); nav("/daily"); }}
+          className="flex-1 h-8 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
+        >
+          <CalendarDays className="h-3.5 w-3.5" /> Daily
+        </button>
+      </div>
+
+      <StoryComposer open={storyOpen} onOpenChange={setStoryOpen} />
+
+      {/* IMAGE FIRST — big drop zone or carousel of previews */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => onFiles(e.target.files)}
+      />
+      {previews.length > 0 ? (
+        <div className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+            {previews.map((src, idx) => (
+              <div
+                key={src}
+                className="relative shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-muted border border-hairline"
+              >
+                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                {idx === 0 && (
+                  <span className="absolute top-1 left-1 text-[10px] font-semibold bg-background/95 text-foreground rounded-full px-1.5 py-0.5">
+                    Cover
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeFileAt(idx)}
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow"
+                  aria-label="Remove"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <div className="absolute bottom-1 right-1 flex gap-1">
+                  {idx > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => moveFile(idx, -1)}
+                      className="h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow text-[10px] font-bold"
+                      aria-label="Move left"
+                    >‹</button>
+                  )}
+                  {idx < previews.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => moveFile(idx, 1)}
+                      className="h-6 w-6 rounded-full bg-background/95 flex items-center justify-center shadow text-[10px] font-bold"
+                      aria-label="Move right"
+                    >›</button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {previews.length < 6 && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="shrink-0 w-32 h-32 rounded-xl border-2 border-dashed border-hairline flex flex-col items-center justify-center text-muted-foreground hover:border-coral/40 hover:text-coral transition"
+              >
+                <ImagePlus className="h-5 w-5" />
+                <span className="text-[11px] mt-1">Add more</span>
+              </button>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground px-1">
+            {previews.length} photo{previews.length === 1 ? "" : "s"} · drag chevrons to reorder
+          </div>
         </div>
       ) : (
         <button
@@ -238,24 +408,55 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
             <Camera className="h-7 w-7 text-coral" strokeWidth={2} />
           </div>
           <div className="text-center">
-            <div className="font-semibold text-base">Add a photo</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Tap to pick from your gallery</div>
+            <div className="font-semibold text-base">Add photos</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Tap to pick — up to 6 per post</div>
           </div>
         </button>
       )}
 
       {/* CAPTION — secondary, below image */}
-      <Textarea
-        value={caption}
-        onChange={(e) => setCaption(e.target.value)}
-        placeholder={
-          showPetTag && pets?.[0]
-            ? `What's ${pets[0].name} up to?`
-            : copy.placeholder
-        }
-        className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
-        maxLength={500}
-      />
+      <div className="relative">
+        <Textarea
+          ref={captionRef}
+          value={caption}
+          onChange={(e) => onCaptionChange(e.target.value)}
+          placeholder={
+            showPetTag && pets?.[0]
+              ? `What's ${pets[0].name} up to?  Try @ to mention or # for a tag`
+              : copy.placeholder
+          }
+          className="rounded-2xl border-hairline min-h-[72px] resize-none text-base"
+          maxLength={500}
+        />
+        {(mentionResults.length > 0 || hashSuggestions.length > 0) && (
+          <div className="absolute left-0 right-0 -bottom-1 translate-y-full z-20 rounded-xl border border-hairline bg-card shadow-lg overflow-hidden">
+            {mentionResults.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => insertAtToken(`@${(p.full_name ?? "user").replace(/\s+/g, "")}`)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center gap-2"
+              >
+                <span className="h-6 w-6 rounded-full bg-primary-soft text-primary text-[10px] grid place-items-center font-semibold">
+                  {(p.full_name?.[0] ?? "P").toUpperCase()}
+                </span>
+                <span className="truncate">{p.full_name ?? "Pet parent"}</span>
+              </button>
+            ))}
+            {hashSuggestions.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => insertAtToken(`#${h}`)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center gap-2"
+              >
+                <span className="h-6 w-6 rounded-full bg-lilac/15 text-lilac text-[12px] grid place-items-center font-bold">#</span>
+                <span className="truncate">{h}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-between gap-2 -mt-2">
         <button
@@ -346,6 +547,27 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       {canRescueJourney && (
         <RescueJourneyPicker value={rescueJourneyId} onChange={setRescueJourneyId} />
       )}
+
+      {/* Visibility — who can see this post */}
+      <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-card px-3 py-2">
+        <span className="text-xs font-semibold text-muted-foreground shrink-0">Who can see</span>
+        <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
+          <SelectTrigger className="h-9 rounded-xl border-hairline ml-auto w-auto min-w-[150px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="public">
+              <span className="inline-flex items-center gap-2"><Globe className="h-4 w-4" /> Public · anyone</span>
+            </SelectItem>
+            <SelectItem value="followers">
+              <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> Followers only</span>
+            </SelectItem>
+            <SelectItem value="private">
+              <span className="inline-flex items-center gap-2"><Lock className="h-4 w-4" /> Only me</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <Button
         type="submit"

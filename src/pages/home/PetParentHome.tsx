@@ -4,7 +4,7 @@ import { useProfile, usePets } from "@/hooks/useProfile";
 import { PostFeed } from "@/components/PostFeed";
 import { EmptyState } from "@/components/EmptyState";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Heart, Users } from "lucide-react";
+import { Heart, Users, Flame } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
@@ -28,7 +28,7 @@ const PetParentHome = () => {
   const { data: pets } = usePets();
   const firstName = profile?.full_name?.split(" ")[0];
   const hasPets = !!pets && pets.length > 0;
-  const [tab, setTab] = useState<"for-you" | "following">("for-you");
+  const [tab, setTab] = useState<"for-you" | "following" | "trending">("for-you");
 
   useSeo({ title: "Home", description: "Your daily Petos feed: stories, meetups, health and missing-pet alerts.", noIndex: true });
 
@@ -62,10 +62,13 @@ const PetParentHome = () => {
 
       <section className="pb-10">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid grid-cols-2 w-full rounded-2xl mb-4 h-11 p-1 bg-muted">
+          <TabsList className="grid grid-cols-3 w-full rounded-2xl mb-4 h-11 p-1 bg-muted">
             <TabsTrigger value="for-you" className="rounded-xl text-sm">For you</TabsTrigger>
             <TabsTrigger value="following" className="rounded-xl text-sm">
               <Users className="h-3.5 w-3.5 mr-1.5" /> Following
+            </TabsTrigger>
+            <TabsTrigger value="trending" className="rounded-xl text-sm">
+              <Flame className="h-3.5 w-3.5 mr-1.5" /> Trending
             </TabsTrigger>
           </TabsList>
           <TabsContent value="for-you">
@@ -102,6 +105,22 @@ const PetParentHome = () => {
                     title="Follow other pet parents"
                     description="Tap any avatar in the feed to visit their profile and follow."
                     ctaLabel="Find people"
+                    onCta={() => nav("/discover")}
+                  />
+                }
+              />
+            )}
+          </TabsContent>
+          <TabsContent value="trending">
+            {tab === "trending" && (
+              <PostFeed
+                scope="trending"
+                emptyState={
+                  <EmptyState
+                    icon={Flame}
+                    title="Nothing trending yet"
+                    description="Posts with the most reactions today will appear here."
+                    ctaLabel="Explore Discover"
                     onCta={() => nav("/discover")}
                   />
                 }

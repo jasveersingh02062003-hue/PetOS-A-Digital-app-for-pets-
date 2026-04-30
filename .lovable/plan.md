@@ -1,72 +1,111 @@
+## Petos Social — Reality Check & Scoped Plan (Social tab ONLY)
 
-## Reality check — Health Vault journey vs shipped code
+**Scope guardrail:** Only files powering the Social experience will be touched. **No changes** to Mate, Health, Discovery, or Profile tabs.
 
-I read `Health.tsx`, `HealthAlerts.tsx`, `HealthCompare.tsx`, `EmergencyBanner.tsx`, `MultiPetSummary.tsx`, `useUnits.ts`, `WeightChart.tsx`, `QuickWeightSheet.tsx`, `VitalsTab.tsx`, `PetEditor.tsx`, `health-export-pdf`, `vet-grant-create`, `vault-view`, `useHealthAlerts.ts`. Verdict below — only **7 small gaps** remain.
+### In-scope files (Social only)
+- `src/pages/home/PetParentHome.tsx` (feed tabs, story rail, daily prompt — the social home)
+- `src/components/PostFeed.tsx`
+- `src/components/CommentSheet.tsx`
+- `src/components/Composer.tsx`
+- `src/components/social/*` (ReactionBar, PawBurst, FollowButton, SaveButton, StoryRail, StoryViewer, StoryComposer, DailyMomentComposer, DailyPromptBanner, CaptionWithTags, CollabPicker, etc.)
+- `src/pages/Notifications.tsx` (only the social rows: reactions, comments, follows, mentions)
+- `src/pages/Messages.tsx` + `src/pages/MessageThread.tsx`
 
-### What is already shipped (no work needed)
+### Explicitly OUT of scope (will NOT be edited)
+- `src/pages/Health.tsx`, `src/components/health/*`
+- `src/pages/Mates.tsx`, `MatesNew.tsx`, `MatesManage.tsx`, `MateListing.tsx`, mate components
+- `src/pages/Discover.tsx`, `Explore.tsx`, `Hashtag.tsx`, discovery rails
+- `src/pages/PetProfile.tsx`, `OrgProfile.tsx`, profile components
 
-| Journey claim | Status |
-|---|---|
-| Empty-state "Add a pet to begin" card | ✅ Health.tsx L104 |
-| Pet selector chips (single + multi) | ✅ L72 |
-| MultiPetSummary strip with priority chips | ✅ MultiPetSummary.tsx |
-| "Compare pets side-by-side" dashed pill → `/health/compare` | ✅ L95 + HealthCompare.tsx |
-| Pet header: name, breed, public_id, allergy/condition tone chips, microchip | ✅ L111-152 |
-| Get verified pill ↔ Verified badge | ✅ L116-127 + VaxVerifyDialog |
-| PetID QR + Share + Export PDF triplet | ✅ L153-157 |
-| Timeline + Book a vet quick row | ✅ L161 |
-| Big "Ask the AI assistant" CTA | ✅ L172 |
-| Quick weight + Log symptom row (severity slider, AI classify, dialog auto-open via signal) | ✅ L180, L437-582 |
-| DailyCare / CareTeam / VetVisitNotes / HeatCycle (intact-female only) / Insurance / HealthInsights / MedicalDisclaimer | ✅ L189-203 |
-| 7 tabs (Vitals, Vax, Meds, Parasite, Symptoms, Food, Records) with edge fades | ✅ L208-239 |
-| Vax: Scan card + Add manually | ✅ L264 |
-| Meds: PharmacySuggestionsCard + MedicationsTab | ✅ L231 |
-| Symptoms tab: red emergency card with Call vet / Ask vet now | ✅ L464 |
-| Vet share: 1h/24h/7d expiry pills, scope toggles, QR + 8-char code, recent views (30s polling) | ✅ L703-887 |
-| Global EmergencyBanner mounted in AppShell, 24h window, real-time | ✅ EmergencyBanner.tsx |
-| `/health/alerts` inbox with per-pet filter, severity tones, swipe-dismiss | ✅ HealthAlerts.tsx |
-| Header bell + alert pill on `/health` | ✅ L60 + AppShell |
-| Units: kg/°C canonical storage, lb/°F display via `useUnits` | ✅ WeightChart, QuickWeightSheet, VitalsTab all unit-aware |
-| PDF passport with QR cover | ✅ health-export-pdf |
-| Past consults list at bottom | ✅ ConsultsList |
+---
 
-### Gaps found (the only real work)
+### Reality checklist (Social only)
 
-| # | Gap | Where | Fix |
-|---|---|---|---|
-| 1 | PetEditor "Target weight" field is hard-labelled `(kg)` regardless of the user's unit preference | `src/pages/settings/PetEditor.tsx` L106 | Use `useUnits()` for label + parse via `parseWeightToKg` on save |
-| 2 | Empty state on `/health` (no pet) has no CTA — user must guess to go to Settings | `src/pages/Health.tsx` L104-108 | Add a primary "Add your first pet →" button linking to `/settings/pets/new` |
-| 3 | Severity slider only shows 5 dots — non-medical users have no idea what "3" vs "5" means | `Health.tsx` SymptomDialog L560-566; same dot scale in symptom cards | Add a one-line helper under slider that updates with the value: 1 "Mild — keep an eye on it" · 2 "Noticeable — log it" · 3 "Concerning — book a vet this week" · 4 "Serious — call vet today" · 5 "Emergency — go now" |
-| 4 | New users land on tabs with zero context about what each one is for | Each of 7 `EmptyState` calls already has a `hint`, but Vitals/Meds/Parasite/Food empty hints are short or missing nuance | Audit all 7 empty hints to a consistent plain-English template: "Track X. Why it matters: Y. First step: Z." (one-line copy edits) |
-| 5 | Vet-share "Recent views" panel ignores the `section` field even though it's selected from DB | `Health.tsx` L862-873 | Render the section name when present (e.g. "Vault opened · Vaccinations") |
-| 6 | Quick weight save gives a generic toast — no traffic-light feedback vs target_weight_kg (the journey explicitly promises this) | `src/components/health/QuickWeightSheet.tsx` | After insert, fetch `pets.target_weight_kg`, compute delta in user's unit, show coloured toast: green ≤ ±2%, amber ≤ ±10%, red beyond |
-| 7 | "Compare pets side-by-side" pill is the only multi-pet shortcut — the new alerts pill doesn't show pet name when only one alert references one pet (minor polish) | `Health.tsx` L60-69 | If all unread alerts belong to one pet, append " · <PetName>" to the pill label |
+**Shell (social-relevant)**
+- [x] BottomNav, NotificationBell with unread dot, global Composer event, route fade-in
 
-### Implementation order (one pass, no overlap)
+**Home feed (`PetParentHome.tsx`)**
+- [x] StoryRail, DailyPromptBanner
+- [x] For you / Following tabs
+- [ ] **Trending tab missing** (PostFeed already supports `scope="trending"`)
 
-**Step A — Settings polish (2 file edit)**
-- `src/pages/settings/PetEditor.tsx`: import `useUnits`, change Target-weight label/placeholder to user unit, convert input → kg via `parseWeightToKg` on save, display existing value via `kgToDisplay`.
+**Post card (`PostFeed.tsx`)**
+- [x] AuthorIdentity, role ring, inline FollowButton
+- [x] Double-tap → PawBurst + haptic
+- [x] ReactionBar (5 emojis, long-press popover)
+- [x] CommentSheet, SaveButton
+- [ ] **Share button missing** (no Web Share API)
+- [ ] **Own-post ⋯ menu missing** (no Edit / Delete / Pin)
 
-**Step B — `/health` empty state CTA (1 file edit)**
-- `src/pages/Health.tsx` L104: replace static empty card with a card that includes a `<Button onClick={() => nav("/settings/pets/new")}>Add your first pet</Button>`. (Confirm route exists; otherwise route to `/settings`.)
+**Composer (`Composer.tsx`)**
+- [x] Photo, pet chips, AI caption, Collab, RescueJourney, moderation
+- [ ] **Format pills (Post / Story / Daily) missing** — single-format dialog
+- [ ] **Multi-image carousel missing**
+- [ ] **Live `#` and `@` autocomplete missing**
+- [ ] **Visibility chip missing** (Public / Followers / Private)
 
-**Step C — Severity guide (1 file edit)**
-- `src/pages/Health.tsx` SymptomDialog: add a small helper line under the `<Slider>` that reads the current `form.severity` and prints the matching label+colour. Reuse `SeverityDots` for visuals.
+**Comments (`CommentSheet.tsx`)**
+- [x] Realtime, comment-as-pet, role rings, delete own
+- [ ] **One-level threaded replies missing**
+- [ ] **Long-press emoji reactions on comments missing**
+- [ ] **`@` / `#` linkification in comment body missing**
+- [ ] **"Author" chip on author replies missing**
 
-**Step D — Empty-state copy audit (1 file edit + tab components)**
-- Tighten the `hint` prop on each `EmptyState` in Vitals/Vax/Meds/Parasite/Symptoms/Food/Records to the "Track / Why / First step" template. Pure string changes.
+**Notifications (social rows only)**
+- [x] Inbox, grouping, filters, mark-read
+- [ ] **Deep-link "flash highlight" on the target post/comment missing**
+- [ ] **Bell entrance pulse on new realtime arrival missing**
+- [ ] Aggregate grouping ("Aanya, Rohit and 3 others reacted") not implemented
 
-**Step E — Vet-share section label (1 file edit)**
-- `src/pages/Health.tsx` L862: when `v.section` exists render `Vault opened · {v.section}`.
+**Messages (`Messages.tsx`, `MessageThread.tsx`)**
+- [x] Inbox, presence dots, realtime
+- [ ] **Typing indicator missing**
+- [ ] **Per-message reactions (long-press) missing**
+- [ ] **Swipe actions on inbox rows missing**
+- [ ] **Pet-card share message type missing**
+- [ ] **Vet/org pinned "Book" banner missing**
 
-**Step F — Quick-weight delta toast (1 file edit)**
-- `src/components/health/QuickWeightSheet.tsx`: after insert succeeds, run `supabase.from("pets").select("target_weight_kg").eq("id", petId).single()`, compute % delta vs entered kg, dispatch `toast.success/warning/error` with copy like "Saved · 1.2 kg over target".
+**Delight**
+- [ ] 7-day streak confetti
+- [~] ContextualFAB doesn't relabel per route
 
-**Step G — Smarter alert pill (1 file edit)**
-- `src/pages/Health.tsx` L60: if `alertUnread.every(a => a.pet_id === alertUnread[0].pet_id)` and that pet exists in `pets`, append its name.
+---
 
-### Out of scope (already covered or explicitly not requested)
-- Onboarding wizard rewrite, push-notification plumbing, new edge functions, AI prompt tuning, schema migrations.
+### Phased plan (Social tab only)
 
-### Estimated touch surface
-~6 files, ~150 lines total. Zero new components, zero migrations, zero new edge functions. Stays well within a single small implementation cycle.
+**Phase 1 — Visible feed wins** (PostFeed + PetParentHome + Notifications)
+1. Add **Share button** to post card (Web Share API + clipboard fallback).
+2. Add **Trending tab** as third tab in `PetParentHome.tsx`.
+3. Add **own-post ⋯ menu**: Edit caption, Delete, Pin.
+4. Add **deep-link highlight pulse** — Notifications appends `?focus=<id>`; PostFeed reads it and rings the matching card for 1.5s.
+5. Add **bell entrance pulse** on realtime new-notification.
+
+**Phase 2 — Composer upgrade** (Composer.tsx only)
+6. Convert to **3-tab sheet** (Post / Story / Daily) reusing existing StoryComposer & DailyMomentComposer.
+7. **Multi-image upload** with drag-to-reorder preview strip.
+8. **Live `@` mention + `#` hashtag autocomplete** (debounced search on profiles + hashtags).
+9. **Visibility selector** (Public / Followers / Private) with `posts.visibility` enum + RLS.
+
+**Phase 3 — Conversation depth** (CommentSheet + small DB)
+10. **One-level threaded replies** (`post_comments.parent_id` + Reply button).
+11. **Comment reactions** (`comment_reactions` table + long-press popover reusing ReactionBar).
+12. **Linkify `@` / `#`** in comment bodies.
+13. **Author chip** on the post-author's own replies.
+
+**Phase 4 — Messaging** (Messages.tsx + MessageThread.tsx)
+14. **Typing indicators** via Realtime broadcast.
+15. **Message reactions** (`message_reactions` table, long-press popover).
+16. **Swipe actions** on inbox rows (mute/delete, mark-unread).
+17. **Pet-card share** message type + **vet/org pinned banner** with Book CTA.
+
+**Phase 5 — Delight**
+18. 7-day streak confetti in `StreakChip.tsx`.
+19. Aggregate notification grouping (SQL view).
+20. ContextualFAB labels per route.
+
+---
+
+### Recommendation
+Ship **Phase 1 + Phase 2** next — biggest visible promises from the journey doc (share, trending, multi-image, autocomplete, visibility). All edits stay within the social file list above; Health/Mate/Discovery/Profile remain untouched.
+
+Tell me which phases to execute — `Phase 1`, `1 and 2`, or `all` — and I'll proceed.
