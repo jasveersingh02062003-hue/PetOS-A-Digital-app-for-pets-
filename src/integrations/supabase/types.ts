@@ -4048,6 +4048,48 @@ export type Database = {
           },
         ]
       }
+      refund_requests: {
+        Row: {
+          admin_note: string | null
+          amount_inr: number | null
+          created_at: string
+          id: string
+          reason: string
+          resolved_at: string | null
+          source_id: string
+          source_kind: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_inr?: number | null
+          created_at?: string
+          id?: string
+          reason: string
+          resolved_at?: string | null
+          source_id: string
+          source_kind: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_inr?: number | null
+          created_at?: string
+          id?: string
+          reason?: string
+          resolved_at?: string | null
+          source_id?: string
+          source_kind?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reminder_log: {
         Row: {
           id: string
@@ -6252,30 +6294,25 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kind: string
           listing_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          kind?: string
           listing_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          kind?: string
           listing_id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "wishlists_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "pet_listings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
