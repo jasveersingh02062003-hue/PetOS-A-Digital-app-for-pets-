@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
+import { PAYMENTS_ENABLED } from "@/lib/featureFlags";
 
 interface Props {
   priceId?: string;
@@ -23,6 +24,23 @@ export function StripeEmbeddedCheckout({ priceId, quantity, customerEmail, userI
   const [ready, setReady] = useState(false);
 
   useEffect(() => { setReady(false); setError(null); }, [priceId, amountInr, productName]);
+
+  // Payments are temporarily disabled via featureFlags.PAYMENTS_ENABLED.
+  // All Stripe code below is preserved — flip the flag back to re-enable.
+  if (!PAYMENTS_ENABLED) {
+    return (
+      <div className="rounded-2xl border border-hairline bg-muted/30 p-6 text-center space-y-3">
+        <div className="mx-auto h-10 w-10 rounded-full bg-muted grid place-items-center">
+          <Lock className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div className="font-display text-lg">Payments are temporarily unavailable</div>
+        <p className="text-sm text-muted-foreground">
+          We've paused checkout while we polish things up. You can keep using
+          all the free features — paid plans will be back soon.
+        </p>
+      </div>
+    );
+  }
 
   const fetchClientSecret = async (): Promise<string> => {
     const { data, error } = await supabase.functions.invoke("payments-create-checkout", {
