@@ -1,6 +1,6 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
@@ -58,29 +58,48 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
   const { data: blocked } = useBlockedIds();
   const { data: publicProfiles } = usePublicProfiles();
 
-  const { data, isLoading } = useQuery({
+  const PAGE_SIZE = 12;
+  const {
+    data: pages,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["feed", scope, user?.id ?? null, blocked?.size ?? 0],
     enabled: publicProfiles !== undefined,
-    queryFn: async () => {
+    initialPageParam: 0 as number,
+    getNextPageParam: (lastPage: FeedPost[], all) =>
+      lastPage.length < PAGE_SIZE ? undefined : all.length * PAGE_SIZE,
+    queryFn: async ({ pageParam }): Promise<FeedPost[]> => {
+      const offset = pageParam as number;
       let followingIds: string[] | null = null;
       if (scope === "following") {
         if (!user) return [];
-        const { data: f } = await supabase.from("follows").select("following_id").eq("follower_id", user.id);
+        const { data: f } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
         followingIds = (f ?? []).map((r: any) => r.following_id);
         if (!followingIds.length) return [];
       }
-      let q = supabase.from("posts").select("id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id");
+      let q = supabase
+        .from("posts")
+        .select(
+          "id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id",
+        );
       if (followingIds) q = q.in("author_id", followingIds);
-      q = scope === "trending"
-        ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false }).limit(50)
-        : q.order("created_at", { ascending: false }).limit(50);
+      q =
+        scope === "trending"
+          ? q.order("like_count", { ascending: false }).order("created_at", { ascending: false })
+          : q.order("created_at", { ascending: false });
+      q = q.range(offset, offset + PAGE_SIZE - 1);
       const { data: postsRaw, error } = await q;
       if (error) throw error;
       const posts = (postsRaw ?? []).filter((p) => !blocked || !blocked.has(p.author_id));
       if (!posts?.length) return [];
 
       const petIds = [...new Set(posts.map((p) => p.pet_id).filter(Boolean) as string[])];
-      // Profiles come from the shared cache — no per-feed RPC.
       const pMap = new Map((publicProfiles ?? []).map((p) => [p.id, p]));
       const { data: pets } = petIds.length
         ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds)
@@ -93,6 +112,28 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       })) as FeedPost[];
     },
   });
+
+  const data = useMemo<FeedPost[]>(
+    () => (pages?.pages ?? []).flat(),
+    [pages],
+  );
+
+  // Infinite-scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Realtime — scope to this feed key so we don't refetch both tabs on every insert.
   useEffect(() => {
@@ -128,6 +169,11 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
             onComment={() => setCommentsFor(post.id)}
           />
         ))}
+        {hasNextPage && (
+          <div ref={sentinelRef} className="py-6 text-center text-xs text-muted-foreground">
+            {isFetchingNextPage ? "Loading more…" : ""}
+          </div>
+        )}
       </div>
       <CommentSheet postId={commentsFor} onOpenChange={(open) => !open && setCommentsFor(null)} />
     </>
