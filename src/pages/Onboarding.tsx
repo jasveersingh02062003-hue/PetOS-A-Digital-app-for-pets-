@@ -428,7 +428,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 2) {
+  if (step === 3) {
     return (
       <StepShell {...sharedProps} title="Meet your pet" subtitle="A photo and the basics. This becomes your pet's identity across Petos.">
         <div className="space-y-5">
@@ -476,7 +476,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 3) {
+  if (step === 4) {
     return (
       <StepShell {...sharedProps} title="Body & lifestyle" subtitle="Powers calorie math, drug-safe AI replies, food filters and service matching.">
         <div className="space-y-5">
@@ -537,7 +537,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 4) {
+  if (step === 5) {
     return (
       <StepShell {...sharedProps} title={`How would you describe ${petName || "your pet"}?`} subtitle="Helps with mating compatibility, boarding and dog-park suggestions.">
         <div className="space-y-6">
@@ -564,7 +564,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 5) {
+  if (step === 6) {
     return (
       <StepShell {...sharedProps} title="What brings you here?" subtitle="We'll order your home screen and feed around what matters most. Pick a few.">
         <ChipGroup
@@ -576,7 +576,7 @@ const Onboarding = () => {
     );
   }
 
-  // step === 6: Safety & consent
+  // step === 7: Safety & consent
   return (
     <StepShell {...sharedProps} title="Safety & consent" subtitle="The last piece. Vaccination earns a verified badge; emergency vet appears in our SOS button.">
       <div className="space-y-5">
