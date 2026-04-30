@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usePets } from "@/hooks/useProfile";
+import { usePets, useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -331,6 +331,10 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
 /* ============== SYMPTOMS ============== */
 const SymptomsTab = ({ petId }: { petId: string }) => {
   const [open, setOpen] = useState(false);
+  const { data: profile } = useProfile();
+  const emergencyVet = (profile as any)?.emergency_vet ?? null;
+  const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;
+  const vetLabel = emergencyVet?.name || emergencyVet?.clinic || "vet";
   const { data, isLoading } = useQuery({
     queryKey: ["symptoms", petId],
     queryFn: async () => {
@@ -361,9 +365,15 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{emergency.ai_reason}</p>
               )}
               <div className="flex gap-2 mt-3">
-                <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
-                  <a href="tel:"><PhoneCall className="h-3.5 w-3.5" /> Call vet</a>
-                </Button>
+                {vetPhone ? (
+                  <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
+                    <a href={`tel:${vetPhone}`}><PhoneCall className="h-3.5 w-3.5" /> Call {vetLabel}</a>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" className="rounded-full gap-1.5 h-8">
+                    <a href="/settings/emergency-vet"><PhoneCall className="h-3.5 w-3.5" /> Add emergency vet</a>
+                  </Button>
+                )}
                 <Button asChild size="sm" variant="outline" className="rounded-full gap-1.5 h-8 border-destructive/30">
                   <a href="/askvet/new"><Stethoscope className="h-3.5 w-3.5" /> Ask vet now</a>
                 </Button>
