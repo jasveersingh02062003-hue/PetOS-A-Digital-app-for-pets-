@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone } from "lucide-react";
+import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone, PawPrint, Building2, Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,7 @@ import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPick
 import { PetCardShare } from "@/components/onboarding/PetCardShare";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS, GOALS } from "@/lib/breeds";
 
-const TOTAL = 7;
+const TOTAL = 8;
 
 type WelcomeCard = { icon: typeof Heart; title: string; copy: string };
 const WELCOME: WelcomeCard[] = [
@@ -29,18 +29,35 @@ const WELCOME: WelcomeCard[] = [
   { icon: Shield, title: "Your data, your rules", copy: "Mating discoverability is off by default. You're always in control." },
 ];
 
+type RoleChoice =
+  | "pet_parent" | "buyer" | "provider" | "breeder"
+  | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo";
+
+const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; needsOrg?: boolean; routeAfter?: string }[] = [
+  { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint },
+  { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders", Icon: SearchIcon, routeAfter: "/onboarding/buyer-prefs" },
+  { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, driver…", Icon: Briefcase, routeAfter: "/onboarding/provider" },
+  { value: "rescuer", title: "Independent rescuer", sub: "I rescue animals on my own", Icon: Heart },
+  { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, needsOrg: true },
+  { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, needsOrg: true },
+  { value: "shelter", title: "Shelter / Rescue NGO", sub: "We rescue and rehome animals", Icon: HomeIcon, needsOrg: true },
+  { value: "sanctuary", title: "Sanctuary / Gaushala", sub: "Lifelong care for animals", Icon: ShieldHalf, needsOrg: true },
+  { value: "zoo", title: "Zoo / Wildlife centre", sub: "Education and donations", Icon: ShieldAlert, needsOrg: true },
+];
+
 const Onboarding = () => {
   const nav = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Role guard: this 7-step wizard is pet_parent-only. Any other role that
-  // lands here (deep link, refresh after picking a role) gets bounced to the
-  // proper chooser/wizard so we never try to insert a pet for a shelter, etc.
+  // Role guard: this wizard handles pet_parent + rescuer end-to-end.
+  // If the profile already has an org/buyer/provider role set (e.g. coming
+  // back to /onboarding via deep link), bounce to the proper flow.
   useEffect(() => {
     if (profileLoading) return;
-    const accountType = profile?.account_type ?? "pet_parent";
+    const accountType = profile?.account_type;
+    if (!accountType) return; // first-timer — let them pick in step 1
     if (accountType !== "pet_parent" && accountType !== "rescuer") {
       nav("/onboarding/account-type", { replace: true });
     }
@@ -49,6 +66,10 @@ const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Step 1 — Role choice (pet_parent default; other roles redirect out)
+  const [role, setRole] = useState<RoleChoice>("pet_parent");
+  const [roleSaving, setRoleSaving] = useState(false);
 
   // Step 1 — About you
   const [fullName, setFullName] = useState("");
@@ -116,14 +137,15 @@ const Onboarding = () => {
   };
 
   const validate = (s: number): string | null => {
-    if (s === 1) {
+    // step 1 = role picker (no validation, handled by handleRoleNext)
+    if (s === 2) {
       const r = z.object({
         fullName: z.string().trim().min(1).max(80),
         city: z.string().trim().min(1).max(80),
       }).safeParse({ fullName, city });
       return r.success ? null : "Add your name and city";
     }
-    if (s === 2) {
+    if (s === 3) {
       const r = z.object({
         petName: z.string().trim().min(1).max(40),
         breed: z.string().trim().min(1).max(60),
@@ -131,6 +153,49 @@ const Onboarding = () => {
       return r.success ? null : "Pet name and breed are required";
     }
     return null;
+  };
+
+  // When the user picks a role on step 1, save it and either continue the
+  // pet-parent/rescuer wizard inline, or redirect to the proper sub-flow.
+  const handleRoleNext = async () => {
+    if (!user) return;
+    const opt = ROLE_OPTIONS.find((o) => o.value === role)!;
+    // pet_parent & rescuer continue the inline wizard — save role and advance.
+    if (role === "pet_parent" || role === "rescuer") {
+      setRoleSaving(true);
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, account_type: role }, { onConflict: "id" });
+        if (error) throw error;
+        qc.invalidateQueries({ queryKey: ["profile", user.id] });
+        setStep(2);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Could not save");
+      } finally {
+        setRoleSaving(false);
+      }
+      return;
+    }
+    // Other roles: persist + redirect to dedicated flow.
+    setRoleSaving(true);
+    try {
+      // "provider" is a wizard branch only — not stored on profiles.
+      if (role !== "provider") {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      if (opt.routeAfter) nav(opt.routeAfter);
+      else if (opt.needsOrg) nav("/onboarding/org");
+      else nav("/onboarding/account-type");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save");
+    } finally {
+      setRoleSaving(false);
+    }
   };
 
   const next = () => {
@@ -284,6 +349,56 @@ const Onboarding = () => {
   }
 
   if (step === 1) {
+    const roleOpt = ROLE_OPTIONS.find((o) => o.value === role)!;
+    const willRedirect = role !== "pet_parent" && role !== "rescuer";
+    return (
+      <StepShell
+        step={step}
+        total={TOTAL}
+        onBack={back}
+        onNext={handleRoleNext}
+        loading={roleSaving}
+        nextLabel={willRedirect ? "Continue setup" : "Continue"}
+        title="How will you use Petos?"
+        subtitle="This personalises your home screen, dashboards and what we ask next. You can change it later."
+      >
+        <div className="space-y-2">
+          {ROLE_OPTIONS.map((o) => {
+            const Icon = o.Icon;
+            const active = role === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => setRole(o.value)}
+                className={`w-full text-left rounded-2xl border p-4 transition flex items-center gap-3 ${
+                  active ? "border-primary bg-primary/5" : "border-hairline bg-card hover:border-foreground/20"
+                }`}
+              >
+                <div className="h-10 w-10 rounded-xl bg-muted grid place-items-center shrink-0">
+                  <Icon className="h-5 w-5" strokeWidth={1.6} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{o.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
+                </div>
+                {o.needsOrg && (
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">Verify</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {willRedirect && (
+          <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+            We'll take you to the {roleOpt.needsOrg ? "verification" : "setup"} flow tailored for {roleOpt.title.toLowerCase()}.
+          </p>
+        )}
+      </StepShell>
+    );
+  }
+
+  if (step === 2) {
     return (
       <StepShell {...sharedProps} title="Tell us about you" subtitle="So we can greet you and tailor distance, language and units.">
         <div className="space-y-5">
@@ -313,7 +428,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 2) {
+  if (step === 3) {
     return (
       <StepShell {...sharedProps} title="Meet your pet" subtitle="A photo and the basics. This becomes your pet's identity across Petos.">
         <div className="space-y-5">
@@ -361,7 +476,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 3) {
+  if (step === 4) {
     return (
       <StepShell {...sharedProps} title="Body & lifestyle" subtitle="Powers calorie math, drug-safe AI replies, food filters and service matching.">
         <div className="space-y-5">
@@ -422,7 +537,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 4) {
+  if (step === 5) {
     return (
       <StepShell {...sharedProps} title={`How would you describe ${petName || "your pet"}?`} subtitle="Helps with mating compatibility, boarding and dog-park suggestions.">
         <div className="space-y-6">
@@ -449,7 +564,7 @@ const Onboarding = () => {
     );
   }
 
-  if (step === 5) {
+  if (step === 6) {
     return (
       <StepShell {...sharedProps} title="What brings you here?" subtitle="We'll order your home screen and feed around what matters most. Pick a few.">
         <ChipGroup
@@ -461,7 +576,7 @@ const Onboarding = () => {
     );
   }
 
-  // step === 6: Safety & consent
+  // step === 7: Safety & consent
   return (
     <StepShell {...sharedProps} title="Safety & consent" subtitle="The last piece. Vaccination earns a verified badge; emergency vet appears in our SOS button.">
       <div className="space-y-5">
