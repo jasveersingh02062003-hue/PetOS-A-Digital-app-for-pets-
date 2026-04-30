@@ -83,14 +83,22 @@ const Health = () => {
       )}
 
       {pets && pets.length > 1 && (
-        <MultiPetSummary
-          pets={pets as any}
-          activeId={active?.id}
-          onSelect={(id) => {
-            const idx = pets.findIndex((p) => p.id === id);
-            if (idx >= 0) setActiveIdx(idx);
-          }}
-        />
+        <>
+          <MultiPetSummary
+            pets={pets as any}
+            activeId={active?.id}
+            onSelect={(id) => {
+              const idx = pets.findIndex((p) => p.id === id);
+              if (idx >= 0) setActiveIdx(idx);
+            }}
+          />
+          <button
+            onClick={() => nav("/health/compare")}
+            className="w-full mb-3 rounded-full border border-dashed border-hairline px-4 py-2 text-xs text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+          >
+            Compare pets side-by-side →
+          </button>
+        </>
       )}
 
       {!active ? (
@@ -695,6 +703,16 @@ const VetShareButton = ({ petId, petName }: { petId: string; petName: string }) 
 const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) => {
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [expiry, setExpiry] = useState<60 | 1440 | 10080>(1440);
+  const ALL_SCOPES: Array<{ key: string; label: string }> = [
+    { key: "vitals", label: "Vitals" },
+    { key: "vax", label: "Vaccinations" },
+    { key: "meds", label: "Medications" },
+    { key: "records", label: "Records" },
+    { key: "symptoms", label: "Symptoms" },
+    { key: "insurance", label: "Insurance" },
+  ];
+  const [scope, setScope] = useState<string[]>([]); // empty = full vault
   const { data: grants, refetch } = useQuery({
     queryKey: ["grants", petId],
     queryFn: async () => {
@@ -713,16 +731,33 @@ const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) =>
   const active = grants?.[0];
   const shareUrl = useMemo(() => active ? `${window.location.origin}/v/${active.code}` : "", [active]);
 
+  const { data: views } = useQuery({
+    queryKey: ["grant-views", active?.id],
+    enabled: !!active?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vet_access_views" as any)
+        .select("viewed_at, section")
+        .eq("grant_id", (active as any).id)
+        .order("viewed_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 30_000,
+  });
+
   const create = async () => {
     setCreating(true);
     const { data, error } = await supabase.functions.invoke("vet-grant-create", {
-      body: { petId },
+      body: { petId, expiry_minutes: expiry, scope },
     });
     setCreating(false);
     if (error || (data as any)?.error) {
       return toast.error((data as any)?.error || error?.message || "Could not create link");
     }
-    toast.success("Share link created — valid 24h");
+    const label = expiry === 60 ? "1h" : expiry === 1440 ? "24h" : "7d";
+    toast.success(`Share link created — valid ${label}`);
     refetch();
   };
 
@@ -738,8 +773,70 @@ const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) =>
     return (
       <div className="space-y-4 pt-2">
         <p className="text-sm text-muted-foreground">
-          Generate a one-time code so a vet can view {petName}'s vault for 24 hours. You can revoke access any time.
+          Generate a one-time code so a vet can view {petName}'s vault. You can revoke access any time.
         </p>
+
+        <div className="space-y-2">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Link expires after</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { v: 60 as const, label: "1 hour" },
+              { v: 1440 as const, label: "24 hours" },
+              { v: 10080 as const, label: "7 days" },
+            ].map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setExpiry(opt.v)}
+                className={`rounded-xl border px-3 py-2 text-sm transition-colors ${expiry === opt.v ? "bg-primary text-primary-foreground border-primary" : "bg-card border-hairline"}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Sections shared</Label>
+            <button
+              type="button"
+              className="text-[11px] text-primary"
+              onClick={() => setScope([])}
+            >
+              Share all
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {ALL_SCOPES.map((s) => {
+              const on = scope.length === 0 || scope.includes(s.key);
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => {
+                    // empty array = full → if user clicks one, switch to explicit list
+                    if (scope.length === 0) {
+                      setScope(ALL_SCOPES.map((x) => x.key).filter((x) => x !== s.key));
+                    } else if (on) {
+                      setScope(scope.filter((x) => x !== s.key));
+                    } else {
+                      setScope([...scope, s.key]);
+                    }
+                  }}
+                  className={`rounded-xl border px-3 py-2 text-xs flex items-center justify-between gap-2 transition-colors ${on ? "bg-primary-soft border-primary text-primary" : "bg-card border-hairline text-muted-foreground"}`}
+                >
+                  <span>{s.label}</span>
+                  <span>{on ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          {scope.length > 0 && scope.length < ALL_SCOPES.length && (
+            <div className="text-[11px] text-muted-foreground">Vet will only see the sections you ticked.</div>
+          )}
+        </div>
+
         <Button onClick={create} disabled={creating} size="lg" className="w-full rounded-xl">
           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Share2 className="h-4 w-4 mr-2" /> Generate share code</>}
         </Button>
@@ -755,7 +852,27 @@ const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) =>
         <div className="text-xs text-muted-foreground mt-1">
           Expires {format(new Date(active.expires_at), "d MMM, h:mm a")}
         </div>
+        {Array.isArray((active as any).scope) && (active as any).scope.length > 0 && (
+          <div className="text-[10px] text-muted-foreground mt-1">
+            Scope: {(active as any).scope.join(", ")}
+          </div>
+        )}
       </div>
+
+      {views && views.length > 0 && (
+        <div className="rounded-xl border border-hairline bg-card p-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium mb-1.5">Recent views</div>
+          <ul className="space-y-1">
+            {views.slice(0, 5).map((v: any, i: number) => (
+              <li key={i} className="text-xs text-muted-foreground flex justify-between">
+                <span>Vault opened</span>
+                <span>{format(new Date(v.viewed_at), "d MMM, h:mm a")}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Button
         variant="outline"
         className="w-full rounded-xl border-hairline gap-2"
