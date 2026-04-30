@@ -109,7 +109,7 @@ Notes: ${log.notes ?? "(none)"}`;
       .update({ ai_flag: flag, ai_reason: reason })
       .eq("id", logId);
 
-    // Emergency → notify the owner.
+    // Emergency → notify the owner + write a health alert (inbox).
     if (flag === "emergency") {
       await admin.rpc("notify_user", {
         _user_id: pet.owner_id,
@@ -117,6 +117,27 @@ Notes: ${log.notes ?? "(none)"}`;
         _title: `${pet.name}: possible emergency`,
         _body: reason,
         _link: `/health?pet=${pet.id}&tab=symptoms`,
+      });
+      await admin.rpc("enqueue_health_alert", {
+        _owner_id: pet.owner_id,
+        _pet_id: pet.id,
+        _kind: "symptom_emergency",
+        _severity: "emergency",
+        _title: `${pet.name}: possible emergency`,
+        _body: reason,
+        _link: `/health`,
+        _dedupe_key: `symptom-${logId}`,
+      });
+    } else if (flag === "vet_soon") {
+      await admin.rpc("enqueue_health_alert", {
+        _owner_id: pet.owner_id,
+        _pet_id: pet.id,
+        _kind: "symptom_vet_soon",
+        _severity: "action",
+        _title: `${pet.name}: see a vet soon`,
+        _body: reason,
+        _link: `/health`,
+        _dedupe_key: `symptom-${logId}`,
       });
     }
 
