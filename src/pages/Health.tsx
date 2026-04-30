@@ -58,14 +58,25 @@ const Health = () => {
       </header>
 
       {alertUnread.length > 0 && (
-        <button
-          onClick={() => nav("/health/alerts")}
-          className="w-full mb-3 flex items-center gap-2 rounded-full bg-primary-soft text-primary px-4 py-2 text-sm font-medium border border-primary/20 hover:bg-primary/15 transition-colors"
-        >
-          <Bell className="h-4 w-4" />
-          <span>{alertUnread.length} new alert{alertUnread.length > 1 ? "s" : ""}</span>
-          <span className="ml-auto text-xs opacity-70">Open</span>
-        </button>
+        (() => {
+          const firstPetId = alertUnread[0]?.pet_id;
+          const allSamePet =
+            firstPetId && alertUnread.every((a) => a.pet_id === firstPetId);
+          const petName = allSamePet ? pets?.find((p) => p.id === firstPetId)?.name : null;
+          return (
+            <button
+              onClick={() => nav("/health/alerts")}
+              className="w-full mb-3 flex items-center gap-2 rounded-full bg-primary-soft text-primary px-4 py-2 text-sm font-medium border border-primary/20 hover:bg-primary/15 transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              <span>
+                {alertUnread.length} new alert{alertUnread.length > 1 ? "s" : ""}
+                {petName ? ` · ${petName}` : ""}
+              </span>
+              <span className="ml-auto text-xs opacity-70">Open</span>
+            </button>
+          );
+        })()
       )}
 
       {pets && pets.length > 0 && (
@@ -104,7 +115,12 @@ const Health = () => {
       {!active ? (
         <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
           <div className="font-display text-lg">Add a pet to begin</div>
-          <p className="text-sm text-muted-foreground mt-1">Vault, AI, and consults appear here.</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Your vault, AI assistant, vet share and consults all appear here once your first pet is added.
+          </p>
+          <Button onClick={() => nav("/onboarding/add-pet")} size="lg" className="rounded-xl gap-2">
+            <Plus className="h-4 w-4" /> Add your first pet
+          </Button>
         </Card>
       ) : (
         <>
@@ -563,6 +579,7 @@ const SymptomDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenCha
               <SeverityDots level={form.severity} />
             </div>
             <Slider value={[form.severity]} onValueChange={(v) => setForm({ ...form, severity: v[0] })} min={1} max={5} step={1} />
+            <SeverityHint level={form.severity} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Notes</Label>
@@ -588,6 +605,18 @@ const SeverityDots = ({ level }: { level: number }) => (
     ))}
   </div>
 );
+
+const SEVERITY_GUIDE: Record<number, { label: string; tone: string }> = {
+  1: { label: "Mild — keep an eye on it", tone: "text-muted-foreground" },
+  2: { label: "Noticeable — log it", tone: "text-muted-foreground" },
+  3: { label: "Concerning — book a vet this week", tone: "text-amber-700 dark:text-amber-300" },
+  4: { label: "Serious — call vet today", tone: "text-rose-700 dark:text-rose-300" },
+  5: { label: "Emergency — go now", tone: "text-destructive font-medium" },
+};
+const SeverityHint = ({ level }: { level: number }) => {
+  const g = SEVERITY_GUIDE[level] ?? SEVERITY_GUIDE[2];
+  return <p className={`text-[11px] leading-relaxed ${g.tone}`}>{g.label}</p>;
+};
 
 const FlagChip = ({ flag }: { flag?: "watch" | "vet_soon" | "emergency" | null }) => {
   if (!flag) return null;
@@ -865,7 +894,7 @@ const VetShareBody = ({ petId, petName }: { petId: string; petName: string }) =>
           <ul className="space-y-1">
             {views.slice(0, 5).map((v: any, i: number) => (
               <li key={i} className="text-xs text-muted-foreground flex justify-between">
-                <span>Vault opened</span>
+                <span>Vault opened{v.section ? ` · ${v.section}` : ""}</span>
                 <span>{format(new Date(v.viewed_at), "d MMM, h:mm a")}</span>
               </li>
             ))}
