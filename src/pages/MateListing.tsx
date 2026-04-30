@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShieldCheck, MapPin, Heart, Loader2, Stethoscope } from "lucide-react";
 import { MatingRequestSheet } from "@/components/MatingRequestSheet";
+import { useSeo } from "@/hooks/useSeo";
+import { jsonLd } from "@/lib/seo";
+import { ContactSellerSheet } from "@/components/ContactSellerSheet";
 
 const MateListing = () => {
   const { id } = useParams();
@@ -16,6 +19,7 @@ const MateListing = () => {
   const { user } = useAuth();
   const { data: pets } = usePets();
   const [reqOpen, setReqOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
@@ -31,6 +35,30 @@ const MateListing = () => {
     enabled: !!id,
   });
 
+  const pet = (listing as any)?.pets;
+  const profile = (listing as any)?.profiles;
+  useSeo({
+    title: listing ? `${pet?.name ?? "Pet"} for mating${pet?.breed ? ` — ${pet.breed}` : ""}` : "Mating listing",
+    description:
+      listing?.description?.slice(0, 150) ??
+      `${pet?.breed ?? pet?.species ?? "Pet"} available for mating${listing?.city ? ` in ${listing.city}` : ""} on Petos.`,
+    image: pet?.avatar_url ?? undefined,
+    type: "article",
+    jsonLd: listing
+      ? jsonLd.pet({
+          name: `${pet?.name ?? "Pet"} — mating`,
+          species: pet?.species ?? undefined,
+          breed: pet?.breed ?? undefined,
+          image: pet?.avatar_url ?? undefined,
+          description: listing.description ?? undefined,
+          url: typeof window !== "undefined" ? window.location.href : "",
+          priceInr: listing.fee_inr ?? 0,
+          city: listing.city ?? undefined,
+          sellerName: profile?.full_name ?? undefined,
+        })
+      : undefined,
+  });
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!listing) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 text-center">
@@ -39,8 +67,6 @@ const MateListing = () => {
     </div>
   );
 
-  const pet = (listing as any).pets;
-  const profile = (listing as any).profiles;
   const isOwn = listing.owner_id === user?.id;
   const myEligiblePets = pets?.filter((p) => p.vaccination_verified && p.discoverable_for_mating) ?? [];
 
@@ -110,7 +136,11 @@ const MateListing = () => {
           </div>
         </Card>
 
-        {!isOwn ? (
+        {!user ? (
+          <Button onClick={() => setContactOpen(true)} size="lg" className="w-full rounded-2xl h-14 gap-2">
+            <Heart className="h-5 w-5" /> Contact owner
+          </Button>
+        ) : !isOwn ? (
           <Button onClick={() => setReqOpen(true)} size="lg" className="w-full rounded-2xl h-14 gap-2" disabled={!myEligiblePets.length}>
             <Heart className="h-5 w-5" /> {myEligiblePets.length ? "Send mating request" : "List a verified pet to request"}
           </Button>
@@ -119,7 +149,7 @@ const MateListing = () => {
             Manage your listings
           </Button>
         )}
-        {!myEligiblePets.length && !isOwn && (
+        {user && !myEligiblePets.length && !isOwn && (
           <Button variant="link" onClick={() => nav("/mates/new")} className="w-full">
             <Stethoscope className="h-4 w-4 mr-1" /> List your pet first
           </Button>
@@ -131,6 +161,19 @@ const MateListing = () => {
         onOpenChange={setReqOpen}
         toListing={listing as any}
         myEligiblePets={myEligiblePets}
+      />
+
+      <ContactSellerSheet
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        intent={{
+          kind: "contact_seller",
+          listingId: listing.id,
+          listingType: "mate",
+          ownerId: listing.owner_id,
+          redirect: `/mates/listing/${listing.id}`,
+        }}
+        title="Sign in to contact the owner"
       />
     </div>
   );
