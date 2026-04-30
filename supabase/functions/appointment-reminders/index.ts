@@ -105,7 +105,9 @@ Deno.serve(async (req) => {
       .from("transport_bookings")
       .select("id, customer_id, scheduled_at, pickup_address")
       .is("reminder_sent_at", null)
-      .in("status", ["confirmed", "accepted", "pending"])
+      // transport_status enum: requested, accepted, en_route_pickup,
+      // picked_up, en_route_drop, dropped_off, cancelled.
+      .in("status", ["requested", "accepted", "en_route_pickup"])
       .gte("scheduled_at", windowStart)
       .lte("scheduled_at", windowEnd);
     if (error) throw error;
