@@ -3617,12 +3617,14 @@ export type Database = {
           image_url_feed: string | null
           image_url_full: string | null
           image_url_thumb: string | null
+          image_urls: Json | null
           like_count: number
           pet_id: string | null
           reaction_counts: Json
           rescue_journey_id: string | null
           skill_spotlight_id: string | null
           updated_at: string
+          visibility: Database["public"]["Enums"]["post_visibility"]
         }
         Insert: {
           author_id: string
@@ -3637,12 +3639,14 @@ export type Database = {
           image_url_feed?: string | null
           image_url_full?: string | null
           image_url_thumb?: string | null
+          image_urls?: Json | null
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
           skill_spotlight_id?: string | null
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
         }
         Update: {
           author_id?: string
@@ -3657,12 +3661,14 @@ export type Database = {
           image_url_feed?: string | null
           image_url_full?: string | null
           image_url_thumb?: string | null
+          image_urls?: Json | null
           like_count?: number
           pet_id?: string | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
           skill_spotlight_id?: string | null
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
         }
         Relationships: [
           {
@@ -7658,6 +7664,7 @@ export type Database = {
         | "sold"
       pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
+      post_visibility: "public" | "followers" | "private"
       pregnancy_milestone_kind:
         | "mating_confirmed"
         | "vet_check"
@@ -7992,6 +7999,7 @@ export const Constants = {
       ],
       pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
+      post_visibility: ["public", "followers", "private"],
       pregnancy_milestone_kind: [
         "mating_confirmed",
         "vet_check",
