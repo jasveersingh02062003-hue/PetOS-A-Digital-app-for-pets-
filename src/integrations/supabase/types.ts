@@ -1295,6 +1295,7 @@ export type Database = {
           notes: string | null
           occurred_on: string
           pet_id: string
+          photo_paths: string[] | null
           record_type: Database["public"]["Enums"]["health_record_type"]
           source_post_id: string | null
           title: string
@@ -1307,6 +1308,7 @@ export type Database = {
           notes?: string | null
           occurred_on?: string
           pet_id: string
+          photo_paths?: string[] | null
           record_type?: Database["public"]["Enums"]["health_record_type"]
           source_post_id?: string | null
           title: string
@@ -1319,6 +1321,7 @@ export type Database = {
           notes?: string | null
           occurred_on?: string
           pet_id?: string
+          photo_paths?: string[] | null
           record_type?: Database["public"]["Enums"]["health_record_type"]
           source_post_id?: string | null
           title?: string
@@ -5242,6 +5245,7 @@ export type Database = {
           logged_at: string
           notes: string | null
           pet_id: string
+          photo_paths: string[] | null
           photo_url: string | null
           severity: number
           symptom: string
@@ -5254,6 +5258,7 @@ export type Database = {
           logged_at?: string
           notes?: string | null
           pet_id: string
+          photo_paths?: string[] | null
           photo_url?: string | null
           severity?: number
           symptom: string
@@ -5266,6 +5271,7 @@ export type Database = {
           logged_at?: string
           notes?: string | null
           pet_id?: string
+          photo_paths?: string[] | null
           photo_url?: string | null
           severity?: number
           symptom?: string
