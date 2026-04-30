@@ -83,14 +83,22 @@ const Health = () => {
       )}
 
       {pets && pets.length > 1 && (
-        <MultiPetSummary
-          pets={pets as any}
-          activeId={active?.id}
-          onSelect={(id) => {
-            const idx = pets.findIndex((p) => p.id === id);
-            if (idx >= 0) setActiveIdx(idx);
-          }}
-        />
+        <>
+          <MultiPetSummary
+            pets={pets as any}
+            activeId={active?.id}
+            onSelect={(id) => {
+              const idx = pets.findIndex((p) => p.id === id);
+              if (idx >= 0) setActiveIdx(idx);
+            }}
+          />
+          <button
+            onClick={() => nav("/health/compare")}
+            className="w-full mb-3 rounded-full border border-dashed border-hairline px-4 py-2 text-xs text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+          >
+            Compare pets side-by-side →
+          </button>
+        </>
       )}
 
       {!active ? (
