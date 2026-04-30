@@ -19,6 +19,8 @@ import { RouteTracker } from "./components/RouteTracker";
 import { RealtimeBridge } from "./components/RealtimeBridge";
 import { NetworkStatus } from "./components/NetworkStatus";
 import { ConsentBanner } from "./components/ConsentBanner";
+import { IntentReplay } from "./components/IntentReplay";
+import { InstallNudgeSheet } from "./components/InstallNudgeSheet";
 
 // Eager — only the entry route the user sees first.
 import Home from "./pages/Home";
@@ -169,6 +171,8 @@ const App = () => (
           <PresenceProvider>
           <CartProvider>
             <RealtimeBridge />
+            <IntentReplay />
+            <InstallNudgeSheet />
             <RouteErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
             <Routes>

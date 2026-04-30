@@ -5,6 +5,7 @@ import { readPendingIntent, clearPendingIntent } from "@/components/ContactSelle
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
+import { requestInstallNudge } from "@/components/InstallNudgeSheet";
 
 /**
  * Mounts at AppShell level. After OTP signup, replays the user's
@@ -60,6 +61,8 @@ export function useIntentReplay() {
             track("intent_replayed", { kind: "contact_seller" });
             toast.success("Opening chat with seller…");
             nav(`/messages/${convId}`);
+            // Phase D nudge — invite install + push so they don't miss the reply
+            setTimeout(() => requestInstallNudge("after_contact_seller"), 1200);
           }
         }
         // book_service / follow_org → just land on redirect, the page handles it
