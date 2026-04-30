@@ -9,6 +9,8 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { NearbyToggle } from "@/components/marketplace/NearbyToggle";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { EmptyState } from "@/components/empty/EmptyState";
+import { TrustChip } from "@/components/marketplace/TrustChip";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
 
 const SPECIALTIES = [
   { key: "all", label: "All" },
@@ -91,6 +93,9 @@ export default function Vets() {
             description="Try widening the radius, removing the 24/7 filter, or picking a different specialty."
           />
         )}
+        {!isLoading && (vets?.length ?? 0) > 0 && (
+          <ResultsHeader count={vets!.length} />
+        )}
         {vets?.map((v) => (
           <Card key={v.user_id} className="rounded-2xl border-hairline p-4">
             <div className="flex items-start gap-3">
@@ -107,6 +112,8 @@ export default function Vets() {
                   {v.clinic_name || "Independent"} {v.city ? `· ${v.city}` : ""}
                 </div>
                 <div className="mt-1 flex items-center gap-2 flex-wrap">
+                  {v.verified && <TrustChip kind="verified" />}
+                  {v.is_24_7 && <TrustChip kind="kyc" label="Open 24/7" />}
                   {v.rating_count > 0 && (
                     <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                       <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
