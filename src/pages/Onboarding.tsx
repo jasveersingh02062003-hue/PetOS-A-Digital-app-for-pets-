@@ -6,56 +6,45 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { z } from "zod";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone, PawPrint, Building2, Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase } from "lucide-react";
+import {
+  Heart, Sparkles, Camera, Loader2, PawPrint, Building2,
+  Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepShell } from "@/components/onboarding/StepShell";
-import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPicker";
 import { PetCardShare } from "@/components/onboarding/PetCardShare";
-import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS, GOALS } from "@/lib/breeds";
+import { BREEDS } from "@/lib/breeds";
+import { IdentityStep } from "@/components/onboarding/IdentityStep";
 
 /**
  * UNIFIED ONBOARDING — single URL `/onboarding`, internal state machine.
  *
- * Like Instagram/TikTok onboarding: the user never sees the URL change in the
- * middle of the flow. Everything is rendered inline based on `?stage=` and the
- * profile's `account_type`. Role-specific sub-flows (buyer prefs, rescuer
- * profile, breeder profile, add-pet) are embedded as components rather than
- * navigated to.
+ * Chapters:
+ *   1. identity → universal: name, @handle, city, language, units
+ *   2. role     → pick role (everyone)
+ *   3. role-specific mini-flow:
+ *        parent  → add first pet (light: name/species/breed/dob/gender) → add-another → done
+ *        buyer   → BuyerPrefs → done
+ *        provider→ ProviderPicker → done
+ *        rescuer → RescuerProfile → done
+ *        breeder → BreederProfile → done (also kennel)
+ *        org     → OrgOnboarding (verification) → done  (sanctuary, zoo)
  *
- * Stages:
- *   role          — pick how you'll use Petos (everyone)
- *   parent        — full pet-parent wizard (8 sub-steps, lives inline below)
- *   buyer         — buyer preferences
- *   rescuer       — rescuer capacity & area
- *   breeder       — breeder programme
- *   org           — organisation verification (handoff to /onboarding/org page)
- *   provider      — provider services picker (handoff to /onboarding/provider page)
- *   add-pet       — quick-add additional pet
- *   add-another   — "add another?" decision screen
- *   done          — celebrate + role-aware CTA
+ * Pet-health questions (weight, vaccines, allergies, conditions) are NOT asked
+ * here. The pet is created with `health_setup_complete: false`; HealthSetupReminder
+ * surfaces on Home and the Health Vault to complete it later.
  */
-
-const TOTAL = 8;
-
-type WelcomeCard = { icon: typeof Heart; title: string; copy: string };
-const WELCOME: WelcomeCard[] = [
-  { icon: Heart, title: "A complete digital life for every pet", copy: "Social, health vault, AI vet, mating, services and shop — one home." },
-  { icon: Sparkles, title: "Personalised from day one", copy: "Every answer shapes your AI vet, your feed, and the help we surface." },
-  { icon: Shield, title: "Your data, your rules", copy: "Mating discoverability is off by default. You're always in control." },
-];
 
 type RoleChoice =
   | "pet_parent" | "buyer" | "provider" | "breeder"
   | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo";
 
 type Stage =
-  | "role" | "parent" | "buyer" | "rescuer" | "breeder"
+  | "identity" | "role" | "parent" | "buyer" | "rescuer" | "breeder"
   | "org" | "provider" | "add-pet" | "add-another" | "done";
 
 const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; nextStage: Stage }[] = [
@@ -70,7 +59,7 @@ const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; 
   { value: "zoo", title: "Zoo / Wildlife centre", sub: "Education and donations", Icon: ShieldAlert, nextStage: "org" },
 ];
 
-// Lazy-load the embedded role flows so the role picker isn't blocked by their bundles.
+// Lazy-load embedded role flows
 const BuyerPrefs = lazy(() => import("./onboarding/BuyerPrefs"));
 const RescuerProfile = lazy(() => import("./onboarding/RescuerProfile"));
 const BreederProfile = lazy(() => import("./onboarding/BreederProfile"));
@@ -87,45 +76,47 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Stage is driven by URL `?stage=` so refresh / back-button work, but the
-  // path stays at `/onboarding` so the user never feels "moved" mid-flow.
   const stageParam = (params.get("stage") as Stage | null) ?? null;
-  const stage: Stage = stageParam ?? "role";
+  const stage: Stage = stageParam ?? "identity";
 
   const setStage = (s: Stage) => {
-    if (s === "role") {
-      setParams({}, { replace: true });
-    } else {
-      setParams({ stage: s }, { replace: false });
-    }
+    if (s === "identity") setParams({}, { replace: true });
+    else setParams({ stage: s }, { replace: false });
   };
 
-  // If the user already has a role saved (e.g. mid-flow refresh), jump them to
-  // the right stage automatically — but only on the role picker; never override
-  // an explicit `?stage=` because they may be moving back/forward.
+  // Resume mid-flow on refresh: identity → role → role-flow.
   useEffect(() => {
     if (profileLoading) return;
-    if (stageParam) return;
+    if (stageParam) return; // user is explicitly at a stage; respect it
+    const hasIdentity = !!profile?.handle && !!profile?.full_name;
     const accountType = profile?.account_type as RoleChoice | undefined;
-    if (!accountType) return;
+    if (!hasIdentity) return; // stay on identity
+    if (!accountType || accountType === ("pet_parent" as RoleChoice) === false) {
+      // has identity but no role → go to role picker
+    }
+    if (!accountType) {
+      setStage("role");
+      return;
+    }
     const opt = ROLE_OPTIONS.find((o) => o.value === accountType);
-    if (opt && opt.nextStage !== "role") setStage(opt.nextStage);
+    if (opt) setStage(opt.nextStage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, profileLoading, stageParam]);
 
-  // ─── PET-PARENT WIZARD STATE (unchanged from prior version) ───────────────
-  const [step, setStep] = useState(0);
+  // Cross-component stage advance event (used by sub-pages).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ next: Stage }>;
+      if (ce.detail?.next) setStage(ce.detail.next);
+    };
+    window.addEventListener("onboarding:advance", handler as EventListener);
+    return () => window.removeEventListener("onboarding:advance", handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── PET-PARENT MINI WIZARD STATE (light: identity is already saved) ──────
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [role, setRole] = useState<RoleChoice>("pet_parent");
-  const [roleSaving, setRoleSaving] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [city, setCity] = useState("");
-  const [language, setLanguage] = useState("en");
-  const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>({ weight: "kg", temp: "c" });
-  const [parentAge, setParentAge] = useState("");
-  const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
-  const [setupHealthNow, setupHealthNowSet] = useState<boolean>(true);
   const [petAvatar, setPetAvatar] = useState<File | null>(null);
   const [petAvatarPreview, setPetAvatarPreview] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
@@ -133,66 +124,20 @@ const Onboarding = () => {
   const [breed, setBreed] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"male" | "female">("male");
-  const [weight, setWeight] = useState("");
-  const [neutered, setNeutered] = useState(false);
-  const [activity, setActivity] = useState<"low" | "medium" | "high">("medium");
-  const [diet, setDiet] = useState<"kibble" | "raw" | "home" | "mixed" | "prescription">("kibble");
-  const [allergies, setAllergies] = useState<string[]>([]);
-  const [conditions, setConditions] = useState<string[]>([]);
-  const [temperament, setTemperament] = useState<string[]>([]);
-  const [socialLevel, setSocialLevel] = useState<"solo" | "pairs" | "crowds">("pairs");
-  const [goals, setGoals] = useState<string[]>([]);
-  const [vaccineFile, setVaccineFile] = useState<File | null>(null);
-  const [emergencyName, setEmergencyName] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
-  const [emergencyClinic, setEmergencyClinic] = useState("");
-  const [notifPush, setNotifPush] = useState(true);
-  const [notifEmail, setNotifEmail] = useState(true);
-  const [notifSms, setNotifSms] = useState(false);
-  const [discoverable, setDiscoverable] = useState(false);
+  const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
+  const [petCount, setPetCount] = useState<"1" | "2" | "3+" | "">("");
+  const [parentStep, setParentStep] = useState(0); // 0 about-you, 1 add-pet
   const breedOptions = useMemo(() => BREEDS[species] ?? BREEDS.other, [species]);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  const detectCity = async () => {
-    if (!navigator.geolocation) return toast.error("Location not available");
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
-          const j = await r.json();
-          const c = j.address?.city || j.address?.town || j.address?.village || j.address?.state_district;
-          if (c) { setCity(c); toast.success(`Set city to ${c}`); }
-        } catch {}
-      },
-      () => toast.error("Location permission denied")
-    );
-  };
+  // Role picker
+  const [role, setRole] = useState<RoleChoice>("pet_parent");
+  const [roleSaving, setRoleSaving] = useState(false);
 
   const onPickAvatar = (f: File | null) => {
     setPetAvatar(f);
     setPetAvatarPreview(f ? URL.createObjectURL(f) : null);
   };
 
-  const validate = (s: number): string | null => {
-    if (s === 2) {
-      const r = z.object({
-        fullName: z.string().trim().min(1).max(80),
-        city: z.string().trim().min(1).max(80),
-      }).safeParse({ fullName, city });
-      return r.success ? null : "Add your name and city";
-    }
-    if (s === 3) {
-      const r = z.object({
-        petName: z.string().trim().min(1).max(40),
-        breed: z.string().trim().min(1).max(60),
-      }).safeParse({ petName, breed });
-      return r.success ? null : "Pet name and breed are required";
-    }
-    return null;
-  };
-
-  // Role picker handler — saves role and advances stage internally (no URL change of path).
   const handleRoleNext = async () => {
     if (!user) return;
     const opt = ROLE_OPTIONS.find((o) => o.value === role)!;
@@ -203,12 +148,7 @@ const Onboarding = () => {
         .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
-      if (role === "pet_parent") {
-        setStep(2); // skip welcome+role steps inside parent wizard
-        setStage("parent");
-      } else {
-        setStage(opt.nextStage);
-      }
+      setStage(opt.nextStage);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
     } finally {
@@ -216,17 +156,14 @@ const Onboarding = () => {
     }
   };
 
-  const next = () => {
-    const err = validate(step);
-    if (err) return toast.error(err);
-    if (step < TOTAL - 1) setStep(step + 1);
-    else submit();
-  };
-
-  const back = () => step > 0 && setStep(step - 1);
-
-  const submit = async () => {
+  const submitPet = async () => {
     if (!user) return;
+    const r = z.object({
+      petName: z.string().trim().min(1).max(40),
+      breed: z.string().trim().min(1).max(60),
+    }).safeParse({ petName, breed });
+    if (!r.success) return toast.error("Pet name and breed are required");
+
     setSubmitting(true);
     try {
       let avatarUrl: string | null = null;
@@ -238,68 +175,27 @@ const Onboarding = () => {
         const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
-      let vaccinePath: string | null = null;
-      if (vaccineFile) {
-        const path = `${user.id}/vaccine-${Date.now()}-${vaccineFile.name}`;
-        const { error: upErr } = await supabase.storage.from("vault-docs").upload(path, vaccineFile);
-        if (upErr) throw upErr;
-        vaccinePath = path;
-      }
-      const emergencyVet =
-        emergencyPhone.trim() || emergencyName.trim() || emergencyClinic.trim()
-          ? { name: emergencyName.trim(), phone: emergencyPhone.trim(), clinic: emergencyClinic.trim() }
-          : null;
-      const { error: pErr } = await supabase.from("profiles").upsert({
+      // Persist parent-only metadata
+      await supabase.from("profiles").upsert({
         id: user.id,
-        full_name: fullName,
-        city,
-        lat: coords?.lat ?? null,
-        lng: coords?.lng ?? null,
-        language,
-        units,
-        goals,
-        emergency_vet: emergencyVet,
-        notif_prefs: { push: notifPush, email: notifEmail, sms: notifSms },
-        onboarded: true,
-        parent_age: parentAge ? Number(parentAge) : null,
         first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
       } as any, { onConflict: "id" });
-      if (pErr) throw pErr;
-      const healthComplete = setupHealthNow && !!vaccinePath;
-      const { data: petRow, error: petErr } = await supabase.from("pets").insert({
+
+      const { error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
         name: petName,
         species,
         breed,
         date_of_birth: dob || null,
         gender,
-        weight_kg: weight ? Number(weight) : null,
-        neutered,
         avatar_url: avatarUrl,
-        city,
-        lat: coords?.lat ?? null,
-        lng: coords?.lng ?? null,
-        activity_level: activity,
-        diet_type: diet,
-        social_level: socialLevel,
-        allergies,
-        conditions,
-        temperament,
-        discoverable_for_mating: neutered ? false : discoverable,
-        vaccination_verified: !!vaccinePath,
-        health_setup_complete: healthComplete,
-      } as any).select("id").single();
+        city: profile?.city ?? null,
+        lat: (profile as any)?.lat ?? null,
+        lng: (profile as any)?.lng ?? null,
+        health_setup_complete: false,
+      } as any);
       if (petErr) throw petErr;
-      if (vaccinePath && petRow) {
-        await supabase.from("vault_documents").insert({
-          pet_id: petRow.id,
-          title: "Vaccination certificate",
-          category: "vaccination",
-          file_path: vaccinePath,
-          mime_type: vaccineFile?.type ?? null,
-          size_bytes: vaccineFile?.size ?? null,
-        });
-      }
+
       qc.invalidateQueries();
       setDone(true);
     } catch (err: any) {
@@ -310,22 +206,26 @@ const Onboarding = () => {
   };
 
   // ═════════════════════════════════════════════════════════════════════
-  // STAGE ROUTER — everything renders inside `/onboarding`
+  // STAGE ROUTER
   // ═════════════════════════════════════════════════════════════════════
 
-  // Embedded role-specific stages render their existing component without
-  // letting it navigate the user away from /onboarding. We pass them an
-  // `onComplete` prop via React context-free convention: each child page
-  // listens to a custom event to advance the stage.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ next: Stage }>;
-      if (ce.detail?.next) setStage(ce.detail.next);
-    };
-    window.addEventListener("onboarding:advance", handler as EventListener);
-    return () => window.removeEventListener("onboarding:advance", handler as EventListener);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  if (profileLoading) return <StageLoader />;
+
+  if (stage === "identity") {
+    return (
+      <IdentityStep
+        initial={{
+          fullName: profile?.full_name,
+          handle: (profile as any)?.handle,
+          city: profile?.city,
+          language: (profile as any)?.language,
+          units: (profile as any)?.units,
+          email: user?.email,
+        }}
+        onComplete={() => setStage("role")}
+      />
+    );
+  }
 
   if (stage === "buyer") {
     return <Suspense fallback={<StageLoader />}><BuyerPrefs /></Suspense>;
@@ -352,70 +252,19 @@ const Onboarding = () => {
     return <Suspense fallback={<StageLoader />}><Done /></Suspense>;
   }
 
-  // ─── PARENT / ROLE PICKER STAGES (inline wizard, unchanged shells) ────────
-
-  if (done) {
-    return (
-      <PetCardShare
-        petName={petName}
-        species={species}
-        breed={breed}
-        city={city}
-        avatar={petAvatarPreview}
-        verified={!!vaccineFile}
-        onContinue={() => setStage("add-another")}
-      />
-    );
-  }
-
-  const sharedProps = {
-    step, total: TOTAL, onBack: step > 0 ? back : undefined, onNext: next,
-    loading: submitting, nextLabel: step === TOTAL - 1 ? "Finish" : "Continue",
-  };
-
-  if (step === 0) {
+  // ─── ROLE PICKER ─────────────────────────────────────────────────────────
+  if (stage === "role") {
     return (
       <StepShell
-        {...sharedProps}
-        title="Welcome to Petos"
-        subtitle="A few thoughtful questions — every answer makes the app smarter for you and your pet."
-      >
-        <div className="space-y-3">
-          {WELCOME.map((c, i) => (
-            <motion.div
-              key={c.title}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="bg-card border border-hairline rounded-2xl p-4 flex items-start gap-3"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
-                <c.icon className="h-5 w-5 text-primary" strokeWidth={1.6} />
-              </div>
-              <div className="min-w-0">
-                <div className="font-medium text-sm">{c.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{c.copy}</div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 1) {
-    const roleOpt = ROLE_OPTIONS.find((o) => o.value === role)!;
-    const willHandoff = role !== "pet_parent";
-    return (
-      <StepShell
-        step={step}
-        total={TOTAL}
-        onBack={back}
+        step={1}
+        total={3}
+        onBack={() => setStage("identity")}
         onNext={handleRoleNext}
         loading={roleSaving}
-        nextLabel={willHandoff ? "Continue setup" : "Continue"}
+        nextLabel={role === "pet_parent" ? "Continue" : "Continue setup"}
         title="How will you use Petos?"
-        subtitle="This personalises your home screen, dashboards and what we ask next. You can change it later."
+        subtitle="This personalises your home screen and what we ask next. You can change it later in settings."
+        showCoach={false}
       >
         <div className="space-y-2">
           {ROLE_OPTIONS.map((o) => {
@@ -441,246 +290,162 @@ const Onboarding = () => {
             );
           })}
         </div>
-        {willHandoff && (
-          <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-            We'll continue with the {roleOpt.title.toLowerCase()} setup next.
-          </p>
-        )}
       </StepShell>
     );
   }
 
-  if (step === 2) {
+  // ─── PET-PARENT INLINE WIZARD ─────────────────────────────────────────────
+  if (done) {
     return (
-      <StepShell {...sharedProps} title="Tell us about you" subtitle="So we can greet you and tailor distance, language and units.">
+      <PetCardShare
+        petName={petName}
+        species={species}
+        breed={breed}
+        city={profile?.city ?? ""}
+        avatar={petAvatarPreview}
+        verified={false}
+        onContinue={() => setStage("add-another")}
+      />
+    );
+  }
+
+  if (parentStep === 0) {
+    return (
+      <StepShell
+        step={2}
+        total={3}
+        onBack={() => setStage("role")}
+        onNext={() => setParentStep(1)}
+        nextDisabled={!firstTimeParent || !petCount}
+        title={`Hi ${profile?.full_name?.split(" ")[0] || "there"}!`}
+        subtitle="A couple of quick questions so we can tailor your home and the AI vet's tone."
+        showCoach={false}
+      >
         <div className="space-y-5">
-          <Field label="Full name" value={fullName} onChange={setFullName} />
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">City</Label>
-            <div className="flex gap-2">
-              <Input value={city} onChange={(e) => setCity(e.target.value)} className="h-12 rounded-xl border-hairline bg-card flex-1" />
-              <Button type="button" variant="outline" onClick={detectCity} className="h-12 rounded-xl border-hairline px-3">
-                <MapPin className="h-4 w-4" />
-              </Button>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">First-time pet parent?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFirstTimeParent("yes")}
+                className={`rounded-xl border h-12 text-sm font-medium transition ${
+                  firstTimeParent === "yes" ? "border-primary bg-primary/5" : "border-hairline bg-card"
+                }`}
+              >
+                Yes — I'm new
+              </button>
+              <button
+                type="button"
+                onClick={() => setFirstTimeParent("no")}
+                className={`rounded-xl border h-12 text-sm font-medium transition ${
+                  firstTimeParent === "no" ? "border-primary bg-primary/5" : "border-hairline bg-card"
+                }`}
+              >
+                No — I've had pets
+              </button>
             </div>
-            <p className="text-[11px] text-muted-foreground">Used for nearby vets, services and breeding circles.</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField label="Language" value={language} onChange={setLanguage} options={[
-              { v: "en", l: "English" }, { v: "hi", l: "हिन्दी" }, { v: "ta", l: "தமிழ்" },
-              { v: "te", l: "తెలుగు" }, { v: "mr", l: "मराठी" }, { v: "bn", l: "বাংলা" },
-            ]} />
-            <SelectField label="Weight" value={units.weight} onChange={(v: any) => setUnits({ ...units, weight: v })} options={[
-              { v: "kg", l: "Kilograms" }, { v: "lb", l: "Pounds" },
-            ]} />
+
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">How many pets do you have?</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["1", "2", "3+"] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setPetCount(c)}
+                  className={`rounded-xl border h-12 text-sm font-medium transition ${
+                    petCount === c ? "border-primary bg-primary/5" : "border-hairline bg-card"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              We'll add them one at a time so you don't lose track.
+            </p>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-2">AI vet replies in your language; charts use your units.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Your age" value={parentAge} onChange={setParentAge} type="number" placeholder="e.g. 28" />
-            <SelectField
-              label="First-time pet parent?"
-              value={firstTimeParent}
-              onChange={(v: any) => setFirstTimeParent(v)}
-              options={[
-                { v: "", l: "Choose…" },
-                { v: "yes", l: "Yes — I'm new" },
-                { v: "no", l: "No — I've had pets before" },
-              ]}
-            />
+
+          <div className="rounded-2xl border border-hairline bg-card p-4 flex items-start gap-3">
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              We'll set up <strong className="text-foreground">health, vaccines and weight</strong> later from
+              the Health tab — they belong with daily care, not sign-up.
+            </p>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-2">Helps us tune tips, reminders and AI replies for your experience level.</p>
         </div>
       </StepShell>
     );
   }
 
-  if (step === 3) {
-    return (
-      <StepShell {...sharedProps} title="Meet your pet" subtitle="A photo and the basics. This becomes your pet's identity across Petos.">
-        <div className="space-y-5">
-          <div className="flex items-center gap-4">
-            <label className="relative h-20 w-20 rounded-2xl bg-muted overflow-hidden cursor-pointer flex items-center justify-center shrink-0 border border-dashed border-hairline">
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickAvatar(e.target.files?.[0] ?? null)} />
-              {petAvatarPreview ? (
-                <img src={petAvatarPreview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-              ) : (
-                <Camera className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
-              )}
-            </label>
-            <div className="flex-1">
-              <Field label="Pet's name" value={petName} onChange={setPetName} />
-            </div>
+  // parentStep === 1: add the first pet (light)
+  return (
+    <StepShell
+      step={2}
+      total={3}
+      onBack={() => setParentStep(0)}
+      onNext={submitPet}
+      loading={submitting}
+      nextLabel="Add pet"
+      title="Meet your pet"
+      subtitle="A photo and the basics. Health details come later — promise."
+      showCoach={false}
+    >
+      <div className="space-y-5">
+        <div className="flex items-center gap-4">
+          <label className="relative h-20 w-20 rounded-2xl bg-muted overflow-hidden cursor-pointer flex items-center justify-center shrink-0 border border-dashed border-hairline">
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickAvatar(e.target.files?.[0] ?? null)} />
+            {petAvatarPreview ? (
+              <img src={petAvatarPreview} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            ) : (
+              <Camera className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+            )}
+          </label>
+          <div className="flex-1 space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Pet's name</Label>
+            <Input
+              value={petName}
+              onChange={(e) => setPetName(e.target.value)}
+              className="h-12 rounded-xl border-hairline bg-card"
+              placeholder="e.g. Bruno"
+              maxLength={40}
+            />
           </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Species</Label>
-            <div className="mt-2"><SpeciesPicker value={species} onChange={(s) => { setSpecies(s); setBreed(""); }} /></div>
+        </div>
+
+        <div>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Species</Label>
+          <div className="mt-2"><SpeciesPicker value={species} onChange={(s) => { setSpecies(s); setBreed(""); }} /></div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Breed</Label>
+          <Select value={breed} onValueChange={setBreed}>
+            <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue placeholder="Choose a breed" /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              {breedOptions.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">Drives mating eligibility and breed-specific tips.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Birthday or gotcha day</Label>
+            <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="h-12 rounded-xl border-hairline bg-card" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Breed</Label>
-            <Select value={breed} onValueChange={setBreed}>
-              <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue placeholder="Choose a breed" /></SelectTrigger>
-              <SelectContent className="max-h-72">
-                {breedOptions.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Gender</Label>
+            <Select value={gender} onValueChange={(v: any) => setGender(v)}>
+              <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">Drives mating eligibility and breed-specific health alerts.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Date of birth</Label>
-              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="h-12 rounded-xl border-hairline bg-card" />
-            </div>
-            <SelectField label="Gender" value={gender} onChange={(v: any) => setGender(v)} options={[
-              { v: "male", l: "Male" }, { v: "female", l: "Female" },
-            ]} />
           </div>
         </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <StepShell {...sharedProps} title="Body & lifestyle" subtitle="Powers calorie math, drug-safe AI replies, food filters and service matching.">
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={`Weight (${units.weight})`} value={weight} onChange={setWeight} type="number" />
-            <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px]">
-              <div className="pr-2">
-                <div className="font-medium text-sm">Neutered</div>
-                <div className="text-[11px] text-muted-foreground leading-tight">Affects breeding & hormones</div>
-              </div>
-              <Switch checked={neutered} onCheckedChange={setNeutered} />
-            </label>
-          </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Activity level</Label>
-            <ChipGroup
-              columns={3}
-              multi={false}
-              value={[activity]}
-              onChange={(v) => v[0] && setActivity(v[0] as any)}
-              options={[
-                { value: "low", label: "Low", blurb: "Mostly indoor" },
-                { value: "medium", label: "Medium", blurb: "Daily walks" },
-                { value: "high", label: "High", blurb: "Runs & play" },
-              ]}
-            />
-          </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Diet</Label>
-            <ChipGroup
-              multi={false}
-              value={[diet]}
-              onChange={(v) => v[0] && setDiet(v[0] as any)}
-              options={[
-                { value: "kibble", label: "Kibble" },
-                { value: "raw", label: "Raw" },
-                { value: "home", label: "Home-cooked" },
-                { value: "mixed", label: "Mixed" },
-                { value: "prescription", label: "Prescription" },
-              ]}
-            />
-          </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Known allergies</Label>
-            <ChipGroup options={COMMON_ALLERGIES} value={allergies} onChange={setAllergies} />
-            <p className="text-[11px] text-muted-foreground mt-2">We'll warn you in shop and AI replies.</p>
-          </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Existing conditions</Label>
-            <ChipGroup options={COMMON_CONDITIONS} value={conditions} onChange={setConditions} />
-          </div>
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 5) {
-    return (
-      <StepShell {...sharedProps} title={`How would you describe ${petName || "your pet"}?`} subtitle="Helps with mating compatibility, boarding and dog-park suggestions.">
-        <div className="space-y-6">
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Temperament</Label>
-            <ChipGroup options={TEMPERAMENT_TAGS} value={temperament} onChange={setTemperament} columns={3} />
-          </div>
-          <div>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Social comfort</Label>
-            <ChipGroup
-              multi={false}
-              value={[socialLevel]}
-              onChange={(v) => v[0] && setSocialLevel(v[0] as any)}
-              options={[
-                { value: "solo", label: "Prefers solo", blurb: "One-on-one only" },
-                { value: "pairs", label: "Small groups", blurb: "Comfortable in pairs" },
-                { value: "crowds", label: "Loves crowds", blurb: "Thrives at parks" },
-              ]}
-              columns={1}
-            />
-          </div>
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 6) {
-    return (
-      <StepShell {...sharedProps} title="What brings you here?" subtitle="We'll order your home screen and feed around what matters most. Pick a few.">
-        <ChipGroup
-          options={GOALS.map((g) => ({ value: g.id, label: g.label, blurb: g.blurb }))}
-          value={goals}
-          onChange={setGoals}
-        />
-      </StepShell>
-    );
-  }
-
-  // step === 7: Safety & consent
-  return (
-    <StepShell {...sharedProps} title="Safety & consent" subtitle="The last piece. Vaccination earns a verified badge; emergency vet appears in our SOS button.">
-      <div className="space-y-5">
-        <label className="block bg-card border border-dashed border-hairline rounded-2xl p-5 text-center cursor-pointer hover:border-primary/40 transition-colors">
-          <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setVaccineFile(e.target.files?.[0] ?? null)} />
-          {vaccineFile ? (
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-primary" />
-              <span className="font-medium">{vaccineFile.name}</span>
-            </div>
-          ) : (
-            <div>
-              <div className="text-sm font-medium">Upload vaccination certificate</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Optional · earns verified badge & unlocks mating</div>
-            </div>
-          )}
-        </label>
-        <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-primary" />
-            <div className="text-sm font-medium">Emergency vet (optional)</div>
-          </div>
-          <p className="text-[11px] text-muted-foreground -mt-1">One-tap call from the SOS button when something's wrong.</p>
-          <Input placeholder="Vet name" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="h-11 rounded-xl border-hairline bg-background" />
-          <Input placeholder="Phone" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className="h-11 rounded-xl border-hairline bg-background" type="tel" />
-          <Input placeholder="Clinic name" value={emergencyClinic} onChange={(e) => setEmergencyClinic(e.target.value)} className="h-11 rounded-xl border-hairline bg-background" />
-        </div>
-        <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3">
-          <div className="text-sm font-medium">How can we reach you?</div>
-          <ToggleRow label="Push notifications" desc="Bookings, orders, vet replies" checked={notifPush} onChange={setNotifPush} />
-          <ToggleRow label="Email" desc="Weekly summary & important alerts" checked={notifEmail} onChange={setNotifEmail} />
-          <ToggleRow label="SMS" desc="Critical alerts only" checked={notifSms} onChange={setNotifSms} />
-        </div>
-        <ToggleRow
-          label="Discoverable for mating"
-          desc={
-            neutered
-              ? `Since ${petName || "your pet"} is neutered, mating discovery stays off. Every other feature still works.`
-              : "Other verified owners in your city can request a match. Off by default."
-          }
-          checked={neutered ? false : discoverable}
-          onChange={(v) => !neutered && setDiscoverable(v)}
-          card
-          disabled={neutered}
-        />
       </div>
     </StepShell>
   );
@@ -690,39 +455,6 @@ const StageLoader = () => (
   <div className="min-h-[60vh] grid place-items-center">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
   </div>
-);
-
-const Field = ({ label, value, onChange, type = "text", placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
-}) => (
-  <div className="space-y-1.5">
-    <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">{label}</Label>
-    <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} placeholder={placeholder} className="h-12 rounded-xl border-hairline bg-card" />
-  </div>
-);
-
-const SelectField = ({ label, value, onChange, options }: {
-  label: string; value: string; onChange: (v: string) => void; options: { v: string; l: string }[];
-}) => (
-  <div className="space-y-1.5">
-    <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">{label}</Label>
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue /></SelectTrigger>
-      <SelectContent>{options.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
-    </Select>
-  </div>
-);
-
-const ToggleRow = ({ label, desc, checked, onChange, card, disabled }: {
-  label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; card?: boolean; disabled?: boolean;
-}) => (
-  <label className={`flex items-center justify-between gap-4 ${card ? "bg-card border border-hairline rounded-2xl p-4" : ""} ${disabled ? "opacity-70" : ""}`}>
-    <div className="min-w-0">
-      <div className="font-medium text-sm">{label}</div>
-      {desc && <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{desc}</div>}
-    </div>
-    <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
-  </label>
 );
 
 export default Onboarding;

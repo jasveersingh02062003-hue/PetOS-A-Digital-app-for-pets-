@@ -91,7 +91,17 @@ export default function OnboardingDone() {
         <NextLink to="/how-it-works" Icon={ArrowRight} title="How PetOS works" desc="Quick visual tour of the platform" />
       </div>
 
-      <Button className="w-full mt-6" onClick={() => nav(primary.to)}>
+      <Button
+        className="w-full mt-6"
+        onClick={async () => {
+          // Mark onboarding complete so PostAuth stops sending the user back here.
+          const { data: u } = await supabase.auth.getUser();
+          if (u.user) {
+            await supabase.from("profiles").update({ onboarded: true } as any).eq("id", u.user.id);
+          }
+          nav(primary.to);
+        }}
+      >
         {primary.label}
       </Button>
     </div>
