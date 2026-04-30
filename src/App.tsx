@@ -63,6 +63,8 @@ const Taxi = lazy(() => import("./pages/Taxi"));
 const TaxiNew = lazy(() => import("./pages/TaxiNew"));
 const TaxiDetail = lazy(() => import("./pages/TaxiDetail"));
 const Cart = lazy(() => import("./pages/Cart"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Vet = lazy(() => import("./pages/Vet"));
 const VetApply = lazy(() => import("./pages/VetApply"));
@@ -275,6 +277,8 @@ const App = () => (
               <Route path="/services/:id" element={<ServiceDetail />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/shop/new" element={<ShopNew />} />
+              <Route path="/shop/:id" element={<ProductDetail />} />
+              <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/account/delete" element={<DeleteAccount />} />

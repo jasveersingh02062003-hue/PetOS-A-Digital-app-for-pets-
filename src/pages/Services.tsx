@@ -161,6 +161,8 @@ const Services = () => {
                     city={p.city}
                     distanceKm={p.distance_km != null ? Number(p.distance_km) : null}
                     trustChips={trust}
+                    wishlistId={p.id}
+                    wishlistKind="service"
                     cta={{ label: "Book now", requiresAuth: true }}
                   />
                 );

@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/marketplace/WishlistButton";
+import type { WishlistKind } from "@/hooks/useWishlist";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { TrustChip, TrustChipKind } from "@/components/marketplace/TrustChip";
 import { PriceTag } from "@/components/marketplace/PriceTag";
@@ -38,6 +39,8 @@ type Props = {
   healthChips?: TrustChipKind[];
   /** Show wishlist heart top-right. Pass listing id to wire it up. */
   wishlistId?: string;
+  /** Wishlist polymorphic kind. Defaults to 'pet' for back-compat. */
+  wishlistKind?: WishlistKind;
   /** Primary CTA. */
   cta?: {
     label: string;
@@ -79,6 +82,7 @@ export const ListingCard = ({
   trustChips = [],
   healthChips = [],
   wishlistId,
+  wishlistKind = "pet",
   cta,
   density = "compact",
   imageTag,
@@ -137,7 +141,7 @@ export const ListingCard = ({
 
         {wishlistId && user && (
           <div className="absolute top-2 right-2" onClickCapture={stop}>
-            <WishlistButton listingId={wishlistId} />
+            <WishlistButton listingId={wishlistId} kind={wishlistKind} />
           </div>
         )}
       </div>

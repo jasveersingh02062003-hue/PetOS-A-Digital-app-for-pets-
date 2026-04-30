@@ -432,6 +432,7 @@ const Shop = () => {
             price={p.price_inr}
             distanceKm={p.distance_km != null ? Number(p.distance_km) : null}
             wishlistId={p.id}
+            wishlistKind="product"
             healthChips={p.stock > 0 ? [] : []}
             imageTag={p.stock <= 0 ? { label: "Out of stock", tone: "danger" } : undefined}
             cta={{

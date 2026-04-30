@@ -3,16 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-export const useWishlistIds = () => {
+export type WishlistKind = "pet" | "product" | "vet" | "service";
+
+export const useWishlistIds = (kind?: WishlistKind) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["wishlist-ids", user?.id],
+    queryKey: ["wishlist-ids", user?.id, kind ?? "all"],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("wishlists" as any)
-        .select("listing_id")
+        .select("listing_id, kind")
         .eq("user_id", user!.id);
+      if (kind) q = q.eq("kind", kind);
+      const { data, error } = await q;
       if (error) throw error;
       return new Set(((data ?? []) as any[]).map((r) => r.listing_id as string));
     },
@@ -26,7 +30,7 @@ export const useWishlistList = (userId?: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("wishlists" as any)
-        .select("id, created_at, listing:listing_id(id, title, photos, fee_inr, listing_type, city, seller_type)")
+        .select("id, created_at, listing_id, kind")
         .eq("user_id", userId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -39,19 +43,28 @@ export const useToggleWishlist = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId, isSaved }: { listingId: string; isSaved: boolean }) => {
+    mutationFn: async ({
+      listingId,
+      isSaved,
+      kind = "pet",
+    }: {
+      listingId: string;
+      isSaved: boolean;
+      kind?: WishlistKind;
+    }) => {
       if (!user) throw new Error("Sign in to save listings");
       if (isSaved) {
         const { error } = await supabase
           .from("wishlists" as any)
           .delete()
           .eq("user_id", user.id)
+          .eq("kind", kind)
           .eq("listing_id", listingId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("wishlists" as any)
-          .insert({ user_id: user.id, listing_id: listingId });
+          .insert({ user_id: user.id, listing_id: listingId, kind });
         if (error) throw error;
       }
     },
