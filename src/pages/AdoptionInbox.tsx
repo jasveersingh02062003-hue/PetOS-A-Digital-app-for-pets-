@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,18 @@ const AdoptionInbox = () => {
       return data ?? [];
     },
   });
+
+  // Realtime: any change to applications addressed to this shelter repaints the list
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`adoption-inbox:${user.id}`)
+      .on("postgres_changes" as any,
+        { event: "*", schema: "public", table: "adoption_applications", filter: `shelter_id=eq.${user.id}` },
+        () => qc.invalidateQueries({ queryKey: ["adoption-inbox", user.id] }))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, qc]);
 
   const openDecision = (id: string, status: "approved" | "rejected") => {
     setNote("");

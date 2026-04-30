@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ const AdoptListingDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
@@ -54,6 +55,21 @@ const AdoptListingDetail = () => {
     },
     enabled: !!id,
   });
+
+  // Realtime: applicant sees their application status flip the moment a shelter decides
+  useEffect(() => {
+    if (!id || !user) return;
+    const ch = supabase
+      .channel(`adopt-app:${id}:${user.id}`)
+      .on("postgres_changes" as any,
+        { event: "*", schema: "public", table: "adoption_applications", filter: `listing_id=eq.${id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["pet-listing", id] });
+          qc.invalidateQueries({ queryKey: ["adoption-application", id, user.id] });
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [id, user, qc]);
 
   const { data: sellerInfo } = useQuery({
     queryKey: ["pet-listing-seller", listing?.owner_id],
