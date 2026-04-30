@@ -3186,6 +3186,7 @@ export type Database = {
           social_level: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           status_chip: string | null
+          target_weight_kg: number | null
           temperament: string[]
           updated_at: string
           vaccination_verified: boolean
@@ -3226,6 +3227,7 @@ export type Database = {
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species: Database["public"]["Enums"]["pet_species"]
           status_chip?: string | null
+          target_weight_kg?: number | null
           temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean
@@ -3266,6 +3268,7 @@ export type Database = {
           social_level?: Database["public"]["Enums"]["social_level"] | null
           species?: Database["public"]["Enums"]["pet_species"]
           status_chip?: string | null
+          target_weight_kg?: number | null
           temperament?: string[]
           updated_at?: string
           vaccination_verified?: boolean

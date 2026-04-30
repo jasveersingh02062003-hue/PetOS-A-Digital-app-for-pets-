@@ -1,0 +1,2 @@
+ALTER TABLE public.pets
+ADD COLUMN IF NOT EXISTS target_weight_kg numeric;
