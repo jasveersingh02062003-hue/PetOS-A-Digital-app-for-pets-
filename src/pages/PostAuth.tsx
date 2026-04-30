@@ -25,7 +25,7 @@ export default function PostAuth() {
       const [{ data: profile }, { data: pets }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("full_name, onboarded, account_type")
+          .select("full_name, onboarded, account_type, handle")
           .eq("id", userId)
           .maybeSingle(),
         supabase.from("pets").select("id").eq("owner_id", userId).limit(1),
@@ -33,7 +33,11 @@ export default function PostAuth() {
 
       const accountType = (profile?.account_type ?? "pet_parent") as string;
       const isPetParent = accountType === "pet_parent";
-      const profileMissing = !profile?.full_name?.trim() || !profile?.onboarded;
+      // New gate: must have name AND a unique @handle AND have finished onboarding.
+      const profileMissing =
+        !profile?.full_name?.trim() ||
+        !(profile as any)?.handle ||
+        !profile?.onboarded;
       const petGateFailed = isPetParent && (!pets || pets.length === 0);
       const incomplete = profileMissing || petGateFailed;
       if (import.meta.env.DEV) {
