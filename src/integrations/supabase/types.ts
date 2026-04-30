@@ -3717,6 +3717,48 @@ export type Database = {
           },
         ]
       }
+      provider_hours: {
+        Row: {
+          close_time: string
+          created_at: string
+          id: string
+          open_time: string
+          provider_id: string
+          weekday: number
+        }
+        Insert: {
+          close_time: string
+          created_at?: string
+          id?: string
+          open_time: string
+          provider_id: string
+          weekday: number
+        }
+        Update: {
+          close_time?: string
+          created_at?: string
+          id?: string
+          open_time?: string
+          provider_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_hours_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_hours_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_payouts: {
         Row: {
           commission_inr: number
@@ -4412,9 +4454,11 @@ export type Database = {
           lat: number | null
           lng: number | null
           name: string
+          next_available_at: string | null
           owner_id: string
           quiz_passed_at: string | null
           quiz_score: number | null
+          service_area_radius_km: number | null
           service_radius_km: number
           time_slots: string[]
           trust_status: string
@@ -4443,9 +4487,11 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           name: string
+          next_available_at?: string | null
           owner_id: string
           quiz_passed_at?: string | null
           quiz_score?: number | null
+          service_area_radius_km?: number | null
           service_radius_km?: number
           time_slots?: string[]
           trust_status?: string
@@ -4474,9 +4520,11 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           name?: string
+          next_available_at?: string | null
           owner_id?: string
           quiz_passed_at?: string | null
           quiz_score?: number | null
+          service_area_radius_km?: number | null
           service_radius_km?: number
           time_slots?: string[]
           trust_status?: string
@@ -6454,6 +6502,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_provider_open_now: { Args: { _provider_id: string }; Returns: boolean }
       is_staff: { Args: { _uid: string }; Returns: boolean }
       is_transport_driver: { Args: { _booking: string }; Returns: boolean }
       mark_conversation_read: { Args: { _conv: string }; Returns: undefined }
@@ -6543,6 +6592,12 @@ export type Database = {
       provider_social_proof: {
         Args: { _city?: string; _provider_id: string }
         Returns: Json
+      }
+      providers_open_now: {
+        Args: { _category?: string; _city?: string }
+        Returns: {
+          provider_id: string
+        }[]
       }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       redeem_reward: {
