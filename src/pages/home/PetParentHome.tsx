@@ -10,6 +10,7 @@ import { PetHeroCard } from "@/components/home/PetHeroCard";
 import { QuickAccessRail } from "@/components/QuickAccessRail";
 import { EmergencyButton } from "@/components/home/EmergencyButton";
 import { ProactiveAlertsCard } from "@/components/home/ProactiveAlertsCard";
+import { BookingSuggestionsCard } from "@/components/home/BookingSuggestionsCard";
 
 const StoryRail = lazy(() => import("@/components/social/StoryRail").then((m) => ({ default: m.StoryRail })));
 const DailyPromptBanner = lazy(() => import("@/components/social/DailyPromptBanner").then((m) => ({ default: m.DailyPromptBanner })));
@@ -44,6 +45,7 @@ const PetParentHome = () => {
 
       <PetHeroCard />
       <EmergencyButton />
+      <BookingSuggestionsCard />
       <ProactiveAlertsCard />
 
       <Suspense fallback={<div className="h-[88px]" />}>
