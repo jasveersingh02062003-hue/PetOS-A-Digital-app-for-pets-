@@ -119,6 +119,9 @@ export function HealthInsightsCard({ petId, petName }: { petId: string; petName:
       ) : (
         <>
           <p className="text-sm leading-relaxed mb-3">{data.summary}</p>
+          <div className="text-[10px] text-muted-foreground italic mb-2">
+            AI-generated suggestions — not a substitute for veterinary advice.
+          </div>
           {Array.isArray(data.insights) && data.insights.length > 0 && (
             <div className="space-y-2">
               {data.insights.map((ins, i) => (
