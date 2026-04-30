@@ -39,6 +39,8 @@ type Props = {
   healthChips?: TrustChipKind[];
   /** Show wishlist heart top-right. Pass listing id to wire it up. */
   wishlistId?: string;
+  /** Wishlist polymorphic kind. Defaults to 'pet' for back-compat. */
+  wishlistKind?: WishlistKind;
   /** Primary CTA. */
   cta?: {
     label: string;
@@ -80,6 +82,7 @@ export const ListingCard = ({
   trustChips = [],
   healthChips = [],
   wishlistId,
+  wishlistKind = "pet",
   cta,
   density = "compact",
   imageTag,
