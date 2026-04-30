@@ -138,7 +138,7 @@ const OrgOnboarding = lazy(() => import("./pages/OrgOnboarding"));
 const OrgProfile = lazy(() => import("./pages/OrgProfile"));
 const OrgReview = lazy(() => import("./pages/admin/OrgReview"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
-const AddFirstPet = lazy(() => import("./pages/onboarding/AddFirstPet"));
+const QuickAddPet = lazy(() => import("./pages/onboarding/QuickAddPet"));
 const AddAnotherPet = lazy(() => import("./pages/onboarding/AddAnotherPet"));
 const OnboardingDone = lazy(() => import("./pages/onboarding/Done"));
 const BuyerPrefs = lazy(() => import("./pages/onboarding/BuyerPrefs"));
