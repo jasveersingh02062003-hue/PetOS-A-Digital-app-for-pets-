@@ -141,7 +141,7 @@ export const ListingCard = ({
 
         {wishlistId && user && (
           <div className="absolute top-2 right-2" onClickCapture={stop}>
-            <WishlistButton listingId={wishlistId} />
+            <WishlistButton listingId={wishlistId} kind={wishlistKind} />
           </div>
         )}
       </div>
