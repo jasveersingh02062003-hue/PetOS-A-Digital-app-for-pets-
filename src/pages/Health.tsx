@@ -29,12 +29,18 @@ import { InsuranceCard } from "@/components/health/InsuranceCard";
 import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
 import { DailyCareCard } from "@/components/health/DailyCareCard";
 import { PhotoUploadField, PhotoThumbs } from "@/components/health/PhotoUploadField";
+import { CareTeamCard } from "@/components/health/CareTeamCard";
+import { VetVisitNotesCard } from "@/components/health/VetVisitNotesCard";
+import { HeatCycleCard } from "@/components/health/HeatCycleCard";
+import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
+import { Scale } from "lucide-react";
 
 const Health = () => {
   const { data: pets } = usePets();
   const [activeIdx, setActiveIdx] = useState(0);
   const active = pets?.[activeIdx];
   const nav = useNavigate();
+  const [quickWeightOpen, setQuickWeightOpen] = useState(false);
 
   return (
     <div className="container-app pad-top-safe">
@@ -109,13 +115,32 @@ const Health = () => {
             </div>
           </Button>
 
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button onClick={() => setQuickWeightOpen(true)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <Scale className="h-4 w-4" /> <span className="text-sm">Quick weight</span>
+            </Button>
+            <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <Activity className="h-4 w-4" /> <span className="text-sm">Log symptom</span>
+            </Button>
+          </div>
+
           <DailyCareCard petId={active.id} petName={active.name} />
+
+          <CareTeamCard petId={active.id} />
+
+          <VetVisitNotesCard petId={active.id} />
+
+          {(active as any).gender === "female" && !(active as any).neutered && (
+            <HeatCycleCard petId={active.id} />
+          )}
 
           <InsuranceCard petId={active.id} currentProvider={(active as any).insurance_provider} />
 
           <HealthInsightsCard petId={active.id} petName={active.name} />
 
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
+
+          <QuickWeightSheet open={quickWeightOpen} onOpenChange={setQuickWeightOpen} petId={active.id} />
 
           <Tabs defaultValue="vitals" className="w-full">
             <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
