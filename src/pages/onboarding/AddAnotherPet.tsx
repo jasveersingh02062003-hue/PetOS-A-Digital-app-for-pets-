@@ -27,7 +27,7 @@ export default function AddAnotherPet() {
 
       <div className="space-y-3">
         <Card
-          onClick={() => nav("/onboarding/add-pet")}
+          onClick={() => nav("/onboarding?stage=add-pet", { replace: true })}
           className="rounded-2xl border border-hairline p-4 cursor-pointer hover:border-primary/30 transition flex items-center gap-3"
         >
           <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center">

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import { Heart, Shield, Sparkles, MapPin, Camera, Check, Loader2, Phone, PawPrint, Building2, Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,6 +18,28 @@ import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPicker";
 import { PetCardShare } from "@/components/onboarding/PetCardShare";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS, GOALS } from "@/lib/breeds";
+
+/**
+ * UNIFIED ONBOARDING — single URL `/onboarding`, internal state machine.
+ *
+ * Like Instagram/TikTok onboarding: the user never sees the URL change in the
+ * middle of the flow. Everything is rendered inline based on `?stage=` and the
+ * profile's `account_type`. Role-specific sub-flows (buyer prefs, rescuer
+ * profile, breeder profile, add-pet) are embedded as components rather than
+ * navigated to.
+ *
+ * Stages:
+ *   role          — pick how you'll use Petos (everyone)
+ *   parent        — full pet-parent wizard (8 sub-steps, lives inline below)
+ *   buyer         — buyer preferences
+ *   rescuer       — rescuer capacity & area
+ *   breeder       — breeder programme
+ *   org           — organisation verification (handoff to /onboarding/org page)
+ *   provider      — provider services picker (handoff to /onboarding/provider page)
+ *   add-pet       — quick-add additional pet
+ *   add-another   — "add another?" decision screen
+ *   done          — celebrate + role-aware CTA
+ */
 
 const TOTAL = 8;
 
@@ -33,59 +54,78 @@ type RoleChoice =
   | "pet_parent" | "buyer" | "provider" | "breeder"
   | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo";
 
-const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; needsOrg?: boolean; routeAfter?: string }[] = [
-  { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint },
-  { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders", Icon: SearchIcon, routeAfter: "/onboarding/buyer-prefs" },
-  { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, driver…", Icon: Briefcase, routeAfter: "/onboarding/provider" },
-  { value: "rescuer", title: "Independent rescuer", sub: "I rescue animals on my own", Icon: Heart, routeAfter: "/onboarding/rescuer" },
-  { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, needsOrg: true, routeAfter: "/onboarding/breeder" },
-  { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, needsOrg: true, routeAfter: "/onboarding/breeder" },
-  { value: "shelter", title: "Shelter / Rescue NGO", sub: "We rescue and rehome animals", Icon: HomeIcon, needsOrg: true, routeAfter: "/onboarding/rescuer" },
-  { value: "sanctuary", title: "Sanctuary / Gaushala", sub: "Lifelong care for animals", Icon: ShieldHalf, needsOrg: true },
-  { value: "zoo", title: "Zoo / Wildlife centre", sub: "Education and donations", Icon: ShieldAlert, needsOrg: true },
+type Stage =
+  | "role" | "parent" | "buyer" | "rescuer" | "breeder"
+  | "org" | "provider" | "add-pet" | "add-another" | "done";
+
+const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; nextStage: Stage }[] = [
+  { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint, nextStage: "parent" },
+  { value: "buyer", title: "Looking to get a pet", sub: "Browse adoption & breeders", Icon: SearchIcon, nextStage: "buyer" },
+  { value: "provider", title: "I offer pet services", sub: "Walker, groomer, sitter, driver…", Icon: Briefcase, nextStage: "provider" },
+  { value: "rescuer", title: "Independent rescuer", sub: "I rescue animals on my own", Icon: Heart, nextStage: "rescuer" },
+  { value: "breeder", title: "Breeder", sub: "I breed pets responsibly", Icon: PawPrint, nextStage: "breeder" },
+  { value: "kennel", title: "Kennel / Cattery", sub: "Registered facility", Icon: Building2, nextStage: "breeder" },
+  { value: "shelter", title: "Shelter / Rescue NGO", sub: "We rescue and rehome animals", Icon: HomeIcon, nextStage: "rescuer" },
+  { value: "sanctuary", title: "Sanctuary / Gaushala", sub: "Lifelong care for animals", Icon: ShieldHalf, nextStage: "org" },
+  { value: "zoo", title: "Zoo / Wildlife centre", sub: "Education and donations", Icon: ShieldAlert, nextStage: "org" },
 ];
+
+// Lazy-load the embedded role flows so the role picker isn't blocked by their bundles.
+const BuyerPrefs = lazy(() => import("./onboarding/BuyerPrefs"));
+const RescuerProfile = lazy(() => import("./onboarding/RescuerProfile"));
+const BreederProfile = lazy(() => import("./onboarding/BreederProfile"));
+const AddFirstPet = lazy(() => import("./onboarding/AddFirstPet"));
+const AddAnotherPet = lazy(() => import("./onboarding/AddAnotherPet"));
+const Done = lazy(() => import("./onboarding/Done"));
+const OrgOnboarding = lazy(() => import("./OrgOnboarding"));
+const ProviderPicker = lazy(() => import("./onboarding/provider/Picker"));
 
 const Onboarding = () => {
   const nav = useNavigate();
+  const [params, setParams] = useSearchParams();
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Role guard: this wizard handles pet_parent end-to-end (multi-pet loop +
-  // health vault deferral). Every other role has its own dedicated flow that
-  // we redirect into the moment we detect the role on the profile.
+  // Stage is driven by URL `?stage=` so refresh / back-button work, but the
+  // path stays at `/onboarding` so the user never feels "moved" mid-flow.
+  const stageParam = (params.get("stage") as Stage | null) ?? null;
+  const stage: Stage = stageParam ?? "role";
+
+  const setStage = (s: Stage) => {
+    if (s === "role") {
+      setParams({}, { replace: true });
+    } else {
+      setParams({ stage: s }, { replace: false });
+    }
+  };
+
+  // If the user already has a role saved (e.g. mid-flow refresh), jump them to
+  // the right stage automatically — but only on the role picker; never override
+  // an explicit `?stage=` because they may be moving back/forward.
   useEffect(() => {
     if (profileLoading) return;
-    const accountType = profile?.account_type;
-    if (!accountType) return; // first-timer — let them pick in step 1
-    if (accountType === "pet_parent") return;
+    if (stageParam) return;
+    const accountType = profile?.account_type as RoleChoice | undefined;
+    if (!accountType) return;
     const opt = ROLE_OPTIONS.find((o) => o.value === accountType);
-    if (opt?.routeAfter) nav(opt.routeAfter, { replace: true });
-    else if (opt?.needsOrg) nav("/onboarding/org", { replace: true });
-    else nav("/onboarding/account-type", { replace: true });
-  }, [profile, profileLoading, nav]);
+    if (opt && opt.nextStage !== "role") setStage(opt.nextStage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, profileLoading, stageParam]);
 
+  // ─── PET-PARENT WIZARD STATE (unchanged from prior version) ───────────────
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-
-  // Step 1 — Role choice (pet_parent default; other roles redirect out)
   const [role, setRole] = useState<RoleChoice>("pet_parent");
   const [roleSaving, setRoleSaving] = useState(false);
-
-  // Step 1 — About you
   const [fullName, setFullName] = useState("");
   const [city, setCity] = useState("");
   const [language, setLanguage] = useState("en");
   const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>({ weight: "kg", temp: "c" });
   const [parentAge, setParentAge] = useState("");
   const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
-  // "Set up health now" controls whether we collect vaccine/emergency in Step 7.
-  // If false, the pet is saved with health_setup_complete=false and the
-  // Health tab + Home both surface a "Set up health for {pet}" reminder.
   const [setupHealthNow, setupHealthNowSet] = useState<boolean>(true);
-
-  // Step 2 — Meet your pet
   const [petAvatar, setPetAvatar] = useState<File | null>(null);
   const [petAvatarPreview, setPetAvatarPreview] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
@@ -93,23 +133,15 @@ const Onboarding = () => {
   const [breed, setBreed] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"male" | "female">("male");
-
-  // Step 3 — Body & lifestyle
   const [weight, setWeight] = useState("");
   const [neutered, setNeutered] = useState(false);
   const [activity, setActivity] = useState<"low" | "medium" | "high">("medium");
   const [diet, setDiet] = useState<"kibble" | "raw" | "home" | "mixed" | "prescription">("kibble");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [conditions, setConditions] = useState<string[]>([]);
-
-  // Step 4 — Personality
   const [temperament, setTemperament] = useState<string[]>([]);
   const [socialLevel, setSocialLevel] = useState<"solo" | "pairs" | "crowds">("pairs");
-
-  // Step 5 — Goals
   const [goals, setGoals] = useState<string[]>([]);
-
-  // Step 6 — Safety & consent
   const [vaccineFile, setVaccineFile] = useState<File | null>(null);
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
@@ -118,9 +150,7 @@ const Onboarding = () => {
   const [notifEmail, setNotifEmail] = useState(true);
   const [notifSms, setNotifSms] = useState(false);
   const [discoverable, setDiscoverable] = useState(false);
-
   const breedOptions = useMemo(() => BREEDS[species] ?? BREEDS.other, [species]);
-
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const detectCity = async () => {
@@ -145,7 +175,6 @@ const Onboarding = () => {
   };
 
   const validate = (s: number): string | null => {
-    // step 1 = role picker (no validation, handled by handleRoleNext)
     if (s === 2) {
       const r = z.object({
         fullName: z.string().trim().min(1).max(80),
@@ -163,8 +192,7 @@ const Onboarding = () => {
     return null;
   };
 
-  // When the user picks a role on step 1, save it and either continue the
-  // pet-parent wizard inline, or redirect to the proper dedicated flow.
+  // Role picker handler — saves role and advances stage internally (no URL change of path).
   const handleRoleNext = async () => {
     if (!user) return;
     const opt = ROLE_OPTIONS.find((o) => o.value === role)!;
@@ -175,15 +203,11 @@ const Onboarding = () => {
         .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
-      // pet_parent continues the inline wizard; everyone else hands off.
       if (role === "pet_parent") {
-        setStep(2);
-      } else if (opt.routeAfter) {
-        nav(opt.routeAfter);
-      } else if (opt.needsOrg) {
-        nav("/onboarding/org");
+        setStep(2); // skip welcome+role steps inside parent wizard
+        setStage("parent");
       } else {
-        nav("/onboarding/account-type");
+        setStage(opt.nextStage);
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
@@ -205,7 +229,6 @@ const Onboarding = () => {
     if (!user) return;
     setSubmitting(true);
     try {
-      // Upload avatar
       let avatarUrl: string | null = null;
       if (petAvatar) {
         const ext = petAvatar.name.split(".").pop() ?? "jpg";
@@ -215,8 +238,6 @@ const Onboarding = () => {
         const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
-
-      // Upload vaccine
       let vaccinePath: string | null = null;
       if (vaccineFile) {
         const path = `${user.id}/vaccine-${Date.now()}-${vaccineFile.name}`;
@@ -224,13 +245,10 @@ const Onboarding = () => {
         if (upErr) throw upErr;
         vaccinePath = path;
       }
-
-      // Profile
       const emergencyVet =
         emergencyPhone.trim() || emergencyName.trim() || emergencyClinic.trim()
           ? { name: emergencyName.trim(), phone: emergencyPhone.trim(), clinic: emergencyClinic.trim() }
           : null;
-
       const { error: pErr } = await supabase.from("profiles").upsert({
         id: user.id,
         full_name: fullName,
@@ -247,9 +265,6 @@ const Onboarding = () => {
         first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
       } as any, { onConflict: "id" });
       if (pErr) throw pErr;
-
-      // Pet — health_setup_complete reflects whether the user actually
-      // provided vaccine/emergency info (or explicitly chose "set up later").
       const healthComplete = setupHealthNow && !!vaccinePath;
       const { data: petRow, error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
@@ -275,8 +290,6 @@ const Onboarding = () => {
         health_setup_complete: healthComplete,
       } as any).select("id").single();
       if (petErr) throw petErr;
-
-      // Vault entry
       if (vaccinePath && petRow) {
         await supabase.from("vault_documents").insert({
           pet_id: petRow.id,
@@ -287,7 +300,6 @@ const Onboarding = () => {
           size_bytes: vaccineFile?.size ?? null,
         });
       }
-
       qc.invalidateQueries();
       setDone(true);
     } catch (err: any) {
@@ -296,6 +308,51 @@ const Onboarding = () => {
       setSubmitting(false);
     }
   };
+
+  // ═════════════════════════════════════════════════════════════════════
+  // STAGE ROUTER — everything renders inside `/onboarding`
+  // ═════════════════════════════════════════════════════════════════════
+
+  // Embedded role-specific stages render their existing component without
+  // letting it navigate the user away from /onboarding. We pass them an
+  // `onComplete` prop via React context-free convention: each child page
+  // listens to a custom event to advance the stage.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ next: Stage }>;
+      if (ce.detail?.next) setStage(ce.detail.next);
+    };
+    window.addEventListener("onboarding:advance", handler as EventListener);
+    return () => window.removeEventListener("onboarding:advance", handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (stage === "buyer") {
+    return <Suspense fallback={<StageLoader />}><BuyerPrefs /></Suspense>;
+  }
+  if (stage === "rescuer") {
+    return <Suspense fallback={<StageLoader />}><RescuerProfile /></Suspense>;
+  }
+  if (stage === "breeder") {
+    return <Suspense fallback={<StageLoader />}><BreederProfile /></Suspense>;
+  }
+  if (stage === "org") {
+    return <Suspense fallback={<StageLoader />}><OrgOnboarding /></Suspense>;
+  }
+  if (stage === "provider") {
+    return <Suspense fallback={<StageLoader />}><ProviderPicker /></Suspense>;
+  }
+  if (stage === "add-pet") {
+    return <Suspense fallback={<StageLoader />}><AddFirstPet /></Suspense>;
+  }
+  if (stage === "add-another") {
+    return <Suspense fallback={<StageLoader />}><AddAnotherPet /></Suspense>;
+  }
+  if (stage === "done") {
+    return <Suspense fallback={<StageLoader />}><Done /></Suspense>;
+  }
+
+  // ─── PARENT / ROLE PICKER STAGES (inline wizard, unchanged shells) ────────
 
   if (done) {
     return (
@@ -306,12 +363,11 @@ const Onboarding = () => {
         city={city}
         avatar={petAvatarPreview}
         verified={!!vaccineFile}
-        onContinue={() => nav("/onboarding/add-another-pet", { replace: true })}
+        onContinue={() => setStage("add-another")}
       />
     );
   }
 
-  // STEP RENDERERS ----------------------------------------------------------
   const sharedProps = {
     step, total: TOTAL, onBack: step > 0 ? back : undefined, onNext: next,
     loading: submitting, nextLabel: step === TOTAL - 1 ? "Finish" : "Continue",
@@ -328,15 +384,15 @@ const Onboarding = () => {
           {WELCOME.map((c, i) => (
             <motion.div
               key={c.title}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.1 + 0.1, duration: 0.4 }}
-              className="bg-card border border-hairline rounded-2xl p-4 flex gap-3"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="bg-card border border-hairline rounded-2xl p-4 flex items-start gap-3"
             >
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
                 <c.icon className="h-5 w-5 text-primary" strokeWidth={1.6} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="font-medium text-sm">{c.title}</div>
                 <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{c.copy}</div>
               </div>
@@ -349,7 +405,7 @@ const Onboarding = () => {
 
   if (step === 1) {
     const roleOpt = ROLE_OPTIONS.find((o) => o.value === role)!;
-    const willRedirect = role !== "pet_parent" && role !== "rescuer";
+    const willHandoff = role !== "pet_parent";
     return (
       <StepShell
         step={step}
@@ -357,7 +413,7 @@ const Onboarding = () => {
         onBack={back}
         onNext={handleRoleNext}
         loading={roleSaving}
-        nextLabel={willRedirect ? "Continue setup" : "Continue"}
+        nextLabel={willHandoff ? "Continue setup" : "Continue"}
         title="How will you use Petos?"
         subtitle="This personalises your home screen, dashboards and what we ask next. You can change it later."
       >
@@ -381,16 +437,13 @@ const Onboarding = () => {
                   <div className="font-medium text-sm">{o.title}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
                 </div>
-                {o.needsOrg && (
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">Verify</span>
-                )}
               </button>
             );
           })}
         </div>
-        {willRedirect && (
+        {willHandoff && (
           <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-            We'll take you to the {roleOpt.needsOrg ? "verification" : "setup"} flow tailored for {roleOpt.title.toLowerCase()}.
+            We'll continue with the {roleOpt.title.toLowerCase()} setup next.
           </p>
         )}
       </StepShell>
@@ -422,7 +475,6 @@ const Onboarding = () => {
             ]} />
           </div>
           <p className="text-[11px] text-muted-foreground -mt-2">AI vet replies in your language; charts use your units.</p>
-
           <div className="grid grid-cols-2 gap-3">
             <Field label="Your age" value={parentAge} onChange={setParentAge} type="number" placeholder="e.g. 28" />
             <SelectField
@@ -459,12 +511,10 @@ const Onboarding = () => {
               <Field label="Pet's name" value={petName} onChange={setPetName} />
             </div>
           </div>
-
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Species</Label>
             <div className="mt-2"><SpeciesPicker value={species} onChange={(s) => { setSpecies(s); setBreed(""); }} /></div>
           </div>
-
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Breed</Label>
             <Select value={breed} onValueChange={setBreed}>
@@ -475,7 +525,6 @@ const Onboarding = () => {
             </Select>
             <p className="text-[11px] text-muted-foreground">Drives mating eligibility and breed-specific health alerts.</p>
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Date of birth</Label>
@@ -504,7 +553,6 @@ const Onboarding = () => {
               <Switch checked={neutered} onCheckedChange={setNeutered} />
             </label>
           </div>
-
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Activity level</Label>
             <ChipGroup
@@ -519,7 +567,6 @@ const Onboarding = () => {
               ]}
             />
           </div>
-
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Diet</Label>
             <ChipGroup
@@ -535,13 +582,11 @@ const Onboarding = () => {
               ]}
             />
           </div>
-
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Known allergies</Label>
             <ChipGroup options={COMMON_ALLERGIES} value={allergies} onChange={setAllergies} />
             <p className="text-[11px] text-muted-foreground mt-2">We'll warn you in shop and AI replies.</p>
           </div>
-
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Existing conditions</Label>
             <ChipGroup options={COMMON_CONDITIONS} value={conditions} onChange={setConditions} />
@@ -608,7 +653,6 @@ const Onboarding = () => {
             </div>
           )}
         </label>
-
         <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-primary" />
@@ -619,14 +663,12 @@ const Onboarding = () => {
           <Input placeholder="Phone" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className="h-11 rounded-xl border-hairline bg-background" type="tel" />
           <Input placeholder="Clinic name" value={emergencyClinic} onChange={(e) => setEmergencyClinic(e.target.value)} className="h-11 rounded-xl border-hairline bg-background" />
         </div>
-
         <div className="bg-card border border-hairline rounded-2xl p-4 space-y-3">
           <div className="text-sm font-medium">How can we reach you?</div>
           <ToggleRow label="Push notifications" desc="Bookings, orders, vet replies" checked={notifPush} onChange={setNotifPush} />
           <ToggleRow label="Email" desc="Weekly summary & important alerts" checked={notifEmail} onChange={setNotifEmail} />
           <ToggleRow label="SMS" desc="Critical alerts only" checked={notifSms} onChange={setNotifSms} />
         </div>
-
         <ToggleRow
           label="Discoverable for mating"
           desc={
@@ -643,6 +685,12 @@ const Onboarding = () => {
     </StepShell>
   );
 };
+
+const StageLoader = () => (
+  <div className="min-h-[60vh] grid place-items-center">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
 
 const Field = ({ label, value, onChange, type = "text", placeholder }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;

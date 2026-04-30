@@ -63,7 +63,7 @@ export default function RescuerProfile() {
     },
     onSuccess: () => {
       toast.success("Saved");
-      nav("/onboarding/org");
+      nav("/onboarding?stage=org", { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not save"),
   });
@@ -166,7 +166,7 @@ export default function RescuerProfile() {
       </Button>
       <Button
         variant="ghost"
-        onClick={() => nav("/onboarding/org")}
+        onClick={() => nav("/onboarding?stage=org", { replace: true })}
         className="w-full mt-2 text-muted-foreground"
       >
         Skip for now
