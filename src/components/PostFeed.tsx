@@ -328,7 +328,12 @@ const PostCard = ({ post, onComment, highlight }: {
   };
 
   return (
-    <Card className="rounded-2xl border-hairline bg-card shadow-none overflow-hidden">
+    <Card
+      ref={cardRef}
+      className={`rounded-2xl border-hairline bg-card shadow-none overflow-hidden transition-shadow ${
+        highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
+      }`}
+    >
       <div className="flex items-center gap-3 p-4">
         {orgPost ? (
           <div className="flex-1 min-w-0">
@@ -429,10 +434,61 @@ const PostCard = ({ post, onComment, highlight }: {
           <span className="text-sm tabular-nums">{post.comment_count}</span>
         </button>
         <SaveButton postId={post.id} />
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-110"
+          aria-label="Share"
+        >
+          <Share2 className="h-5 w-5" strokeWidth={1.6} />
+        </button>
         <div className="ml-auto pr-1">
-          <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+          {isOwner ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="More">
+                  <MoreHorizontal className="h-5 w-5" strokeWidth={1.6} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuItem onClick={() => { setEditCaption(post.caption ?? ""); setEditOpen(true); }}>
+                  <Pencil className="h-4 w-4 mr-2" /> Edit caption
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePin}>
+                  <Pin className="h-4 w-4 mr-2" /> Pin to profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+          )}
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit caption</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editCaption}
+            onChange={(e) => setEditCaption(e.target.value)}
+            className="rounded-xl border-hairline min-h-[120px] resize-none"
+            maxLength={500}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={saveEdit} disabled={savingEdit} className="rounded-xl">
+              {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-1" /> Save</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
