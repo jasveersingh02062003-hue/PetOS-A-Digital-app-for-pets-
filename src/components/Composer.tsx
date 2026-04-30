@@ -74,6 +74,7 @@ ComposerButton.displayName = "ComposerButton";
 
 const Composer = ({ onDone }: { onDone: () => void }) => {
   const { user } = useAuth();
+  const nav = useNavigate();
   const { data: pets } = usePets();
   const { data: profile } = useProfile();
   const accountType = profile?.account_type ?? "pet_parent";
@@ -87,8 +88,10 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const invite = useInviteCollaborators();
   const [caption, setCaption] = useState("");
   const [petId, setPetId] = useState<string>("none");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<"public" | "followers" | "private">("public");
+  const [storyOpen, setStoryOpen] = useState(false);
   const [collabs, setCollabs] = useState<CollabUser[]>([]);
   const [healthTag, setHealthTag] = useState<HealthTag | null>(null);
   const [rescueJourneyId, setRescueJourneyId] = useState<string | null>(null);
@@ -96,6 +99,64 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<{ captions: string[]; hashtags: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
+
+  // ---- @mention / #hashtag autocomplete ----
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [hashQuery, setHashQuery] = useState<string | null>(null);
+  const [mentionResults, setMentionResults] = useState<{ id: string; full_name: string | null }[]>([]);
+
+  useEffect(() => {
+    if (mentionQuery == null) { setMentionResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await supabase.rpc("get_profiles_public");
+        const q = mentionQuery.toLowerCase();
+        const matches = ((data ?? []) as any[])
+          .filter((p) => (p.full_name ?? "").toLowerCase().includes(q))
+          .slice(0, 6);
+        setMentionResults(matches);
+      } catch { setMentionResults([]); }
+    }, 180);
+    return () => clearTimeout(t);
+  }, [mentionQuery]);
+
+  const onCaptionChange = (val: string) => {
+    setCaption(val);
+    const ta = captionRef.current;
+    const cursor = ta ? ta.selectionStart : val.length;
+    const upTo = val.slice(0, cursor);
+    const mMatch = upTo.match(/(?:^|\s)@([\w.]{1,30})$/);
+    const hMatch = upTo.match(/(?:^|\s)#([\w]{1,30})$/);
+    setMentionQuery(mMatch ? mMatch[1] : null);
+    setHashQuery(hMatch ? hMatch[1] : null);
+  };
+
+  const insertAtToken = (replacement: string) => {
+    const ta = captionRef.current;
+    if (!ta) return;
+    const cursor = ta.selectionStart;
+    const before = caption.slice(0, cursor);
+    const after = caption.slice(cursor);
+    // Strip the in-progress token (e.g. "@bru" or "#lab")
+    const stripped = before.replace(/(@|#)[\w.]*$/, "");
+    const next = `${stripped}${replacement} ${after}`;
+    setCaption(next);
+    setMentionQuery(null);
+    setHashQuery(null);
+    requestAnimationFrame(() => {
+      const pos = stripped.length + replacement.length + 1;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  };
+
+  const TRENDING_HASHTAGS = [
+    "petsofpetos", "morningwalk", "labradorlife", "catsofinstagram",
+    "rescuepup", "trainingday", "vetvisit", "happypets",
+  ];
+  const hashSuggestions = hashQuery == null ? [] :
+    TRENDING_HASHTAGS.filter((h) => h.includes(hashQuery.toLowerCase())).slice(0, 6);
 
   const suggestCaptions = async () => {
     setSuggesting(true);
@@ -125,8 +186,8 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
   const onFile = (f: File | null) => {
     if (!f) return;
     if (f.size > 8 * 1024 * 1024) return toast.error("Image must be under 8 MB");
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setFiles((prev) => [...prev, f].slice(0, 6));
+    setPreviews((prev) => [...prev, URL.createObjectURL(f)].slice(0, 6));
     // Smart auto-detect: prompt to log as health if no tag yet
     if (!healthTag && pets && pets.length > 0) {
       const hour = new Date().getHours();
@@ -146,10 +207,29 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
     }
   };
 
+  const onFiles = (list: FileList | null) => {
+    if (!list) return;
+    Array.from(list).slice(0, 6 - files.length).forEach((f) => onFile(f));
+  };
+
+  const removeFileAt = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveFile = (from: number, dir: -1 | 1) => {
+    const to = from + dir;
+    if (to < 0 || to >= files.length) return;
+    const nf = [...files]; const np = [...previews];
+    [nf[from], nf[to]] = [nf[to], nf[from]];
+    [np[from], np[to]] = [np[to], np[from]];
+    setFiles(nf); setPreviews(np);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error("Please sign in");
-    if (!caption.trim() && !file) return toast.error("Add a caption or photo");
+    if (!caption.trim() && files.length === 0) return toast.error("Add a caption or photo");
     setUploading(true);
     try {
       // Auto-moderation (best-effort; never blocks on backend errors)
@@ -171,12 +251,18 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       let image_url_thumb: string | null = null;
       let image_url_feed: string | null = null;
       let image_url_full: string | null = null;
-      if (file) {
-        const v = await uploadImageWithVariants(file, "posts");
+      let image_urls: { thumb: string; feed: string; full: string }[] | null = null;
+      if (files.length > 0) {
+        const uploaded = [];
+        for (const f of files) {
+          uploaded.push(await uploadImageWithVariants(f, "posts"));
+        }
+        const v = uploaded[0];
         image_url_thumb = v.thumb;
         image_url_feed = v.feed;
         image_url_full = v.full;
         image_url = v.feed; // keep legacy column populated for backwards compat
+        if (uploaded.length > 1) image_urls = uploaded;
       }
       // Zoo accounts: every post is auto-tagged #educational so PetOS can flag
       // wildlife content as informational, not commercial.
@@ -194,6 +280,8 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
         image_url_thumb,
         image_url_feed,
         image_url_full,
+        image_urls: image_urls as any,
+        visibility,
         health_kind: healthTag?.kind ?? null,
         health_pet_id: healthTag?.pet_id ?? null,
         health_value: healthTag?.value ?? null,
@@ -205,7 +293,9 @@ const Composer = ({ onDone }: { onDone: () => void }) => {
       }
       toast.success(healthTag ? "Posted & logged to health" : "Posted");
       qc.invalidateQueries({ queryKey: ["feed"] });
-      setCaption(""); setFile(null); setPreview(null); setPetId("none"); setCollabs([]); setHealthTag(null); setRescueJourneyId(null);
+      setCaption(""); setFiles([]); setPreviews([]); setPetId("none");
+      setCollabs([]); setHealthTag(null); setRescueJourneyId(null);
+      setVisibility("public");
       onDone();
     } catch (err: any) {
       toast.error(err.message || "Could not post");
