@@ -9,7 +9,6 @@ import { ComposerButton } from "./Composer";
 import { ContextualFab } from "./ContextualFab";
 import { OfflineBanner } from "./OfflineBanner";
 import { SkipToContent } from "./SkipToContent";
-import { useIntentReplay } from "@/hooks/useIntentReplay";
 
 const PUBLIC_ROUTES = ["/auth", "/v/"];
 
@@ -19,8 +18,6 @@ export const AppShell = () => {
   const loc = useLocation();
   const nav = useNavigate();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
-
-  useIntentReplay();
 
   useEffect(() => {
     if (loading) return;
