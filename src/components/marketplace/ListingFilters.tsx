@@ -199,17 +199,6 @@ export const ListingFilters = ({
           />
         </div>
       )}
-
-      {showVerified && (
-        <Button
-          variant={value.verifiedOnly ? "default" : "outline"}
-          size="sm"
-          onClick={() => set("verifiedOnly", !value.verifiedOnly)}
-          className="rounded-full gap-1.5 h-8"
-        >
-          <ShieldCheck className="h-3.5 w-3.5" /> Verified only
-        </Button>
-      )}
     </div>
   );
 };
