@@ -5976,7 +5976,6 @@ export type Database = {
       }
       org_profiles_public: {
         Row: {
-          address: string | null
           city: string | null
           created_at: string | null
           description: string | null
@@ -5988,16 +5987,13 @@ export type Database = {
           lng: number | null
           org_name: string | null
           org_type: Database["public"]["Enums"]["account_type"] | null
-          pincode: string | null
           state: string | null
           status: string | null
           total_donations_inr: number | null
-          updated_at: string | null
           user_id: string | null
           website: string | null
         }
         Insert: {
-          address?: string | null
           city?: string | null
           created_at?: string | null
           description?: string | null
@@ -6009,16 +6005,13 @@ export type Database = {
           lng?: number | null
           org_name?: string | null
           org_type?: Database["public"]["Enums"]["account_type"] | null
-          pincode?: string | null
           state?: string | null
           status?: string | null
           total_donations_inr?: number | null
-          updated_at?: string | null
           user_id?: string | null
           website?: string | null
         }
         Update: {
-          address?: string | null
           city?: string | null
           created_at?: string | null
           description?: string | null
@@ -6030,11 +6023,9 @@ export type Database = {
           lng?: number | null
           org_name?: string | null
           org_type?: Database["public"]["Enums"]["account_type"] | null
-          pincode?: string | null
           state?: string | null
           status?: string | null
           total_donations_inr?: number | null
-          updated_at?: string | null
           user_id?: string | null
           website?: string | null
         }
@@ -6119,6 +6110,7 @@ export type Database = {
           bio: string | null
           category: Database["public"]["Enums"]["service_category"] | null
           city: string | null
+          contact_phone: string | null
           cover_url: string | null
           created_at: string | null
           days_available: string[] | null
@@ -6133,7 +6125,6 @@ export type Database = {
           service_radius_km: number | null
           time_slots: string[] | null
           trust_status: string | null
-          updated_at: string | null
           verification_status: string | null
           verified: boolean | null
           years_experience: number | null
@@ -6144,6 +6135,7 @@ export type Database = {
           bio?: string | null
           category?: Database["public"]["Enums"]["service_category"] | null
           city?: string | null
+          contact_phone?: string | null
           cover_url?: string | null
           created_at?: string | null
           days_available?: string[] | null
@@ -6158,7 +6150,6 @@ export type Database = {
           service_radius_km?: number | null
           time_slots?: string[] | null
           trust_status?: string | null
-          updated_at?: string | null
           verification_status?: string | null
           verified?: boolean | null
           years_experience?: number | null
@@ -6169,6 +6160,7 @@ export type Database = {
           bio?: string | null
           category?: Database["public"]["Enums"]["service_category"] | null
           city?: string | null
+          contact_phone?: string | null
           cover_url?: string | null
           created_at?: string | null
           days_available?: string[] | null
@@ -6183,7 +6175,6 @@ export type Database = {
           service_radius_km?: number | null
           time_slots?: string[] | null
           trust_status?: string | null
-          updated_at?: string | null
           verification_status?: string | null
           verified?: boolean | null
           years_experience?: number | null
