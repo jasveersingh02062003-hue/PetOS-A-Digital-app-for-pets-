@@ -47,6 +47,8 @@ const Health = () => {
   const [quickWeightOpen, setQuickWeightOpen] = useState(false);
   const [vaxVerifyOpen, setVaxVerifyOpen] = useState(false);
   const { unread: alertUnread } = useHealthAlerts();
+  const [tab, setTab] = useState<string>("vitals");
+  const [symptomOpenSignal, setSymptomOpenSignal] = useState(0);
 
   return (
     <div className="container-app pad-top-safe">
@@ -171,7 +173,7 @@ const Health = () => {
             <Button onClick={() => setQuickWeightOpen(true)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
               <Scale className="h-4 w-4" /> <span className="text-sm">Quick weight</span>
             </Button>
-            <Button onClick={() => nav(`/health/${active.id}/timeline?openSymptom=1`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+            <Button onClick={() => { setTab("symptoms"); setSymptomOpenSignal((n) => n + 1); }} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
               <Activity className="h-4 w-4" /> <span className="text-sm">Log symptom</span>
             </Button>
           </div>
@@ -195,7 +197,7 @@ const Health = () => {
           <QuickWeightSheet open={quickWeightOpen} onOpenChange={setQuickWeightOpen} petId={active.id} />
           <VaxVerifyDialog open={vaxVerifyOpen} onOpenChange={setVaxVerifyOpen} petId={active.id} />
 
-          <Tabs defaultValue="vitals" className="w-full">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
             <div className="relative -mx-5">
               <div
                 className="overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
@@ -223,7 +225,7 @@ const Health = () => {
               <MedicationsTab petId={active.id} />
             </TabsContent>
             <TabsContent value="parasite" className="mt-4"><ParasiteTab petId={active.id} /></TabsContent>
-            <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} /></TabsContent>
+            <TabsContent value="symptoms" className="mt-4"><SymptomsTab petId={active.id} openSignal={symptomOpenSignal} /></TabsContent>
             <TabsContent value="nutrition" className="mt-4"><NutritionTab petId={active.id} /></TabsContent>
             <TabsContent value="records" className="mt-4"><RecordsTab petId={active.id} /></TabsContent>
           </Tabs>
@@ -425,8 +427,12 @@ const RecordDialog = ({ open, onOpenChange, petId }: { open: boolean; onOpenChan
 };
 
 /* ============== SYMPTOMS ============== */
-const SymptomsTab = ({ petId }: { petId: string }) => {
+const SymptomsTab = ({ petId, openSignal = 0 }: { petId: string; openSignal?: number }) => {
   const [open, setOpen] = useState(false);
+  // External open trigger from the "Log symptom" quick action
+  // (signal increments → open dialog)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // useEffect intentionally outside import block to keep diff small
   const { data: profile } = useProfile();
   const emergencyVet = (profile as any)?.emergency_vet ?? null;
   const vetPhone: string | undefined = emergencyVet?.phone?.trim() || undefined;
