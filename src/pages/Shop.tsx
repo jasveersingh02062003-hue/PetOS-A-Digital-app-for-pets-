@@ -18,6 +18,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { PincodeEta } from "@/components/shop/PincodeEta";
+import { ListingCard } from "@/components/marketplace/ListingCard";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
 
 type ProductCategory = Database["public"]["Enums"]["product_category"];
 
@@ -420,45 +422,31 @@ const Shop = () => {
 
       <div className="grid grid-cols-2 gap-3">
         {visible.map((p) => (
-          <Card key={p.id} className="rounded-2xl border-hairline overflow-hidden p-0 flex flex-col">
-            <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-              {p.image_url ? (
-                <img src={p.image_url} alt={p.title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
-              ) : (
-                <Package className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
-              )}
-            </div>
-            <div className="p-3 flex-1 flex flex-col">
-              <div className="text-sm font-medium line-clamp-2 leading-tight">{p.title}</div>
-              <div className="text-xs text-muted-foreground capitalize mt-0.5">{p.category}</div>
-              {p.distance_km != null && (
-                <DistanceChip distanceKm={Number(p.distance_km)} className="mt-0.5" />
-              )}
-              <div className="mt-1"><SubjectRating type="product" id={p.id} size="sm" /></div>
-              <div className="mt-auto pt-2 flex items-center justify-between">
-                <div className="font-display text-base">₹{p.price_inr}</div>
-                <div className="flex items-center gap-1">
-                  <ReorderReminderButton productId={p.id} productTitle={p.title} />
-                  <Button
-                    size="sm"
-                    className="rounded-full h-8 px-3 text-xs"
-                    onClick={() =>
-                      add({
-                        product_id: p.id,
-                        seller_id: p.seller_id,
-                        title: p.title,
-                        price_inr: p.price_inr,
-                        image_url: p.image_url,
-                      })
-                    }
-                    disabled={p.stock <= 0}
-                  >
-                    {p.stock <= 0 ? "Out" : "Add"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <ListingCard
+            key={p.id}
+            to={`/shop/${p.id}`}
+            image={p.image_url}
+            imageAlt={p.title}
+            title={p.title}
+            eyebrow={p.category}
+            price={p.price_inr}
+            distanceKm={p.distance_km != null ? Number(p.distance_km) : null}
+            wishlistId={p.id}
+            healthChips={p.stock > 0 ? [] : []}
+            imageTag={p.stock <= 0 ? { label: "Out of stock", tone: "danger" } : undefined}
+            cta={{
+              label: p.stock <= 0 ? "Out of stock" : "Add to cart",
+              requiresAuth: true,
+              onClick: () =>
+                add({
+                  product_id: p.id,
+                  seller_id: p.seller_id,
+                  title: p.title,
+                  price_inr: p.price_inr,
+                  image_url: p.image_url,
+                }),
+            }}
+          />
         ))}
       </div>
     </div>
