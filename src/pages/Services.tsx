@@ -19,6 +19,9 @@ import { NearbyToggle } from "@/components/marketplace/NearbyToggle";
 import { DistanceChip } from "@/components/marketplace/DistanceChip";
 import { useNearbyQuery } from "@/hooks/useNearbyQuery";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { ListingCard } from "@/components/marketplace/ListingCard";
+import { ResultsHeader } from "@/components/marketplace/ResultsHeader";
+import type { TrustChipKind } from "@/components/marketplace/TrustChip";
 
 const categories: { key: ServiceCategory | "all"; label: string; icon: any }[] = [
   { key: "all", label: "All", icon: ShoppingBag },
@@ -137,44 +140,34 @@ const Services = () => {
             description="Try a different category, or check back soon — new pros join Petos every week."
           />
         )}
-        {providers?.map((p: any) => (
-          <Link key={p.id} to={`/services/${p.id}`}>
-            <Card className="rounded-2xl border-hairline bg-card shadow-none p-4 flex items-center gap-4 hover:bg-muted/40 transition-colors">
-              <div className="bg-primary-soft rounded-2xl h-14 w-14 flex items-center justify-center overflow-hidden">
-                {p.cover_url ? (
-                  <img src={p.cover_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
-                ) : (
-                  <Scissors className="h-5 w-5 text-primary" strokeWidth={1.5} />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="font-display text-base leading-tight truncate">
-                    {p.name}
-                  </div>
-                  {p.verified && (
-                    <span className="text-[10px] rounded-full bg-primary/15 text-primary px-1.5 py-0.5 font-medium">
-                      Verified
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground capitalize">
-                  {p.category} · {p.city || "—"}
-                </div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <SubjectRating type="provider" id={p.id} size="sm" />
-                  <DistanceChip distanceKm={p.distance_km} />
-                </div>
-              </div>
-              {p.hourly_rate_inr ? (
-                <div className="text-sm font-medium">
-                  ₹{p.hourly_rate_inr}
-                  <span className="text-xs text-muted-foreground">/hr</span>
-                </div>
-              ) : null}
-            </Card>
-          </Link>
-        ))}
+        {!isLoading && (providers?.length ?? 0) > 0 && (
+          <>
+            <ResultsHeader count={providers.length} />
+            <div className="grid grid-cols-2 gap-3">
+              {providers.map((p: any) => {
+                const trust: TrustChipKind[] = [];
+                if (p.verified) trust.push("verified");
+                if (p.trust_status === "kyc" || p.verification_status === "approved") trust.push("kyc");
+                return (
+                  <ListingCard
+                    key={p.id}
+                    to={`/services/${p.id}`}
+                    image={p.cover_url}
+                    imageAlt={p.name}
+                    title={p.name}
+                    eyebrow={p.category}
+                    price={p.hourly_rate_inr ?? null}
+                    priceSuffix="/hr"
+                    city={p.city}
+                    distanceKm={p.distance_km != null ? Number(p.distance_km) : null}
+                    trustChips={trust}
+                    cta={{ label: "Book now", requiresAuth: true }}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
