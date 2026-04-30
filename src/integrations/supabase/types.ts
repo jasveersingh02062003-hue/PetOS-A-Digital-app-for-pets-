@@ -5629,6 +5629,63 @@ export type Database = {
         }
         Relationships: []
       }
+      vaccination_verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          pet_id: string
+          photo_paths: string[] | null
+          reviewed_at: string | null
+          reviewer_note: string | null
+          reviewer_vet_id: string | null
+          status: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pet_id: string
+          photo_paths?: string[] | null
+          reviewed_at?: string | null
+          reviewer_note?: string | null
+          reviewer_vet_id?: string | null
+          status?: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pet_id?: string
+          photo_paths?: string[] | null
+          reviewed_at?: string | null
+          reviewer_note?: string | null
+          reviewer_vet_id?: string | null
+          status?: Database["public"]["Enums"]["vax_verification_status"]
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_verification_requests_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "vaccination_verification_requests_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vaccinations: {
         Row: {
           administered_on: string
@@ -7498,6 +7555,7 @@ export type Database = {
         | "dropped_off"
         | "cancelled"
       triage_severity: "mild" | "moderate" | "severe"
+      vax_verification_status: "pending" | "approved" | "rejected"
       verification_status: "pending" | "approved" | "rejected"
       vet_q_category:
         | "behavior"
@@ -7832,6 +7890,7 @@ export const Constants = {
         "cancelled",
       ],
       triage_severity: ["mild", "moderate", "severe"],
+      vax_verification_status: ["pending", "approved", "rejected"],
       verification_status: ["pending", "approved", "rejected"],
       vet_q_category: ["behavior", "nutrition", "medical", "training", "other"],
       vet_q_status: ["open", "answered", "closed"],
