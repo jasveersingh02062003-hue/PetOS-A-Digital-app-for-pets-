@@ -399,6 +399,22 @@ const AdoptListingDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {listing && (
+        <ContactSellerSheet
+          open={contactSheetOpen}
+          onOpenChange={setContactSheetOpen}
+          intent={{
+            kind: "contact_seller",
+            listingId: listing.id,
+            listingType: "adopt",
+            ownerId: listing.owner_id,
+            redirect: `/mates/adopt/${listing.id}`,
+          }}
+          title="Sign in to contact the seller"
+          description="We'll send a 6-digit code to your email — no password needed. Your account will be created automatically."
+        />
+      )}
     </div>
   );
 };
