@@ -39,7 +39,7 @@ export const useHealthAlerts = () => {
 
   useEffect(() => {
     if (!user?.id) return;
-    const ch = supabase.channel("health-alerts-" + user.id);
+    const ch = supabase.channel(`health-alerts-${user.id}-${Math.random().toString(36).slice(2, 8)}`);
     ch.on(
       "postgres_changes" as any,
       { event: "*", schema: "public", table: "health_alerts", filter: `owner_id=eq.${user.id}` },
