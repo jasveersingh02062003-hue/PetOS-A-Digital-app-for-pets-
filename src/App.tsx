@@ -236,20 +236,23 @@ const App = () => (
               <Route path="/admin/orgs" element={<OrgReview />} />
               <Route path="/admin/org-review" element={<OrgReview />} />
               <Route path="/admin/providers" element={<ProviderReview />} />
-              <Route path="/onboarding/account-type" element={<AccountTypeChooser />} />
-              <Route path="/onboarding/org" element={<OrgOnboarding />} />
-              <Route path="/onboarding/provider" element={<ProviderPicker />} />
+              {/* All onboarding sub-routes funnel through `/onboarding` so the
+                  user only ever sees one URL during onboarding (Instagram-style).
+                  The controller reads `?stage=` and renders the right step inline. */}
+              <Route path="/onboarding/account-type" element={<Navigate to="/onboarding" replace />} />
+              <Route path="/onboarding/org" element={<Navigate to="/onboarding?stage=org" replace />} />
+              <Route path="/onboarding/provider" element={<Navigate to="/onboarding?stage=provider" replace />} />
               <Route path="/onboarding/provider/:category" element={<ProviderWizard />} />
               <Route path="/provider" element={<ProviderDashboard />} />
               <Route path="/jobs" element={<JobsFeed />} />
               <Route path="/jobs/new" element={<JobNew />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
-              <Route path="/onboarding/add-pet" element={<AddFirstPet />} />
-              <Route path="/onboarding/add-another-pet" element={<AddAnotherPet />} />
-              <Route path="/onboarding/done" element={<OnboardingDone />} />
-              <Route path="/onboarding/buyer-prefs" element={<BuyerPrefs />} />
-              <Route path="/onboarding/rescuer" element={<RescuerProfile />} />
-              <Route path="/onboarding/breeder" element={<BreederProfile />} />
+              <Route path="/onboarding/add-pet" element={<Navigate to="/onboarding?stage=add-pet" replace />} />
+              <Route path="/onboarding/add-another-pet" element={<Navigate to="/onboarding?stage=add-another" replace />} />
+              <Route path="/onboarding/done" element={<Navigate to="/onboarding?stage=done" replace />} />
+              <Route path="/onboarding/buyer-prefs" element={<Navigate to="/onboarding?stage=buyer" replace />} />
+              <Route path="/onboarding/rescuer" element={<Navigate to="/onboarding?stage=rescuer" replace />} />
+              <Route path="/onboarding/breeder" element={<Navigate to="/onboarding?stage=breeder" replace />} />
               <Route path="/org/:userId" element={<OrgProfile />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/plus" element={<Plus />} />
