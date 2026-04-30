@@ -1344,6 +1344,54 @@ export type Database = {
           },
         ]
       }
+      heat_cycle_logs: {
+        Row: {
+          created_at: string
+          end_on: string | null
+          id: string
+          intensity: number | null
+          notes: string | null
+          pet_id: string
+          start_on: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_on?: string | null
+          id?: string
+          intensity?: number | null
+          notes?: string | null
+          pet_id: string
+          start_on: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_on?: string | null
+          id?: string
+          intensity?: number | null
+          notes?: string | null
+          pet_id?: string
+          start_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heat_cycle_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "heat_cycle_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_leads: {
         Row: {
           commission_inr: number | null
@@ -6218,6 +6266,66 @@ export type Database = {
           },
         ]
       }
+      vet_visit_notes: {
+        Row: {
+          assessment: string | null
+          created_at: string
+          follow_up_on: string | null
+          id: string
+          objective: string | null
+          pet_id: string
+          photo_paths: string[] | null
+          plan: string | null
+          subjective: string | null
+          updated_at: string
+          vet_id: string
+          visit_date: string
+        }
+        Insert: {
+          assessment?: string | null
+          created_at?: string
+          follow_up_on?: string | null
+          id?: string
+          objective?: string | null
+          pet_id: string
+          photo_paths?: string[] | null
+          plan?: string | null
+          subjective?: string | null
+          updated_at?: string
+          vet_id: string
+          visit_date?: string
+        }
+        Update: {
+          assessment?: string | null
+          created_at?: string
+          follow_up_on?: string | null
+          id?: string
+          objective?: string | null
+          pet_id?: string
+          photo_paths?: string[] | null
+          plan?: string | null
+          subjective?: string | null
+          updated_at?: string
+          vet_id?: string
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_visit_notes_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "vet_visit_notes_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vital_logs: {
         Row: {
           body_condition: number | null
@@ -7019,6 +7127,14 @@ export type Database = {
       }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
+      is_pet_care_team_vet: {
+        Args: { _pet_id: string; _vet_id: string }
+        Returns: boolean
+      }
+      is_pet_owner: {
+        Args: { _pet_id: string; _user_id: string }
         Returns: boolean
       }
       is_provider_open_now: { Args: { _provider_id: string }; Returns: boolean }

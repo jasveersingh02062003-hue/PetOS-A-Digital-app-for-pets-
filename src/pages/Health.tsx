@@ -29,12 +29,18 @@ import { InsuranceCard } from "@/components/health/InsuranceCard";
 import { HealthInsightsCard } from "@/components/health/HealthInsightsCard";
 import { DailyCareCard } from "@/components/health/DailyCareCard";
 import { PhotoUploadField, PhotoThumbs } from "@/components/health/PhotoUploadField";
+import { CareTeamCard } from "@/components/health/CareTeamCard";
+import { VetVisitNotesCard } from "@/components/health/VetVisitNotesCard";
+import { HeatCycleCard } from "@/components/health/HeatCycleCard";
+import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
+import { Scale } from "lucide-react";
 
 const Health = () => {
   const { data: pets } = usePets();
   const [activeIdx, setActiveIdx] = useState(0);
   const active = pets?.[activeIdx];
   const nav = useNavigate();
+  const [quickWeightOpen, setQuickWeightOpen] = useState(false);
 
   return (
     <div className="container-app pad-top-safe">
@@ -109,13 +115,32 @@ const Health = () => {
             </div>
           </Button>
 
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button onClick={() => setQuickWeightOpen(true)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <Scale className="h-4 w-4" /> <span className="text-sm">Quick weight</span>
+            </Button>
+            <Button onClick={() => nav(`/health/${active.id}/timeline`)} variant="outline" className="rounded-2xl h-12 justify-center gap-2 border-hairline">
+              <Activity className="h-4 w-4" /> <span className="text-sm">Log symptom</span>
+            </Button>
+          </div>
+
           <DailyCareCard petId={active.id} petName={active.name} />
+
+          <CareTeamCard petId={active.id} />
+
+          <VetVisitNotesCard petId={active.id} />
+
+          {(active as any).gender === "female" && !(active as any).neutered && (
+            <HeatCycleCard petId={active.id} />
+          )}
 
           <InsuranceCard petId={active.id} currentProvider={(active as any).insurance_provider} />
 
           <HealthInsightsCard petId={active.id} petName={active.name} />
 
           <div className="mb-5"><MedicalDisclaimer variant="inline" /></div>
+
+          <QuickWeightSheet open={quickWeightOpen} onOpenChange={setQuickWeightOpen} petId={active.id} />
 
           <Tabs defaultValue="vitals" className="w-full">
             <div className="overflow-x-auto no-scrollbar -mx-5 px-5">
@@ -175,7 +200,7 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
           <Plus className="h-4 w-4" /> Add manually
         </Button>
       </div>
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" /> : data.map((v) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" hint="Scan the vaccine card or add the most recent shot — we'll remind you when boosters are due." /> : data.map((v) => (
         <Card key={v.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -257,7 +282,7 @@ const RecordsTab = ({ petId }: { petId: string }) => {
   return (
     <div className="space-y-3">
       <AddButton label="Add record" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No records yet" /> : data.map((r) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No records yet" hint="Upload visit summaries, lab reports or prescriptions so they're one tap away at the next consult." /> : data.map((r) => (
         <Card key={r.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -393,7 +418,7 @@ const SymptomsTab = ({ petId }: { petId: string }) => {
         </Card>
       )}
       <AddButton label="Log symptom" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No symptoms logged" /> : data.map((s) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No symptoms logged" hint="Log anything unusual — vomiting, limping, lethargy. AI flags signs that may need a vet." /> : data.map((s) => (
         <Card key={s.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -526,7 +551,7 @@ const NutritionTab = ({ petId }: { petId: string }) => {
   return (
     <div className="space-y-3">
       <AddButton label="Log meal" onClick={() => setOpen(true)} />
-      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No meals logged" /> : data.map((n) => (
+      {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No meals logged" hint="A few entries help spot diet-related patterns and allergies in your AI insights." /> : data.map((n) => (
         <Card key={n.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -686,9 +711,10 @@ const AddButton = ({ label, onClick }: { label: string; onClick: () => void }) =
   </Button>
 );
 
-const EmptyState = ({ text }: { text: string }) => (
-  <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center text-sm text-muted-foreground">
-    {text}
+const EmptyState = ({ text, hint }: { text: string; hint?: string }) => (
+  <Card className="rounded-2xl border-hairline bg-card shadow-none p-8 text-center">
+    <div className="text-sm text-muted-foreground">{text}</div>
+    {hint && <div className="text-xs text-muted-foreground/80 mt-2 leading-relaxed">{hint}</div>}
   </Card>
 );
 
