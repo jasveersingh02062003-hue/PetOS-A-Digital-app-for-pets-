@@ -33,6 +33,7 @@ import { CareTeamCard } from "@/components/health/CareTeamCard";
 import { VetVisitNotesCard } from "@/components/health/VetVisitNotesCard";
 import { HeatCycleCard } from "@/components/health/HeatCycleCard";
 import { QuickWeightSheet } from "@/components/health/QuickWeightSheet";
+import { VaxVerifyDialog } from "@/components/health/VaxVerifyDialog";
 import { Scale } from "lucide-react";
 
 const Health = () => {
