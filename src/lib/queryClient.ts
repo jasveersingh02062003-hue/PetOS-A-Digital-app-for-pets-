@@ -1,7 +1,8 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, onlineManager, MutationCache } from "@tanstack/react-query";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { get, set, del, clear } from "idb-keyval";
 import { logError } from "./logError";
+import { toast } from "sonner";
 
 /**
  * Phase 8 — query client + persistence.
@@ -20,6 +21,16 @@ const SCHEMA_REV = "v1";
 const BUILD_ID = (import.meta.env.VITE_BUILD_ID as string | undefined) ?? "dev";
 export const PERSIST_BUSTER = `${SCHEMA_REV}:${BUILD_ID}`;
 const IDB_KEY = "rq-cache";
+
+/**
+ * Phase 9 — bind onlineManager to navigator.onLine so paused mutations resume
+ * automatically on reconnect, and queries don't fire while offline.
+ */
+if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+  onlineManager.setOnline(navigator.onLine);
+  window.addEventListener("online", () => onlineManager.setOnline(true));
+  window.addEventListener("offline", () => onlineManager.setOnline(false));
+}
 
 /**
  * Stale-time presets — pick one when calling useQuery to align with how often
@@ -54,6 +65,17 @@ const NON_PERSISTED_PREFIXES = [
 const MAX_PERSISTED_BYTES = 4 * 1024 * 1024; // 4MB
 
 export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) => {
+      // Skip the toast if the call site provided its own onError handler —
+      // they probably already showed a contextual error UI.
+      if (mutation.options.onError) return;
+      const msg =
+        (error as { message?: string })?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(msg.slice(0, 140));
+    },
+  }),
   defaultOptions: {
     queries: {
       // Phase 3 perf — most reads are not edited from other tabs in real time.

@@ -12,9 +12,43 @@ import { supabase } from "@/integrations/supabase/client";
  * Rules:
  *   - Never put PII in props (no emails, phone numbers, free-text input).
  *   - Keep event names short and stable; prefer snake_case.
+ *
+ * Phase 10 — consent gating:
+ *   - Honors window.localStorage["petos.consent"] === "granted".
+ *   - Honors navigator.doNotTrack === "1" (auto-opt-out).
+ *   - Until consent is granted, all calls to track() are no-ops.
  */
 
 const SESSION_KEY = "petos.session_id";
+const CONSENT_KEY = "petos.consent";
+
+/** Returns true when the user has explicitly granted analytics consent. */
+export function hasAnalyticsConsent(): boolean {
+  if (typeof window === "undefined") return false;
+  if (typeof navigator !== "undefined" && navigator.doNotTrack === "1") return false;
+  try {
+    return window.localStorage.getItem(CONSENT_KEY) === "granted";
+  } catch {
+    return false;
+  }
+}
+
+export function setAnalyticsConsent(granted: boolean): void {
+  try {
+    window.localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
+  } catch { /* private mode */ }
+}
+
+export function getStoredConsent(): "granted" | "denied" | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(CONSENT_KEY);
+    return v === "granted" || v === "denied" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 let cachedSession: string | null = null;
 
 function getSessionId(): string {
@@ -60,6 +94,7 @@ export async function track(
   props: Record<string, unknown> = {},
 ): Promise<void> {
   if (typeof window === "undefined") return;
+  if (!hasAnalyticsConsent()) return;
   let user_id: string | null = null;
   try {
     const { data } = await supabase.auth.getUser();

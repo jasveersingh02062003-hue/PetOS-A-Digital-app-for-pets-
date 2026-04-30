@@ -10,12 +10,15 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { track, trackPageView } from "@/lib/analytics";
+import { track, trackPageView, setAnalyticsConsent } from "@/lib/analytics";
 
 describe("analytics.track", () => {
   beforeEach(() => {
     insertSpy.mockClear();
     sessionStorage.clear();
+    // Phase 10 — track() is consent-gated; explicitly grant for these tests.
+    localStorage.clear();
+    setAnalyticsConsent(true);
     vi.useFakeTimers();
   });
   afterEach(() => {
