@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile, usePets } from "@/hooks/useProfile";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
@@ -75,6 +75,7 @@ const Onboarding = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: pets, isLoading: petsLoading } = usePets();
 
   const stageParam = (params.get("stage") as Stage | null) ?? null;
   const stage: Stage = stageParam ?? "identity";
@@ -86,22 +87,34 @@ const Onboarding = () => {
 
   // Resume mid-flow on refresh: identity → role → role-flow.
   useEffect(() => {
-    if (profileLoading) return;
-    if (stageParam) return; // user is explicitly at a stage; respect it
+    if (profileLoading || petsLoading) return;
+
     const hasIdentity = !!profile?.handle && !!profile?.full_name;
     const accountType = profile?.account_type as RoleChoice | undefined;
-    if (!hasIdentity) return; // stay on identity
-    if (!accountType || accountType === ("pet_parent" as RoleChoice) === false) {
-      // has identity but no role → go to role picker
+    const hasPets = (pets?.length ?? 0) > 0;
+
+    if (stageParam === "parent" && accountType === "pet_parent" && hasPets) {
+      setStage("done");
+      return;
     }
+
+    if (stageParam) return; // user is explicitly at a stage; respect it
+
+    if (!hasIdentity) return; // stay on identity
     if (!accountType) {
       setStage("role");
       return;
     }
+
+    if (accountType === "pet_parent" && hasPets) {
+      setStage("done");
+      return;
+    }
+
     const opt = ROLE_OPTIONS.find((o) => o.value === accountType);
     if (opt) setStage(opt.nextStage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, profileLoading, stageParam]);
+  }, [profile, profileLoading, pets, petsLoading, stageParam]);
 
   // Cross-component stage advance event (used by sub-pages).
   useEffect(() => {
@@ -175,11 +188,12 @@ const Onboarding = () => {
         const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
-      // Persist parent-only metadata
-      await supabase.from("profiles").upsert({
+      // Persist parent-only metadata first.
+      const { error: profileErr } = await supabase.from("profiles").upsert({
         id: user.id,
         first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
       } as any, { onConflict: "id" });
+      if (profileErr) throw profileErr;
 
       const { error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
@@ -196,6 +210,12 @@ const Onboarding = () => {
       } as any);
       if (petErr) throw petErr;
 
+      const { error: onboardErr } = await supabase
+        .from("profiles")
+        .update({ onboarded: true } as any)
+        .eq("id", user.id);
+      if (onboardErr) throw onboardErr;
+
       qc.invalidateQueries();
       setDone(true);
     } catch (err: any) {
@@ -209,7 +229,7 @@ const Onboarding = () => {
   // STAGE ROUTER
   // ═════════════════════════════════════════════════════════════════════
 
-  if (profileLoading) return <StageLoader />;
+  if (profileLoading || petsLoading) return <StageLoader />;
 
   if (stage === "identity") {
     return (
