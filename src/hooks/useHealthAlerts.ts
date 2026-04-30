@@ -39,16 +39,15 @@ export const useHealthAlerts = () => {
 
   useEffect(() => {
     if (!user?.id) return;
-    const ch = supabase
-      .channel("health-alerts-" + user.id)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "health_alerts", filter: `owner_id=eq.${user.id}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["health-alerts", user.id] });
-        },
-      )
-      .subscribe();
+    const ch = supabase.channel("health-alerts-" + user.id);
+    ch.on(
+      "postgres_changes" as any,
+      { event: "*", schema: "public", table: "health_alerts", filter: `owner_id=eq.${user.id}` },
+      () => {
+        qc.invalidateQueries({ queryKey: ["health-alerts", user.id] });
+      },
+    );
+    ch.subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
