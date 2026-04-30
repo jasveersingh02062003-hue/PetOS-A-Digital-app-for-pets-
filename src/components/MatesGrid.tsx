@@ -144,6 +144,7 @@ export const MatesGrid = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2"><ResultsHeader count={listings.length} /></div>
           {listings.map((l: any) => (
             <div
               key={l.id}
