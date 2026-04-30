@@ -16,11 +16,14 @@ import { logError } from "./lib/logError";
 import { FirstRunGate } from "./components/FirstRunGate";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { RouteTracker } from "./components/RouteTracker";
-import { RealtimeBridge } from "./components/RealtimeBridge";
 import { NetworkStatus } from "./components/NetworkStatus";
 import { ConsentBanner } from "./components/ConsentBanner";
-import { IntentReplay } from "./components/IntentReplay";
-import { InstallNudgeSheet } from "./components/InstallNudgeSheet";
+import { DeferredMount } from "./components/DeferredMount";
+
+// Heavy non-critical: realtime subscriptions, intent replay, install nudge — load after first paint
+const RealtimeBridge = lazy(() => import("./components/RealtimeBridge").then(m => ({ default: m.RealtimeBridge })));
+const IntentReplay = lazy(() => import("./components/IntentReplay").then(m => ({ default: m.IntentReplay })));
+const InstallNudgeSheet = lazy(() => import("./components/InstallNudgeSheet").then(m => ({ default: m.InstallNudgeSheet })));
 
 // Eager — only the entry route the user sees first.
 import Home from "./pages/Home";
