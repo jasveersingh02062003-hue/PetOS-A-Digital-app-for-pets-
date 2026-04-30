@@ -1381,6 +1381,45 @@ export type Database = {
         }
         Relationships: []
       }
+      intent_events: {
+        Row: {
+          anon_session_id: string | null
+          channel: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          identifier: string | null
+          kind: string
+          payload: Json
+          redirect: string | null
+          user_id: string | null
+        }
+        Insert: {
+          anon_session_id?: string | null
+          channel?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind: string
+          payload?: Json
+          redirect?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          anon_session_id?: string | null
+          channel?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          kind?: string
+          payload?: Json
+          redirect?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       job_offers: {
         Row: {
           created_at: string
@@ -2127,6 +2166,7 @@ export type Database = {
       }
       missing_pet_sightings: {
         Row: {
+          anon_session_id: string | null
           created_at: string
           id: string
           lat: number | null
@@ -2134,9 +2174,10 @@ export type Database = {
           missing_pet_id: string
           note: string | null
           photo_url: string | null
-          reporter_id: string
+          reporter_id: string | null
         }
         Insert: {
+          anon_session_id?: string | null
           created_at?: string
           id?: string
           lat?: number | null
@@ -2144,9 +2185,10 @@ export type Database = {
           missing_pet_id: string
           note?: string | null
           photo_url?: string | null
-          reporter_id: string
+          reporter_id?: string | null
         }
         Update: {
+          anon_session_id?: string | null
           created_at?: string
           id?: string
           lat?: number | null
@@ -2154,7 +2196,7 @@ export type Database = {
           missing_pet_id?: string
           note?: string | null
           photo_url?: string | null
-          reporter_id?: string
+          reporter_id?: string | null
         }
         Relationships: [
           {
