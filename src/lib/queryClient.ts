@@ -86,10 +86,12 @@ export const idbPersister = createAsyncStoragePersister({
   throttleTime: 1000,
 });
 
+import type { Query } from "@tanstack/react-query";
+
 /** Dehydrate filter — decide what to write to disk. */
-export function shouldPersistQuery(query: { state: { status: string }; queryKey: unknown[] }): boolean {
+export function shouldPersistQuery(query: Query): boolean {
   if (query.state.status !== "success") return false;
-  const head = query.queryKey?.[0];
+  const head = query.queryKey?.[0] as unknown;
   if (typeof head === "string") {
     for (const p of NON_PERSISTED_PREFIXES) {
       if (head === p || head.startsWith(`${p}:`) || head.startsWith(`${p}/`)) return false;
