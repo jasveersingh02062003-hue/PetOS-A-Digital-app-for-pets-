@@ -171,7 +171,7 @@ export const MatesGrid = () => {
                   <div className="mt-1.5">
                     <SellerBadge
                       type={profileById[l.owner_id].account_type as any}
-                      verified={verifiedOrgs?.has(l.owner_id) ?? false}
+                      verified={(verifiedOrgs instanceof Set && verifiedOrgs.has(l.owner_id) ?? false}
                     />
                   </div>
                 )}

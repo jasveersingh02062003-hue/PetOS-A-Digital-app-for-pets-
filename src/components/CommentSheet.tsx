@@ -137,7 +137,7 @@ export const CommentSheet = ({ postId, onOpenChange }: { postId: string | null; 
                     {!asPet && c.author?.account_type && c.author.account_type !== "pet_parent" && (
                       <SellerBadge
                         type={c.author.account_type}
-                        verified={verifiedOrgs?.has(c.author_id) ?? false}
+                        verified={(verifiedOrgs instanceof Set && verifiedOrgs.has(c.author_id) ?? false}
                         className="text-[9px] py-0 px-1.5 h-4"
                       />
                     )}
