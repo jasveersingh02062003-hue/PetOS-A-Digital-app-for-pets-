@@ -137,14 +137,15 @@ const Onboarding = () => {
   };
 
   const validate = (s: number): string | null => {
-    if (s === 1) {
+    // step 1 = role picker (no validation, handled by handleRoleNext)
+    if (s === 2) {
       const r = z.object({
         fullName: z.string().trim().min(1).max(80),
         city: z.string().trim().min(1).max(80),
       }).safeParse({ fullName, city });
       return r.success ? null : "Add your name and city";
     }
-    if (s === 2) {
+    if (s === 3) {
       const r = z.object({
         petName: z.string().trim().min(1).max(40),
         breed: z.string().trim().min(1).max(60),
@@ -154,10 +155,48 @@ const Onboarding = () => {
     return null;
   };
 
-  const next = () => {
-    const err = validate(step);
-    if (err) return toast.error(err);
-    if (step < TOTAL - 1) setStep(step + 1);
+  // When the user picks a role on step 1, save it and either continue the
+  // pet-parent/rescuer wizard inline, or redirect to the proper sub-flow.
+  const handleRoleNext = async () => {
+    if (!user) return;
+    const opt = ROLE_OPTIONS.find((o) => o.value === role)!;
+    // pet_parent & rescuer continue the inline wizard — save role and advance.
+    if (role === "pet_parent" || role === "rescuer") {
+      setRoleSaving(true);
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, account_type: role }, { onConflict: "id" });
+        if (error) throw error;
+        qc.invalidateQueries({ queryKey: ["profile", user.id] });
+        setStep(2);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Could not save");
+      } finally {
+        setRoleSaving(false);
+      }
+      return;
+    }
+    // Other roles: persist + redirect to dedicated flow.
+    setRoleSaving(true);
+    try {
+      // "provider" is a wizard branch only — not stored on profiles.
+      if (role !== "provider") {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      if (opt.routeAfter) nav(opt.routeAfter);
+      else if (opt.needsOrg) nav("/onboarding/org");
+      else nav("/onboarding/account-type");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save");
+    } finally {
+      setRoleSaving(false);
+    }
+  };
     else submit();
   };
 
