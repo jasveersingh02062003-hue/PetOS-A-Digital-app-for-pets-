@@ -54,7 +54,7 @@ export default function AddAnotherPet() {
         </Card>
       </div>
 
-      <Button variant="ghost" onClick={() => nav("/", { replace: true })} className="w-full mt-6 text-muted-foreground">
+      <Button variant="ghost" onClick={() => nav("/onboarding?stage=goals", { replace: true })} className="w-full mt-6 text-muted-foreground">
         Skip
       </Button>
     </div>
