@@ -15,14 +15,11 @@ const PET_REACTIONS: { kind: string; emoji: string }[] = [
 ];
 
 /**
- * Single post action bar.
- *
- * Improvements over the old inline implementation:
- * - Adds a one-line "Top reactions" summary above the bar so the engagement
- *   is immediately legible (numbers next to emoji, not just a count badge).
- * - Restyled icon buttons with bigger touch targets and a faint divider above
- *   so the photo and the actions are visually separated.
- * - Layout is consistent across viewports.
+ * Premium post action bar.
+ * - Single "headline" line above the actions: stacked top emojis + total "paws".
+ *   Reads as one number, not a Top-3 leaderboard.
+ * - Generous 44px+ tap targets, subtle hairline divider.
+ * - Trailing slot (right-aligned) for owner menu / report.
  */
 export const PostActionBar = ({
   postId,
@@ -40,24 +37,39 @@ export const PostActionBar = ({
   trailing?: React.ReactNode;
 }) => {
   const counts = reactionCounts ?? {};
-  const top = PET_REACTIONS
+  const ranked = PET_REACTIONS
     .map((r) => ({ ...r, n: Number(counts[r.kind] ?? 0) }))
     .filter((r) => r.n > 0)
-    .sort((a, b) => b.n - a.n)
-    .slice(0, 3);
+    .sort((a, b) => b.n - a.n);
+  const top3 = ranked.slice(0, 3);
+  const total = ranked.reduce((s, r) => s + r.n, 0);
 
   return (
-    <div className="border-t border-hairline mt-2">
-      {top.length > 0 && (
-        <div className="px-4 pt-2 pb-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-          <span className="font-medium text-foreground/80">Top</span>
-          {top.map((r) => (
-            <span key={r.kind} className="inline-flex items-center gap-1">
-              <span className="text-sm leading-none">{r.emoji}</span>
-              <span className="tabular-nums">{r.n}</span>
+    <div className="border-t border-hairline mt-1">
+      {total > 0 && (
+        <button
+          onClick={onComment}
+          className="w-full px-4 pt-2.5 pb-1 flex items-center justify-between text-[12px] text-muted-foreground hover:bg-muted/30 transition-colors"
+          aria-label="See reactions"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="flex -space-x-1.5">
+              {top3.map((r) => (
+                <span
+                  key={r.kind}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-card ring-1 ring-hairline text-[12px] leading-none"
+                >
+                  {r.emoji}
+                </span>
+              ))}
             </span>
-          ))}
-        </div>
+            <span className="font-semibold text-foreground/85 tabular-nums">{total}</span>
+            <span>{total === 1 ? "paw" : "paws"}</span>
+          </span>
+          {commentCount > 0 && (
+            <span className="tabular-nums">{commentCount} {commentCount === 1 ? "comment" : "comments"}</span>
+          )}
+        </button>
       )}
       <div className="flex items-center gap-1 px-2 py-1.5">
         <ReactionBar postId={postId} initialCounts={counts as any} />
@@ -65,7 +77,7 @@ export const PostActionBar = ({
           onClick={onComment}
           className={cn(
             "flex items-center gap-1.5 px-3 py-2 rounded-full",
-            "hover:bg-muted/60 transition-colors active:scale-110",
+            "hover:bg-muted/60 transition-colors active:scale-95",
           )}
           aria-label="Comment"
         >
@@ -77,7 +89,7 @@ export const PostActionBar = ({
           onClick={onShare}
           className={cn(
             "flex items-center gap-1.5 px-3 py-2 rounded-full",
-            "hover:bg-muted/60 transition-colors active:scale-110",
+            "hover:bg-muted/60 transition-colors active:scale-95",
           )}
           aria-label="Share"
         >
