@@ -107,7 +107,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       let q = supabase
         .from("posts")
         .select(
-          "id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id",
+          "id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id, kind, pet_snapshot",
         );
       if (followingIds) q = q.in("author_id", followingIds);
       q =
