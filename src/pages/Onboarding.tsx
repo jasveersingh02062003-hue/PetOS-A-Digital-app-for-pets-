@@ -98,7 +98,7 @@ const Onboarding = () => {
     const isOnboarded = (profile as any)?.onboarded === true;
 
     if (stageParam === "parent" && accountType === "pet_parent" && hasPets) {
-      setStage("done");
+      setStage(isOnboarded ? "done" : "goals");
       return;
     }
 
@@ -118,8 +118,9 @@ const Onboarding = () => {
       return;
     }
 
+    // Pet-parent resume: has pets but hasn't picked goals yet → goals step.
     if (accountType === "pet_parent" && hasPets) {
-      setStage("done");
+      setStage("goals");
       return;
     }
 
