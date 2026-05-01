@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,8 @@ import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPick
 import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { BREEDS, TEMPERAMENT_TAGS, COMMON_ALLERGIES, COMMON_CONDITIONS } from "@/lib/breeds";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
-import { Camera, Loader2, Bell, Stethoscope, PawPrint, Heart } from "lucide-react";
+import { track } from "@/lib/analytics";
+import { Camera, Loader2, Bell, Stethoscope, PawPrint, Heart, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const OTHER = "__other__";
@@ -32,6 +33,13 @@ export const FirstPetWizard = ({ isAdditional = false, onDone }: Props) => {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const qc = useQueryClient();
+  useEffect(() => {
+    void track("onboarding_step", {
+      step: "pet",
+      action: "started",
+      additional: !!isAdditional,
+    });
+  }, [isAdditional]);
 
   // ── Section A: Basics ──
   const [name, setName] = useState("");
@@ -85,6 +93,9 @@ export const FirstPetWizard = ({ isAdditional = false, onDone }: Props) => {
   const submit = async () => {
     if (!user) return;
     if (!name.trim()) return toast.error("Pet name is required");
+    if (breed === OTHER && !breedOther.trim()) {
+      return toast.error("Type the breed name (or pick one from the list)");
+    }
     if (!finalBreed) return toast.error("Pick a breed (or type one)");
 
     let approxMonths: number | null = null;
@@ -108,11 +119,14 @@ export const FirstPetWizard = ({ isAdditional = false, onDone }: Props) => {
         temperament.length > 0 || allergies.length > 0 || conditions.length > 0 ||
         !!weightKg || !!microchip;
 
+      // Tag user-typed "Other" breeds so future fuzzy-matching can find them.
+      const breedToStore = breed === OTHER ? `Other: ${breedOther.trim()}` : finalBreed;
+
       const { data: petRow, error: petErr } = await supabase.from("pets").insert({
         owner_id: user.id,
         name: name.trim(),
         species,
-        breed: finalBreed,
+        breed: breedToStore,
         gender,
         date_of_birth: ageMode === "dob" && dob ? dob : null,
         approx_age_months: approxMonths,
@@ -164,6 +178,18 @@ export const FirstPetWizard = ({ isAdditional = false, onDone }: Props) => {
 
       qc.invalidateQueries({ queryKey: ["pets"] });
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      void track("onboarding_step", {
+        step: "pet",
+        action: "submitted",
+        additional: !!isAdditional,
+        species,
+        age_mode: ageMode,
+        has_photo: !!photoUrl,
+        has_emergency_vet: !isAdditional && !!(vetName.trim() || vetPhone.trim()),
+        reminders_on: remindersOn,
+        reminder_kinds_count: remindersOn ? reminderKinds.length : 0,
+        temperament_count: temperament.length,
+      });
       toast.success(`${name.trim()} added!`);
       onDone();
     } catch (e: any) {
