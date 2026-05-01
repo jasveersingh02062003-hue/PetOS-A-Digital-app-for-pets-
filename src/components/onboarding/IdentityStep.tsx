@@ -125,6 +125,7 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
         lng: coords?.lng ?? null,
         language,
         units,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       } as any, { onConflict: "id" });
       if (error) {
         if (error.code === "23505" || /handle/i.test(error.message)) {
