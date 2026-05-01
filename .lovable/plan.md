@@ -1,182 +1,129 @@
-# Pet Parent Onboarding — Real, End-to-End Rebuild
 
-Scope: **only the pet-parent path** of `/onboarding`. Other roles (buyer, provider, breeder, vet, org) untouched. Every field collected here must show up in a real surface of the app — never just sit in the database.
+# Pet Parent Onboarding — Finish the Gaps (Sequential, No Overlap)
+
+After re-auditing the code, **most of the original plan is already shipped**. Only six concrete gaps remain. We'll do them strictly in order, verify each, then walk the full user journey.
 
 ---
 
-## 1. Audit — What Exists vs. What's Missing
+## Re-Audit (Updated, Accurate)
 
-| Step in your spec | Today | Status |
+| Item | Status |
+|---|---|
+| `pets.approx_age_months`, `profiles.reminder_prefs`, DOB derive trigger | ✅ Live in DB |
+| `seed_pet_vaccine_reminders` RPC | ✅ Exists & **already called** from `FirstPetWizard` |
+| `FirstPetWizard.tsx` with `isAdditional` mode | ✅ Built |
+| `GoalsStep.tsx`, `Done.tsx` (confetti + summary) | ✅ Built |
+| `IdentityStep.tsx` avatar uploader | ✅ Built |
+| Onboarding stage router incl. `goals` stage | ✅ Wired |
+| **`ReactionBar` runtime crash blocking Home** | ❌ Open |
+| **"Add another" reuses rich wizard** | ❌ Currently routes to lightweight `add-pet` stub |
+| **`WizardSteps` parent‑variant (6 dots)** | ❌ Still generic |
+| **`PetParentHome` reorders modules by `goals[]`** | ❌ Reads name only, not `goals` |
+| **Stage fade transitions** | ❌ Missing |
+| **Manual end-to-end verification** | ❌ Never done |
+
+---
+
+## Sequential Plan (one after the other, no overlap)
+
+### Step 1 — Unblock the preview (fix `ReactionBar` crash)
+- File: `src/components/social/ReactionBar.tsx` line 130 — `mine?.has(r.kind)` fails because `mine` is sometimes an array, not a `Set`.
+- Fix: normalize `mine` to a `Set<string>` once with `useMemo`, or guard with `Array.isArray(mine) ? mine.includes(...) : mine?.has?.(...)`.
+- Why first: nothing else can be visually verified while Home crashes.
+
+### Step 2 — Make "Add another pet" reuse the rich wizard
+- File: `src/pages/onboarding/AddAnotherPet.tsx` — change the "Add another pet" card to navigate to `/onboarding?stage=add-pet` **and** in `Onboarding.tsx` map stage `add-pet` to `<FirstPetWizard isAdditional onDone={() => setStage("add-another")} />` (already partially done — verify the path actually renders the rich wizard, not the legacy `QuickAddPet`). If `add-pet` currently maps to `QuickAddPet`, repoint it.
+- Result: 2nd/3rd pets get the same temperament/allergy/conditions capture, with vet & reminder sections hidden.
+
+### Step 3 — Parent-aware `WizardSteps` (6-dot progress)
+- File: `src/components/onboarding/WizardSteps.tsx` — already accepts `labels[]`. No change needed there.
+- File: `src/pages/Onboarding.tsx` — for pet-parent path, pass `labels={["Account","About you","Pet","More?","Goals","Done"]}` and compute `current` from current `stage`. For other roles keep the existing 3-step labels.
+
+### Step 4 — `PetParentHome` reorders modules by `profiles.goals[]`
+- File: `src/pages/home/PetParentHome.tsx`.
+- Read `profile.goals` (array) once. Define a static `MODULE_PRIORITY` mapping: `vet→AskVet card`, `social→PostFeed`, `mating→MatesRail`, `services→ServicesRail`, `lost_found→MissingFeed`, etc.
+- Sort/pin the corresponding sections to the top in the order the user picked them; everything else falls below.
+- Add a tiny "Personalised for: 🩺 Vet · 🐾 Mates" chip strip near the greeting so the user sees it worked.
+
+### Step 5 — Fade transitions between stages
+- File: `src/pages/Onboarding.tsx` — wrap the stage switch body in a `framer-motion` `<AnimatePresence mode="wait">` with `key={stage}`, `initial/animate/exit opacity` (0.2s). `framer-motion` is already in deps.
+
+### Step 6 — Manual end-to-end verification (I drive, no guessing)
+Using the browser tool against the preview URL, signed in as the current user:
+1. Open `/onboarding?stage=identity` → confirm avatar uploader works (file picker + preview).
+2. Advance through `role → parent` → fill rich `FirstPetWizard` with **approx age (Y/M)**, temperament chips, reminders ON, vet phone.
+3. Confirm new row appears in `pets` (read_query) with `approx_age_months` set, `date_of_birth` derived by trigger, `temperament[]` populated, `health_setup_complete=true`.
+4. Confirm `vaccinations` rows seeded for that pet (read_query).
+5. Tap "Add another pet" → confirm rich wizard opens with vet/reminders hidden.
+6. Skip to Goals → pick 3 goals → confirm `profiles.goals` updated (read_query) and `profiles.onboarded=true`.
+7. Land on `Done` → confetti, summary card shows correct pet count + reminders + goals.
+8. Navigate `/` → confirm modules reordered, personalised chip visible, no console errors.
+9. Hard refresh mid-flow at each stage → confirm resume.
+
+Any failure found → fix before declaring done.
+
+---
+
+## Files Touched (final list, no overlap)
+
+| Step | File | Change |
 |---|---|---|
-| 0. Account type | `Onboarding.tsx` stage `role` (10 cards) | Exists, keep |
-| 1. About You (name, @handle, city, photo) | `IdentityStep.tsx` — name, handle (live check), city + geolocate, language, units. **No avatar.** City is *checked* but city auto-fill uses Nominatim already | Partial |
-| 2. Add first pet | `Onboarding.tsx` parent stage — name, species, breed (dropdown only, **no "Other"**), DOB only (**no approx age**), gender, photo | Partial |
-| Vet contact, reminders opt-in, temperament/allergies/conditions in onboarding | **Missing** (exists in `settings/EmergencyVet`, `PetEditor`, `notif_prefs` but never asked at signup) | Missing |
-| 3. Add another pet | `AddAnotherPet.tsx` exists | Keep |
-| 4. Goals | `settings/Goals.tsx` exists, **but onboarding never asks goals** | Missing in flow |
-| 5. Done | `Done.tsx` — generic, no summary, no confetti | Weak |
+| 1 | `src/components/social/ReactionBar.tsx` | Normalize `mine` to Set |
+| 2 | `src/pages/onboarding/AddAnotherPet.tsx`, `src/pages/Onboarding.tsx` | Route "add-pet" stage to `<FirstPetWizard isAdditional/>` |
+| 3 | `src/pages/Onboarding.tsx` | Pass parent labels to `WizardSteps` |
+| 4 | `src/pages/home/PetParentHome.tsx` | Reorder modules by `goals[]` + chip strip |
+| 5 | `src/pages/Onboarding.tsx` | `AnimatePresence` wrapper |
+| 6 | none (verification only) | Browser + DB checks |
 
-**DB columns already present (no migration needed for most):**
-- `profiles`: `full_name, handle, city, lat, lng, avatar_url, goals[], emergency_vet jsonb, notif_prefs jsonb, first_time_parent, onboarded`
-- `pets`: `name, species, breed, date_of_birth, gender, weight_kg, neutered, microchip_id, temperament[], allergies[], conditions[], avatar_url, primary_vet_id, health_setup_complete`
-
-**Small additions needed:**
-- `pets.approx_age_months int` (when DOB unknown) — derive a synthetic DOB on save so the rest of the app keeps working.
-- `profiles.reminder_prefs jsonb` (default `{vaccines:true, deworming:true, flea_tick:true, checkup:true}`) — separate from notif transport.
+No DB migrations needed. No new components.
 
 ---
 
-## 2. New Pet Parent Flow (6 steps)
+## Final Pet Parent User Journey (post-build)
 
 ```text
-[0 Account type] -> [1 About You] -> [2 First Pet] -> [3 Another?]
-                                                       |        |
-                                                       v        v
-                                              loop to [2]    [4 Goals] -> [5 Done]
+Sign up (email/Google)
+        │
+        ▼
+[/onboarding · stage=identity]
+   Name · @handle (live check) · City (geolocate) · Avatar · Lang · Units
+        │
+        ▼
+[stage=role]  → choose "Pet parent"
+        │
+        ▼
+[stage=parent] FirstPetWizard
+   A. Photo · Name · Species · Breed (or Other) · Sex · Age (DOB or approx Y/M)
+   B. Weight · Spay/Neuter · Microchip · Emergency vet name+phone
+   C. Temperament · Allergies · Conditions
+   D. Reminders toggle + Vaccines/Deworm/Flea/Checkup chips + channel
+   → Insert pets row · trigger derives DOB · seed_pet_vaccine_reminders RPC
+        │
+        ▼
+[stage=add-another] "Add another pet?"
+   ├─ Yes → [stage=add-pet] FirstPetWizard isAdditional (vet/reminders hidden) → loop
+   └─ No  → continue
+        │
+        ▼
+[stage=goals] GoalsStep
+   Multi-select goals + live preview ("Vet → AskVet on Home", etc.)
+   → profiles.goals[] · profiles.onboarded=true
+        │
+        ▼
+[stage=done] Done
+   Confetti · "You're all set, {firstName}!" · Summary card
+   (N pets · Reminders On/Off · N goals) · CTA "Open my home"
+        │
+        ▼
+[/]  PetParentHome
+   • Greeting with pet name + age (from derived DOB)
+   • "Personalised for: …" chip strip
+   • Modules reordered by goals[]
+   • Vaccine reminder rows already scheduled → push notifications fire on schedule
 ```
 
-All steps live inside `/onboarding` (single URL, stage param) — keeps resume-on-refresh working.
-
-### Step 0 — Account Type *(unchanged)*
-Use existing role cards. Pet-parent advances to step 1.
-
-### Step 1 — About You *(extend `IdentityStep`)*
-Add to existing form:
-- **Avatar uploader** (circle, optional) → uploads to `avatars` storage bucket → `profiles.avatar_url` + thumbnail variants (image-process edge fn already exists).
-- City stays required, "Use my location" already wired.
-- Keep handle live availability + language + units.
-- Save in one upsert. Advance to step 2.
-
-### Step 2 — First Pet *(replace inline parent wizard with new `FirstPetWizard.tsx`)*
-Single scrollable form, 4 collapsible sections, sticky bottom CTA.
-
-**Section A — Basics**
-- Pet photo (large square, optional) → `pet-avatars` bucket
-- Name *(required)*
-- Species (segmented: Dog/Cat/Bird/Rabbit/Other)
-- Breed: searchable dropdown from `BREEDS[species]` **+ "Other" → free-text** (saves the typed value)
-- Sex (Male/Female)
-- Age input with toggle:
-  - DOB (date picker), **or**
-  - Approx age (Years + Months number inputs) → stored in `approx_age_months`, server-side trigger fills `date_of_birth` = `today - approx_age_months`
-
-**Section B — Physical & Health (optional but visible)**
-- Weight (kg/lb based on `units`)
-- Spayed/Neutered (Yes/No/Unknown)
-- Microchip ID
-- **Emergency vet name + phone** → `profiles.emergency_vet = {name, phone}`
-
-**Section C — Behaviour**
-- Temperament chips (multi) → `pets.temperament[]`
-- Allergies chips → `pets.allergies[]`
-- Conditions chips → `pets.conditions[]`
-- If user touches any chip, set `health_setup_complete = true` so the Health-tab nag card hides.
-
-**Section D — Reminders**
-- Master toggle "Send me care reminders" (default on)
-- Multi-chip: Vaccines / Deworming / Flea & tick / Annual check-up
-- Channel: Push (default) / Email — writes `profiles.notif_prefs` and `profiles.reminder_prefs`
-- On submit, if vaccines toggled, insert seed rows into `vaccination_reminders` (table already used by `vaccination-reminders` edge fn) keyed to `date_of_birth + species default schedule`.
-
-CTA "Add pet & continue" → inserts `pets` row, fires reminder seeding, goes to Step 3.
-
-### Step 3 — Add Another? *(keep `AddAnotherPet.tsx`)*
-"Yes" → loop to Step 2 (reuse `FirstPetWizard` in "additional" mode — hides reminders & vet sections since already set).
-"No" → Step 4.
-
-### Step 4 — Goals *(new `GoalsStep.tsx` inside onboarding)*
-- Reuse `GOALS` from `lib/breeds.ts` and `ChipGroup` component.
-- Live preview panel below: as user picks goals, list features ("Vet & AI help → AskVet on Home", "Walking → Services tab pinned", etc.).
-- Saves `profiles.goals[]` and `profiles.onboarded = true`.
-- This array is **already read** by `PetParentHome.tsx` for module ordering — confirm and wire any missing modules.
-
-### Step 5 — Done *(rewrite `Done.tsx` for parents)*
-- Confetti (canvas-confetti, 1.5s, single fire)
-- Big "You're all set, {firstName}!"
-- Summary card pulled live from DB:
-  - `{n} pets added`
-  - `Reminders: On / Off`
-  - `Goals: {n} selected`
-- Primary CTA "Open my home" → `/`. FirstRunGate already lets them through.
+Resume rules: refresh at any stage = lands on the same stage. Re-login post-onboarding = goes straight to `/`.
 
 ---
 
-## 3. Where Each Field Surfaces in the App (real wiring)
-
-| Collected | Surface |
-|---|---|
-| `profiles.avatar_url` | Top-bar avatar, comments, `UserProfile`, mate cards |
-| `profiles.city + lat/lng` | Discover, Mates, Services nearby (`useUserLocation`) |
-| `profiles.handle` | Public URL `petos.app/@handle`, share cards |
-| `profiles.emergency_vet` | Health tab → Emergency card; AskVet triage CTA |
-| `profiles.goals[]` | `PetParentHome` module ordering, Discover tabs default |
-| `profiles.notif_prefs + reminder_prefs` | `vaccination-reminders` & `pet-care-reminders` edge fns; Settings → Notifications |
-| `pets.avatar_url` | Pet card, Home greeting, MissingFeed prefill |
-| `pets.temperament/allergies/conditions` | Health tab, Mates filters, AskVet context, AI suggestions |
-| `pets.weight_kg` | Health charts, dose calculators |
-| `pets.microchip_id` | MissingFeed auto-fill |
-| `pets.date_of_birth` (or derived) | Age in greetings, vaccine schedule, life-stage feed |
-| `pets.health_setup_complete` | Hides Home + Health nag cards |
-| `vaccination_reminders` rows | Push notifications via `send-push` |
-
----
-
-## 4. Implementation Plan (priority-ordered, no overlap)
-
-**P0 — Data foundation**
-1. Migration: add `pets.approx_age_months int`, `profiles.reminder_prefs jsonb default '{...}'`. Add trigger to derive DOB from `approx_age_months` on insert/update if DOB null.
-2. Confirm `vaccination_reminders` table shape; add seed helper SQL function `seed_pet_vaccine_reminders(pet_id uuid)`.
-
-**P1 — Components**
-3. Extend `IdentityStep.tsx`: avatar uploader (uses existing `uploadImage` lib + `avatars` bucket).
-4. New `src/components/onboarding/FirstPetWizard.tsx` (replaces inline parent stage in `Onboarding.tsx`). Sections A–D, validation, submit handler.
-5. New `src/components/onboarding/GoalsStep.tsx` with live preview map.
-6. Rewrite `src/pages/onboarding/Done.tsx` for pet-parent: confetti + live summary card; keep current behaviour for other roles.
-
-**P2 — Wiring**
-7. `Onboarding.tsx`: replace `parentStep 0/1` block with `<FirstPetWizard />`; add `goals` stage between `add-another` and `done` for pet-parent only.
-8. `Onboarding.tsx` parent submit: call `seed_pet_vaccine_reminders` RPC when reminders enabled.
-9. Verify `PetParentHome` reads `goals[]` and reorders modules; fill any gap.
-10. Update `FirstRunGate` / `PostAuth` — no logic change needed (gate already requires `full_name + handle + onboarded + ≥1 pet`).
-
-**P3 — Polish**
-11. Progress bar `WizardSteps` updated to 6 dots for parent path: Account · About You · Pet · More? · Goals · Done.
-12. Fade transitions (0.2s) between stages with `framer-motion` (already a dep? if not, simple CSS).
-13. Confetti on Done (`canvas-confetti`).
-14. QA: full flow signed-out → signup → 6 steps → Home shows pet, reminders scheduled, goals reflected.
-
----
-
-## 5. Files Touched
-
-**New**
-- `src/components/onboarding/FirstPetWizard.tsx`
-- `src/components/onboarding/GoalsStep.tsx`
-- `supabase/migrations/<ts>_pet_parent_onboarding.sql`
-
-**Modified**
-- `src/components/onboarding/IdentityStep.tsx` (add avatar)
-- `src/components/onboarding/WizardSteps.tsx` (parent variant w/ 6 steps)
-- `src/pages/Onboarding.tsx` (stage router: insert `goals`, swap parent wizard)
-- `src/pages/onboarding/Done.tsx` (parent summary + confetti)
-- `src/pages/onboarding/AddAnotherPet.tsx` (route "No" → `?stage=goals` instead of `done`)
-- `src/lib/breeds.ts` (extend lists slightly + ensure "Other" sentinel)
-
-**Untouched** (out of scope per your instruction)
-- Buyer / Provider / Vet / Breeder / Org flows
-- Auth pages, FirstRunGate logic, PostAuth routing
-
----
-
-## 6. Acceptance Checks
-
-After implementation, a brand-new email signup must be able to:
-1. Sign up → land on `/onboarding`.
-2. Complete About You with avatar → see avatar in top bar.
-3. Add a pet with approx age + temperament + reminders on → pet shows on Home with correct age, vaccine reminder appears in Notifications within seconds.
-4. Loop "Add another" works.
-5. Pick 3 goals → Done summary says "1 pet · Reminders: On · Goals: 3" → Home modules reordered to match goals.
-6. Refresh mid-flow → resumes at the same stage.
-7. Re-login → goes straight to Home (never re-prompted).
-
-Ready to switch to build mode and implement P0 → P3 in order?
+Ready to switch to build mode and execute Steps 1 → 6 in order.
