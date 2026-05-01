@@ -89,11 +89,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const days = differenceInCalendarDays(new Date(v.next_due_on), today);
         items.push({
           key: `vax-${v.id}`,
-          icon: Syringe,
+          iconKey: "syringe",
           title: v.vaccine_name,
           due: days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `in ${days}d`,
           tone: days < 0 ? "overdue" : days <= 3 ? "due" : "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       });
 
@@ -101,11 +102,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const days = differenceInCalendarDays(new Date(p.next_due_on), today);
         items.push({
           key: `par-${p.id}`,
-          icon: Bug,
+          iconKey: "bug",
           title: `${p.product_name} (${p.parasite_type})`,
           due: days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `in ${days}d`,
           tone: days < 0 ? "overdue" : days <= 3 ? "due" : "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       });
 
@@ -118,11 +120,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const isPast = new Date(d.scheduled_at).getTime() < Date.now();
         items.push({
           key: `dose-${d.id}`,
-          icon: Pill,
+          iconKey: "pill",
           title: `${name}${dose}`,
           due: `${time}${isPast ? " · missed" : ""}`,
           tone: isPast ? "overdue" : "due",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
         dosed.add(d.id);
       });
@@ -130,11 +133,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         if (m.schedule_kind && m.schedule_kind !== "as_needed") return; // covered by doses
         items.push({
           key: `med-${m.id}`,
-          icon: Pill,
+          iconKey: "pill",
           title: m.name,
           due: [m.dose, m.frequency].filter(Boolean).join(" · ") || "active",
           tone: "soon",
-          cta: { label: "View", onClick: () => nav(`/health`) },
+          ctaLabel: "View",
+          ctaHref: "/health",
         });
       });
 
@@ -143,11 +147,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
       if (weightDays === null || weightDays > 30) {
         items.push({
           key: "weight-check",
-          icon: Scale,
+          iconKey: "scale",
           title: "Log a weight",
           due: lastWeight ? `last ${format(lastWeight, "d MMM")}` : "never logged",
           tone: "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       }
 
