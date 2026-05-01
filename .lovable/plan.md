@@ -1,148 +1,100 @@
 
-# Petos Home — The "Stop Being a Clone" Rebuild
+# Petos Engagement Polish — Honest, Targeted Build
 
-## Honest verdict on what's live
+## Why this plan is short
 
-The current Home is a **dashboard pretending to be a social app**. Five surfaces above the fold (greeting → goal chips → pet card with 3 CTAs → SOS ribbon → composer → 6-icon grid → 3 tabs) before a single piece of social content. Generic "Hi joe" greeting. No app logo. No signature scroll. The "social" tab is a list of square cards — indistinguishable from any pet-themed Instagram clone.
+The reviewer's 8.7/10 list mixed genuine gaps with **work that's already shipped**. Auditing the current code:
 
-Score today: **5.5 / 10**. Functional. Forgettable.
+| Reviewer item | Real status |
+|---|---|
+| Brand bar, Tribe + Nearby tabs, TodayPanel | ✅ Shipped last turn |
+| Double-tap = boop with paw ripple | ✅ Already in `PostFeed.tsx` |
+| Long-press radial reaction picker | ✅ Already in `ReactionBar.tsx` |
+| Swipe-right save | ✅ Already in `PostFeed.tsx` |
+| Daily prompt | ✅ `DailyPromptBanner` mounted on Home |
+| Empty states | ✅ Designed for For-you / Tribe / Nearby |
+| Vet-verified shield | ✅ `PawShield` renders on `vaccines_ok=true` |
+| Service worker caching | ✅ `public/sw.js` exists |
 
-## What we are stealing (and what we are not)
+Out of 14 items, **11 are already in the codebase**. Only 3 are real gaps.
 
-| From | What we take | What we ignore |
-|------|-------------|----------------|
-| Instagram | Story rail at top, double-tap to react | The square-grid feed (overdone) |
-| TikTok | Vertical full-bleed feed, one moment per screen, infinite swipe | The algorithmic creator economy |
-| Strava | Streaks, weekly leaderboards, kudos as a status symbol | The fitness obsession framing |
-| BeReal | Daily prompt creates FOMO + one-shot posting | The 2-minute window gimmick |
-| LinkedIn | Verified badges as social currency | The corporate tone |
+## What we're explicitly skipping (and why)
 
-**The unique twist nobody else has:** every post is provably tied to a real, verifiable pet (vaccines, lineage, walks). The flex isn't followers — it's **receipts**.
+- **Leaderboards / Boop Champion / Mystery Treat / Barkometry** — Candy-Crush gamification contradicts the "premium feel" we just shipped. These are dark patterns, not premium signals.
+- **Auto-generated 15-sec memory reel video** — Server-side video rendering is a 2-day project (FFmpeg in edge runtime, queue, storage). Not worth one feature.
+- **IndexedDB offline feed cache** — `sw.js` caches assets; caching feed *data* with stale-reaction invalidation is complex. Defer until users actually report it.
+- **Color palette swap to `#FF6B6B` + `#4ECDC4`** — This is the most dangerous suggestion. The current warm-cream + leaf + coral palette is on-brand and premium. Swapping to flat coral + mint = generic 2014 startup. **Hard skip — would be a regression.**
 
----
+## What we're building (3 features, ~90 minutes)
 
-## The new Home — three modes, one screen
+### 1. Reaction notifications — "X booped your post"
+The `notifications` table exists. The `post_reactions` table exists. There's nothing connecting them today, so users never find out anyone reacted to their posts — which kills the return-visit loop.
 
-```text
-┌────────────────────────────────────┐
-│  🐾 petos          🔍   🔔         │  ← signature top bar (logo + search + bell)
-├────────────────────────────────────┤
-│  ╭──╮ ╭──╮ ╭──╮ ╭──╮ ╭──╮ ╭──╮     │  ← story rail: pets you follow + "+ Share"
-│  │+ │ │🐕│ │🐱│ │🐕│ │🐕│ │🐕│     │     pulsing dot if you haven't posted in 24h
-│  ╰──╯ ╰──╯ ╰──╯ ╰──╯ ╰──╯ ╰──╯     │
-├────────────────────────────────────┤
-│  For you │ Tribe │ Nearby          │  ← 3 tabs (no "Following" — collapsed into Tribe)
-├────────────────────────────────────┤
-│                                    │
-│   ╔══════════════════════════════╗ │
-│   ║                              ║ │
-│   ║   FULL-BLEED PET MOMENT      ║ │  ← one moment per screen, 4:5 portrait
-│   ║                              ║ │     swipe up = next, double-tap = boop
-│   ║   ╭──────────────────────╮   ║ │     reactions float over image
-│   ║   │ 🐕 PUBG · 7y · ✓vax  │   ║ │
-│   ║   │ "first day at beach" │   ║ │  ← identity plate already exists
-│   ║   ╰──────────────────────╯   ║ │
-│   ║   🐾 12   💬 4   🔖   ↗      ║ │
-│   ╚══════════════════════════════╝ │
-│                                    │
-└────────────────────────────────────┘
-```
+**Build:** A `SECURITY DEFINER` trigger on `post_reactions INSERT` that writes a notification row to the post author. Skips self-reactions. Uses an emoji per reaction kind so the notification reads naturally ("Joe 🐾 your post").
 
-**Killed for good:**
-- "Hi, joe" greeting → moved to Profile tab only
-- "Personalised for: Social / Mates …" chip strip → deleted (it shows the user their own onboarding answers)
-- Pet hero card with 3 CTAs above the feed → moved to a **swipe-down "Today" panel** accessible from the avatar in the top-bar
-- Emergency SOS ribbon → already a floating dot bottom-right; remove the ribbon
-- "Share funny's morning" composer card → replaced by the **+ tile in the story rail** (Instagram pattern)
-- 6-icon quick-action grid → moved into a **"More" sheet** behind a single icon in the top-bar
-- "Following" tab → folded into "Tribe" (people + groups + tribes you're in)
-- "Trending" tab → renamed "Nearby" (geo-bounded; we have city/lineage data — competitors don't)
+**Database changes:**
+- New function `public.notify_post_reaction()` — security-definer, sets `search_path = public`
+- New trigger `trg_notify_post_reaction` on `post_reactions AFTER INSERT`
+- No new tables, no schema changes to existing tables
 
----
+### 2. Auto-milestone posts (daily)
+Pet birthdays from `pets.date_of_birth` are sitting in the database doing nothing. Posting "Bruno turned 1 today 🎂" automatically is genuinely free engagement content — not a dark pattern, just surfacing facts the user already gave us.
 
-## The five things that make it not-a-clone
+**Build:**
+- New edge function `supabase/functions/auto-milestones/index.ts` — runs daily, finds pets whose DOB matches today's month/day, inserts a `kind = 'milestone'` post tagged with `pet_snapshot.auto_milestone_key = 'birthday-{year}'` so it can't double-post.
+- Owner opt-in via new `pets.auto_milestones` boolean column (defaults `true` — they can disable per pet in Settings).
+- Index on `(pet_snapshot->>'auto_milestone_key')` for the dedup check.
+- `pg_cron` schedule firing daily at 09:00 local time.
 
-### 1. Brand identity in the top bar
-Add a real `Petos` wordmark + paw-leaf glyph on the left of the top-bar. Search on the right. Bell after that. **One bar. Three elements. That's the entire chrome.** This alone removes 70% of the "white-label" feel.
+**Database changes:**
+- `ALTER TABLE pets ADD COLUMN auto_milestones boolean DEFAULT true`
+- New partial index for dedup
+- `pg_cron` + `pg_net` schedule (set via `supabase--insert` per the schedule-jobs guidance — embeds project URL + anon key, not a portable migration)
 
-### 2. Vertical full-bleed feed (TikTok pattern)
-Today the feed is a list of cards in a scrollable column. Change to **one moment per viewport** with snap-scroll. The Pet Identity Plate (already built) overlays the bottom of the photo. Reactions float on the right edge (TikTok-style vertical action rail). Swipe up = next moment. This is the addictive loop competitors haven't done for pets.
+### 3. Shareable moment cards (real OG previews)
+Today, sharing a post link drops a generic favicon preview into WhatsApp/Twitter. Users want their pet's photo + identity baked into the share image. The `og-pet` edge function exists as a template — we mirror it for posts.
 
-### 3. Per-pet vertical feed (the "follow a pet" hook)
-Tap any pet's avatar/name → enter **their** vertical feed (their last 30 moments only). Like TikTok's per-creator scroll. This makes following a pet feel like following a *show*, not a person. Pets become characters.
+**Build:**
+- New edge function `supabase/functions/og-post/index.ts` — renders a 1200×630 SVG share card: brand strip, pet photo (left half, rounded), pet identity (name in display font, breed/age, vaccinated badge, city), caption, "🐾 12 · 💬 4" tally.
+- New page `src/pages/PostDetail.tsx` at `/post/:id` that uses `useSeo()` to inject the og-post URL as `og:image`. The existing `?focus=` deep-link in feed continues to work for in-app navigation.
+- Update `handleShare` in `PostFeed.tsx` to share `${origin}/post/${id}` instead of `?focus=` so the OG meta gets fetched.
 
-### 4. The "Tribe" tab — the moat
-Replaces "Following". Shows posts from:
-- Pets in your **city** (Hyderabad Goldens, Bangalore Indies)
-- Pets of your **breed** (all Labradors)
-- Pets in your **groups**
-Powered by `pet_snapshot.city` + `pet_snapshot.breed` already on `posts`. **No other pet app does locality+breed feeds.** This is the USP made tangible.
+**No schema changes.**
 
-### 5. Signature interactions
-- **Double-tap any moment** → boop (paw-print ripple, haptic)
-- **Long-press the boop area** → radial reaction picker (already built, wire it in)
-- **Swipe right on a moment** → save to private vault
-- **Swipe left** → "see more like this" (per-pet feed)
-- **Streak chip** auto-flexes when a pet hits 7/30/100-day walk streak (auto-share card)
+## File-by-file plan
 
----
+| File | Action |
+|---|---|
+| `supabase/functions/og-post/index.ts` | Create — SVG share card renderer |
+| `supabase/functions/auto-milestones/index.ts` | Create — daily birthday/milestone job |
+| `src/pages/PostDetail.tsx` | Create — `/post/:id` route, sets OG meta + renders the post |
+| `src/App.tsx` | Add `/post/:id` route |
+| `src/components/PostFeed.tsx` | Update `handleShare` to use `/post/:id` URL |
+| `src/pages/settings/PetEditor.tsx` | Add toggle for `auto_milestones` |
+| (DB migration) | Trigger + `pets.auto_milestones` column + dedup index |
+| (DB insert) | `pg_cron` schedule for `auto-milestones` daily |
 
-## What to build (technical)
+## Order
 
-### Files to create
-- `src/components/social/HomeTopBar.tsx` — wordmark + glyph + search + bell. Sticky. ~64px.
-- `src/components/social/VerticalFeed.tsx` — snap-scroll container, one card per viewport, swipe-up = next. Replaces the column layout in `PostFeed.tsx` only on the Home tab.
-- `src/components/social/VerticalActionRail.tsx` — TikTok-style right-edge column: avatar, boop, comment, save, share. Floats over media.
-- `src/components/social/TodayPanel.tsx` — the swipe-down (or avatar-tap) panel that holds today's pet card, vaccinations CTA, quick actions. Removes them from the always-visible scroll path.
-- `src/components/brand/PetosWordmark.tsx` — SVG wordmark in `font-display`, paw-leaf glyph beside it.
-- `src/components/social/PetVerticalFeed.tsx` — route `/pet/:id/feed` — full-screen, last 30 moments of a single pet.
+1. DB migration (trigger + column + index) — must approve this first
+2. `og-post` edge function (deploys automatically)
+3. `PostDetail` page + route + share-link update
+4. `auto-milestones` edge function
+5. `pg_cron` schedule via `supabase--insert`
+6. Pet editor toggle for `auto_milestones`
 
-### Files to change
-- `src/pages/home/PetParentHome.tsx` — strip greeting, goal chips, pet hero, SOS ribbon, composer card, quick-action grid, 3-tab strip. Replace with `<HomeTopBar /> + <StoryRail /> + <TabsBar tribe|foryou|nearby /> + <VerticalFeed />`.
-- `src/components/PostFeed.tsx` — accept `layout="vertical" | "list"` prop. Vertical mode renders snap-scroll children with `VerticalActionRail`. List mode keeps current cards (used in profile, hashtag, search).
-- `src/components/social/StoryRail.tsx` — pulsing "+ Share" tile only when user hasn't posted in 24h.
-- `src/components/home/PetHeroCard.tsx` — keep the component, but mount it inside `TodayPanel` instead of always-on Home.
-- `src/components/home/EmergencyButton.tsx` — already slim; remove the ribbon entirely from Home, keep only the floating dot.
-- `src/App.tsx` — add route `/pet/:id/feed` → `PetVerticalFeed`.
+## What I am NOT touching
 
-### Backend additions (small, additive)
-- **`get_nearby_posts(city text, limit int)`** RPC — returns posts where `pet_snapshot->>'city' = city`, ordered by recency × reactions. Powers the "Nearby" tab.
-- **`get_tribe_posts(user_id uuid)`** RPC — union of: posts from groups the user joined + posts from pets matching their pet's breed + posts from their city.
-- **`pet_streaks` view** — per-pet computed `current_streak_days` from walk sessions. Surfaces auto-flex moments ("PUBG hit 30 days 🔥").
-- No schema changes required — everything else is read-only views and RPCs.
+- Color palette — staying with the current warm/leaf/coral tokens
+- The home redesign (already shipped, working)
+- Reaction picker, double-tap boop, swipe-save (already shipped)
+- Service worker (already shipped)
 
-### Brand assets
-- One SVG wordmark (`/public/brand/petos-wordmark.svg`) — `Petos` in Fraunces with the `o` styled as a paw print.
-- Glyph (`/public/brand/petos-glyph.svg`) — the paw print alone for favicon/PWA.
+## Acceptance
 
----
+- React to your own post → no notification (correct).
+- React to someone else's post → they get a "X 🐾 your post" notification immediately.
+- Share a post link from WhatsApp → pet photo + identity preview shows up (not a generic favicon).
+- The day a pet turns 1, 2, 3… a milestone post auto-appears at 09:00 (only once per year, only if owner opted in).
 
-## Order of execution
-
-1. **Backend RPCs + view** (15 min) — `get_nearby_posts`, `get_tribe_posts`, `pet_streaks`.
-2. **Brand bar** (`HomeTopBar` + wordmark SVG) (20 min) — instant identity win.
-3. **Strip Home** — delete greeting, goal chips, hero, SOS ribbon, composer, quick grid (10 min).
-4. **TodayPanel** — re-home the deleted-from-feed surfaces behind a swipe/avatar tap (30 min).
-5. **VerticalFeed + VerticalActionRail** — the main visual shift (45 min).
-6. **Tribe + Nearby tabs** wired to the new RPCs (20 min).
-7. **PetVerticalFeed route** + tap-pet-name navigation (20 min).
-8. **Signature interactions** — double-tap boop + swipe-right save + swipe-left "more like this" (20 min).
-
-Total: one continuous build, ~3 hours of work shipped in one pass.
-
-## What I will NOT touch
-
-- Other role dashboards (BreederHome, ShelterHome, etc.) — only `PetParentHome`.
-- Auth, payments, routing graph (apart from one new route).
-- Existing post composer, story viewer internals, comment sheet — only restyled if they clash.
-- The pet card design itself (already redesigned last pass — it's good, just in the wrong place).
-
-## How we'll know it worked
-
-- Side-by-side with Instagram's home: the brand bar, story rail, and **vertical full-bleed feed** are immediately distinguishable.
-- "Hi, joe" and the goal chip strip are gone.
-- One tap on a pet name takes you into that pet's vertical feed (the "follow a show" hook).
-- The Tribe tab shows posts from your breed/city — something Instagram structurally can't do.
-- Time-on-feed (sessions > 60s) measurable via existing analytics events.
-
-Approve and I'll start with the backend RPCs, then ship steps 2–8 in one continuous build.
+Approve and I'll ship in the order above.

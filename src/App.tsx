@@ -113,6 +113,7 @@ const AppointmentRoom = lazy(() => import("./pages/AppointmentRoom"));
 const MyAppointments = lazy(() => import("./pages/MyAppointments"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const PetProfile = lazy(() => import("./pages/PetProfile"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
 const PetTracker = lazy(() => import("./pages/PetTracker"));
 const Groups = lazy(() => import("./pages/Groups"));
 const GroupDetail = lazy(() => import("./pages/GroupDetail"));
@@ -308,6 +309,7 @@ const App = () => (
               <Route path="/rescue/:id" element={<RescueJourneyDetail />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/pet/:publicId" element={<PetProfile />} />
+              <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/pets/:petId/tracker" element={<PetTracker />} />
               <Route path="/groups" element={<Groups />} />
               <Route path="/g/:slug" element={<GroupDetail />} />

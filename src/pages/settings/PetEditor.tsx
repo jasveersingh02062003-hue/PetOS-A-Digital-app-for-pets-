@@ -125,6 +125,18 @@ const PetEditor = () => {
           <div className="text-sm font-medium">Neutered</div>
           <Switch checked={!!pet.neutered} onCheckedChange={onNeuteredChange} />
         </label>
+        <label className="flex items-start justify-between gap-3 bg-card border border-hairline rounded-xl px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Auto-celebrate birthdays</div>
+            <div className="text-[12px] text-muted-foreground mt-0.5">
+              Posts a "{pet.name ?? "Pet"} turned N today 🎂" milestone for you each year.
+            </div>
+          </div>
+          <Switch
+            checked={pet.auto_milestones !== false}
+            onCheckedChange={(v) => update({ auto_milestones: v })}
+          />
+        </label>
       </div>
 
       <div>

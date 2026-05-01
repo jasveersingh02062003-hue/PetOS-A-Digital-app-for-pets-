@@ -259,7 +259,7 @@ const PostCard = ({ post, onComment, highlight }: {
 
   const handleShare = async () => {
     haptic(8);
-    const url = `${window.location.origin}/?focus=${post.id}`;
+    const url = `${window.location.origin}/post/${post.id}`;
     const shareData = {
       title: post.author?.full_name ? `${post.author.full_name} on Petos` : "A post on Petos",
       text: post.caption ?? "Check out this Petos post",
