@@ -70,6 +70,9 @@ export type FeedPost = {
     avatar_url?: string | null;
     vaccines_ok?: boolean | null;
     city?: string | null;
+    lifetime_walks_km?: number | null;
+    streak_days?: number | null;
+    lineage_verified?: boolean | null;
   } | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
