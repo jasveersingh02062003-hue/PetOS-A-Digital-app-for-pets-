@@ -45,7 +45,7 @@ type RoleChoice =
 
 type Stage =
   | "identity" | "role" | "parent" | "buyer" | "rescuer" | "breeder"
-  | "org" | "provider" | "vet" | "add-pet" | "add-another" | "done";
+  | "org" | "provider" | "vet" | "add-pet" | "add-another" | "goals" | "done";
 
 const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; nextStage: Stage }[] = [
   { value: "pet_parent", title: "Pet parent", sub: "I have pets at home", Icon: PawPrint, nextStage: "parent" },
