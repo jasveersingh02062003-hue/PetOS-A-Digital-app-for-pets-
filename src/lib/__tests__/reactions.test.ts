@@ -47,4 +47,11 @@ describe("addReaction", () => {
     expect(out).toBe(true);
     expect(lastInsert).toHaveBeenCalledWith({ post_id: "p1", user_id: "u1", kind: "paw" });
   });
+
+  it("defaults to boop (pet-native reaction) when kind is omitted", async () => {
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
+    const out = await addReaction("p1", "u1");
+    expect(out).toBe(true);
+    expect(lastInsert).toHaveBeenCalledWith({ post_id: "p1", user_id: "u1", kind: "boop" });
+  });
 });
