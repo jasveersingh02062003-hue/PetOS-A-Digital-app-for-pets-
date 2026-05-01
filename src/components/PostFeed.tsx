@@ -80,7 +80,7 @@ export type FeedPost = {
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
-export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following"; emptyState?: ReactNode }) => {
+export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following" | "tribe" | "nearby"; emptyState?: ReactNode }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
@@ -104,6 +104,32 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       lastPage.length < PAGE_SIZE ? undefined : all.length * PAGE_SIZE,
     queryFn: async ({ pageParam }): Promise<FeedPost[]> => {
       const offset = pageParam as number;
+
+      // Tribe / Nearby use SECURITY DEFINER RPCs that combine breed + city + groups.
+      // They don't paginate server-side yet — we slice client-side from a single fetch
+      // and short-circuit further pages.
+      if (scope === "tribe" || scope === "nearby") {
+        if (offset > 0) return [];
+        const fn = scope === "tribe" ? "get_tribe_posts" : "get_nearby_posts";
+        const args: any = scope === "tribe" ? { _limit: 60 } : { _limit: 60 };
+        const { data: rpcData, error: rpcErr } = await (supabase as any).rpc(fn, args);
+        if (rpcErr) throw rpcErr;
+        const postsRaw = (rpcData ?? []) as any[];
+        const posts = postsRaw.filter((p) => !blocked || !blocked.has(p.author_id));
+        if (!posts.length) return [];
+        const petIds = [...new Set(posts.map((p) => p.pet_id).filter(Boolean) as string[])];
+        const pMap = new Map((publicProfiles ?? []).map((p) => [p.id, p]));
+        const { data: pets } = petIds.length
+          ? await supabase.from("pets").select("id, name, avatar_url").in("id", petIds)
+          : { data: [] as any[] };
+        const petMap = new Map((pets ?? []).map((p: any) => [p.id, p]));
+        return posts.map((p) => ({
+          ...p,
+          author: pMap.get(p.author_id) ?? null,
+          pet: p.pet_id ? petMap.get(p.pet_id) ?? null : null,
+        })) as FeedPost[];
+      }
+
       let followingIds: string[] | null = null;
       if (scope === "following") {
         if (!user) return [];

@@ -7261,6 +7261,39 @@ export type Database = {
         }[]
       }
       get_my_donation_pan: { Args: { _donation_id: string }; Returns: string }
+      get_nearby_posts: {
+        Args: { _city?: string; _limit?: number }
+        Returns: {
+          author_id: string
+          caption: string | null
+          comment_count: number
+          created_at: string
+          health_kind: string | null
+          health_pet_id: string | null
+          health_value: Json | null
+          id: string
+          image_url: string | null
+          image_url_feed: string | null
+          image_url_full: string | null
+          image_url_thumb: string | null
+          image_urls: Json | null
+          kind: Database["public"]["Enums"]["post_kind"]
+          like_count: number
+          pet_id: string | null
+          pet_snapshot: Json | null
+          reaction_counts: Json
+          rescue_journey_id: string | null
+          skill_spotlight_id: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_or_create_dm: { Args: { _other_user: string }; Returns: string }
       get_org_profile_phone: { Args: { _org_user_id: string }; Returns: string }
       get_pet_public_by_ref: {
@@ -7347,6 +7380,39 @@ export type Database = {
       get_service_provider_phone: {
         Args: { _provider_id: string }
         Returns: string
+      }
+      get_tribe_posts: {
+        Args: { _limit?: number }
+        Returns: {
+          author_id: string
+          caption: string | null
+          comment_count: number
+          created_at: string
+          health_kind: string | null
+          health_pet_id: string | null
+          health_value: Json | null
+          id: string
+          image_url: string | null
+          image_url_feed: string | null
+          image_url_full: string | null
+          image_url_thumb: string | null
+          image_urls: Json | null
+          kind: Database["public"]["Enums"]["post_kind"]
+          like_count: number
+          pet_id: string | null
+          pet_snapshot: Json | null
+          reaction_counts: Json
+          rescue_journey_id: string | null
+          skill_spotlight_id: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_id_by_email: {
         Args: { _email: string }
