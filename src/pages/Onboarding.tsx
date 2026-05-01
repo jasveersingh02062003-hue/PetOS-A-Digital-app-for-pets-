@@ -69,6 +69,8 @@ const AddAnotherPet = lazy(() => import("./onboarding/AddAnotherPet"));
 const Done = lazy(() => import("./onboarding/Done"));
 const OrgOnboarding = lazy(() => import("./OrgOnboarding"));
 const ProviderPicker = lazy(() => import("./onboarding/provider/Picker"));
+const FirstPetWizard = lazy(() => import("@/components/onboarding/FirstPetWizard"));
+const GoalsStep = lazy(() => import("@/components/onboarding/GoalsStep"));
 
 const Onboarding = () => {
   const nav = useNavigate();
