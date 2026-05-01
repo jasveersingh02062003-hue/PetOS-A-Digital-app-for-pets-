@@ -56,7 +56,6 @@ const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; 
 const BuyerPrefs = lazy(() => import("./onboarding/BuyerPrefs"));
 const RescuerProfile = lazy(() => import("./onboarding/RescuerProfile"));
 const BreederProfile = lazy(() => import("./onboarding/BreederProfile"));
-const QuickAddPet = lazy(() => import("./onboarding/QuickAddPet"));
 const AddAnotherPet = lazy(() => import("./onboarding/AddAnotherPet"));
 const Done = lazy(() => import("./onboarding/Done"));
 const OrgOnboarding = lazy(() => import("./OrgOnboarding"));
