@@ -192,7 +192,7 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
       </div>
       <ul className="divide-y divide-hairline">
         {data.map((it) => {
-          const Icon = it.icon;
+          const Icon = ICONS[it.iconKey] ?? Pill;
           return (
             <li key={it.key} className="flex items-center gap-3 py-2 px-1">
               <div className="h-8 w-8 rounded-full bg-primary-soft text-primary grid place-items-center shrink-0">
@@ -202,8 +202,8 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
                 <div className="text-sm font-medium truncate">{it.title}</div>
                 <div className={`text-[11px] ${TONE[it.tone]}`}>{it.due}</div>
               </div>
-              <Button size="sm" variant="ghost" className="h-8 px-3 rounded-full" onClick={it.cta.onClick}>
-                {it.cta.label}
+              <Button size="sm" variant="ghost" className="h-8 px-3 rounded-full" onClick={() => nav(it.ctaHref)}>
+                {it.ctaLabel}
               </Button>
             </li>
           );
