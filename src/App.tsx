@@ -309,6 +309,7 @@ const App = () => (
               <Route path="/rescue/:id" element={<RescueJourneyDetail />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/pet/:publicId" element={<PetProfile />} />
+              <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/pets/:petId/tracker" element={<PetTracker />} />
               <Route path="/groups" element={<Groups />} />
               <Route path="/g/:slug" element={<GroupDetail />} />
