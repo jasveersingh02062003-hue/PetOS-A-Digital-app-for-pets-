@@ -15,12 +15,13 @@ export const useProfile = () => {
   });
 };
 
-export const usePets = (ownerId?: string) => {
+export const usePets = (ownerId?: string, opts?: { enabled?: boolean }) => {
   const { user } = useAuth();
   const id = ownerId ?? user?.id;
+  const callerEnabled = opts?.enabled ?? true;
   return useQuery({
     queryKey: ["pets", id],
-    enabled: !!id,
+    enabled: !!id && callerEnabled,
     queryFn: async () => {
       const { data, error } = await supabase.from("pets").select("*").eq("owner_id", id!).order("created_at");
       if (error) throw error;

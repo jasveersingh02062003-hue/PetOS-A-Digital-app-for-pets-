@@ -1,29 +1,50 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
-import { Loader2 } from "lucide-react";
+import { HomeSkeleton } from "./HomeSkeleton";
 
 const SEEN_KEY = "petos_seen_intro";
 
 /**
  * Gates the main tab routes. Order matters — never navigate while loading.
- *   1. authLoading → spinner
+ *   1. authLoading → skeleton (matches Home structure, no jarring flash)
  *   2. !user → /welcome (first device visit) or /auth?redirect=…
- *   3. user but profile/pets loading → spinner
+ *   3. user but profile/pets loading → skeleton
  *   4. profile incomplete → /onboarding
  *   5. else → render children
+ *
+ * Perf notes:
+ *   - We preload the PetParentHome chunk the moment auth resolves, so its
+ *     JS download happens in parallel with the profile query instead of
+ *     starting only *after* the gate passes (saves ~300-1500ms on cold loads).
+ *   - We skip the pets query when account_type is known and not pet_parent —
+ *     orgs/breeders/vets don't need it to pass the gate.
  */
 export const FirstRunGate = ({ children }: { children: ReactNode }) => {
   const { pathname } = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: pets, isLoading: petsLoading } = usePets();
+
+  // Only fetch pets when the user is (or might be) a pet_parent — saves a
+  // round-trip for every other role.
+  const accountType = profile?.account_type;
+  const needsPets = !accountType || accountType === "pet_parent";
+  const { data: pets, isLoading: petsLoading } = usePets(undefined, { enabled: needsPets });
+
+  // Warm the PetParentHome chunk as soon as we have a signed-in user — most
+  // users land there, and we'd rather pay the network cost in parallel with
+  // the profile query than serially after the gate passes.
+  useEffect(() => {
+    if (user) {
+      import("@/pages/home/PetParentHome").catch(() => {});
+    }
+  }, [user]);
 
   // 1. Wait for auth to resolve before any navigation decision.
   if (authLoading) {
     if (import.meta.env.DEV) console.info("[FirstRunGate] waiting on auth");
-    return <Spinner />;
+    return <HomeSkeleton />;
   }
 
   // 2. Not signed in.
@@ -38,8 +59,8 @@ export const FirstRunGate = ({ children }: { children: ReactNode }) => {
   }
 
   // 3. Wait on profile/pets data.
-  if (profileLoading || petsLoading) {
-    return <Spinner />;
+  if (profileLoading || (needsPets && petsLoading)) {
+    return <HomeSkeleton />;
   }
 
   // 4. Profile incomplete → onboarding.
@@ -62,9 +83,3 @@ export const FirstRunGate = ({ children }: { children: ReactNode }) => {
 
   return <>{children}</>;
 };
-
-const Spinner = () => (
-  <div className="min-h-screen grid place-items-center">
-    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-  </div>
-);
