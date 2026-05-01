@@ -280,13 +280,33 @@ const Onboarding = () => {
     return <Suspense fallback={<StageLoader />}><ProviderPicker /></Suspense>;
   }
   if (stage === "add-pet") {
-    return <Suspense fallback={<StageLoader />}><QuickAddPet /></Suspense>;
+    // Adding a 2nd/3rd/etc pet — reuse the rich wizard in additional mode.
+    return (
+      <Suspense fallback={<StageLoader />}>
+        <FirstPetWizard isAdditional onDone={() => setStage("add-another")} />
+      </Suspense>
+    );
   }
   if (stage === "add-another") {
     return <Suspense fallback={<StageLoader />}><AddAnotherPet /></Suspense>;
   }
+  if (stage === "goals") {
+    return (
+      <Suspense fallback={<StageLoader />}>
+        <GoalsStep onDone={() => setStage("done")} />
+      </Suspense>
+    );
+  }
   if (stage === "done") {
     return <Suspense fallback={<StageLoader />}><Done /></Suspense>;
+  }
+  if (stage === "parent") {
+    // First pet — full rich wizard.
+    return (
+      <Suspense fallback={<StageLoader />}>
+        <FirstPetWizard onDone={() => setStage("add-another")} />
+      </Suspense>
+    );
   }
 
   // ─── ROLE PICKER ─────────────────────────────────────────────────────────
