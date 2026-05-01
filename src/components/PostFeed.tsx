@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,6 +32,8 @@ import { PetPostHeader } from "./social/PetPostHeader";
 // PostTrustStrip merged into PetPostHeader for pet cards; org posts use AuthorIdentity
 import { PostActionBar } from "./social/PostActionBar";
 import { PostKindBadge } from "./social/PostKindBadge";
+import { PetIdentityPlate } from "./social/PetIdentityPlate";
+import { PetCardActionBar } from "./social/PetCardActionBar";
 import { useSwipe } from "@/lib/useSwipe";
 import { useIsSaved, useToggleSave } from "@/hooks/usePostSave";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
