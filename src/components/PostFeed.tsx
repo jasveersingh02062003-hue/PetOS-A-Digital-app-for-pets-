@@ -412,6 +412,8 @@ const PostCard = ({ post, onComment, highlight }: {
         </div>
       )}
 
+      <PostTrustStrip petSnapshot={post.pet_snapshot} />
+
       {post.caption && (
         <CaptionWithTags
           text={post.caption}
