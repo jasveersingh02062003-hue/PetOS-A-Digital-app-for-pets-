@@ -42,6 +42,21 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
   const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>(
     initial.units ?? { weight: "kg", temp: "c" }
   );
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl ?? null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const onPickAvatar = async (f: File | null) => {
+    if (!f) return;
+    setAvatarUploading(true);
+    try {
+      const v = await uploadImageWithVariants(f, "user-avatars");
+      setAvatarUrl(v.full);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not upload photo");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   // Auto-suggest handle from name/email if user hasn't typed one yet.
   useEffect(() => {
