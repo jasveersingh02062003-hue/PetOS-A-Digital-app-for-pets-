@@ -421,6 +421,7 @@ const PostCard = ({ post, onComment, highlight }: {
         >
           <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
           <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
+          <PostKindBadge kind={post.kind} />
           {postLitter && (
             <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
               <Sparkles className="h-3 w-3" /> Bred on PetOS
