@@ -32,7 +32,7 @@ import { PetPostHeader } from "./social/PetPostHeader";
 import { PostTrustStrip } from "./social/PostTrustStrip";
 import { PostActionBar } from "./social/PostActionBar";
 import { useSwipe } from "@/lib/useSwipe";
-import { savePost } from "@/hooks/usePostSave";
+import { useIsSaved, useToggleSave } from "@/hooks/usePostSave";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
 import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
