@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { StepShell } from "@/components/onboarding/StepShell";
 import { IdentityStep } from "@/components/onboarding/IdentityStep";
+import { track } from "@/lib/analytics";
 
 /**
  * UNIFIED ONBOARDING — single URL `/onboarding`, internal state machine.
@@ -145,6 +146,7 @@ const Onboarding = () => {
         .upsert({ id: user.id, account_type: role as any }, { onConflict: "id" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      void track("onboarding_step", { step: "role", action: "selected", role });
       setStage(opt.nextStage);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");

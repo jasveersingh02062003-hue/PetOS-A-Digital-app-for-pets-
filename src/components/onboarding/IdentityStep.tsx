@@ -11,6 +11,7 @@ import { Check, Loader2, MapPin, AlertCircle, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyHandle, validateHandle, isHandleAvailable } from "@/lib/handle";
 import { uploadImageWithVariants } from "@/lib/uploadImage";
+import { track } from "@/lib/analytics";
 
 type Props = {
   initial: {
@@ -33,6 +34,7 @@ type Props = {
 export const IdentityStep = ({ initial, onComplete }: Props) => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  useEffect(() => { void track("onboarding_step", { step: "identity", action: "started" }); }, []);
   const [fullName, setFullName] = useState(initial.fullName ?? "");
   const [handle, setHandle] = useState(initial.handle ?? "");
   const [handleTouched, setHandleTouched] = useState(!!initial.handle);
@@ -135,6 +137,13 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
         throw error;
       }
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      void track("onboarding_step", {
+        step: "identity",
+        action: "completed",
+        has_avatar: !!avatarUrl,
+        language,
+        units: units.weight,
+      });
       onComplete();
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope, Sparkles, Siren, PhoneCall } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, Syringe, Utensils, Activity, FileText, Plus, QrCode, Share2, Loader2, Calendar, Trash2, Copy, Pill, Bug, ListOrdered, Stethoscope, Sparkles, Siren, PhoneCall, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { MedicalDisclaimer } from "@/components/MedicalDisclaimer";
@@ -278,6 +278,22 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
     },
   });
 
+  const [recalculating, setRecalculating] = useState(false);
+  const recalc = async () => {
+    if (!confirm("This replaces all auto-scheduled vaccine reminders for this pet using its current age. Vaccines you added manually are kept. Continue?")) return;
+    setRecalculating(true);
+    try {
+      const { error } = await supabase.rpc("seed_pet_vaccine_reminders" as any, { _pet_id: petId, _force: true });
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["vaccinations", petId] });
+      toast.success("Reminders recalculated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not recalculate");
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
@@ -290,6 +306,16 @@ const VaccinationsTab = ({ petId }: { petId: string }) => {
           <Plus className="h-4 w-4" /> Add manually
         </Button>
       </div>
+      <Button
+        onClick={recalc}
+        disabled={recalculating}
+        variant="ghost"
+        size="sm"
+        className="w-full h-9 rounded-xl text-xs text-muted-foreground gap-1.5"
+      >
+        {recalculating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+        Recalculate auto-scheduled reminders
+      </Button>
       {isLoading ? <SkeletonList /> : !data?.length ? <EmptyState text="No vaccinations recorded" hint="Scan the vaccine card or add the most recent shot — we'll remind you when boosters are due." /> : data.map((v) => (
         <Card key={v.id} className="rounded-2xl border-hairline bg-card shadow-none p-4">
           <div className="flex items-start justify-between gap-3">

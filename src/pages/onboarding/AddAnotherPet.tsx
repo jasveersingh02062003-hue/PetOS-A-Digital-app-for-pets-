@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PawPrint, ArrowRight, Plus } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
+import { track } from "@/lib/analytics";
 
 /**
  * Shown after the pet-parent finishes the wizard for a pet.
@@ -12,6 +14,16 @@ import { useSeo } from "@/hooks/useSeo";
 export default function AddAnotherPet() {
   const nav = useNavigate();
   useSeo({ title: "Add another pet?", description: "You can add as many pets as you like." });
+  useEffect(() => { void track("onboarding_step", { step: "add_another", action: "viewed" }); }, []);
+
+  const goAddPet = () => {
+    void track("onboarding_step", { step: "add_another", action: "add_more" });
+    nav("/onboarding?stage=add-pet", { replace: true });
+  };
+  const goGoals = (source: "card" | "skip") => {
+    void track("onboarding_step", { step: "add_another", action: "continue", source });
+    nav("/onboarding?stage=goals", { replace: true });
+  };
 
   return (
     <div className="container-app pt-10 pb-24 max-w-lg">
@@ -27,7 +39,7 @@ export default function AddAnotherPet() {
 
       <div className="space-y-3">
         <Card
-          onClick={() => nav("/onboarding?stage=add-pet", { replace: true })}
+          onClick={goAddPet}
           className="rounded-2xl border border-hairline p-4 cursor-pointer hover:border-primary/30 transition flex items-center gap-3"
         >
           <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center">
@@ -41,7 +53,7 @@ export default function AddAnotherPet() {
         </Card>
 
         <Card
-          onClick={() => nav("/onboarding?stage=goals", { replace: true })}
+          onClick={() => goGoals("card")}
           className="rounded-2xl border border-hairline p-4 cursor-pointer hover:border-foreground/20 transition flex items-center gap-3"
         >
           <div className="h-10 w-10 rounded-xl bg-muted grid place-items-center">
@@ -54,7 +66,7 @@ export default function AddAnotherPet() {
         </Card>
       </div>
 
-      <Button variant="ghost" onClick={() => nav("/onboarding?stage=goals", { replace: true })} className="w-full mt-6 text-muted-foreground">
+      <Button variant="ghost" onClick={() => goGoals("skip")} className="w-full mt-6 text-muted-foreground">
         Skip
       </Button>
     </div>

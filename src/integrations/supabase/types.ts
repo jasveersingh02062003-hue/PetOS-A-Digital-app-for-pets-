@@ -7546,10 +7546,9 @@ export type Database = {
           title: string
         }[]
       }
-      seed_pet_vaccine_reminders: {
-        Args: { _pet_id: string }
-        Returns: undefined
-      }
+      seed_pet_vaccine_reminders:
+        | { Args: { _pet_id: string }; Returns: undefined }
+        | { Args: { _force?: boolean; _pet_id: string }; Returns: undefined }
       seller_trust: { Args: { _user_id: string }; Returns: Json }
       send_broadcast: {
         Args: {
