@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +30,7 @@ export const ReactionBar = ({
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
-  const { data: mine } = useQuery({
+  const { data: mineRaw } = useQuery({
     queryKey: ["post-reactions-mine", postId, user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
@@ -40,9 +40,16 @@ export const ReactionBar = ({
         .eq("post_id", postId)
         .eq("user_id", user!.id);
       if (error) throw error;
-      return new Set((data ?? []).map((r: any) => r.kind as ReactionKind));
+      return (data ?? []).map((r: any) => r.kind as ReactionKind);
     },
   });
+  // Always work with a real Set — query cache may rehydrate as plain array/object.
+  const mine = useMemo<Set<ReactionKind>>(() => {
+    if (!mineRaw) return new Set();
+    if (mineRaw instanceof Set) return mineRaw as Set<ReactionKind>;
+    if (Array.isArray(mineRaw)) return new Set(mineRaw as ReactionKind[]);
+    return new Set();
+  }, [mineRaw]);
 
   const { data: counts } = useQuery({
     queryKey: ["post-reactions-counts", postId],
@@ -68,7 +75,7 @@ export const ReactionBar = ({
     if (!user) return toast.error("Please sign in");
     setOpen(false);
     haptic(10);
-    const has = mine?.has(kind);
+    const has = mine.has(kind);
     if (has) {
       await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id).eq("kind", kind);
     } else {
@@ -78,7 +85,7 @@ export const ReactionBar = ({
 
   const total = Object.values(counts ?? {}).reduce((s: number, n: any) => s + (Number(n) || 0), 0);
   const top = REACTIONS.filter((r) => (counts?.[r.kind] ?? 0) > 0).slice(0, 3);
-  const myFirst = REACTIONS.find((r) => mine?.has(r.kind));
+  const myFirst = REACTIONS.find((r) => mine.has(r.kind));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -133,7 +140,7 @@ export const ReactionBar = ({
       <PopoverContent side="top" align="start" className="p-1.5 rounded-full w-auto border-hairline">
         <div className="flex items-center gap-0.5">
           {REACTIONS.map((r) => {
-            const active = mine?.has(r.kind);
+            const active = mine.has(r.kind);
             return (
               <button
                 key={r.kind}
