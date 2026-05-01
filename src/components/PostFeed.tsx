@@ -345,9 +345,9 @@ const PostCard = ({ post, onComment, highlight }: {
         highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
       }`}
     >
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex items-start gap-2">
         {orgPost ? (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 p-4">
             <AuthorIdentity
               userId={post.author_id}
               fallbackName={post.author?.full_name}
@@ -363,38 +363,25 @@ const PostCard = ({ post, onComment, highlight }: {
             <CollabBadge postId={post.id} />
           </div>
         ) : (
-          <>
-        <Link to={`/u/${post.author_id}`} className="shrink-0">
-          <Avatar
-            className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(accountType)}`}
-          >
-            <AvatarImage src={displayImg} alt={displayName} />
-            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
-          </Avatar>
-        </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate hover:underline">
-              {displayName}
-            </Link>
-            {accountType !== "pet_parent" && (
-              <SellerBadge type={accountType as any} verified={authorVerified} pending={authorPending} />
-            )}
-            {accountType === "pet_parent" && (
-              <UserStreakChip
-                userId={post.author_id}
-                className="text-[10px] py-0 px-1.5 h-4"
-              />
-            )}
+          <div className="flex-1 min-w-0">
+            <PetPostHeader
+              authorId={post.author_id}
+              authorName={post.author?.full_name}
+              authorAvatar={post.author?.avatar_url}
+              accountType={accountType}
+              petId={post.pet_id}
+              pet={post.pet}
+              petSnapshot={post.pet_snapshot}
+              createdAt={post.created_at}
+              authorVerified={authorVerified}
+              authorPending={authorPending}
+            />
+            <div className="px-4 -mt-1 pb-1"><CollabBadge postId={post.id} /></div>
           </div>
-          <div className="text-[11px] text-muted-foreground">
-            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-          </div>
-          <CollabBadge postId={post.id} />
-        </div>
-          </>
         )}
-        <FollowButton targetId={post.author_id} />
+        <div className="pr-3 pt-4">
+          <FollowButton targetId={post.author_id} />
+        </div>
       </div>
 
       {(post.image_url_feed || post.image_url) && (
