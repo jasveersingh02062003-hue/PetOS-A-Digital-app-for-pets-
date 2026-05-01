@@ -113,6 +113,7 @@ const AppointmentRoom = lazy(() => import("./pages/AppointmentRoom"));
 const MyAppointments = lazy(() => import("./pages/MyAppointments"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const PetProfile = lazy(() => import("./pages/PetProfile"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
 const PetTracker = lazy(() => import("./pages/PetTracker"));
 const Groups = lazy(() => import("./pages/Groups"));
 const GroupDetail = lazy(() => import("./pages/GroupDetail"));
