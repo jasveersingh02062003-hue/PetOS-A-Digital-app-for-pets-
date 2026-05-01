@@ -392,6 +392,46 @@ const PostCard = ({ post, onComment, highlight }: {
       : "";
   const captionShort = (post.caption?.length ?? 0) <= 80 && (post.image_url_feed || post.image_url);
 
+  const hasImage = !!(post.image_url_feed || post.image_url);
+  const hasPet = !!(post.pet || post.pet_snapshot?.name);
+  const usePetCardLayout = !orgPost && hasPet && hasImage;
+
+  // Footer meta for pet card layout — owner + follow live BELOW the actions, not at the top
+  const petFooterByLine = (
+    <span className="inline-flex items-center gap-1.5">
+      <span>by</span>
+      <Link to={`/u/${post.author_id}`} className="hover:underline font-medium text-foreground/70 truncate max-w-[140px]">
+        {post.author?.full_name ?? "owner"}
+      </Link>
+      <span>·</span>
+      <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+    </span>
+  );
+
+  const ownerMenu = isOwner ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="More">
+          <MoreHorizontal className="h-5 w-5" strokeWidth={1.6} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="rounded-xl">
+        <DropdownMenuItem onClick={() => { setEditCaption(post.caption ?? ""); setEditOpen(true); }}>
+          <Pencil className="h-4 w-4 mr-2" /> Edit caption
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handlePin}>
+          <Pin className="h-4 w-4 mr-2" /> Pin to profile
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="h-4 w-4 mr-2" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : (
+    <ReportButton subjectType="post" subjectId={post.id} size="icon" />
+  );
+
   return (
     <Card
       ref={cardRef}
@@ -400,133 +440,162 @@ const PostCard = ({ post, onComment, highlight }: {
         highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
       }`}
     >
-      <div className="flex items-start gap-2">
-        {orgPost ? (
-          <div className="flex-1 min-w-0 p-4">
-            <AuthorIdentity
-              userId={post.author_id}
-              fallbackName={post.author?.full_name}
-              fallbackAvatar={post.author?.avatar_url}
-              fallbackAccountType={accountType}
-              size="md"
-              subline={
-                <span className="text-[11px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                </span>
-              }
+      {/* ============ Pet card layout (full-bleed photo with floating identity plate) ============ */}
+      {usePetCardLayout ? (
+        <>
+          <div
+            className={`relative select-none ${imageTint}`}
+            onClick={handleImageTap}
+            onDoubleClick={(e) => e.preventDefault()}
+            {...imageSwipe}
+          >
+            <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
+            <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
+            <PostKindBadge kind={post.kind} />
+            {postLitter && (
+              <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
+                <Sparkles className="h-3 w-3" /> Bred on PetOS
+              </div>
+            )}
+            <SmartImage
+              variant="feed"
+              src={post.image_url}
+              variants={{
+                thumb: post.image_url_thumb,
+                feed: post.image_url_feed,
+                full: post.image_url_full,
+              }}
+              aspect="4/5"
+              alt=""
             />
-            <CollabBadge postId={post.id} />
-          </div>
-        ) : (
-          <div className="flex-1 min-w-0">
-            <PetPostHeader
-              authorId={post.author_id}
-              authorName={post.author?.full_name}
-              authorAvatar={post.author?.avatar_url}
-              accountType={accountType}
+            {/* Soft bottom gradient so the floating plate is always legible on busy photos */}
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/35 via-black/10 to-transparent pointer-events-none" />
+
+            <PetIdentityPlate
               petId={post.pet_id}
+              authorId={post.author_id}
               pet={post.pet}
               petSnapshot={post.pet_snapshot}
-              createdAt={post.created_at}
-              authorVerified={authorVerified}
-              authorPending={authorPending}
+              accountType={accountType}
             />
-            <div className="px-4 -mt-1 pb-1"><CollabBadge postId={post.id} /></div>
-          </div>
-        )}
-        <div className="pr-3 pt-4">
-          <FollowButton targetId={post.author_id} />
-        </div>
-      </div>
-
-      {(post.image_url_feed || post.image_url) && (
-        <div
-          className={`relative select-none ${imageTint}`}
-          onClick={handleImageTap}
-          onDoubleClick={(e) => e.preventDefault()}
-          {...imageSwipe}
-        >
-          <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
-          <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
-          <PostKindBadge kind={post.kind} />
-          {postLitter && (
-            <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
-              <Sparkles className="h-3 w-3" /> Bred on PetOS
-            </div>
-          )}
-          <SmartImage
-            variant="feed"
-            src={post.image_url}
-            variants={{
-              thumb: post.image_url_thumb,
-              feed: post.image_url_feed,
-              full: post.image_url_full,
-            }}
-            aspect="1/1"
-            alt=""
-          />
-          {/* Caption overlay for short captions — premium editorial feel */}
-          {captionShort && post.caption && (
-            <div className="absolute inset-x-0 bottom-0 p-4 pt-12 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none">
-              <p className="text-white text-[14px] leading-snug font-medium drop-shadow-sm line-clamp-2">
-                {post.caption}
-              </p>
-            </div>
-          )}
-          {pawLayer}
-          {savedFlash && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
-              <div className="bg-foreground/85 text-background rounded-full px-4 py-2 flex items-center gap-2 shadow-lg animate-scale-in">
-                <Bookmark className="h-4 w-4 fill-current" />
-                <span className="text-sm font-semibold">Saved</span>
+            {pawLayer}
+            {savedFlash && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in z-20">
+                <div className="bg-foreground/85 text-background rounded-full px-4 py-2 flex items-center gap-2 shadow-lg animate-scale-in">
+                  <Bookmark className="h-4 w-4 fill-current" />
+                  <span className="text-sm font-semibold">Saved</span>
+                </div>
               </div>
+            )}
+          </div>
+
+          {post.caption && (
+            <CaptionWithTags
+              text={post.caption}
+              className="px-4 pt-3 text-[15px] leading-relaxed text-foreground whitespace-pre-wrap font-display"
+            />
+          )}
+
+          <div className="px-4 pt-1"><CollabBadge postId={post.id} /></div>
+          <RescueJourneyCarousel journeyId={post.rescue_journey_id} />
+
+          <PetCardActionBar
+            postId={post.id}
+            reactionCounts={post.reaction_counts as any}
+            commentCount={post.comment_count}
+            authorByLine={petFooterByLine}
+            followSlot={<FollowButton targetId={post.author_id} />}
+            trailing={ownerMenu}
+            onComment={onComment}
+            onShare={handleShare}
+          />
+        </>
+      ) : (
+        /* ============ Legacy layout for org posts / posts without an image ============ */
+        <>
+          <div className="flex items-start gap-2">
+            {orgPost ? (
+              <div className="flex-1 min-w-0 p-4">
+                <AuthorIdentity
+                  userId={post.author_id}
+                  fallbackName={post.author?.full_name}
+                  fallbackAvatar={post.author?.avatar_url}
+                  fallbackAccountType={accountType}
+                  size="md"
+                  subline={
+                    <span className="text-[11px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                    </span>
+                  }
+                />
+                <CollabBadge postId={post.id} />
+              </div>
+            ) : (
+              <div className="flex-1 min-w-0">
+                <PetPostHeader
+                  authorId={post.author_id}
+                  authorName={post.author?.full_name}
+                  authorAvatar={post.author?.avatar_url}
+                  accountType={accountType}
+                  petId={post.pet_id}
+                  pet={post.pet}
+                  petSnapshot={post.pet_snapshot}
+                  createdAt={post.created_at}
+                  authorVerified={authorVerified}
+                  authorPending={authorPending}
+                />
+                <div className="px-4 -mt-1 pb-1"><CollabBadge postId={post.id} /></div>
+              </div>
+            )}
+            <div className="pr-3 pt-4">
+              <FollowButton targetId={post.author_id} />
+            </div>
+          </div>
+
+          {hasImage && (
+            <div
+              className={`relative select-none ${imageTint}`}
+              onClick={handleImageTap}
+              onDoubleClick={(e) => e.preventDefault()}
+              {...imageSwipe}
+            >
+              <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
+              <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
+              <PostKindBadge kind={post.kind} />
+              <SmartImage
+                variant="feed"
+                src={post.image_url}
+                variants={{
+                  thumb: post.image_url_thumb,
+                  feed: post.image_url_feed,
+                  full: post.image_url_full,
+                }}
+                aspect="1/1"
+                alt=""
+              />
+              {pawLayer}
             </div>
           )}
-        </div>
+
+          {post.caption && (
+            <CaptionWithTags
+              text={post.caption}
+              className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap"
+            />
+          )}
+
+          <RescueJourneyCarousel journeyId={post.rescue_journey_id} />
+
+          <PostActionBar
+            postId={post.id}
+            reactionCounts={post.reaction_counts as any}
+            commentCount={post.comment_count}
+            onComment={onComment}
+            onShare={handleShare}
+            trailing={ownerMenu}
+          />
+        </>
       )}
-
-      {/* Show full caption below image only when it's long (or when there's no image) */}
-      {post.caption && !captionShort && (
-        <CaptionWithTags
-          text={post.caption}
-          className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap"
-        />
-      )}
-
-      <RescueJourneyCarousel journeyId={post.rescue_journey_id} />
-
-      <PostActionBar
-        postId={post.id}
-        reactionCounts={post.reaction_counts as any}
-        commentCount={post.comment_count}
-        onComment={onComment}
-        onShare={handleShare}
-        trailing={
-          isOwner ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="More">
-                  <MoreHorizontal className="h-5 w-5" strokeWidth={1.6} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-xl">
-                <DropdownMenuItem onClick={() => { setEditCaption(post.caption ?? ""); setEditOpen(true); }}>
-                  <Pencil className="h-4 w-4 mr-2" /> Edit caption
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePin}>
-                  <Pin className="h-4 w-4 mr-2" /> Pin to profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <ReportButton subjectType="post" subjectId={post.id} size="icon" />
-          )
-        }
-      />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="rounded-2xl">
