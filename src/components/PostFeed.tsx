@@ -57,6 +57,15 @@ export type FeedPost = {
   reaction_counts?: Record<string, number> | null;
   rescue_journey_id?: string | null;
   skill_spotlight_id?: string | null;
+  kind?: "moment" | "milestone" | "memorial" | "tribe_post" | null;
+  pet_snapshot?: {
+    name?: string | null;
+    breed?: string | null;
+    age_months?: number | null;
+    avatar_url?: string | null;
+    vaccines_ok?: boolean | null;
+    city?: string | null;
+  } | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
