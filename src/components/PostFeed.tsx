@@ -29,6 +29,8 @@ import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
 import { UserStreakChip } from "./social/UserStreakChip";
+import { PetPostHeader } from "./social/PetPostHeader";
+import { PostTrustStrip } from "./social/PostTrustStrip";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
 import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
