@@ -131,7 +131,7 @@ export const ReactionBar = ({
             </span>
           ) : (
             <span className={`text-base leading-none ${myFirst ? "" : "grayscale opacity-60"}`}>
-              {myFirst?.emoji ?? "❤️"}
+              {myFirst?.emoji ?? "🐾"}
             </span>
           )}
           <span className="text-sm tabular-nums relative inline-block min-w-[1ch] text-center overflow-hidden h-[1.25em] leading-[1.25em]">
