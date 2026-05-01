@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { Siren } from "lucide-react";
+import { Siren, ChevronRight } from "lucide-react";
 
 /**
- * Big, unmissable SOS button on Home — the entry point for the
- * pet-context-aware AI Doctor. Distinct red emergency tone so it
- * stands apart from the regular AI chat in the QuickAccessRail.
+ * Slim emergency ribbon. Compact one-liner so the hero pet card stays
+ * dominant above the fold — the existing floating red FAB already covers
+ * the "always-visible" SOS pattern.
  */
 export const EmergencyButton = () => {
   const nav = useNavigate();
@@ -12,18 +12,16 @@ export const EmergencyButton = () => {
     <button
       onClick={() => nav("/vet-triage")}
       aria-label="Emergency — talk to AI vet"
-      className="w-full rounded-3xl border border-emergency/25 bg-gradient-to-br from-emergency/15 via-card to-emergency/5 p-4 mb-4 active:scale-[0.99] transition-transform card-elev flex items-center gap-3"
+      className="w-full rounded-2xl border border-emergency/25 bg-emergency/8 hover:bg-emergency/12 px-3 py-2 mb-4 active:scale-[0.99] transition-all flex items-center gap-2.5 group"
     >
-      <div className="h-12 w-12 rounded-2xl bg-emergency/15 ring-1 ring-emergency/25 flex items-center justify-center shrink-0">
-        <Siren className="h-6 w-6 text-emergency" strokeWidth={2.2} />
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <div className="font-display text-base leading-tight text-foreground">Emergency? Ask DogtorAI</div>
-        <div className="text-[11px] text-muted-foreground mt-0.5">
-          Pet-context triage in seconds — escalates to a live vet if needed
-        </div>
-      </div>
-      <div className="text-[11px] font-semibold text-emergency">SOS</div>
+      <span className="h-7 w-7 rounded-full bg-emergency/15 flex items-center justify-center shrink-0">
+        <Siren className="h-3.5 w-3.5 text-emergency" strokeWidth={2.4} />
+      </span>
+      <span className="flex-1 min-w-0 text-left text-[13px] font-medium text-foreground/90">
+        Emergency? <span className="text-muted-foreground font-normal">Ask DogtorAI now</span>
+      </span>
+      <span className="text-[10px] font-bold text-emergency tracking-wider">SOS</span>
+      <ChevronRight className="h-4 w-4 text-emergency/60 group-hover:translate-x-0.5 transition-transform" />
     </button>
   );
 };

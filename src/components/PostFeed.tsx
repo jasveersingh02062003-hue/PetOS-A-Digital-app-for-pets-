@@ -29,7 +29,7 @@ import { AuthorIdentity } from "./AuthorIdentity";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 // streak chip moved into PetPostHeader
 import { PetPostHeader } from "./social/PetPostHeader";
-import { PostTrustStrip } from "./social/PostTrustStrip";
+// PostTrustStrip merged into PetPostHeader for pet cards; org posts use AuthorIdentity
 import { PostActionBar } from "./social/PostActionBar";
 import { PostKindBadge } from "./social/PostKindBadge";
 import { useSwipe } from "@/lib/useSwipe";
@@ -70,6 +70,9 @@ export type FeedPost = {
     avatar_url?: string | null;
     vaccines_ok?: boolean | null;
     city?: string | null;
+    lifetime_walks_km?: number | null;
+    streak_days?: number | null;
+    lineage_verified?: boolean | null;
   } | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
@@ -365,11 +368,35 @@ const PostCard = ({ post, onComment, highlight }: {
     }
   };
 
+  // Per-kind premium variants — top stroke, ring tint, image overlay
+  const kind = post.kind ?? "moment";
+  const variantWrap =
+    kind === "milestone"
+      ? "ring-1 ring-amber-300/50 shadow-[0_1px_0_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(245,158,11,0.35)]"
+      : kind === "memorial"
+      ? "ring-1 ring-amber-700/30 shadow-[0_1px_0_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(120,53,15,0.35)] bg-gradient-to-b from-amber-50/40 to-card dark:from-amber-950/20"
+      : kind === "tribe_post"
+      ? "ring-1 ring-leaf/30 shadow-[0_1px_0_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(34,197,94,0.3)]"
+      : "shadow-[0_1px_0_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.10)]";
+  const variantTopStroke =
+    kind === "milestone"
+      ? "before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-amber-300 before:via-coral before:to-amber-300"
+      : kind === "memorial"
+      ? "before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-amber-700/0 before:via-amber-700 before:to-amber-700/0"
+      : kind === "tribe_post"
+      ? "before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-leaf/0 before:via-leaf before:to-leaf/0"
+      : "";
+  const imageTint =
+    kind === "memorial"
+      ? "after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-b after:from-amber-900/10 after:via-transparent after:to-amber-900/15 after:pointer-events-none"
+      : "";
+  const captionShort = (post.caption?.length ?? 0) <= 80 && (post.image_url_feed || post.image_url);
+
   return (
     <Card
       ref={cardRef}
       {...cardSwipe}
-      className={`rounded-2xl border-hairline bg-card shadow-none overflow-hidden transition-shadow ${
+      className={`relative rounded-3xl border-hairline bg-card overflow-hidden transition-all duration-200 ${variantWrap} ${variantTopStroke} ${
         highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
       }`}
     >
@@ -414,7 +441,7 @@ const PostCard = ({ post, onComment, highlight }: {
 
       {(post.image_url_feed || post.image_url) && (
         <div
-          className="relative select-none"
+          className={`relative select-none ${imageTint}`}
           onClick={handleImageTap}
           onDoubleClick={(e) => e.preventDefault()}
           {...imageSwipe}
@@ -423,7 +450,7 @@ const PostCard = ({ post, onComment, highlight }: {
           <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
           <PostKindBadge kind={post.kind} />
           {postLitter && (
-            <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
+            <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-card/95 backdrop-blur border border-coral/30 px-2 py-0.5 text-[10px] font-semibold text-coral shadow-sm">
               <Sparkles className="h-3 w-3" /> Bred on PetOS
             </div>
           )}
@@ -438,8 +465,15 @@ const PostCard = ({ post, onComment, highlight }: {
             aspect="1/1"
             alt=""
           />
+          {/* Caption overlay for short captions — premium editorial feel */}
+          {captionShort && post.caption && (
+            <div className="absolute inset-x-0 bottom-0 p-4 pt-12 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none">
+              <p className="text-white text-[14px] leading-snug font-medium drop-shadow-sm line-clamp-2">
+                {post.caption}
+              </p>
+            </div>
+          )}
           {pawLayer}
-          {/* Saved-via-swipe flash — quick visual confirm without a sheet */}
           {savedFlash && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
               <div className="bg-foreground/85 text-background rounded-full px-4 py-2 flex items-center gap-2 shadow-lg animate-scale-in">
@@ -451,9 +485,8 @@ const PostCard = ({ post, onComment, highlight }: {
         </div>
       )}
 
-      <PostTrustStrip petSnapshot={post.pet_snapshot} />
-
-      {post.caption && (
+      {/* Show full caption below image only when it's long (or when there's no image) */}
+      {post.caption && !captionShort && (
         <CaptionWithTags
           text={post.caption}
           className="px-4 pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap"

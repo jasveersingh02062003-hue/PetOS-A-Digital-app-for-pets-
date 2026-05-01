@@ -150,19 +150,28 @@ export const ReactionBar = ({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="p-1.5 rounded-full w-auto border-hairline">
-        <div className="flex items-center gap-0.5">
-          {REACTIONS.map((r) => {
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="p-2 rounded-full w-auto border-hairline bg-card/95 backdrop-blur-md shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]"
+      >
+        <div className="flex items-center gap-1">
+          {REACTIONS.map((r, i) => {
             const active = mine.has(r.kind);
             return (
-              <button
+              <motion.button
                 key={r.kind}
+                initial={{ scale: 0, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ delay: i * 0.025, type: "spring", stiffness: 500, damping: 22 }}
                 onClick={() => toggle(r.kind)}
                 title={r.label}
-                className={`h-9 w-9 flex items-center justify-center rounded-full text-xl transition-transform hover:scale-125 active:scale-110 ${active ? "bg-primary-soft animate-pop" : ""}`}
+                aria-label={r.label}
+                className={`relative h-11 w-11 flex items-center justify-center rounded-full text-2xl transition-transform hover:scale-[1.35] hover:-translate-y-1 active:scale-110 ${active ? "bg-primary-soft" : ""}`}
               >
                 {r.emoji}
-              </button>
+              </motion.button>
             );
           })}
         </div>

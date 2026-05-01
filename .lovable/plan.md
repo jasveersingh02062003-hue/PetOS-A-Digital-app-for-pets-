@@ -1,232 +1,165 @@
+# Petos Social — Premium Redesign Plan
 
-# Petos Social — From Clone → Category
+## Honest critique of what's live now (your screenshots)
 
-A phased, non-overlapping build plan. Each phase ships independently, has clear backend + frontend boundaries, and passes a "live & real" bar (no mocks, real Supabase, real-time where it matters).
+Looking at the `pubg` post card and the home screen:
 
----
+1. **It reads as a stock IG card.** Square photo, avatar-name-time header, icon row beneath. The "Pet-first" header is there in code, but visually the pet identity is the same weight as any IG username — no signature treatment.
+2. **The trust strip is weak.** "Unverified · Golden Retriever · 7y · hyderabad" is rendered as four flat grey/orange chips. It looks like a filter bar, not a credibility belt. Nothing about it says *"this is data Instagram literally cannot show you."*
+3. **The action bar is generic.** A row of 5 monochrome icons with a tiny "Top ❤️ 2 🐾 1" line above. No personality, no pet language, no premium feel.
+4. **No spatial hierarchy.** Header, image, chips, caption, actions are all the same card width, same padding, same neutral background. Nothing pulls the eye. Premium apps (IG Reels, TikTok, LinkedIn premium cards) always have **one hero element** per card.
+5. **Home screen is busy but not energetic.** Pet card → SOS banner → composer → 6-icon grid → tabs → feed. Five competing surfaces above the fold, none of them feel like *the* moment.
 
-## What's changing (in plain English)
-
-We're rebuilding the social experience around **the pet, not the human**, and wiring it to data Instagram cannot have (vaccines, walks, breed, age, location). Every phase below produces a *visible, shippable* improvement.
-
-| Phase | Theme | User sees… |
-|---|---|---|
-| 0 | Foundations cleanup | Same UI, faster, no bugs |
-| 1 | Pet-first feed card | Pet name/breed/age/health badges on every post |
-| 2 | Pet-native reactions | 🐾 boop, 🦴 treat, 😋 yummy replace generic ❤️ |
-| 3 | Smart composer + Home polish | Floating "+" with intents; cleaner Home; smart story prompt |
-| 4 | Auto-milestones | "Bruno turned 1 today!" auto-posted from health/birthday data |
-| 5 | Breed Tribes | Auto-joined feeds: "Labrador parents near you" |
-| 6 | Real-time chat hardening | Message read receipts, typing, presence, push |
-| 7 | Memory Reels | Auto slideshow "Bruno's first year" — shareable outside app |
-| 8 | Vet-verified replies & Rainbow Bridge | Trust moat + lifetime retention |
-
-We will **not** touch: payments, vet booking, taxi, shop. Those stay as-is.
+Rating today: **6.2 / 10.** Functional, organized, but indistinguishable from any pet-themed Instagram clone.
 
 ---
 
-## Phase 0 — Foundations (½ day, no UI change)
+## The USP — one sentence
 
-**Why first:** later phases depend on it. Zero overlap with feature work.
+> **"Every post is a Pet Passport entry."** The pet — not the owner — is the protagonist, and every card is provably backed by health, lineage, and locality data that no other social app has.
 
-**Backend**
-- Add `posts.kind` enum: `moment | milestone | memorial | tribe_post` (default `moment`).
-- Add `posts.pet_snapshot jsonb` — denormalized `{name, breed, age_months, avatar_url, vaccines_ok, location_city}` written by trigger on insert. Avoids N+1 joins on every feed render.
-- Add index `posts_kind_created_idx`.
+Three pillars derived from this:
 
-**Frontend**
-- Extend `FeedPost` type with `kind` + `pet_snapshot`.
-- Single `usePetSnapshot(petId)` hook for fallback when snapshot is null (older posts).
-
-**Done when:** existing feed renders identically but reads `pet_snapshot` instead of joining `pets` table.
+1. **Pet-as-protagonist** — the pet's face, name, and life stats own the card.
+2. **Receipts, not vibes** — verified vaccines, breed lineage, vet co-signs, walk streaks, rescue journeys appear as first-class card chrome.
+3. **Pet-native interactions** — boops, treats, tail-wags, vet co-signs replace generic likes. They sound, feel, and animate differently.
 
 ---
 
-## Phase 1 — Pet-First Feed Card 🥇 (highest leverage)
+## Phase A — The "Pet Card" redesign (frontend only, highest leverage)
 
-**Frontend only. No backend changes.**
-
-Replace `PostCard` header in `src/components/PostFeed.tsx`:
+The single biggest change. Transforms the card from "IG post with a pet badge" into "a moment from a pet's life."
 
 ```text
-[Pet avatar w/ breed-color ring]  PUBG · Golden Retriever · 2y
-                                  by @joe · 21h · 🔥 47-day streak
-                                  💉 Vaccines up-to-date · 📍 2 km
-[image]
-"Meet pubg — first day at the park 🌳"
+┌──────────────────────────────────────────────┐
+│  ╭─────╮                                      │
+│  │ pet │  PUBG                          ◐ ⋯  │
+│  │ avtr│  Golden Retriever · 7y               │
+│  ╰─────╯  ✓ Vaccinated  📍 Hyderabad          │
+│           by @jpmorgan · 22h                  │
+├──────────────────────────────────────────────┤
+│                                              │
+│           [ EDGE-TO-EDGE PHOTO ]             │
+│                                              │
+│   ╭───────────────────────────────╮          │
+│   │ "meet pubg"                   │  ← caption overlay
+│   ╰───────────────────────────────╯          │
+├──────────────────────────────────────────────┤
+│  🐾 boop · 🦴 treat · 💛 love     12 paws    │
+│  💬 4    🔖    ↗                              │
+└──────────────────────────────────────────────┘
 ```
 
-- New component: `src/components/social/PetPostHeader.tsx` (pet is primary, owner is secondary subline).
-- New component: `src/components/social/PostTrustStrip.tsx` — vaccine badge, distance chip, streak.
-- `displayName` fallback chain: pet → owner (already exists, just elevate pet visually).
-- Remove the redundant top-right `FollowButton` on org posts; keep it for personal posts.
+Concrete changes:
 
-**Done when:** every feed card shows the pet as protagonist; the human handle is a subline; trust signals appear when data exists.
+- **Header collapses trust into the identity block.** Vaccinated/city move *up* next to breed-age, so the first glance reads "PUBG, Golden Retriever, 7y, vaccinated, Hyderabad." Removes the redundant chip strip below the photo.
+- **Edge-to-edge media.** Image fills card width, no inner padding. Adds a soft bottom gradient with the caption laid over the last 80px of the photo (LinkedIn premium / Apple News pattern). Optional — when caption is long, it falls under the photo as today.
+- **Reaction summary becomes the headline below the photo.** Big emojis, single "12 paws" tally on the right (not a Top-3 row). Tap the row to open a reaction sheet showing who booped.
+- **Action row gets generous spacing** (48px tap targets), the comment count moves inside the icon (`💬 4`), and the bookmark/share/report sit right-aligned with a divider.
+- **Owner sub-line is intentionally smaller** ("by @jpmorgan · 22h"), reinforcing the pet is the subject.
+- **Follow button** moves out of the card to a hover/long-press action — one less competing CTA per scroll.
 
----
-
-## Phase 2 — Pet-Native Reactions
-
-**Backend**
-- Extend the `reaction_kind` check (currently `love | paw | laugh | wow | sad`) to add: `boop | treat | yummy | strong | cute`.
-- Backfill existing rows untouched.
-- Update `reaction_counts` rollup trigger (already exists) — no logic change, just new keys.
-
-**Frontend**
-- Update `REACTIONS` in `src/components/social/ReactionBar.tsx`:
-  - `🐾 Boop` (default tap), `🦴 Treat`, `😋 Yummy`, `❤️ Love`, `💪 Strong`, `🥰 Cute`.
-  - Default double-tap action → `boop` (not `love`).
-- Update `src/lib/reactions.ts` ReactionKind union + tests.
-- Animations: keep PawBurst; add per-reaction emoji burst variants.
-
-**Done when:** double-tap = boop; long-press shows the 6-emoji palette; counts update live via existing realtime channel.
+Files: `PetPostHeader.tsx`, `PostFeed.tsx` (PostCard JSX), `PostActionBar.tsx`, `PostTrustStrip.tsx` (will be merged into header for typical posts; kept only for org/non-pet posts).
 
 ---
 
-## Phase 3 — Smart Composer + Home Polish
+## Phase B — Signature reactions (frontend + tiny backend)
 
-**Frontend only.**
+Pet-native reactions exist but feel like emojis on buttons. Make them a **signature interaction**.
 
-**3a. Floating compose FAB → intent picker**
-- New `src/components/social/SmartComposer.tsx`: bottom sheet with 4 intents:
-  - 📸 Moment → existing photo composer
-  - 🏆 Milestone → pre-fills caption from pet data
-  - ❓ Ask community → routes to Ask Vet / group post
-  - 🚨 Lost / Found → opens existing `MissingCreateSheet`
-- Wire to existing `ContextualFab` instead of replacing.
+- **Long-press the boop button → radial picker** with 6 reactions in a fan, IG-Reels style, with subtle haptic + a paw-print ripple under the finger.
+- **Each reaction has its own micro-animation** when tapped: boop = paw print drops, treat = bone bounces, love = hearts float, strong = flex pulse.
+- **Reaction counts shown as stacked emoji + total** (`🐾🦴💛 +12`) instead of a comma row.
+- **Backend:** add a tiny `reactions_summary` view (or extend the existing trigger) so the top-3 emojis are computed in SQL, not on the client. One query, one render.
 
-**3b. Home cleanup (`src/pages/home/PetParentHome.tsx`)**
-- Hide `StoryRail` when zero stories; replace with a `SmartStoryPrompt` card: *"📸 Share Pubg's morning — your followers are waiting"*.
-- Rename "Personalised for" → "Today for {petName}" with max 3 cards (birthday countdown, nearby same-breed, upcoming checkup).
-- Tighten spacing: standardize section vertical rhythm to `mt-6`.
-
-**Done when:** Home no longer shows empty story row; compose is one tap with clear intents.
+Files: `ReactionBar.tsx`, new `ReactionPicker.tsx`, new SQL view `post_reactions_top`.
 
 ---
 
-## Phase 4 — Auto-Milestones
+## Phase C — Hero variants by post `kind` (uses backend already shipped)
 
-**Backend**
-- New table `pet_milestones` (`id, pet_id, kind, occurred_on, payload jsonb, posted_post_id`).
-- Edge function `generate-milestones` (cron daily 09:00 user-local via existing pg_cron):
-  - Birthday (`pets.dob`)
-  - Vaccine completed (last 24h health_records)
-  - First walk of season
-  - Streak milestones (7/30/100 day)
-- Function inserts a `posts` row with `kind='milestone'` and a generated caption + uses `pets.avatar_url`.
-- RLS: pet owner can delete the auto-post within 24h (suppress next time).
+The `kind` column (`moment | milestone | memorial | tribe_post`) is already on `posts` — but visually every card looks identical. Make each kind a distinct hero treatment:
 
-**Frontend**
-- New `MilestoneCard` variant in `PostFeed` (different background gradient, 🎂/🏅 badge).
-- Settings toggle `notification_preferences.auto_milestones` (default on).
+- **Milestone** (birthday, 1st walk, gotcha day): card gets a thin gold top-stroke, the photo has a confetti animation on first appear, header shows a "🎂 Birthday" ribbon.
+- **Memorial**: warm sepia tone overlay on the photo, soft amber border, "💛 In memory" ribbon, reactions replaced with single "🕯 light a candle" tap (counts as a reaction kind).
+- **Tribe post** (group): card shows the tribe badge + "Posted in 🐕 Hyderabad Goldens" pill, tap → group page.
+- **Default moment**: the standard pet card from Phase A.
 
-**Done when:** turning on a test pet's birthday tomorrow → tomorrow morning a milestone post appears in feed automatically.
+This alone makes the feed feel **alive and varied** — not a wall of identical squares.
+
+Files: `PostKindBadge.tsx` (exists, expand), `PostFeed.tsx`, new `MemorialCard.tsx` wrapper.
 
 ---
 
-## Phase 5 — Breed Tribes
+## Phase D — Home above-the-fold, simplified
 
-**Backend**
-- New tables:
-  - `tribes` (`id, slug, name, kind: breed|life_stage|location, criteria jsonb`)
-  - `tribe_members` (`tribe_id, user_id, pet_id, joined_at`)
-  - `tribe_posts` (view: posts where author has matching pet/tribe)
-- Seed top 50 breed tribes + life-stage tribes (puppy, senior, first-time).
-- Trigger: when a pet is created/updated, auto-add owner to matching tribes.
+Today there are 5 stacked surfaces before the feed. Cut to **three** with stronger hierarchy:
 
-**Frontend**
-- New page `src/pages/Tribes.tsx` — grid of joined tribes.
-- New page `src/pages/TribeDetail.tsx` — feed scoped to tribe + member rail.
-- Add "Tribe" tab next to For-you / Following / Trending in Home.
+1. **The Pet hero card** (already exists) — but bigger pet avatar (96px), age in big numerals, single primary CTA changes by context (verify vaccines today; share moment if vaccines are done).
+2. **Smart Story Rail** — keep, but the "Add" tile becomes a soft pulsing prompt only if I haven't posted in 24h. Otherwise it's just my latest story with a green "Live" dot.
+3. **Quick-actions strip** condensed from 6 icons to **3 contextual** ones based on time of day + pet state (morning → Walks; mealtime → Shop; rash detected → Ask vet). The other actions move into a "More" sheet.
 
-**Done when:** signing up a Labrador auto-joins "Labrador Parents" tribe and that feed has real posts.
+The SOS banner is collapsed into a single floating red dot bottom-right (already there), so it isn't competing for the hero spot.
+
+Files: `PetParentHome.tsx`, `SmartStoryPrompt.tsx`, new `QuickActions.tsx`.
 
 ---
 
-## Phase 6 — Real-time Chat Hardening
+## Phase E — Premium feel polish (cross-cutting)
 
-The chat tables already exist (`conversations`, `messages`, `is_conversation_member` RLS). What's missing for "more powerful than other apps":
+Small details that separate "clone" from "premium":
 
-**Backend**
-- Add `messages.read_by jsonb` (array of `{user_id, read_at}`).
-- Add `typing_indicators` ephemeral table OR use Supabase Realtime presence (preferred — no DB writes).
-- Add `messages.delivery_status` derived view.
-- Edge function `send-chat-push` triggered on insert → fans out web push to offline members.
-- Enable realtime publication on `messages` and `conversations` (verify already enabled).
+- **Display font on pet names** (Fraunces/Playfair already in `font-display`) — use it for the pet name in cards. Sets the brand voice.
+- **Card radius up to `rounded-3xl`** with a `shadow-[0_1px_0_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.12)]` — looks lifted, not boxed.
+- **Tap microinteractions** on every card surface: scale to 0.99 on press, springs back. Already have `haptic()` — wire it to all primary actions (boop, save, share).
+- **Skeleton → content fade** instead of pop-in (200ms opacity).
+- **Verified vaccinated chip** uses a custom SVG paw-shield, not the generic `ShieldCheck` lucide icon.
 
-**Frontend (`src/pages/MessageThread.tsx`, `src/pages/Messages.tsx`)**
-- Realtime `postgres_changes` subscription on `messages` filtered by `conversation_id`.
-- Presence channel per conversation → typing dots + online status.
-- Read-receipt update on viewport visibility.
-- Optimistic send with rollback on error.
-- Image/voice attachments via existing `uploadImage` lib (extend to audio).
-
-**Done when:** two devices, two accounts → message delivered <500ms, typing dots, read ticks, push to backgrounded tab.
+Files: `index.css` (shadow tokens), `tailwind.config.ts`, all card components.
 
 ---
 
-## Phase 7 — Memory Reels
+## Phase F — Backend alignment (ensures the visuals are real, not faked)
 
-**Backend**
-- New table `memory_reels` (`id, pet_id, period: year|season|month, items jsonb, cover_url, share_token`).
-- Edge function `generate-memory-reel` runs weekly per pet:
-  - Picks top 12 posts by reactions in period.
-  - Calls `og-image` style renderer to compose cover.
-  - Stores items array of post_ids + computed thumbnails.
-- Public share route renders without auth (using `share_token`).
+Frontend redesign without backend backing = lipstick. Three small additions:
 
-**Frontend**
-- New component `MemoryReelCard` on Home (when one is ready).
-- New page `src/pages/MemoryReel.tsx` — Stories-style full-screen player.
-- Share button → public URL → OG image preview on WhatsApp/IG (free virality).
+1. **`post_reactions_top` SQL view** — returns top 3 reaction kinds + total per post. Powers the reaction summary line in O(1).
+2. **`pet_snapshot` extension** — add `lifetime_walks_km`, `streak_days`, `lineage_verified` to the JSON. Trigger already exists; just extend the SELECT.
+3. **`posts.hero_variant` derived column** — small PL/pgSQL function that sets `hero_variant` based on `kind` + pet age + time since last post (e.g., "first post in 30 days" auto-promotes to `comeback` variant). Lets the feed stay visually surprising without manual tagging.
 
-**Done when:** a pet with 12+ posts gets a "Bruno's first year" reel that plays full-screen and shares as a link.
+Migration: one new view + one ALTER TABLE + one trigger update. Backwards compatible (all nullable).
 
 ---
 
-## Phase 8 — Vet-Verified Replies + Rainbow Bridge
+## Order of execution
 
-**8a. Vet-verified comments**
-- Backend: existing `helpful_vets` flag — surface on `post_comments` via join. Add `post_comments.vet_verified` materialized boolean.
-- Frontend: green checkmark badge in `CommentSheet` when commenter is a verified vet.
+| # | Phase | Visual impact | Effort |
+|---|-------|--------------:|-------:|
+| 1 | A — Pet Card redesign | very high | M |
+| 2 | C — Hero variants by kind | high | M |
+| 3 | B — Signature reactions | high | M |
+| 4 | E — Premium polish | medium | S |
+| 5 | D — Home simplification | medium | S |
+| 6 | F — Backend view + snapshot fields | low (enables 1–3) | S |
 
-**8b. Rainbow Bridge**
-- Backend: `pets.memorial_at timestamp`, new `tributes` table (text + photo from any user).
-- Frontend: when set, pet profile transitions to memorial layout (soft palette, "In loving memory", tribute wall, candle reactions).
-
-**Done when:** marking a pet as memorial converts their profile to a tribute page where friends can leave messages.
-
----
-
-## Cross-cutting non-functionals
-
-- **Real, not mocked:** every query uses Supabase. No hardcoded data anywhere.
-- **RLS first:** every new table gets policies before frontend access.
-- **Realtime where it matters:** feed inserts, reactions, messages, presence.
-- **Performance:** denormalized `pet_snapshot`, paginated infinite queries (already in place), lazy-loaded heavy components.
-- **Analytics:** emit `analytics_events` for: reaction tapped, milestone posted, tribe joined, reel shared. Used to validate impact.
-- **Backward compatible:** old posts without `pet_snapshot` or `kind` keep rendering via fallbacks.
+I'll do **F first as a tiny migration** (so visuals have data), then **A → C → B → E → D** in one continuous build.
 
 ---
 
-## Suggested execution order (no overlap)
+## What I will NOT change
 
-1. **Phase 0** (½ day) — foundation
-2. **Phase 1** (1 day) — feed card V2  ← *biggest visible win*
-3. **Phase 2** (½ day) — pet reactions
-4. **Phase 3** (1 day) — composer + home polish
-5. **Phase 6** (1.5 days) — chat hardening (parallel-safe with 4/5 if different person)
-6. **Phase 4** (1 day) — auto-milestones
-7. **Phase 5** (1.5 days) — tribes
-8. **Phase 7** (1 day) — memory reels
-9. **Phase 8** (1 day) — vet-verified + rainbow bridge
-
-**Total:** ~9 working days for a launchable, category-defining social experience.
+- Auth, routing, role dashboards, payments — out of scope.
+- Story viewer internals, comment sheet — only restyled if they obviously clash with the new card.
+- Existing `kind` / `pet_snapshot` schema — only **extended**, never broken.
 
 ---
 
-## Where I'd start when you approve
+## Acceptance check (how we'll know it worked)
 
-**Phase 0 + Phase 1 + Phase 2 in one push** — they ship together as the new "feed" and give you the headline screenshot for marketing in ~2 days. Backend changes are tiny (one migration), frontend changes are surgical to `PostFeed.tsx`, `ReactionBar.tsx`, plus 2 new components.
+- Show the `pubg` post next to an Instagram post side-by-side — it should be **immediately distinguishable** without reading text.
+- Tapping a reaction triggers a different micro-animation per kind.
+- A milestone post and a moment post look visually different at a glance.
+- Home above-the-fold has at most 3 surfaces, not 5.
+- Lighthouse mobile score doesn't regress.
 
-Ready when you are — say **"start with phases 0-2"** and I'll switch to build mode.
+Approve and I'll start with the Phase F migration, then ship Phases A → E in one pass.
