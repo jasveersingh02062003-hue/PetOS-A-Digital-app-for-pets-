@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepShell } from "@/components/onboarding/StepShell";
-import { Check, Loader2, MapPin, AlertCircle } from "lucide-react";
+import { Check, Loader2, MapPin, AlertCircle, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyHandle, validateHandle, isHandleAvailable } from "@/lib/handle";
+import { uploadImageWithVariants } from "@/lib/uploadImage";
 
 type Props = {
   initial: {
@@ -19,6 +20,7 @@ type Props = {
     language?: string | null;
     units?: { weight: "kg" | "lb"; temp: "c" | "f" } | null;
     email?: string | null;
+    avatarUrl?: string | null;
   };
   onComplete: () => void;
 };
