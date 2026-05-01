@@ -104,7 +104,7 @@ export const ReactionBar = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          onClick={() => myFirst ? toggle(myFirst.kind) : toggle("love")}
+          onClick={() => myFirst ? toggle(myFirst.kind) : toggle("boop")}
           onContextMenu={(e) => { e.preventDefault(); setOpen(true); }}
           onTouchStart={(e) => {
             const t = setTimeout(() => setOpen(true), 350);
