@@ -3271,6 +3271,7 @@ export type Database = {
           adoption_date: string | null
           allergies: string[]
           approx_age_months: number | null
+          auto_milestones: boolean
           avatar_url: string | null
           avatar_url_feed: string | null
           avatar_url_full: string | null
@@ -3315,6 +3316,7 @@ export type Database = {
           adoption_date?: string | null
           allergies?: string[]
           approx_age_months?: number | null
+          auto_milestones?: boolean
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
@@ -3359,6 +3361,7 @@ export type Database = {
           adoption_date?: string | null
           allergies?: string[]
           approx_age_months?: number | null
+          auto_milestones?: boolean
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
