@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepShell } from "@/components/onboarding/StepShell";
-import { Check, Loader2, MapPin, AlertCircle } from "lucide-react";
+import { Check, Loader2, MapPin, AlertCircle, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { slugifyHandle, validateHandle, isHandleAvailable } from "@/lib/handle";
+import { uploadImageWithVariants } from "@/lib/uploadImage";
 
 type Props = {
   initial: {
@@ -19,6 +20,7 @@ type Props = {
     language?: string | null;
     units?: { weight: "kg" | "lb"; temp: "c" | "f" } | null;
     email?: string | null;
+    avatarUrl?: string | null;
   };
   onComplete: () => void;
 };
@@ -40,6 +42,21 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
   const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>(
     initial.units ?? { weight: "kg", temp: "c" }
   );
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl ?? null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const onPickAvatar = async (f: File | null) => {
+    if (!f) return;
+    setAvatarUploading(true);
+    try {
+      const v = await uploadImageWithVariants(f, "user-avatars");
+      setAvatarUrl(v.full);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not upload photo");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   // Auto-suggest handle from name/email if user hasn't typed one yet.
   useEffect(() => {
@@ -108,6 +125,7 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
         lng: coords?.lng ?? null,
         language,
         units,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       } as any, { onConflict: "id" });
       if (error) {
         if (error.code === "23505" || /handle/i.test(error.message)) {
@@ -141,6 +159,28 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
       showCoach={false}
     >
       <div className="space-y-5">
+        <div className="flex justify-center">
+          <label className="relative h-24 w-24 rounded-full bg-muted overflow-hidden cursor-pointer flex items-center justify-center border-2 border-dashed border-hairline hover:border-primary transition">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onPickAvatar(e.target.files?.[0] ?? null)}
+              disabled={avatarUploading}
+            />
+            {avatarUploading ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : avatarUrl ? (
+              <img src={avatarUrl} alt="Your photo" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+            )}
+          </label>
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center -mt-3">
+          {avatarUrl ? "Tap photo to change" : "Add a profile photo (optional)"}
+        </p>
+
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Full name</Label>
           <Input

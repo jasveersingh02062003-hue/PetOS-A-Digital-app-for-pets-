@@ -41,20 +41,20 @@ export default function AddAnotherPet() {
         </Card>
 
         <Card
-          onClick={() => nav("/", { replace: true })}
+          onClick={() => nav("/onboarding?stage=goals", { replace: true })}
           className="rounded-2xl border border-hairline p-4 cursor-pointer hover:border-foreground/20 transition flex items-center gap-3"
         >
           <div className="h-10 w-10 rounded-xl bg-muted grid place-items-center">
             <ArrowRight className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium">I'm done — go to home</div>
-            <div className="text-xs text-muted-foreground">You can add more pets later from Settings → Pets</div>
+            <div className="font-medium">No more pets — continue</div>
+            <div className="text-xs text-muted-foreground">Pick what you want to do on Petos next</div>
           </div>
         </Card>
       </div>
 
-      <Button variant="ghost" onClick={() => nav("/", { replace: true })} className="w-full mt-6 text-muted-foreground">
+      <Button variant="ghost" onClick={() => nav("/onboarding?stage=goals", { replace: true })} className="w-full mt-6 text-muted-foreground">
         Skip
       </Button>
     </div>

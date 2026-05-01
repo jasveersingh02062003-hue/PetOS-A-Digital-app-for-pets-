@@ -3270,6 +3270,7 @@ export type Database = {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
           adoption_date: string | null
           allergies: string[]
+          approx_age_months: number | null
           avatar_url: string | null
           avatar_url_feed: string | null
           avatar_url_full: string | null
@@ -3313,6 +3314,7 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
           adoption_date?: string | null
           allergies?: string[]
+          approx_age_months?: number | null
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
@@ -3356,6 +3358,7 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"] | null
           adoption_date?: string | null
           allergies?: string[]
+          approx_age_months?: number | null
           avatar_url?: string | null
           avatar_url_feed?: string | null
           avatar_url_full?: string | null
@@ -3932,6 +3935,7 @@ export type Database = {
           onboarding_state: Json
           parent_age: number | null
           phone: string | null
+          reminder_prefs: Json
           unit_system: string
           units: Json
           updated_at: string
@@ -3965,6 +3969,7 @@ export type Database = {
           onboarding_state?: Json
           parent_age?: number | null
           phone?: string | null
+          reminder_prefs?: Json
           unit_system?: string
           units?: Json
           updated_at?: string
@@ -3998,6 +4003,7 @@ export type Database = {
           onboarding_state?: Json
           parent_age?: number | null
           phone?: string | null
+          reminder_prefs?: Json
           unit_system?: string
           units?: Json
           updated_at?: string
@@ -7539,6 +7545,10 @@ export type Database = {
           subtitle: string
           title: string
         }[]
+      }
+      seed_pet_vaccine_reminders: {
+        Args: { _pet_id: string }
+        Returns: undefined
       }
       seller_trust: { Args: { _user_id: string }; Returns: Json }
       send_broadcast: {
