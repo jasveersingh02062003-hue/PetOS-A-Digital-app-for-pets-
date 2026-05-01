@@ -6,13 +6,23 @@ import { Syringe, Bug, Pill, Scale, CheckCircle2, CalendarClock } from "lucide-r
 import { differenceInCalendarDays, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
+type IconKey = "syringe" | "bug" | "pill" | "scale";
+
 type Item = {
   key: string;
-  icon: any;
+  iconKey: IconKey;
   title: string;
   due: string; // human label
   tone: "due" | "soon" | "overdue";
-  cta: { label: string; onClick: () => void };
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+const ICONS: Record<IconKey, typeof Syringe> = {
+  syringe: Syringe,
+  bug: Bug,
+  pill: Pill,
+  scale: Scale,
 };
 
 const TONE: Record<Item["tone"], string> = {
