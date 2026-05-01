@@ -266,44 +266,22 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
           <p className="text-[11px] text-muted-foreground">Powers nearby vets, services, mates and missing-pet alerts.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Language</Label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="hi">हिन्दी</SelectItem>
-                <SelectItem value="ta">தமிழ்</SelectItem>
-                <SelectItem value="te">తెలుగు</SelectItem>
-                <SelectItem value="mr">मराठी</SelectItem>
-                <SelectItem value="bn">বাংলা</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Units</Label>
-            <div className="grid grid-cols-2 gap-2 h-12">
-              <button
-                type="button"
-                onClick={() => setUnits({ weight: "kg", temp: "c" })}
-                className={`rounded-xl border text-sm font-medium transition ${
-                  units.weight === "kg" ? "border-primary bg-primary/5" : "border-hairline bg-card"
-                }`}
-              >
-                kg · °C
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnits({ weight: "lb", temp: "f" })}
-                className={`rounded-xl border text-sm font-medium transition ${
-                  units.weight === "lb" ? "border-primary bg-primary/5" : "border-hairline bg-card"
-                }`}
-              >
-                lb · °F
-              </button>
-            </div>
-          </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Language</Label>
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="h-12 rounded-xl border-hairline bg-card"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="hi">हिन्दी</SelectItem>
+              <SelectItem value="ta">தமிழ்</SelectItem>
+              <SelectItem value="te">తెలుగు</SelectItem>
+              <SelectItem value="mr">मराठी</SelectItem>
+              <SelectItem value="bn">বাংলা</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            Units ({inferredUnits.weight} · °{inferredUnits.temp.toUpperCase()}) auto-detected — change later in Settings.
+          </p>
         </div>
       </div>
     </StepShell>
