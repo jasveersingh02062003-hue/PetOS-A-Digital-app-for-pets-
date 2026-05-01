@@ -136,7 +136,7 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
         language,
-        units,
+        units: inferredUnits,
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       } as any, { onConflict: "id" });
       if (error) {
@@ -152,7 +152,7 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
         action: "completed",
         has_avatar: !!avatarUrl,
         language,
-        units: units.weight,
+        units: inferredUnits.weight,
       });
       onComplete();
     } catch (e: any) {
