@@ -3627,8 +3627,10 @@ export type Database = {
           image_url_full: string | null
           image_url_thumb: string | null
           image_urls: Json | null
+          kind: Database["public"]["Enums"]["post_kind"]
           like_count: number
           pet_id: string | null
+          pet_snapshot: Json | null
           reaction_counts: Json
           rescue_journey_id: string | null
           skill_spotlight_id: string | null
@@ -3649,8 +3651,10 @@ export type Database = {
           image_url_full?: string | null
           image_url_thumb?: string | null
           image_urls?: Json | null
+          kind?: Database["public"]["Enums"]["post_kind"]
           like_count?: number
           pet_id?: string | null
+          pet_snapshot?: Json | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
           skill_spotlight_id?: string | null
@@ -3671,8 +3675,10 @@ export type Database = {
           image_url_full?: string | null
           image_url_thumb?: string | null
           image_urls?: Json | null
+          kind?: Database["public"]["Enums"]["post_kind"]
           like_count?: number
           pet_id?: string | null
+          pet_snapshot?: Json | null
           reaction_counts?: Json
           rescue_journey_id?: string | null
           skill_spotlight_id?: string | null
@@ -7689,6 +7695,7 @@ export type Database = {
         | "sold"
       pet_listing_type: "adoption" | "rehoming" | "breeder_sale"
       pet_species: "dog" | "cat" | "bird" | "rabbit" | "other"
+      post_kind: "moment" | "milestone" | "memorial" | "tribe_post"
       post_visibility: "public" | "followers" | "private"
       pregnancy_milestone_kind:
         | "mating_confirmed"
@@ -8025,6 +8032,7 @@ export const Constants = {
       ],
       pet_listing_type: ["adoption", "rehoming", "breeder_sale"],
       pet_species: ["dog", "cat", "bird", "rabbit", "other"],
+      post_kind: ["moment", "milestone", "memorial", "tribe_post"],
       post_visibility: ["public", "followers", "private"],
       pregnancy_milestone_kind: [
         "mating_confirmed",

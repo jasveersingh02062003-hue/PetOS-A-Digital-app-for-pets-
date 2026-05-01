@@ -7,14 +7,27 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AnimatePresence, motion } from "framer-motion";
 import { haptic } from "@/lib/haptics";
 
-export type ReactionKind = "love" | "paw" | "laugh" | "wow" | "sad";
+export type ReactionKind =
+  | "love"
+  | "paw"
+  | "laugh"
+  | "wow"
+  | "sad"
+  | "boop"
+  | "treat"
+  | "yummy"
+  | "strong"
+  | "cute";
 
+// Pet-native reactions lead. Legacy "love/laugh/wow/sad" stay supported
+// in the data model but live behind a "More" affordance to keep the UI focused.
 const REACTIONS: { kind: ReactionKind; emoji: string; label: string }[] = [
+  { kind: "boop", emoji: "🐾", label: "Boop" },
+  { kind: "treat", emoji: "🦴", label: "Treat" },
+  { kind: "yummy", emoji: "😋", label: "Yummy" },
   { kind: "love", emoji: "❤️", label: "Love" },
-  { kind: "paw", emoji: "🐾", label: "Paw" },
-  { kind: "laugh", emoji: "😂", label: "Haha" },
-  { kind: "wow", emoji: "🤯", label: "Mind-blown" },
-  { kind: "sad", emoji: "😢", label: "Sad" },
+  { kind: "strong", emoji: "💪", label: "Strong" },
+  { kind: "cute", emoji: "🥰", label: "Cute" },
 ];
 
 type Counts = Partial<Record<ReactionKind, number>>;
@@ -91,7 +104,7 @@ export const ReactionBar = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          onClick={() => myFirst ? toggle(myFirst.kind) : toggle("love")}
+          onClick={() => myFirst ? toggle(myFirst.kind) : toggle("boop")}
           onContextMenu={(e) => { e.preventDefault(); setOpen(true); }}
           onTouchStart={(e) => {
             const t = setTimeout(() => setOpen(true), 350);
@@ -118,7 +131,7 @@ export const ReactionBar = ({
             </span>
           ) : (
             <span className={`text-base leading-none ${myFirst ? "" : "grayscale opacity-60"}`}>
-              {myFirst?.emoji ?? "❤️"}
+              {myFirst?.emoji ?? "🐾"}
             </span>
           )}
           <span className="text-sm tabular-nums relative inline-block min-w-[1ch] text-center overflow-hidden h-[1.25em] leading-[1.25em]">

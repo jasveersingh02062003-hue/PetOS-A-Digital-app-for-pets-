@@ -1,10 +1,10 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// avatars are rendered inside PetPostHeader / AuthorIdentity now
 import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,14 +21,16 @@ import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
-import { SellerBadge } from "./SellerBadge";
+// SellerBadge is rendered by AuthorIdentity / PetPostHeader
 import { useVerifiedOrgs, usePendingOrgs } from "@/hooks/useVerifiedOrgs";
-import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
+import { isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "./AuthorIdentity";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
-import { UserStreakChip } from "./social/UserStreakChip";
+// streak chip moved into PetPostHeader
+import { PetPostHeader } from "./social/PetPostHeader";
+import { PostTrustStrip } from "./social/PostTrustStrip";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
 import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
@@ -57,6 +59,15 @@ export type FeedPost = {
   reaction_counts?: Record<string, number> | null;
   rescue_journey_id?: string | null;
   skill_spotlight_id?: string | null;
+  kind?: "moment" | "milestone" | "memorial" | "tribe_post" | null;
+  pet_snapshot?: {
+    name?: string | null;
+    breed?: string | null;
+    age_months?: number | null;
+    avatar_url?: string | null;
+    vaccines_ok?: boolean | null;
+    city?: string | null;
+  } | null;
   author?: { full_name: string | null; avatar_url: string | null; account_type?: string | null } | null;
   pet?: { name: string; avatar_url: string | null } | null;
 };
@@ -98,7 +109,7 @@ export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trend
       let q = supabase
         .from("posts")
         .select(
-          "id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id",
+          "id, author_id, pet_id, caption, image_url, image_url_thumb, image_url_feed, image_url_full, like_count, comment_count, created_at, reaction_counts, rescue_journey_id, skill_spotlight_id, kind, pet_snapshot",
         );
       if (followingIds) q = q.in("author_id", followingIds);
       q =
@@ -280,9 +291,7 @@ const PostCard = ({ post, onComment, highlight }: {
       return (data?.litter_id as string | null) ?? null;
     },
   });
-  const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
-  const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
-  const initial = displayName[0]?.toUpperCase() || "P";
+  // (display name/avatar/initial are computed inside PetPostHeader now)
   const { burst, node: pawLayer } = usePawBurst();
   const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
 
@@ -314,7 +323,7 @@ const PostCard = ({ post, onComment, highlight }: {
         return;
       }
       try {
-        const inserted = await addReaction(post.id, user.id, "love");
+        const inserted = await addReaction(post.id, user.id, "boop");
         if (inserted) {
           qc.invalidateQueries({ queryKey: ["post-reactions-counts", post.id] });
           qc.invalidateQueries({ queryKey: ["post-reactions-mine", post.id] });
@@ -334,9 +343,9 @@ const PostCard = ({ post, onComment, highlight }: {
         highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
       }`}
     >
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex items-start gap-2">
         {orgPost ? (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 p-4">
             <AuthorIdentity
               userId={post.author_id}
               fallbackName={post.author?.full_name}
@@ -352,38 +361,25 @@ const PostCard = ({ post, onComment, highlight }: {
             <CollabBadge postId={post.id} />
           </div>
         ) : (
-          <>
-        <Link to={`/u/${post.author_id}`} className="shrink-0">
-          <Avatar
-            className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-background ${getRoleRing(accountType)}`}
-          >
-            <AvatarImage src={displayImg} alt={displayName} />
-            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">{initial}</AvatarFallback>
-          </Avatar>
-        </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Link to={post.pet_id ? `/pet/${post.pet_id}` : `/u/${post.author_id}`} className="text-sm font-medium truncate hover:underline">
-              {displayName}
-            </Link>
-            {accountType !== "pet_parent" && (
-              <SellerBadge type={accountType as any} verified={authorVerified} pending={authorPending} />
-            )}
-            {accountType === "pet_parent" && (
-              <UserStreakChip
-                userId={post.author_id}
-                className="text-[10px] py-0 px-1.5 h-4"
-              />
-            )}
+          <div className="flex-1 min-w-0">
+            <PetPostHeader
+              authorId={post.author_id}
+              authorName={post.author?.full_name}
+              authorAvatar={post.author?.avatar_url}
+              accountType={accountType}
+              petId={post.pet_id}
+              pet={post.pet}
+              petSnapshot={post.pet_snapshot}
+              createdAt={post.created_at}
+              authorVerified={authorVerified}
+              authorPending={authorPending}
+            />
+            <div className="px-4 -mt-1 pb-1"><CollabBadge postId={post.id} /></div>
           </div>
-          <div className="text-[11px] text-muted-foreground">
-            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-          </div>
-          <CollabBadge postId={post.id} />
-        </div>
-          </>
         )}
-        <FollowButton targetId={post.author_id} />
+        <div className="pr-3 pt-4">
+          <FollowButton targetId={post.author_id} />
+        </div>
       </div>
 
       {(post.image_url_feed || post.image_url) && (
@@ -413,6 +409,8 @@ const PostCard = ({ post, onComment, highlight }: {
           {pawLayer}
         </div>
       )}
+
+      <PostTrustStrip petSnapshot={post.pet_snapshot} />
 
       {post.caption && (
         <CaptionWithTags
