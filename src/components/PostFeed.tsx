@@ -80,7 +80,7 @@ export type FeedPost = {
   pet?: { name: string; avatar_url: string | null } | null;
 };
 
-export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following"; emptyState?: ReactNode }) => {
+export const PostFeed = ({ scope = "all", emptyState }: { scope?: "all" | "trending" | "following" | "tribe" | "nearby"; emptyState?: ReactNode }) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
