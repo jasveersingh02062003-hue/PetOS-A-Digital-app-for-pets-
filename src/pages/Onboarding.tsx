@@ -254,6 +254,7 @@ const Onboarding = () => {
           language: (profile as any)?.language,
           units: (profile as any)?.units,
           email: user?.email,
+          avatarUrl: (profile as any)?.avatar_url,
         }}
         onComplete={() => setStage("role")}
       />
