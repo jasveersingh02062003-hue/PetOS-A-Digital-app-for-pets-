@@ -41,9 +41,19 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
   const [city, setCity] = useState(initial.city ?? "");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [language, setLanguage] = useState(initial.language ?? "en");
-  const [units, setUnits] = useState<{ weight: "kg" | "lb"; temp: "c" | "f" }>(
-    initial.units ?? { weight: "kg", temp: "c" }
-  );
+  // Units are inferred from the user's locale (US → lb/°F, everywhere else → kg/°C)
+  // and editable later in Settings — no point cluttering the welcome screen.
+  const inferredUnits = useMemo<{ weight: "kg" | "lb"; temp: "c" | "f" }>(() => {
+    if (initial.units) return initial.units;
+    try {
+      const loc = (typeof navigator !== "undefined" && navigator.language) || "en";
+      const region = (loc.split("-")[1] || "").toUpperCase();
+      const imperial = ["US", "LR", "MM"].includes(region);
+      return imperial ? { weight: "lb", temp: "f" } : { weight: "kg", temp: "c" };
+    } catch {
+      return { weight: "kg", temp: "c" };
+    }
+  }, [initial.units]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl ?? null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
