@@ -29,7 +29,7 @@ import { AuthorIdentity } from "./AuthorIdentity";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 // streak chip moved into PetPostHeader
 import { PetPostHeader } from "./social/PetPostHeader";
-import { PostTrustStrip } from "./social/PostTrustStrip";
+// PostTrustStrip merged into PetPostHeader for pet cards; org posts use AuthorIdentity
 import { PostActionBar } from "./social/PostActionBar";
 import { PostKindBadge } from "./social/PostKindBadge";
 import { useSwipe } from "@/lib/useSwipe";
