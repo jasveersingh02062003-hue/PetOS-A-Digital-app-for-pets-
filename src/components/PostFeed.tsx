@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 // avatars are rendered inside PetPostHeader / AuthorIdentity now
-import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check, Bookmark } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +25,14 @@ import { CollabBadge } from "./social/CollabBadge";
 import { useVerifiedOrgs, usePendingOrgs } from "@/hooks/useVerifiedOrgs";
 import { isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "./AuthorIdentity";
-import { ReactionBar } from "./social/ReactionBar";
+// ReactionBar / SaveButton are now rendered inside PostActionBar
 import { CaptionWithTags } from "./social/CaptionWithTags";
-import { SaveButton } from "./social/SaveButton";
 // streak chip moved into PetPostHeader
 import { PetPostHeader } from "./social/PetPostHeader";
 import { PostTrustStrip } from "./social/PostTrustStrip";
+import { PostActionBar } from "./social/PostActionBar";
+import { useSwipe } from "@/lib/useSwipe";
+import { useIsSaved, useToggleSave } from "@/hooks/usePostSave";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
 import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
@@ -294,6 +296,32 @@ const PostCard = ({ post, onComment, highlight }: {
   // (display name/avatar/initial are computed inside PetPostHeader now)
   const { burst, node: pawLayer } = usePawBurst();
   const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
+  const { data: isSaved } = useIsSaved(post.id);
+  const toggleSave = useToggleSave();
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const handleSwipeRightSave = () => {
+    if (!user) {
+      toast.message("Sign in to save");
+      return;
+    }
+    if (isSaved) {
+      toast("Already saved", { icon: "🔖" });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 700);
+      return;
+    }
+    haptic(12);
+    toggleSave.mutate({ postId: post.id, saved: false });
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 700);
+    toast.success("Saved");
+  };
+
+  // Swipe-up on the card body opens the comment sheet (mobile-first interaction).
+  // Swipe-right anywhere on the image saves the post with a confetti-style flash.
+  const cardSwipe = useSwipe({ onSwipeUp: onComment });
+  const imageSwipe = useSwipe({ onSwipeRight: handleSwipeRightSave });
 
   const handleImageTap = async (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
@@ -339,6 +367,7 @@ const PostCard = ({ post, onComment, highlight }: {
   return (
     <Card
       ref={cardRef}
+      {...cardSwipe}
       className={`rounded-2xl border-hairline bg-card shadow-none overflow-hidden transition-shadow ${
         highlight ? "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""
       }`}
@@ -387,6 +416,7 @@ const PostCard = ({ post, onComment, highlight }: {
           className="relative select-none"
           onClick={handleImageTap}
           onDoubleClick={(e) => e.preventDefault()}
+          {...imageSwipe}
         >
           <RescueJourneyRibbon journeyId={post.rescue_journey_id} />
           <SkillSpotlightRibbon spotlightId={post.skill_spotlight_id} />
@@ -407,6 +437,15 @@ const PostCard = ({ post, onComment, highlight }: {
             alt=""
           />
           {pawLayer}
+          {/* Saved-via-swipe flash — quick visual confirm without a sheet */}
+          {savedFlash && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
+              <div className="bg-foreground/85 text-background rounded-full px-4 py-2 flex items-center gap-2 shadow-lg animate-scale-in">
+                <Bookmark className="h-4 w-4 fill-current" />
+                <span className="text-sm font-semibold">Saved</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -421,26 +460,14 @@ const PostCard = ({ post, onComment, highlight }: {
 
       <RescueJourneyCarousel journeyId={post.rescue_journey_id} />
 
-      <div className="flex items-center gap-1 px-2 py-2">
-        <ReactionBar postId={post.id} initialCounts={post.reaction_counts ?? {}} />
-        <button
-          onClick={onComment}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-110"
-          aria-label="Comment"
-        >
-          <MessageCircle className="h-5 w-5" strokeWidth={1.6} />
-          <span className="text-sm tabular-nums">{post.comment_count}</span>
-        </button>
-        <SaveButton postId={post.id} />
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/60 transition-colors active:scale-110"
-          aria-label="Share"
-        >
-          <Share2 className="h-5 w-5" strokeWidth={1.6} />
-        </button>
-        <div className="ml-auto pr-1">
-          {isOwner ? (
+      <PostActionBar
+        postId={post.id}
+        reactionCounts={post.reaction_counts as any}
+        commentCount={post.comment_count}
+        onComment={onComment}
+        onShare={handleShare}
+        trailing={
+          isOwner ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="More">
@@ -462,9 +489,9 @@ const PostCard = ({ post, onComment, highlight }: {
             </DropdownMenu>
           ) : (
             <ReportButton subjectType="post" subjectId={post.id} size="icon" />
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="rounded-2xl">
