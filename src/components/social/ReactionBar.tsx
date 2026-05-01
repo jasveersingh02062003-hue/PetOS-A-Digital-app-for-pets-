@@ -7,14 +7,27 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AnimatePresence, motion } from "framer-motion";
 import { haptic } from "@/lib/haptics";
 
-export type ReactionKind = "love" | "paw" | "laugh" | "wow" | "sad";
+export type ReactionKind =
+  | "love"
+  | "paw"
+  | "laugh"
+  | "wow"
+  | "sad"
+  | "boop"
+  | "treat"
+  | "yummy"
+  | "strong"
+  | "cute";
 
+// Pet-native reactions lead. Legacy "love/laugh/wow/sad" stay supported
+// in the data model but live behind a "More" affordance to keep the UI focused.
 const REACTIONS: { kind: ReactionKind; emoji: string; label: string }[] = [
+  { kind: "boop", emoji: "🐾", label: "Boop" },
+  { kind: "treat", emoji: "🦴", label: "Treat" },
+  { kind: "yummy", emoji: "😋", label: "Yummy" },
   { kind: "love", emoji: "❤️", label: "Love" },
-  { kind: "paw", emoji: "🐾", label: "Paw" },
-  { kind: "laugh", emoji: "😂", label: "Haha" },
-  { kind: "wow", emoji: "🤯", label: "Mind-blown" },
-  { kind: "sad", emoji: "😢", label: "Sad" },
+  { kind: "strong", emoji: "💪", label: "Strong" },
+  { kind: "cute", emoji: "🥰", label: "Cute" },
 ];
 
 type Counts = Partial<Record<ReactionKind, number>>;
