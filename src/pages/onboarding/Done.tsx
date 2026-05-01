@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle2, ArrowRight, Compass, PawPrint, ShieldCheck, Bell, Target } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
 import { WizardSteps } from "@/components/onboarding/WizardSteps";
+import { track } from "@/lib/analytics";
 
 const ORG_TYPES = ["breeder", "kennel", "shelter", "sanctuary", "zoo"];
 
@@ -67,6 +68,10 @@ export default function OnboardingDone() {
     }, 250);
     return () => clearTimeout(t);
   }, [isPetParent]);
+
+  useEffect(() => {
+    void track("onboarding_step", { step: "done", action: "viewed", role });
+  }, [role]);
 
   const reminderPrefs = (profile as any)?.reminder_prefs ?? {};
   const remindersOn = Object.values(reminderPrefs).some(Boolean);
@@ -142,6 +147,7 @@ export default function OnboardingDone() {
       <Button
         className="w-full mt-6"
         onClick={async () => {
+          void track("onboarding_step", { step: "done", action: "primary_cta", target: primary.to });
           const { data: u } = await supabase.auth.getUser();
           if (u.user) {
             await supabase.from("profiles").update({ onboarded: true } as any).eq("id", u.user.id);
