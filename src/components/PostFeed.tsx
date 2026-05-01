@@ -325,7 +325,7 @@ const PostCard = ({ post, onComment, highlight }: {
         return;
       }
       try {
-        const inserted = await addReaction(post.id, user.id, "love");
+        const inserted = await addReaction(post.id, user.id, "boop");
         if (inserted) {
           qc.invalidateQueries({ queryKey: ["post-reactions-counts", post.id] });
           qc.invalidateQueries({ queryKey: ["post-reactions-mine", post.id] });
