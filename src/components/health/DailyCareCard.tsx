@@ -6,13 +6,23 @@ import { Syringe, Bug, Pill, Scale, CheckCircle2, CalendarClock } from "lucide-r
 import { differenceInCalendarDays, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
+type IconKey = "syringe" | "bug" | "pill" | "scale";
+
 type Item = {
   key: string;
-  icon: any;
+  iconKey: IconKey;
   title: string;
   due: string; // human label
   tone: "due" | "soon" | "overdue";
-  cta: { label: string; onClick: () => void };
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+const ICONS: Record<IconKey, typeof Syringe> = {
+  syringe: Syringe,
+  bug: Bug,
+  pill: Pill,
+  scale: Scale,
 };
 
 const TONE: Record<Item["tone"], string> = {
@@ -79,11 +89,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const days = differenceInCalendarDays(new Date(v.next_due_on), today);
         items.push({
           key: `vax-${v.id}`,
-          icon: Syringe,
+          iconKey: "syringe",
           title: v.vaccine_name,
           due: days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `in ${days}d`,
           tone: days < 0 ? "overdue" : days <= 3 ? "due" : "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       });
 
@@ -91,11 +102,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const days = differenceInCalendarDays(new Date(p.next_due_on), today);
         items.push({
           key: `par-${p.id}`,
-          icon: Bug,
+          iconKey: "bug",
           title: `${p.product_name} (${p.parasite_type})`,
           due: days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "due today" : `in ${days}d`,
           tone: days < 0 ? "overdue" : days <= 3 ? "due" : "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       });
 
@@ -108,11 +120,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         const isPast = new Date(d.scheduled_at).getTime() < Date.now();
         items.push({
           key: `dose-${d.id}`,
-          icon: Pill,
+          iconKey: "pill",
           title: `${name}${dose}`,
           due: `${time}${isPast ? " · missed" : ""}`,
           tone: isPast ? "overdue" : "due",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
         dosed.add(d.id);
       });
@@ -120,11 +133,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
         if (m.schedule_kind && m.schedule_kind !== "as_needed") return; // covered by doses
         items.push({
           key: `med-${m.id}`,
-          icon: Pill,
+          iconKey: "pill",
           title: m.name,
           due: [m.dose, m.frequency].filter(Boolean).join(" · ") || "active",
           tone: "soon",
-          cta: { label: "View", onClick: () => nav(`/health`) },
+          ctaLabel: "View",
+          ctaHref: "/health",
         });
       });
 
@@ -133,11 +147,12 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
       if (weightDays === null || weightDays > 30) {
         items.push({
           key: "weight-check",
-          icon: Scale,
+          iconKey: "scale",
           title: "Log a weight",
           due: lastWeight ? `last ${format(lastWeight, "d MMM")}` : "never logged",
           tone: "soon",
-          cta: { label: "Log", onClick: () => nav(`/health`) },
+          ctaLabel: "Log",
+          ctaHref: "/health",
         });
       }
 
@@ -177,7 +192,7 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
       </div>
       <ul className="divide-y divide-hairline">
         {data.map((it) => {
-          const Icon = it.icon;
+          const Icon = ICONS[it.iconKey] ?? Pill;
           return (
             <li key={it.key} className="flex items-center gap-3 py-2 px-1">
               <div className="h-8 w-8 rounded-full bg-primary-soft text-primary grid place-items-center shrink-0">
@@ -187,8 +202,8 @@ export const DailyCareCard = ({ petId, petName }: { petId: string; petName: stri
                 <div className="text-sm font-medium truncate">{it.title}</div>
                 <div className={`text-[11px] ${TONE[it.tone]}`}>{it.due}</div>
               </div>
-              <Button size="sm" variant="ghost" className="h-8 px-3 rounded-full" onClick={it.cta.onClick}>
-                {it.cta.label}
+              <Button size="sm" variant="ghost" className="h-8 px-3 rounded-full" onClick={() => nav(it.ctaHref)}>
+                {it.ctaLabel}
               </Button>
             </li>
           );
