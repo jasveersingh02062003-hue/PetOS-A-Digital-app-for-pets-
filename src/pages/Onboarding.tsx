@@ -140,29 +140,9 @@ const Onboarding = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── PET-PARENT MINI WIZARD STATE (light: identity is already saved) ──────
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [petAvatar, setPetAvatar] = useState<File | null>(null);
-  const [petAvatarPreview, setPetAvatarPreview] = useState<string | null>(null);
-  const [petName, setPetName] = useState("");
-  const [species, setSpecies] = useState<Species>("dog");
-  const [breed, setBreed] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState<"male" | "female">("male");
-  const [firstTimeParent, setFirstTimeParent] = useState<"yes" | "no" | "">("");
-  const [petCount, setPetCount] = useState<"1" | "2" | "3+" | "">("");
-  const [parentStep, setParentStep] = useState(0); // 0 about-you, 1 add-pet
-  const breedOptions = useMemo(() => BREEDS[species] ?? BREEDS.other, [species]);
-
-  // Role picker
+  // Role picker state
   const [role, setRole] = useState<RoleChoice>("pet_parent");
   const [roleSaving, setRoleSaving] = useState(false);
-
-  const onPickAvatar = (f: File | null) => {
-    setPetAvatar(f);
-    setPetAvatarPreview(f ? URL.createObjectURL(f) : null);
-  };
 
   const handleRoleNext = async () => {
     if (!user) return;
@@ -179,62 +159,6 @@ const Onboarding = () => {
       toast.error(e?.message ?? "Could not save");
     } finally {
       setRoleSaving(false);
-    }
-  };
-
-  const submitPet = async () => {
-    if (!user) return;
-    const r = z.object({
-      petName: z.string().trim().min(1).max(40),
-      breed: z.string().trim().min(1).max(60),
-    }).safeParse({ petName, breed });
-    if (!r.success) return toast.error("Pet name and breed are required");
-
-    setSubmitting(true);
-    try {
-      let avatarUrl: string | null = null;
-      if (petAvatar) {
-        const ext = petAvatar.name.split(".").pop() ?? "jpg";
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("pet-avatars").upload(path, petAvatar);
-        if (upErr) throw upErr;
-        const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
-        avatarUrl = data.publicUrl;
-      }
-      // Persist parent-only metadata first.
-      const { error: profileErr } = await supabase.from("profiles").upsert({
-        id: user.id,
-        first_time_parent: firstTimeParent === "yes" ? true : firstTimeParent === "no" ? false : null,
-      } as any, { onConflict: "id" });
-      if (profileErr) throw profileErr;
-
-      const { error: petErr } = await supabase.from("pets").insert({
-        owner_id: user.id,
-        name: petName,
-        species,
-        breed,
-        date_of_birth: dob || null,
-        gender,
-        avatar_url: avatarUrl,
-        city: profile?.city ?? null,
-        lat: (profile as any)?.lat ?? null,
-        lng: (profile as any)?.lng ?? null,
-        health_setup_complete: false,
-      } as any);
-      if (petErr) throw petErr;
-
-      const { error: onboardErr } = await supabase
-        .from("profiles")
-        .update({ onboarded: true } as any)
-        .eq("id", user.id);
-      if (onboardErr) throw onboardErr;
-
-      qc.invalidateQueries();
-      setDone(true);
-    } catch (err: any) {
-      toast.error(err.message ?? "Could not save");
-    } finally {
-      setSubmitting(false);
     }
   };
 
