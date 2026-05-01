@@ -159,6 +159,28 @@ export const IdentityStep = ({ initial, onComplete }: Props) => {
       showCoach={false}
     >
       <div className="space-y-5">
+        <div className="flex justify-center">
+          <label className="relative h-24 w-24 rounded-full bg-muted overflow-hidden cursor-pointer flex items-center justify-center border-2 border-dashed border-hairline hover:border-primary transition">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onPickAvatar(e.target.files?.[0] ?? null)}
+              disabled={avatarUploading}
+            />
+            {avatarUploading ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : avatarUrl ? (
+              <img src={avatarUrl} alt="Your photo" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+            )}
+          </label>
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center -mt-3">
+          {avatarUrl ? "Tap photo to change" : "Add a profile photo (optional)"}
+        </p>
+
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Full name</Label>
           <Input
