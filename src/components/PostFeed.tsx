@@ -31,6 +31,7 @@ import { CaptionWithTags } from "./social/CaptionWithTags";
 import { PetPostHeader } from "./social/PetPostHeader";
 import { PostTrustStrip } from "./social/PostTrustStrip";
 import { PostActionBar } from "./social/PostActionBar";
+import { PostKindBadge } from "./social/PostKindBadge";
 import { useSwipe } from "@/lib/useSwipe";
 import { useIsSaved, useToggleSave } from "@/hooks/usePostSave";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
