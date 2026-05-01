@@ -1,23 +1,15 @@
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
-import { z } from "zod";
 import { toast } from "sonner";
 import {
-  Heart, Sparkles, Camera, Loader2, PawPrint, Building2,
+  Heart, Loader2, PawPrint, Building2,
   Home as HomeIcon, ShieldHalf, ShieldAlert, Search as SearchIcon, Briefcase, Stethoscope,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepShell } from "@/components/onboarding/StepShell";
-import { SpeciesPicker, type Species } from "@/components/onboarding/SpeciesPicker";
-import { PetCardShare } from "@/components/onboarding/PetCardShare";
-import { BREEDS } from "@/lib/breeds";
 import { IdentityStep } from "@/components/onboarding/IdentityStep";
 
 /**
