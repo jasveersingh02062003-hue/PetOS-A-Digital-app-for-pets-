@@ -1,10 +1,10 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// avatars are rendered inside PetPostHeader / AuthorIdentity now
 import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,14 +21,14 @@ import { CommentSheet } from "./CommentSheet";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./social/FollowButton";
 import { CollabBadge } from "./social/CollabBadge";
-import { SellerBadge } from "./SellerBadge";
+// SellerBadge is rendered by AuthorIdentity / PetPostHeader
 import { useVerifiedOrgs, usePendingOrgs } from "@/hooks/useVerifiedOrgs";
-import { getRoleRing, isOrgRole } from "@/lib/roleTheme";
+import { isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "./AuthorIdentity";
 import { ReactionBar } from "./social/ReactionBar";
 import { CaptionWithTags } from "./social/CaptionWithTags";
 import { SaveButton } from "./social/SaveButton";
-import { UserStreakChip } from "./social/UserStreakChip";
+// streak chip moved into PetPostHeader
 import { PetPostHeader } from "./social/PetPostHeader";
 import { PostTrustStrip } from "./social/PostTrustStrip";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
@@ -291,9 +291,7 @@ const PostCard = ({ post, onComment, highlight }: {
       return (data?.litter_id as string | null) ?? null;
     },
   });
-  const displayName = post.pet?.name || post.author?.full_name || "Pet parent";
-  const displayImg = post.pet?.avatar_url || post.author?.avatar_url || undefined;
-  const initial = displayName[0]?.toUpperCase() || "P";
+  // (display name/avatar/initial are computed inside PetPostHeader now)
   const { burst, node: pawLayer } = usePawBurst();
   const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
 
