@@ -296,6 +296,32 @@ const PostCard = ({ post, onComment, highlight }: {
   // (display name/avatar/initial are computed inside PetPostHeader now)
   const { burst, node: pawLayer } = usePawBurst();
   const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
+  const { data: isSaved } = useIsSaved(post.id);
+  const toggleSave = useToggleSave();
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const handleSwipeRightSave = () => {
+    if (!user) {
+      toast.message("Sign in to save");
+      return;
+    }
+    if (isSaved) {
+      toast("Already saved", { icon: "🔖" });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 700);
+      return;
+    }
+    haptic(12);
+    toggleSave.mutate({ postId: post.id, saved: false });
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 700);
+    toast.success("Saved");
+  };
+
+  // Swipe-up on the card body opens the comment sheet (mobile-first interaction).
+  // Swipe-right anywhere on the image saves the post with a confetti-style flash.
+  const cardSwipe = useSwipe({ onSwipeUp: onComment });
+  const imageSwipe = useSwipe({ onSwipeRight: handleSwipeRightSave });
 
   const handleImageTap = async (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
