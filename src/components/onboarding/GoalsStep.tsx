@@ -8,6 +8,7 @@ import { ChipGroup } from "@/components/onboarding/ChipGroup";
 import { GOALS } from "@/lib/breeds";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 const GOAL_PREVIEW: Record<string, string> = {
   social: "Friend feed, walks, daily prompts pinned on Home",
@@ -41,6 +42,12 @@ export const GoalsStep = ({ onDone }: { onDone: () => void }) => {
         .eq("id", user.id);
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["profile", user.id] });
+      void track("onboarding_step", {
+        step: "goals",
+        action: "submitted",
+        count: goals.length,
+        goals,
+      });
       onDone();
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");

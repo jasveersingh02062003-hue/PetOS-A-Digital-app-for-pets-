@@ -265,13 +265,21 @@ export const FirstPetWizard = ({ isAdditional = false, onDone }: Props) => {
               </SelectContent>
             </Select>
             {breed === OTHER && (
-              <Input
-                value={breedOther}
-                onChange={(e) => setBreedOther(e.target.value)}
-                placeholder="Type the breed"
-                className="h-12 rounded-xl border-hairline bg-card"
-                maxLength={60}
-              />
+              <>
+                <Input
+                  value={breedOther}
+                  onChange={(e) => setBreedOther(e.target.value)}
+                  placeholder="Type the breed"
+                  className={`h-12 rounded-xl bg-card ${breedOther.trim() ? "border-hairline" : "border-destructive/60"}`}
+                  maxLength={60}
+                  autoFocus
+                />
+                {!breedOther.trim() && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Please type the breed name so we can match care tips and find mates.
+                  </p>
+                )}
+              </>
             )}
           </div>
 
