@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 // avatars are rendered inside PetPostHeader / AuthorIdentity now
-import { MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Pin, Loader2, Check, Bookmark } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +25,14 @@ import { CollabBadge } from "./social/CollabBadge";
 import { useVerifiedOrgs, usePendingOrgs } from "@/hooks/useVerifiedOrgs";
 import { isOrgRole } from "@/lib/roleTheme";
 import { AuthorIdentity } from "./AuthorIdentity";
-import { ReactionBar } from "./social/ReactionBar";
+// ReactionBar / SaveButton are now rendered inside PostActionBar
 import { CaptionWithTags } from "./social/CaptionWithTags";
-import { SaveButton } from "./social/SaveButton";
 // streak chip moved into PetPostHeader
 import { PetPostHeader } from "./social/PetPostHeader";
 import { PostTrustStrip } from "./social/PostTrustStrip";
+import { PostActionBar } from "./social/PostActionBar";
+import { useSwipe } from "@/lib/useSwipe";
+import { savePost } from "@/hooks/usePostSave";
 import { RescueJourneyRibbon } from "./rescue/RescueJourneyRibbon";
 import { SkillSpotlightRibbon } from "./skills/SkillSpotlightRibbon";
 import { RescueJourneyCarousel } from "./rescue/RescueJourneyCarousel";
