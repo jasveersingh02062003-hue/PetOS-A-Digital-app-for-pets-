@@ -159,6 +159,10 @@ const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 const AdoptCategory = lazy(() => import("./pages/discover/AdoptCategory"));
 const ServiceCategoryCity = lazy(() => import("./pages/discover/ServiceCategoryCity"));
 const DriverTaxiInbox = lazy(() => import("./pages/driver/TaxiInbox"));
+const FindMyPet = lazy(() => import("./pages/FindMyPet"));
+const BreedEncyclopedia = lazy(() => import("./pages/BreedEncyclopedia"));
+const BreedDetail = lazy(() => import("./pages/BreedDetail"));
+const CarePlan = lazy(() => import("./pages/CarePlan"));
 
 const App = () => (
   <ErrorBoundary>
