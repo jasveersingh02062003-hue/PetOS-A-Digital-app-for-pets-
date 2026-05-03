@@ -327,6 +327,10 @@ const App = () => (
               <Route path="/t/:tag" element={<Hashtag />} />
               <Route path="/walk/:id" element={<WalkSession />} />
               <Route path="/walk-live/:token" element={<WalkLive />} />
+              <Route path="/find-my-pet" element={<FindMyPet />} />
+              <Route path="/breeds" element={<BreedEncyclopedia />} />
+              <Route path="/breeds/:species/:breed" element={<BreedDetail />} />
+              <Route path="/care-plan/:petId" element={<CarePlan />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
