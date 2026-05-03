@@ -507,6 +507,129 @@ export type Database = {
           },
         ]
       }
+      breed_profiles: {
+        Row: {
+          apartment_friendly: boolean | null
+          breed: string
+          climate_fit: string[] | null
+          climate_warnings: string | null
+          common_health_issues: string[] | null
+          created_at: string
+          exercise_hours_per_day: number | null
+          experience_level: string | null
+          fake_breeder_warnings: string | null
+          good_with_kids: boolean | null
+          good_with_other_pets: boolean | null
+          grooming_needs: string | null
+          id: string
+          image_url: string | null
+          india_notes: string | null
+          lifespan_years_max: number | null
+          lifespan_years_min: number | null
+          long_description: string | null
+          monthly_cost_max: number | null
+          monthly_cost_min: number | null
+          noise_level: string | null
+          origin: string | null
+          popularity: number | null
+          pure_breed_traits: string | null
+          shedding: string | null
+          short_summary: string | null
+          species: string
+          temperament: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          apartment_friendly?: boolean | null
+          breed: string
+          climate_fit?: string[] | null
+          climate_warnings?: string | null
+          common_health_issues?: string[] | null
+          created_at?: string
+          exercise_hours_per_day?: number | null
+          experience_level?: string | null
+          fake_breeder_warnings?: string | null
+          good_with_kids?: boolean | null
+          good_with_other_pets?: boolean | null
+          grooming_needs?: string | null
+          id?: string
+          image_url?: string | null
+          india_notes?: string | null
+          lifespan_years_max?: number | null
+          lifespan_years_min?: number | null
+          long_description?: string | null
+          monthly_cost_max?: number | null
+          monthly_cost_min?: number | null
+          noise_level?: string | null
+          origin?: string | null
+          popularity?: number | null
+          pure_breed_traits?: string | null
+          shedding?: string | null
+          short_summary?: string | null
+          species: string
+          temperament?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          apartment_friendly?: boolean | null
+          breed?: string
+          climate_fit?: string[] | null
+          climate_warnings?: string | null
+          common_health_issues?: string[] | null
+          created_at?: string
+          exercise_hours_per_day?: number | null
+          experience_level?: string | null
+          fake_breeder_warnings?: string | null
+          good_with_kids?: boolean | null
+          good_with_other_pets?: boolean | null
+          grooming_needs?: string | null
+          id?: string
+          image_url?: string | null
+          india_notes?: string | null
+          lifespan_years_max?: number | null
+          lifespan_years_min?: number | null
+          long_description?: string | null
+          monthly_cost_max?: number | null
+          monthly_cost_min?: number | null
+          noise_level?: string | null
+          origin?: string | null
+          popularity?: number | null
+          pure_breed_traits?: string | null
+          shedding?: string | null
+          short_summary?: string | null
+          species?: string
+          temperament?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      breed_quiz_responses: {
+        Row: {
+          answers: Json
+          avoid_breeds: Json | null
+          created_at: string
+          id: string
+          recommended_breeds: Json | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          avoid_breeds?: Json | null
+          created_at?: string
+          id?: string
+          recommended_breeds?: Json | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          avoid_breeds?: Json | null
+          created_at?: string
+          id?: string
+          recommended_breeds?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       broadcasts: {
         Row: {
           body: string | null
@@ -540,6 +663,66 @@ export type Database = {
           target_city?: string | null
           target_role?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      care_plan_templates: {
+        Row: {
+          body: string
+          breed: string | null
+          category: string
+          created_at: string
+          do_list: string[] | null
+          dont_list: string[] | null
+          id: string
+          life_stage_weeks_max: number
+          life_stage_weeks_min: number
+          premium_only: boolean | null
+          recurrence_days: number | null
+          red_flags: string[] | null
+          sort_order: number | null
+          species: string
+          title: string
+          trigger_offset_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          breed?: string | null
+          category: string
+          created_at?: string
+          do_list?: string[] | null
+          dont_list?: string[] | null
+          id?: string
+          life_stage_weeks_max: number
+          life_stage_weeks_min: number
+          premium_only?: boolean | null
+          recurrence_days?: number | null
+          red_flags?: string[] | null
+          sort_order?: number | null
+          species: string
+          title: string
+          trigger_offset_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          breed?: string | null
+          category?: string
+          created_at?: string
+          do_list?: string[] | null
+          dont_list?: string[] | null
+          id?: string
+          life_stage_weeks_max?: number
+          life_stage_weeks_min?: number
+          premium_only?: boolean | null
+          recurrence_days?: number | null
+          red_flags?: string[] | null
+          sort_order?: number | null
+          species?: string
+          title?: string
+          trigger_offset_days?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3069,6 +3252,88 @@ export type Database = {
           vet_id?: string
         }
         Relationships: []
+      }
+      pet_care_plan_items: {
+        Row: {
+          ai_personalised_note: string | null
+          body: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          do_list: string[] | null
+          dont_list: string[] | null
+          due_date: string
+          id: string
+          owner_id: string
+          pet_id: string
+          premium_only: boolean | null
+          red_flags: string[] | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_personalised_note?: string | null
+          body?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          do_list?: string[] | null
+          dont_list?: string[] | null
+          due_date: string
+          id?: string
+          owner_id: string
+          pet_id: string
+          premium_only?: boolean | null
+          red_flags?: string[] | null
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_personalised_note?: string | null
+          body?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          do_list?: string[] | null
+          dont_list?: string[] | null
+          due_date?: string
+          id?: string
+          owner_id?: string
+          pet_id?: string
+          premium_only?: boolean | null
+          red_flags?: string[] | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_care_plan_items_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_health_status"
+            referencedColumns: ["pet_id"]
+          },
+          {
+            foreignKeyName: "pet_care_plan_items_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_care_plan_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "care_plan_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pet_care_team: {
         Row: {
