@@ -159,6 +159,10 @@ const ProviderReview = lazy(() => import("./pages/admin/ProviderReview"));
 const AdoptCategory = lazy(() => import("./pages/discover/AdoptCategory"));
 const ServiceCategoryCity = lazy(() => import("./pages/discover/ServiceCategoryCity"));
 const DriverTaxiInbox = lazy(() => import("./pages/driver/TaxiInbox"));
+const FindMyPet = lazy(() => import("./pages/FindMyPet"));
+const BreedEncyclopedia = lazy(() => import("./pages/BreedEncyclopedia"));
+const BreedDetail = lazy(() => import("./pages/BreedDetail"));
+const CarePlan = lazy(() => import("./pages/CarePlan"));
 
 const App = () => (
   <ErrorBoundary>
@@ -323,6 +327,10 @@ const App = () => (
               <Route path="/t/:tag" element={<Hashtag />} />
               <Route path="/walk/:id" element={<WalkSession />} />
               <Route path="/walk-live/:token" element={<WalkLive />} />
+              <Route path="/find-my-pet" element={<FindMyPet />} />
+              <Route path="/breeds" element={<BreedEncyclopedia />} />
+              <Route path="/breeds/:species/:breed" element={<BreedDetail />} />
+              <Route path="/care-plan/:petId" element={<CarePlan />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
                 <Route path="/discover" element={<Discover />} />
