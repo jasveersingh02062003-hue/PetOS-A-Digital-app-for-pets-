@@ -33,6 +33,8 @@ type Tile = {
 };
 
 const TILES: Tile[] = [
+  { key: "find-pet",  title: "Find my pet",      subtitle: "2-min quiz · breed matchmaker",  icon: Sparkles,     tone: "primary",   to: "/find-my-pet" },
+  { key: "breeds",    title: "Breed guide",      subtitle: "All species · India-specific",   icon: Compass,      tone: "lilac",     to: "/breeds" },
   { key: "mate",      title: "Find a mate",      subtitle: "Verified pets near you",        icon: Heart,        tone: "coral",     to: "/mates" },
   { key: "askvet",    title: "Ask a vet",        subtitle: "Verified Q&A in minutes",       icon: Stethoscope,  tone: "sky",       to: "/askvet" },
   { key: "grooming",  title: "Grooming",         subtitle: "Baths, haircuts & spa",         icon: Scissors,     tone: "coral",     to: "/services/category/grooming",  serviceKey: "grooming" },
