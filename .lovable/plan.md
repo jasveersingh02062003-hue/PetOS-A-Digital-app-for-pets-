@@ -1,100 +1,217 @@
+# Pet Journey: Pre-Purchase Guide + Post-Purchase Care Plan
 
-# Petos Engagement Polish — Honest, Targeted Build
+## What I Heard You Say (in plain words)
 
-## Why this plan is short
+You're identifying **two huge gaps** that every first-time pet owner in India hits — and your app currently doesn't fully solve either:
 
-The reviewer's 8.7/10 list mixed genuine gaps with **work that's already shipped**. Auditing the current code:
+### Gap 1 — BEFORE buying ("What should I even get?")
+A first-time owner today does this:
+- Calls friends → random opinions
+- Googles "best dog for India" → 100 conflicting answers
+- Visits a breeder/kennel → gets upsold
+- Picks emotionally (Husky because it looks cool) → suffers later (Hyderabad heat kills the dog's quality of life)
 
-| Reviewer item | Real status |
+They have **no clue** about:
+- Which breed fits their **city, climate, home size, budget, experience level, purpose** (guard / family / low-maintenance / kids)
+- Real **monthly cost** (food + vet + grooming + accessories, not just purchase price)
+- **Pure vs mixed breed** — how to spot fake breeders, fake papers
+- Breed-specific **temperament warnings** (Rottweiler = needs firm owner, Husky = needs cold + 2hr exercise, Pug = breathing issues, Persian cat = daily grooming, etc.)
+- This applies to **all species** — dogs, cats, birds, rabbits, hamsters, fish, turtles
+
+### Gap 2 — AFTER buying ("I have it, now what?!")
+Day 1 with a 45-day-old puppy/kitten/bunny — total panic:
+- Can I give milk? Cow milk or special? How much?
+- Biscuits? Rice? Bones? Sweets? (most owners poison their pets unknowingly)
+- When's the **first vaccine**? 6 weeks? 9 weeks? Which one?
+- When deworming? Tick prevention? Nail trim? First bath?
+- When to neuter/spay?
+- House training, crate training, socialization windows
+- Red flags — when to rush to the vet vs wait
+
+There's no **chronological, day-by-day, species-and-breed-specific care plan**. Generic blogs exist, personalised guidance does not.
+
+---
+
+## How This Fits Into Your Existing App
+
+Your current tabs: **Home (social) · Mates (mating/adopt/buy) · Health (tracking) · Discovery · Profile**
+
+The new system spreads across them, no new tab needed:
+
+```text
+┌─ DISCOVERY tab ──────────────┐    ┌─ MATES tab ─────────────┐
+│  + "Find My Pet" Quiz        │───▶│  Filtered breed/adopt   │
+│  + Breed Encyclopedia        │    │  listings (existing)    │
+│  + Cost Calculator           │    └─────────────────────────┘
+└──────────────────────────────┘                │
+                                                ▼ (after acquiring)
+┌─ HEALTH tab ─────────────────┐    ┌─ HOME tab ──────────────┐
+│  + "Care Plan" timeline      │◀───│  Daily Coach Card       │
+│  + Age-stage feeding guide   │    │  "Today: Bruno needs    │
+│  + Vaccine/dewormer schedule │    │   deworming + 30min     │
+│  + Red-flag symptom checker  │    │   socialisation walk"   │
+└──────────────────────────────┘    └─────────────────────────┘
+                  ▲
+                  │ AI Vet chat (already exists) ties it all together
+```
+
+---
+
+## The Two New Modules
+
+### MODULE 1 — "Find My Pet" (Pre-Purchase Guide)
+**Lives in:** Discovery tab → new top card "Not sure what to get? Take the 2-min quiz"
+
+**Quiz questions** (adaptive, ~10 questions):
+1. City / climate (auto-detect)
+2. Home type — apartment / independent / farmhouse
+3. Family — kids? elderly? other pets?
+4. Experience level — first-timer / had pets before
+5. Daily time available — <1hr / 1–3hr / 3hr+
+6. Monthly budget — ₹2k / ₹5k / ₹10k / ₹20k+
+7. Purpose — companion / guard / low-maintenance / kids' pet / show
+8. Allergy concerns
+9. Noise tolerance
+10. Travel frequency
+
+**Output screen** — three sections:
+- ✅ **Best matches** (3 breeds across species) with match-score, why it fits, monthly cost estimate, lifespan, energy bar
+- ⚠️ **Avoid for you** (e.g. "Husky — Hyderabad summers reach 42°C, this breed suffers above 25°C")
+- 📋 **Owner readiness checklist** — "Before you buy: vet identified, ₹15k starter budget, crate, time off work for first 2 weeks…"
+
+**Breed Encyclopedia** (linked from quiz + standalone):
+For each breed across **dogs, cats, birds, rabbits, small pets**:
+- Origin, temperament, climate fit (India-specific)
+- Monthly cost band
+- Common health issues
+- Pure-breed identifier traits + photos
+- "How to spot a fake breeder" checklist
+- Buy ethically vs adopt option (links to your Mates/Adopt listings)
+
+### MODULE 2 — "Care Plan" (Post-Purchase Journey)
+**Lives in:** Health tab → top section becomes a **timeline** for each pet
+
+When user adds a pet (existing FirstPetWizard already captures species, breed, DOB, weight), we auto-generate a **day-by-day plan** based on age:
+
+```text
+Bruno · Labrador · 8 weeks old
+─────────────────────────────────
+TODAY        Feed: 4× meals puppy-formula, 30g each
+             Skip: cow milk, biscuits, sweets, bones
+             Activity: 5min play, no outdoor walks yet
+             
+TOMORROW     Start nail-check routine
+
+DAY 4        💉 DHPPi vaccine due — book vet
+DAY 12       Deworming dose 2
+WEEK 12      Anti-rabies vaccine
+MONTH 4      Switch to 3 meals/day, intro raw veg
+MONTH 6      Spay/neuter discussion
+MONTH 7      Adult food transition
+YEAR 1       Annual booster + dental check
+```
+
+**Each day card includes:**
+- ✅ What to feed (quantity, brand options across price tiers)
+- ❌ What to NEVER feed today (chocolate, onion, grapes, milk after 8 weeks…)
+- 🏃 Activity / training focus (socialisation window 8–16 weeks is critical!)
+- 🚨 Red flags — "If you see vomiting + lethargy → vet NOW" → one tap to AskVet
+- 📚 Mini-lesson — 60-second read ("Why no milk after weaning")
+
+**Different curriculum for:** dog, cat, rabbit, bird, hamster, turtle, fish (each species has its own lifecycle template).
+
+**Already exists in your app and we reuse:**
+- `seed_pet_vaccine_reminders` RPC ✅
+- AskVet AI ✅
+- Notifications system ✅
+- `pets` table with species/breed/DOB ✅
+
+**What we add:**
+- New `care_plan_templates` table (species + breed → ordered list of milestones)
+- New `pet_care_plan_items` table (per-pet generated timeline)
+- "Today" widget on Home for the daily nudge
+- Edge function `generate-care-plan` — uses Lovable AI to personalise the template to the specific pet (breed, weight, climate, owner experience)
+
+---
+
+## Where Money Comes In (Monetization Gaps)
+
+Your app already has Plus/subscription. New revenue hooks this unlocks:
+
+| Hook | How |
 |---|---|
-| Brand bar, Tribe + Nearby tabs, TodayPanel | ✅ Shipped last turn |
-| Double-tap = boop with paw ripple | ✅ Already in `PostFeed.tsx` |
-| Long-press radial reaction picker | ✅ Already in `ReactionBar.tsx` |
-| Swipe-right save | ✅ Already in `PostFeed.tsx` |
-| Daily prompt | ✅ `DailyPromptBanner` mounted on Home |
-| Empty states | ✅ Designed for For-you / Tribe / Nearby |
-| Vet-verified shield | ✅ `PawShield` renders on `vaccines_ok=true` |
-| Service worker caching | ✅ `public/sw.js` exists |
+| **Premium Breed Report** | Free quiz shows top match; ₹49 unlocks full PDF with vet-reviewed cost breakdown, India-specific care, 50 photos |
+| **Verified Breeder badge** | Breeders pay to be in the "Best matches" results with ✓ badge |
+| **Starter Kit affiliate** | "Bruno's first month" bundle → Shop tab (food + crate + toys), commission |
+| **Pro Care Plan** | Free plan = milestones; ₹99/mo Plus = AI-personalised daily coach + unlimited AskVet |
+| **Vet partnership** | Each scheduled vaccine card has "Book at partner clinic — ₹100 off" → revenue share |
+| **Insurance lead-gen** | Care plan surfaces "Insure Bruno for ₹X/mo" at month 2 — partner commission |
 
-Out of 14 items, **11 are already in the codebase**. Only 3 are real gaps.
+---
 
-## What we're explicitly skipping (and why)
+## User Journey End-to-End
 
-- **Leaderboards / Boop Champion / Mystery Treat / Barkometry** — Candy-Crush gamification contradicts the "premium feel" we just shipped. These are dark patterns, not premium signals.
-- **Auto-generated 15-sec memory reel video** — Server-side video rendering is a 2-day project (FFmpeg in edge runtime, queue, storage). Not worth one feature.
-- **IndexedDB offline feed cache** — `sw.js` caches assets; caching feed *data* with stale-reaction invalidation is complex. Defer until users actually report it.
-- **Color palette swap to `#FF6B6B` + `#4ECDC4`** — This is the most dangerous suggestion. The current warm-cream + leaf + coral palette is on-brand and premium. Swapping to flat coral + mint = generic 2014 startup. **Hard skip — would be a regression.**
+```text
+NEW USER (no pet yet)
+  │
+  ▼
+Welcome → "Do you already have a pet?"
+  │                              │
+  No                             Yes
+  │                              │
+  ▼                              ▼
+Discovery > Find My Pet     FirstPetWizard (exists)
+quiz → results              → Care Plan auto-generates
+  │                              │
+  ▼                              ▼
+Browse Mates/Adopt          Home shows "Today's tasks"
+matching breed              Health shows full timeline
+  │                              │
+  ▼                              ▼
+Acquire pet → wizard        Daily nudges, vet bookings,
+  → Care Plan starts        shop reorders, AI Q&A
+```
 
-## What we're building (3 features, ~90 minutes)
+---
 
-### 1. Reaction notifications — "X booped your post"
-The `notifications` table exists. The `post_reactions` table exists. There's nothing connecting them today, so users never find out anyone reacted to their posts — which kills the return-visit loop.
+## Technical Plan (for the build phase)
 
-**Build:** A `SECURITY DEFINER` trigger on `post_reactions INSERT` that writes a notification row to the post author. Skips self-reactions. Uses an emoji per reaction kind so the notification reads naturally ("Joe 🐾 your post").
+**New DB tables (migration):**
+- `breed_profiles` — species, breed, climate_fit, temperament, monthly_cost_min/max, exercise_hrs, experience_level, common_issues[], pure_breed_traits, image_url
+- `breed_quiz_responses` — user_id, answers (jsonb), recommended_breeds[]
+- `care_plan_templates` — species, life_stage_weeks, action_type (feed/vaccine/training/grooming), title, body, red_flags
+- `pet_care_plan_items` — pet_id, due_date, status, template_id, ai_personalised_note
 
-**Database changes:**
-- New function `public.notify_post_reaction()` — security-definer, sets `search_path = public`
-- New trigger `trg_notify_post_reaction` on `post_reactions AFTER INSERT`
-- No new tables, no schema changes to existing tables
+**New pages/components:**
+- `src/pages/discover/FindMyPet.tsx` — quiz flow
+- `src/pages/discover/BreedEncyclopedia.tsx` + `BreedDetail.tsx`
+- `src/components/care/CarePlanTimeline.tsx` — Health tab integration
+- `src/components/home/TodayCareCard.tsx` — Home tab daily nudge
+- `src/pages/CostCalculator.tsx`
 
-### 2. Auto-milestone posts (daily)
-Pet birthdays from `pets.date_of_birth` are sitting in the database doing nothing. Posting "Bruno turned 1 today 🎂" automatically is genuinely free engagement content — not a dark pattern, just surfacing facts the user already gave us.
+**New edge functions:**
+- `generate-care-plan` — Lovable AI (gemini-3-flash-preview) personalises template for the pet
+- `breed-recommend` — runs quiz logic + AI to rank breeds
 
-**Build:**
-- New edge function `supabase/functions/auto-milestones/index.ts` — runs daily, finds pets whose DOB matches today's month/day, inserts a `kind = 'milestone'` post tagged with `pet_snapshot.auto_milestone_key = 'birthday-{year}'` so it can't double-post.
-- Owner opt-in via new `pets.auto_milestones` boolean column (defaults `true` — they can disable per pet in Settings).
-- Index on `(pet_snapshot->>'auto_milestone_key')` for the dedup check.
-- `pg_cron` schedule firing daily at 09:00 local time.
+**Reuse:** existing FirstPetWizard, AskVet, notifications, `seed_pet_vaccine_reminders`, Shop, Mates listings.
 
-**Database changes:**
-- `ALTER TABLE pets ADD COLUMN auto_milestones boolean DEFAULT true`
-- New partial index for dedup
-- `pg_cron` + `pg_net` schedule (set via `supabase--insert` per the schedule-jobs guidance — embeds project URL + anon key, not a portable migration)
+**Content seed:** Pre-load ~80 dog breeds, 30 cat breeds, 20 birds, 15 rabbits, 10 small-pet profiles tuned for Indian climate. We can generate the first draft with Lovable AI then you review.
 
-### 3. Shareable moment cards (real OG previews)
-Today, sharing a post link drops a generic favicon preview into WhatsApp/Twitter. Users want their pet's photo + identity baked into the share image. The `og-pet` edge function exists as a template — we mirror it for posts.
+---
 
-**Build:**
-- New edge function `supabase/functions/og-post/index.ts` — renders a 1200×630 SVG share card: brand strip, pet photo (left half, rounded), pet identity (name in display font, breed/age, vaccinated badge, city), caption, "🐾 12 · 💬 4" tally.
-- New page `src/pages/PostDetail.tsx` at `/post/:id` that uses `useSeo()` to inject the og-post URL as `og:image`. The existing `?focus=` deep-link in feed continues to work for in-app navigation.
-- Update `handleShare` in `PostFeed.tsx` to share `${origin}/post/${id}` instead of `?focus=` so the OG meta gets fetched.
+## Phased Rollout (recommended)
 
-**No schema changes.**
+1. **Phase 1 (MVP, ~1 build session):** Find My Pet quiz + breed encyclopedia (dogs only) + basic care plan template (dog 0–6 months)
+2. **Phase 2:** Extend to cats + rabbits + birds; add cost calculator; Today card on Home
+3. **Phase 3:** AI-personalised daily coach; vet booking integrations; affiliate Shop bundles; Premium PDF
 
-## File-by-file plan
+---
 
-| File | Action |
-|---|---|
-| `supabase/functions/og-post/index.ts` | Create — SVG share card renderer |
-| `supabase/functions/auto-milestones/index.ts` | Create — daily birthday/milestone job |
-| `src/pages/PostDetail.tsx` | Create — `/post/:id` route, sets OG meta + renders the post |
-| `src/App.tsx` | Add `/post/:id` route |
-| `src/components/PostFeed.tsx` | Update `handleShare` to use `/post/:id` URL |
-| `src/pages/settings/PetEditor.tsx` | Add toggle for `auto_milestones` |
-| (DB migration) | Trigger + `pets.auto_milestones` column + dedup index |
-| (DB insert) | `pg_cron` schedule for `auto-milestones` daily |
+## Questions Before I Build
 
-## Order
+1. Should the quiz be **required for new users without a pet**, or just an optional Discovery card?
+2. For Phase 1, do you want to launch with **dogs only** (faster, deeper) or **all species shallow**?
+3. Do you want me to **draft the breed content with Lovable AI** for you to review, or will you supply it?
+4. Should Care Plan be **free for everyone** (drives retention) or **gated behind Plus** from day 1 (drives revenue)?
 
-1. DB migration (trigger + column + index) — must approve this first
-2. `og-post` edge function (deploys automatically)
-3. `PostDetail` page + route + share-link update
-4. `auto-milestones` edge function
-5. `pg_cron` schedule via `supabase--insert`
-6. Pet editor toggle for `auto_milestones`
-
-## What I am NOT touching
-
-- Color palette — staying with the current warm/leaf/coral tokens
-- The home redesign (already shipped, working)
-- Reaction picker, double-tap boop, swipe-save (already shipped)
-- Service worker (already shipped)
-
-## Acceptance
-
-- React to your own post → no notification (correct).
-- React to someone else's post → they get a "X 🐾 your post" notification immediately.
-- Share a post link from WhatsApp → pet photo + identity preview shows up (not a generic favicon).
-- The day a pet turns 1, 2, 3… a milestone post auto-appears at 09:00 (only once per year, only if owner opted in).
-
-Approve and I'll ship in the order above.
+Reply with answers (or just "go phase 1, dogs, AI draft, free") and I'll start building.
