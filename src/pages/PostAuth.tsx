@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLayoutMode } from "@/hooks/useLayoutMode";
 
 /**
  * Single-purpose router after any successful auth (email or OAuth).
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function PostAuth() {
   const nav = useNavigate();
   const [params] = useSearchParams();
+  const layoutMode = useLayoutMode();
 
   useEffect(() => {
     let cancelled = false;
@@ -46,19 +48,19 @@ export default function PostAuth() {
 
       const redirect = params.get("redirect");
       if (cancelled) return;
-      if (incomplete) {
+      if (incomplete && layoutMode === "mobile-app") {
         nav("/onboarding", { replace: true });
         return;
       }
       // Returning users: providers go to their dedicated dashboard, everyone else to home.
       if (redirect) nav(redirect, { replace: true });
       else if (accountType === "provider") nav("/provider", { replace: true });
-      else nav("/", { replace: true });
+      else nav(layoutMode === "web" ? "/dashboard" : "/", { replace: true });
     })();
     return () => {
       cancelled = true;
     };
-  }, [nav, params]);
+  }, [nav, params, layoutMode]);
 
   return (
     <div className="min-h-[100dvh] grid place-items-center bg-background">

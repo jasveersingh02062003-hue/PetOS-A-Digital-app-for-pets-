@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { isPublicRoute } from "@/lib/publicRoutes";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, usePets } from "@/hooks/useProfile";
 import { HomeSkeleton } from "./HomeSkeleton";
@@ -49,6 +50,12 @@ export const FirstRunGate = ({ children }: { children: ReactNode }) => {
 
   // 2. Not signed in.
   if (!user) {
+    // If it's a public route, just render the children
+    if (isPublicRoute(pathname)) {
+      if (import.meta.env.DEV) console.info("[FirstRunGate] public route allowed:", pathname);
+      return <>{children}</>;
+    }
+
     const seenIntro = typeof window !== "undefined" && localStorage.getItem(SEEN_KEY);
     if (!seenIntro) {
       if (import.meta.env.DEV) console.info("[FirstRunGate] no user, no intro → /welcome");

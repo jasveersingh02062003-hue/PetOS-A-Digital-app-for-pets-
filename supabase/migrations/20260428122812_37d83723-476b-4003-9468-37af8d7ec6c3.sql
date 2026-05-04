@@ -21,7 +21,7 @@ STABLE
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
-  SELECT id, public_id, owner_id, name, species, breed, gender, date_of_birth,
+  SELECT id, public_id, owner_id, name, species::public.pet_species, breed, gender::public.pet_gender, date_of_birth,
          avatar_url, bio, city, vaccination_verified, discoverable_for_mating
   FROM public.pets;
 $function$;

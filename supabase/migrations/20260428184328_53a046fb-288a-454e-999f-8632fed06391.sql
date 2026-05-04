@@ -17,7 +17,7 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT id, full_name, avatar_url, city, bio, handle, cover_url, account_type
+  SELECT id, full_name, avatar_url, city, bio, handle, cover_url, account_type::public.account_type
   FROM public.profiles;
 $$;
 REVOKE ALL ON FUNCTION public.get_profiles_public() FROM PUBLIC, anon;
@@ -47,7 +47,7 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT id, public_id, owner_id, name, species, breed, gender, date_of_birth,
+  SELECT id, public_id, owner_id, name, species::public.pet_species, breed, gender::public.pet_gender, date_of_birth,
          avatar_url, bio, city, vaccination_verified, discoverable_for_mating,
          status_chip, sire_pet_id, dam_pet_id
   FROM public.pets;

@@ -26,10 +26,11 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-hairline">
-        <div className="container-app h-14 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => nav(-1)}><ArrowLeft className="h-5 w-5" /></Button>
-          <h1 className="font-display text-xl">Settings</h1>
-        </div>
+          <div className="container-app h-14 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => nav(-1)}><ArrowLeft className="h-5 w-5" /></Button>
+            <h1 className="font-display text-xl">Settings</h1>
+            <Badge className="bg-primary/10 text-primary border-primary/20 px-1.5 h-5 text-[10px]">V2.0</Badge>
+          </div>
       </header>
 
       <main className="container-app py-6 space-y-6">
@@ -133,7 +134,7 @@ const Settings = () => {
           </Button>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground pt-2">Petos · v1.0.0</p>
+        <p className="text-center text-[11px] text-muted-foreground pt-2">Petos Buddy Club · v2.0.0</p>
       </main>
     </div>
   );

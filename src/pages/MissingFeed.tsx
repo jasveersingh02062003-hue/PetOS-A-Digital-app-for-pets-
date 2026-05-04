@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Clock, Eye, Navigation, Sparkles } from "lucide-react";
+import { useSeo } from "@/hooks/useSeo";
 
 const formatTimeAgo = (iso: string) => {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -17,6 +18,7 @@ const formatTimeAgo = (iso: string) => {
 
 const MissingFeed = () => {
   const nav = useNavigate();
+  useSeo({ title: "Missing Pets Directory", description: "Help find missing pets in your city." });
   const qc = useQueryClient();
   const { data: profile } = useProfile();
   const userCity = profile?.city ?? null;

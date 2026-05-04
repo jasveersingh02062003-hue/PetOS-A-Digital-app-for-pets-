@@ -62,7 +62,7 @@ RETURNS TABLE (
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT id, owner_id, name, species, breed, gender, avatar_url, bio, city,
+  SELECT id, owner_id, name, species::public.pet_species, breed, gender::public.pet_gender, avatar_url, bio, city,
          vaccination_verified, discoverable_for_mating
   FROM public.pets;
 $$;

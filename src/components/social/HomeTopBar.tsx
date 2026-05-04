@@ -42,6 +42,9 @@ export const HomeTopBar = ({
         <span className="font-display text-[22px] leading-none tracking-tight font-semibold text-foreground group-active:scale-[0.97] transition-transform">
           petos
         </span>
+        <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-primary/20 ml-0.5">
+          V2
+        </span>
       </Link>
 
       <div className="flex-1" />

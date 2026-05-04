@@ -30,11 +30,20 @@ const PetProfile = () => {
       // 1. Try the owner-only direct read first (full row, includes private fields when viewer = owner)
       const { data: byPub } = await supabase.from("pets").select("*").eq("public_id", publicId!).maybeSingle();
       if (byPub) return byPub;
-      const { data: byId } = await supabase.from("pets").select("*").eq("id", publicId!).maybeSingle();
-      if (byId) return byId;
+      
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(publicId!);
+      if (isUuid) {
+        const { data: byId } = await supabase.from("pets").select("*").eq("id", publicId!).maybeSingle();
+        if (byId) return byId;
+      }
 
       // 2. Fall back to the safe single-row public RPC for non-owners.
-      const { data: pub } = await supabase.rpc("get_pet_public_by_ref" as any, { _ref: publicId! });
+      const { data: pub, error: rpcError } = await supabase.rpc("get_pet_public_by_ref" as any, { _ref: publicId! });
+      if (rpcError) {
+        console.error("RPC Error:", rpcError);
+        return null;
+      }
+      
       const row = Array.isArray(pub) ? pub[0] : pub;
       return row ?? null;
     },
@@ -238,6 +247,14 @@ const PetProfile = () => {
 
         {/* Bio */}
         {pet.bio && <p className="text-sm leading-relaxed mb-3 whitespace-pre-wrap">{pet.bio}</p>}
+
+        {/* Favorite Toy */}
+        {pet.favorite_toy && (
+          <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground bg-primary-soft/30 p-2 rounded-lg border border-primary-soft/50">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>Favorite Toy: <strong>{pet.favorite_toy}</strong></span>
+          </div>
+        )}
 
         {/* Owner pill */}
         {owner && (

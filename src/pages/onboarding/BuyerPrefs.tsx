@@ -11,6 +11,8 @@ import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useSeo } from "@/hooks/useSeo";
 import { WizardSteps } from "@/components/onboarding/WizardSteps";
+import { useQuizDraft } from "@/hooks/useQuizDraft";
+import { useEffect } from "react";
 
 const SPECIES = [
   { value: "dog", label: "Dog" },
@@ -65,6 +67,23 @@ export default function BuyerPrefs() {
   const [experience, setExperience] = useState<string>("");
   const [timeDaily, setTimeDaily] = useState<string>("");
   const [purpose, setPurpose] = useState<string>("");
+
+  const { mergeToAccount } = useQuizDraft();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("resume") === "save_quiz") {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          mergeToAccount(user.id).then((success) => {
+            if (success) {
+              toast.success("Quiz results saved to your profile!");
+            }
+          });
+        }
+      });
+    }
+  }, [mergeToAccount]);
 
   const toggleSpecies = (v: string) =>
     setSpecies((s) => (s.includes(v) ? s.filter((x) => x !== v) : [...s, v]));

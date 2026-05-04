@@ -4,6 +4,8 @@ import { HomeSkeleton } from "@/components/HomeSkeleton";
 
 // Eager: most users land here as pet_parent — avoid an extra round-trip on first paint
 import PetParentHome from "./home/PetParentHome";
+import { useAuth } from "@/hooks/useAuth";
+import { LandingPage } from "./LandingPage";
 
 /**
  * Home is a thin router by `profiles.account_type`.
@@ -20,8 +22,12 @@ const ZooHome = lazy(() => import("./home/ZooHome"));
 const RoleHome = lazy(() => import("./home/RoleHome"));
 
 const Home = () => {
+  const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading } = useProfile();
-  if (isLoading) return <HomeSkeleton />;
+  
+  if (authLoading || (user && isLoading)) return <HomeSkeleton />;
+
+  if (!user) return <LandingPage />;
 
   const accountType = profile?.account_type ?? "pet_parent";
 

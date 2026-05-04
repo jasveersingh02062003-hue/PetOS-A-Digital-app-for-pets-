@@ -40,11 +40,15 @@ import { useHealthAlerts } from "@/hooks/useHealthAlerts";
 import { Bell } from "lucide-react";
 import { HealthSetupReminder } from "@/components/health/HealthSetupReminder";
 
+import { useLayoutMode } from "@/hooks/useLayoutMode";
+import { AddPetPrompt } from "@/components/AddPetPrompt";
+
 const Health = () => {
   const { data: pets } = usePets();
   const [activeIdx, setActiveIdx] = useState(0);
   const active = pets?.[activeIdx];
   const nav = useNavigate();
+  const layoutMode = useLayoutMode();
   const [quickWeightOpen, setQuickWeightOpen] = useState(false);
   const [vaxVerifyOpen, setVaxVerifyOpen] = useState(false);
   const { unread: alertUnread } = useHealthAlerts();
@@ -121,9 +125,13 @@ const Health = () => {
           <p className="text-sm text-muted-foreground mt-1 mb-4">
             Your vault, AI assistant, vet share and consults all appear here once your first pet is added.
           </p>
-          <Button onClick={() => nav("/onboarding/add-pet")} size="lg" className="rounded-xl gap-2">
-            <Plus className="h-4 w-4" /> Add your first pet
-          </Button>
+          {layoutMode === "web" ? (
+            <AddPetPrompt triggerClassName="rounded-xl gap-2 w-full max-w-xs mx-auto" />
+          ) : (
+            <Button onClick={() => nav("/onboarding/add-pet")} size="lg" className="rounded-xl gap-2 w-full max-w-xs mx-auto">
+              <Plus className="h-4 w-4" /> Add your first pet
+            </Button>
+          )}
         </Card>
       ) : (
         <>

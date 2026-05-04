@@ -25,6 +25,10 @@ const STATIC_PATHS = [
   "/legal/terms",
   "/legal/privacy",
   "/legal/refunds",
+  "/breeds",
+  "/find-my-pet",
+  "/cost-calculator",
+  "/care-guide",
 ];
 
 const SERVICE_CATEGORIES = [
@@ -70,6 +74,14 @@ Deno.serve(async (req) => {
     for (const city of POPULAR_CITIES) {
       urls.push({ loc: `${origin}/adopt/${species}/${breed}/${city}` });
     }
+  }
+
+  // Breed encyclopedia pages
+  const { data: breed_profiles } = await supabase
+    .from("breed_profiles")
+    .select("species, breed, updated_at");
+  for (const bp of breed_profiles ?? []) {
+    urls.push({ loc: `${origin}/breeds/${bp.species}/${encodeURIComponent(bp.breed)}`, lastmod: (bp as any).updated_at });
   }
 
   // Public pets

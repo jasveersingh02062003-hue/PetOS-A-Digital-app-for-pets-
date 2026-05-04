@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Sparkles, ArrowLeft, ArrowRight, Check, X, AlertTriangle, Heart, IndianRupee } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, ArrowRight, Check, X, AlertTriangle, Heart, IndianRupee, Save } from "lucide-react";
 import { useSeo } from "@/hooks/useSeo";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuizDraft } from "@/hooks/useQuizDraft";
+import { ContactSellerSheet } from "@/components/ContactSellerSheet";
 
 type Question = {
   key: string;
@@ -91,18 +94,39 @@ type Result = {
 export default function FindMyPet() {
   useSeo({ title: "Find My Pet — Pet matchmaker for India", description: "Take a 2-minute quiz to find the best pet breed for your home, climate, family and budget." });
   const nav = useNavigate();
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  // Retrieve saved state from localStorage
+  const savedState = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("findMyPetState") || "{}") : {};
+
+  const [step, setStep] = useState(savedState.step || 0);
+  const [answers, setAnswers] = useState<Record<string, string>>(savedState.answers || {});
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<Result | null>(savedState.result || null);
+  const [showAuth, setShowAuth] = useState(false);
+
+  const { user } = useAuth();
+  const { saveDraft, mergeToAccount } = useQuizDraft();
+
+  const saveState = (newState: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("findMyPetState", JSON.stringify(newState));
+    }
+  };
 
   const isLast = step === QUESTIONS.length - 1;
   const q = QUESTIONS[step];
   const value = answers[q?.key];
 
   const onPick = (v: string) => {
-    setAnswers((a) => ({ ...a, [q.key]: v }));
-    if (!isLast) setTimeout(() => setStep((s) => s + 1), 150);
+    const newAnswers = { ...answers, [q.key]: v };
+    setAnswers(newAnswers);
+    saveState({ step, answers: newAnswers, result });
+    if (!isLast) {
+      setTimeout(() => {
+        setStep((s) => s + 1);
+        saveState({ step: step + 1, answers: newAnswers, result });
+      }, 150);
+    }
   };
 
   const submit = async () => {
@@ -112,12 +136,17 @@ export default function FindMyPet() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setResult(data as Result);
+      saveState({ step, answers, result: data });
     } catch (e: any) {
       toast.error(e?.message ?? "Could not generate recommendations");
+      setResult(null); // Clear any partial/stale results on error
     } finally {
       setLoading(false);
     }
   };
+
+  const recommended = result?.recommended || [];
+  const avoid = result?.avoid || [];
 
   if (result) {
     return (
@@ -132,7 +161,10 @@ export default function FindMyPet() {
 
         <h2 className="font-display text-lg mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-coral" /> Best matches</h2>
         <div className="space-y-3 mb-6">
-          {result.recommended.map((r, i) => (
+          {recommended.length === 0 && !loading && (
+            <p className="text-sm text-muted-foreground italic">No specific recommendations found. Try adjusting your quiz answers.</p>
+          )}
+          {recommended.map((r, i) => (
             <Card key={i} className="p-4 rounded-2xl border-hairline">
               <div className="flex justify-between items-start gap-3">
                 <div className="flex-1">
@@ -140,10 +172,10 @@ export default function FindMyPet() {
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">{r.species}</span>
                     <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{r.match_score}% match</span>
                   </div>
-                  <div className="font-display text-lg">{r.breed}</div>
-                  <p className="text-sm text-muted-foreground mt-1">{r.why_it_fits}</p>
+                   <div className="font-display text-lg">{r?.breed || "Unknown Breed"}</div>
+                  <p className="text-sm text-muted-foreground mt-1">{r?.why_it_fits}</p>
                   <div className="flex gap-2 mt-2 text-[11px]">
-                    <span className="px-2 py-0.5 rounded-full bg-muted inline-flex items-center gap-1"><IndianRupee className="h-3 w-3" />{r.monthly_cost_inr}/mo</span>
+                    <span className="px-2 py-0.5 rounded-full bg-muted inline-flex items-center gap-1"><IndianRupee className="h-3 w-3" />{r?.monthly_cost_inr || "0"}/mo</span>
                     <span className="px-2 py-0.5 rounded-full bg-muted">Energy: {r.energy_level}</span>
                   </div>
                 </div>
@@ -183,10 +215,40 @@ export default function FindMyPet() {
           </>
         )}
 
-        <div className="mt-6 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => { setResult(null); setStep(0); setAnswers({}); }}>Retake quiz</Button>
-          <Button className="flex-1" onClick={() => nav("/breeds")}>Browse all breeds</Button>
+        <div className="mt-6 flex flex-col gap-3">
+          {!user && (
+            <Button 
+              size="lg" 
+              className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+              onClick={() => {
+                saveDraft({
+                  species: (result.recommended[0]?.species as any) ?? "dog",
+                  answers,
+                  recommendations: result.recommended.map(r => r.breed),
+                  timestamp: new Error().toISOString()
+                });
+                setShowAuth(true);
+              }}
+            >
+              <Save className="h-4 w-4 mr-2" /> Save results to profile
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => { 
+              setResult(null); setStep(0); setAnswers({}); 
+              saveState({ step: 0, answers: {}, result: null });
+            }}>Retake quiz</Button>
+            <Button className="flex-1" onClick={() => nav("/breeds")}>Browse all breeds</Button>
+          </div>
         </div>
+
+        <ContactSellerSheet
+          open={showAuth}
+          onOpenChange={setShowAuth}
+          intent={{ kind: "save_quiz", redirect: "/onboarding?stage=buyer" }}
+          title="Save your results"
+          description="We'll create an account for you so you can access your matches later."
+        />
       </div>
     );
   }
@@ -194,7 +256,13 @@ export default function FindMyPet() {
   return (
     <div className="container-app pad-top-safe pb-16">
       <header className="pt-6 pb-6">
-        <button onClick={() => step === 0 ? nav(-1) : setStep(step - 1)} className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-4">
+        <button onClick={() => {
+          if (step === 0) nav(-1);
+          else {
+            setStep(step - 1);
+            saveState({ step: step - 1, answers, result });
+          }
+        }} className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-4">
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex justify-between items-center mb-2 text-xs text-muted-foreground">

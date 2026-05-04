@@ -37,7 +37,7 @@ type RoleChoice =
   | "kennel" | "shelter" | "sanctuary" | "rescuer" | "zoo" | "vet";
 
 type Stage =
-  | "identity" | "role" | "parent" | "buyer" | "rescuer" | "breeder"
+  | "fork" | "identity" | "role" | "parent" | "buyer" | "rescuer" | "breeder"
   | "org" | "provider" | "vet" | "add-pet" | "add-another" | "goals" | "done";
 
 const ROLE_OPTIONS: { value: RoleChoice; title: string; sub: string; Icon: any; nextStage: Stage }[] = [
@@ -73,10 +73,10 @@ const Onboarding = () => {
   const { data: pets, isLoading: petsLoading } = usePets();
 
   const stageParam = (params.get("stage") as Stage | null) ?? null;
-  const stage: Stage = stageParam ?? "identity";
+  const stage: Stage = stageParam ?? "fork";
 
   const setStage = (s: Stage) => {
-    if (s === "identity") setParams({}, { replace: true });
+    if (s === "fork") setParams({}, { replace: true });
     else setParams({ stage: s }, { replace: false });
   };
 
@@ -160,6 +160,64 @@ const Onboarding = () => {
   // ═════════════════════════════════════════════════════════════════════
 
   if (profileLoading || petsLoading) return <StageLoader />;
+
+  if (stage === "fork") {
+    return (
+      <StepShell
+        step={1}
+        total={4}
+        title="Welcome to Petos"
+        subtitle="How can we help you today?"
+        showCoach={false}
+      >
+        <div className="space-y-3">
+          <button
+            onClick={async () => {
+              if (user) {
+                await supabase.from("profiles").update({ account_type: "buyer" }).eq("id", user.id);
+              }
+              setStage("buyer");
+            }}
+            className="w-full text-left rounded-2xl border border-hairline p-5 bg-card hover:border-primary/50 transition group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 grid place-items-center shrink-0 group-hover:bg-primary/20 transition">
+                <SearchIcon className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold text-base">I'm still researching</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Browse breeds, take the quiz, or find adoption listings.</div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setStage("identity")}
+            className="w-full text-left rounded-2xl border border-hairline p-5 bg-card hover:border-primary/50 transition group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-secondary/10 grid place-items-center shrink-0 group-hover:bg-secondary/20 transition">
+                <PawPrint className="h-6 w-6 text-secondary-foreground" />
+              </div>
+              <div>
+                <div className="font-semibold text-base">I already have a pet</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Set up a care plan, track health, and get reminders.</div>
+              </div>
+            </div>
+          </button>
+
+          <div className="pt-4">
+            <button 
+              onClick={() => setStage("role")}
+              className="text-xs text-muted-foreground hover:text-foreground underline transition block mx-auto"
+            >
+              I am a professional (Breeder, Vet, etc.)
+            </button>
+          </div>
+        </div>
+      </StepShell>
+    );
+  }
 
   if (stage === "identity") {
     return (

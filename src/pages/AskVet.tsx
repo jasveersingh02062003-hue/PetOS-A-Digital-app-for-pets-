@@ -7,6 +7,7 @@ import { ArrowLeft, MessageCircleQuestion, Stethoscope, Plus, Inbox } from "luci
 import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
+import { useSeo } from "@/hooks/useSeo";
 
 const CATEGORIES: { value: VetCategory | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -17,6 +18,7 @@ const CATEGORIES: { value: VetCategory | "all"; label: string }[] = [
 ];
 
 const AskVet = () => {
+  useSeo({ title: "Ask a Vet", description: "Verified vets answer your pet health questions." });
   const nav = useNavigate();
   const { user } = useAuth();
   const [cat, setCat] = useState<VetCategory | "all">("all");

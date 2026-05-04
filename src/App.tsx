@@ -163,6 +163,10 @@ const FindMyPet = lazy(() => import("./pages/FindMyPet"));
 const BreedEncyclopedia = lazy(() => import("./pages/BreedEncyclopedia"));
 const BreedDetail = lazy(() => import("./pages/BreedDetail"));
 const CarePlan = lazy(() => import("./pages/CarePlan"));
+const CostCalculator = lazy(() => import("./pages/CostCalculator"));
+const CareGuide = lazy(() => import("./pages/CareGuide"));
+const WebDashboard = lazy(() => import("./pages/WebDashboard"));
+
 
 const App = () => (
   <ErrorBoundary>
@@ -210,7 +214,6 @@ const App = () => (
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/ai" element={<AiChat />} />
               <Route path="/vet-triage" element={<VetTriage />} />
-              <Route path="/vets" element={<Vets />} />
               <Route path="/photo-vet" element={<PhotoVet />} />
               <Route path="/install" element={<Install />} />
               <Route path="/search" element={<Search />} />
@@ -267,7 +270,7 @@ const App = () => (
               <Route path="/receipt/:intentId" element={<Receipt />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/breeders" element={<Breeders />} />
-              <Route path="/missing" element={<MissingFeed />} />
+              <Route path="/breeders" element={<Breeders />} />
               <Route path="/missing/new" element={<MissingNew />} />
               <Route path="/missing/:id" element={<MissingDetail />} />
               <Route path="/litters/new" element={<NewLitter />} />
@@ -277,7 +280,7 @@ const App = () => (
               <Route path="/mates/adopt/new" element={<AdoptListingNew />} />
               <Route path="/adoption-inbox" element={<AdoptionInbox />} />
               <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
-              <Route path="/shelters" element={<Shelters />} />
+              <Route path="/mates/adopt/:id" element={<AdoptListingDetail />} />
               <Route path="/services/new" element={<ServiceNew />} />
               <Route path="/services/manage" element={<ServicesManage />} />
               <Route path="/bookings/recurring" element={<RecurringBookings />} />
@@ -320,16 +323,14 @@ const App = () => (
               <Route path="/meetups" element={<Meetups />} />
               <Route path="/meetups/new" element={<MeetupNew />} />
               <Route path="/meetups/:id" element={<MeetupDetail />} />
-              <Route path="/askvet" element={<AskVet />} />
+              <Route path="/meetups/:id" element={<MeetupDetail />} />
               <Route path="/askvet/new" element={<AskVetNew />} />
               <Route path="/askvet/:id" element={<AskVetDetail />} />
               <Route path="/daily" element={<Daily />} />
               <Route path="/t/:tag" element={<Hashtag />} />
               <Route path="/walk/:id" element={<WalkSession />} />
               <Route path="/walk-live/:token" element={<WalkLive />} />
-              <Route path="/find-my-pet" element={<FindMyPet />} />
-              <Route path="/breeds" element={<BreedEncyclopedia />} />
-              <Route path="/breeds/:species/:breed" element={<BreedDetail />} />
+              <Route path="/walk-live/:token" element={<WalkLive />} />
               <Route path="/care-plan/:petId" element={<CarePlan />} />
               <Route element={<FirstRunGate><AppShell /></FirstRunGate>}>
                 <Route path="/" element={<Home />} />
@@ -340,7 +341,21 @@ const App = () => (
                 <Route path="/health/compare" element={<HealthCompare />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/profile" element={<Profile />} />
+                {/* Public PWA Routes */}
+                <Route path="/vets" element={<Vets />} />
+                <Route path="/shelters" element={<Shelters />} />
+                <Route path="/missing" element={<MissingFeed />} />
+                <Route path="/find-my-pet" element={<FindMyPet />} />
+                <Route path="/quiz" element={<Navigate to="/find-my-pet" replace />} />
+                <Route path="/breeds" element={<BreedEncyclopedia />} />
+                <Route path="/breeds/:species/:breed" element={<BreedDetail />} />
+                <Route path="/ask-vet" element={<AskVet />} />
+                <Route path="/askvet" element={<Navigate to="/ask-vet" replace />} />
+                <Route path="/cost-calculator" element={<CostCalculator />} />
+                <Route path="/care-guide/*" element={<CareGuide />} />
+                <Route path="/dashboard" element={<WebDashboard />} />
               </Route>
+
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>

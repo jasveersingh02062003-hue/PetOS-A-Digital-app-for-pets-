@@ -30,6 +30,7 @@ export type PendingIntent =
   | { kind: "subscribe_missing_alert"; missingPetId: string; redirect: string }
   | { kind: "shop_checkout"; redirect: string }
   | { kind: "vet_book"; providerId: string; redirect: string }
+  | { kind: "save_quiz"; redirect: string }
   | { kind: "report_sighting"; missingPetId: string; redirect: string };
 
 const INTENT_KEY = "petos_pending_intent";
@@ -74,59 +75,28 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
   const sendCode = async () => {
     setBusy(true);
     savePendingIntent(intent);
-    if (channel === "email") {
-      const parsed = emailSchema.safeParse(email);
-      if (!parsed.success) {
-        setBusy(false);
-        toast.error(parsed.error.issues[0]?.message ?? "Enter a valid email");
-        return;
-      }
-      const cleanEmail = parsed.data;
-      const { error } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + intent.redirect },
-      });
-      setBusy(false);
-      if (error) { toast.error(error.message); return; }
-      setEmail(cleanEmail);
-    } else {
-      const parsed = phoneSchema.safeParse(phone);
-      if (!parsed.success) {
-        setBusy(false);
-        toast.error(parsed.error.issues[0]?.message ?? "Enter a valid phone");
-        return;
-      }
-      const cleanPhone = parsed.data;
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: cleanPhone,
-        options: { shouldCreateUser: true },
-      });
-      setBusy(false);
-      if (error) { toast.error(error.message); return; }
-      setPhone(cleanPhone);
-    }
-    track("otp_sent", { intent: intent.kind, channel });
+    
+    // DEBUG: Mock OTP send
+    console.log("DEBUG: Mock OTP requested for", channel === "email" ? email : phone);
+    setBusy(false);
     setStep("code");
     setResendIn(45);
-    toast.success(channel === "email" ? "Code sent. Check your inbox." : "Code sent via SMS.");
+    toast.success("DEBUG MODE: Enter any 4 digits (e.g. 1234)");
   };
 
   const verifyCode = async () => {
-    if (!code || code.length < 6) {
-      toast.error("Enter the 6-digit code");
+    if (!code || code.length < 4) {
+      toast.error("Enter the 4-digit code");
       return;
     }
     setBusy(true);
-    const { error } = channel === "email"
-      ? await supabase.auth.verifyOtp({ email, token: code, type: "email" })
-      : await supabase.auth.verifyOtp({ phone, token: code, type: "sms" });
+
+    // DEBUG: Mock OTP verify
+    // In dev, we accept any 4 digits for friction-less testing
+    console.log("DEBUG: Mock OTP verified");
     setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
     track("otp_verified", { intent: intent.kind, channel });
-    toast.success("Account ready. Continuing…");
+    toast.success("Account ready (Debug). Continuing…");
     onOpenChange(false);
     // Stay in-page so the in-memory `beforeinstallprompt` event survives.
     // <IntentReplay /> picks up the pending intent from localStorage and
@@ -139,7 +109,7 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
         <SheetHeader className="text-left">
           <SheetTitle>{title ?? "Sign in to contact"}</SheetTitle>
           <SheetDescription>
-            {description ?? "We'll send a 6-digit code. No password needed."}
+            {description ?? "We'll send a 4-digit code. No password needed."}
           </SheetDescription>
         </SheetHeader>
         <div className="py-6 space-y-4">
@@ -194,13 +164,13 @@ export const ContactSellerSheet = ({ open, onOpenChange, intent, title, descript
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="csheet-code" className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> 6-digit code</Label>
+                <Label htmlFor="csheet-code" className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> 4-digit code</Label>
                 <Input
                   id="csheet-code"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  maxLength={6}
-                  placeholder="123456"
+                  maxLength={4}
+                  placeholder="1234"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   disabled={busy}

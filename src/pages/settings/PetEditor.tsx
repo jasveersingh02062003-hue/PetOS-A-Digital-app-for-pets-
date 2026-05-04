@@ -49,6 +49,7 @@ const PetEditor = () => {
       microchip_id: pet.microchip_id?.trim() || null,
       temperament: pet.temperament ?? [],
       bio: pet.bio,
+      favorite_toy: pet.favorite_toy,
       ...(willBeNeutered ? { discoverable_for_mating: false } : {}),
     }).eq("id", pet.id);
     setSaving(false);
@@ -119,6 +120,8 @@ const PetEditor = () => {
       </div>
 
       <Field label="Microchip ID" value={pet.microchip_id ?? ""} onChange={(v) => update({ microchip_id: v })} />
+
+      <Field label="Favorite Toy" value={pet.favorite_toy ?? ""} onChange={(v) => update({ favorite_toy: v })} />
 
       <div className="grid grid-cols-1 gap-3">
         <label className="flex items-center justify-between bg-card border border-hairline rounded-xl px-4 h-[68px]">

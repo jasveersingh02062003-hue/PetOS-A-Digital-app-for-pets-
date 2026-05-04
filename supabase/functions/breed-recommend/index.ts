@@ -28,11 +28,14 @@ serve(async (req) => {
       global: { headers: { Authorization: auth } },
     });
     const { data: { user } } = await userClient.auth.getUser();
+    // Allow anonymous users to use the matchmaker
+    /*
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    */
 
     const { answers } = await req.json();
     if (!answers || typeof answers !== "object") {
@@ -128,12 +131,15 @@ serve(async (req) => {
     const parsed = args ? JSON.parse(args) : { recommended: [], avoid: [], owner_readiness: [] };
 
     // Save the response
-    await admin.from("breed_quiz_responses").insert({
-      user_id: user.id,
-      answers,
-      recommended_breeds: parsed.recommended,
-      avoid_breeds: parsed.avoid,
-    });
+    // Save the response if user is logged in
+    if (user) {
+      await admin.from("breed_quiz_responses").insert({
+        user_id: user.id,
+        answers,
+        recommended_breeds: parsed.recommended,
+        avoid_breeds: parsed.avoid,
+      });
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
